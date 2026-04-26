@@ -125,18 +125,18 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
         logger.debug("Query submitted: {} (tenant: {})", queryId, tenantId);
 
-        // Generate query plan
-        QueryPlan plan = generateQueryPlan(query);
-        queryPlans.put(queryId, plan);
-
-        // Execute query
-        return executeQuery(query, plan)
-            .then(result -> {
-                query.setStatus("COMPLETED");
-                query.setCompletedAt(Instant.now());
-                resultCache.put(queryId, result);
-                logger.debug("Query completed: {}", queryId);
-                return Promise.of(result);
+        // Plan generation can invoke SQL parsing multiple times; keep it off the event loop.
+        return Promise.ofBlocking(blockingExecutor, () -> generateQueryPlan(query))
+            .then(plan -> {
+                queryPlans.put(queryId, plan);
+                return executeQuery(query, plan)
+                    .then(result -> {
+                        query.setStatus("COMPLETED");
+                        query.setCompletedAt(Instant.now());
+                        resultCache.put(queryId, result);
+                        logger.debug("Query completed: {}", queryId);
+                        return Promise.of(result);
+                    });
             })
             .whenComplete((result, exception) -> {
                 if (exception != null) {

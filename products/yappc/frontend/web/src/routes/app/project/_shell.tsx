@@ -35,7 +35,7 @@ import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import { parseJsonResourceResponse, parseJsonResponse } from '@/lib/http';
-import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle/LifecycleArtifactService';
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { UnifiedContextHeader } from '../../../components/navigation';

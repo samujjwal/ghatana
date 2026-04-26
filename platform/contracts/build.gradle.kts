@@ -64,7 +64,7 @@ tasks.register<Copy>("copyProductOpenApiSpecs") {
     }
 
     into(layout.projectDirectory.dir("src/test/resources"))
-    duplicatesStrategy = DuplicatesStrategy.REPLACE
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.named("processTestResources") {

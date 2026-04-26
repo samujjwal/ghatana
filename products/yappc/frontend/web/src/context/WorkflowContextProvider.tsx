@@ -28,7 +28,7 @@ import { useWorkspaceContext } from '../hooks/useWorkspaceData';
 export interface RouteContext {
     path: string;
     phase: LifecyclePhase | null;
-    section: 'intent' | 'canvas' | 'preview' | 'deploy' | 'settings' | 'observe' | 'other';
+    section: 'intent' | 'workspaces' | 'canvas' | 'preview' | 'deploy' | 'settings' | 'observe' | 'other';
     projectId: string | null;
     isProjectRoute: boolean;
 }
@@ -303,15 +303,20 @@ export function WorkflowContextProvider({ children }: WorkflowContextProviderPro
         else if (path.includes('/settings')) section = 'settings';
         else if (path.includes('/observe')) section = 'observe';
         else if (path === '/' || path === '/projects') section = 'intent';
+        else if (path === '/workspaces') section = 'workspaces';
         else if (isProjectRoute && !path.includes('/')) section = 'canvas'; // Default
 
         // Determine phase from section
         let phase: LifecyclePhase | null = null;
         switch (section) {
-            case 'intent': phase = LifecyclePhase.INTENT; break;
+            case 'intent':
+            case 'workspaces':
+                phase = LifecyclePhase.INTENT;
+                break;
             case 'canvas': phase = LifecyclePhase.SHAPE; break;
             case 'preview': phase = LifecyclePhase.OBSERVE; break;
             case 'deploy': phase = LifecyclePhase.RUN; break;
+            case 'settings': phase = null; break;
             default: phase = null;
         }
 

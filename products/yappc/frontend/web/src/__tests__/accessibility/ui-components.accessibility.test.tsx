@@ -601,4 +601,71 @@ describe('UI Components Accessibility Tests', () => {
       document.documentElement.style.fontSize = '';
     });
   });
+
+  describe('Button Accessible Names (WCAG 4.1.2)', () => {
+    function assertButtonsHaveNames(container: HTMLElement): void {
+      const buttons = container.querySelectorAll('button');
+      const unnamed: string[] = [];
+      buttons.forEach((btn, index) => {
+        const name = btn.textContent?.trim() ||
+          btn.getAttribute('aria-label') ||
+          btn.getAttribute('aria-labelledby') ||
+          btn.getAttribute('title') || '';
+        if (!name) {
+          unnamed.push(`button[${index}]`);
+        }
+      });
+      expect(unnamed).toEqual([]);
+    }
+
+    it('AIStatusBar buttons have accessible names', () => {
+      const { container } = render(
+        <AIStatusBar
+          status="ready"
+          currentPhase="INTENT"
+          phaseProgress={75}
+          nextBestAction={{
+            title: 'Add Validation',
+            description: 'Add validation rules',
+            action: () => {},
+          }}
+        />
+      );
+      assertButtonsHaveNames(container);
+    });
+
+    it('InlineCodePanel buttons have accessible names', () => {
+      const { container } = render(
+        <InlineCodePanel
+          code="// Sample code"
+          language="typescript"
+          fileName="example.tsx"
+          isVisible={true}
+          onCodeChange={() => {}}
+          onFormat={() => {}}
+          onRun={() => {}}
+          onToggle={() => {}}
+        />
+      );
+      assertButtonsHaveNames(container);
+    });
+
+    it('KeyboardShortcutsHelp buttons have accessible names', () => {
+      const { container } = render(<KeyboardShortcutsHelp isOpen={true} onClose={() => {}} />);
+      assertButtonsHaveNames(container);
+    });
+
+    it('StudioLayout buttons have accessible names', () => {
+      const { container } = render(
+        <StudioLayout
+          fileTree={<div>File Tree Content</div>}
+          codeEditor={<div>Code Editor Content</div>}
+          livePreview={<div>Live Preview Content</div>}
+          validation={<div>Validation Content</div>}
+          onClose={() => {}}
+        />
+      );
+      assertButtonsHaveNames(container);
+    });
+  });
 });

@@ -105,7 +105,7 @@ class StreamingLoadResilienceTest {
                 session.endStream();
             }
 
-            OptionalDouble maxLatency = chunkLatenciesMs.stream()
+                OptionalLong maxLatency = chunkLatenciesMs.stream()
                     .mapToLong(Long::longValue)
                     .max();
             assertThat(maxLatency.isPresent()).isTrue();
@@ -418,7 +418,7 @@ class StreamingLoadResilienceTest {
     private static AudioChunk dummyChunk(int sizeBytes) {
         byte[] data = new byte[sizeBytes];
         Arrays.fill(data, (byte) 0);
-        return new AudioChunk(data, 16000, 1, 16);
+        return new AudioChunk(data, 0, false, System.currentTimeMillis());
     }
 
     /**

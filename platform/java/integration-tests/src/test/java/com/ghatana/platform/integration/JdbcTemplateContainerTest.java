@@ -40,7 +40,7 @@ class JdbcTemplateContainerTest extends PlatformIntegrationTestBase {
         jdbc = new JdbcTemplate(ds);
 
         // Create a local test table scoped to this test run
-        jdbc.execute("""
+        jdbc.update("""
             CREATE TABLE IF NOT EXISTS it_kv_store (
                 id      BIGSERIAL   PRIMARY KEY,
                 k       TEXT        NOT NULL UNIQUE,
@@ -48,13 +48,13 @@ class JdbcTemplateContainerTest extends PlatformIntegrationTestBase {
                 created TIMESTAMPTZ DEFAULT now()
             )
             """);
-        jdbc.execute("TRUNCATE TABLE it_kv_store");
+        jdbc.update("TRUNCATE TABLE it_kv_store");
     }
 
     @AfterEach
     void tearDown() {
         try {
-            jdbc.execute("DROP TABLE IF EXISTS it_kv_store");
+            jdbc.update("DROP TABLE IF EXISTS it_kv_store");
         } catch (Exception ignored) {
             // best-effort cleanup
         }
@@ -204,22 +204,11 @@ class JdbcTemplateContainerTest extends PlatformIntegrationTestBase {
 
     @Test
     @Order(10)
-    @DisplayName("executeInTransaction commits both statements atomically")
+    @DisplayName("inTransaction commits both statements atomically")
     void transactionCommitsBothStatementsAtomically() {
-        jdbc.executeInTransaction(conn -> {
-            try (var ps1 = conn.prepareStatement(
-                    "INSERT INTO it_kv_store (k, v) VALUES (?, ?)")) {
-                ps1.setString(1, "tx-a");
-                ps1.setString(2, "alpha");
-                ps1.executeUpdate();
-            }
-            try (var ps2 = conn.prepareStatement(
-                    "INSERT INTO it_kv_store (k, v) VALUES (?, ?)")) {
-                ps2.setString(1, "tx-b");
-                ps2.setString(2, "beta");
-                ps2.executeUpdate();
-            }
-            return null;
+        jdbc.inTransaction(txJdbc -> {
+            txJdbc.update("INSERT INTO it_kv_store (k, v) VALUES (?, ?)", "tx-a", "alpha");
+            txJdbc.update("INSERT INTO it_kv_store (k, v) VALUES (?, ?)", "tx-b", "beta");
         });
 
         List<String> keys = jdbc.queryForList(
@@ -231,24 +220,13 @@ class JdbcTemplateContainerTest extends PlatformIntegrationTestBase {
 
     @Test
     @Order(11)
-    @DisplayName("executeInTransaction rolls back on exception — no rows persisted")
+    @DisplayName("inTransaction rolls back on exception — no rows persisted")
     void transactionRollsBackOnException() {
         assertThatThrownBy(() ->
-            jdbc.executeInTransaction(conn -> {
-                try (var ps = conn.prepareStatement(
-                        "INSERT INTO it_kv_store (k, v) VALUES (?, ?)")) {
-                    ps.setString(1, "rollback-key");
-                    ps.setString(2, "value");
-                    ps.executeUpdate();
-                }
+            jdbc.inTransaction(txJdbc -> {
+                txJdbc.update("INSERT INTO it_kv_store (k, v) VALUES (?, ?)", "rollback-key", "value");
                 // Force a constraint violation to trigger rollback
-                try (var ps = conn.prepareStatement(
-                        "INSERT INTO it_kv_store (k, v) VALUES (?, ?)")) {
-                    ps.setString(1, "rollback-key"); // duplicate UNIQUE key
-                    ps.setString(2, "duplicate");
-                    ps.executeUpdate();
-                }
-                return null;
+                txJdbc.update("INSERT INTO it_kv_store (k, v) VALUES (?, ?)", "rollback-key", "duplicate");
             })
         ).isInstanceOf(Exception.class);
 

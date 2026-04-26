@@ -13,6 +13,7 @@
 
 import type { CanvasSnapshot } from '../CanvasPersistence';
 import { parseJsonResponse } from '@/lib/http';
+import { getAccessToken } from '../../session/SessionManager';
 
 export interface APIConfig {
     baseUrl: string;
@@ -285,22 +286,8 @@ export class CanvasAPIClient {
     private getAuthToken(): string | null {
         if (this._getAuthToken) return this._getAuthToken();
 
-        // Try localStorage first
-        const localToken = localStorage.getItem('auth_token');
-        if (localToken) return localToken;
-
-        // Try sessionStorage
-        const sessionToken = sessionStorage.getItem('auth_token');
-        if (sessionToken) return sessionToken;
-
-        // Try cookie (if accessible)
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-            const [name, value] = cookie.trim().split('=');
-            if (name === 'auth_token') return value;
-        }
-
-        return null;
+        // Centralized token retrieval via SessionManager
+        return getAccessToken();
     }
 
     /**

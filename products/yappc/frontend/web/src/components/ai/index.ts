@@ -23,3 +23,9 @@ export type { AICommandBarProps, AISubmitOptions } from './AICommandBar';
 
 export { InsightPanel } from './InsightPanel';
 export type { InsightPanelProps } from './InsightPanel';
+
+export { ConfidenceBadge, ConfidenceDot } from './ConfidenceBadge';
+export type { ConfidenceBadgeProps, ConfidenceLevel } from './ConfidenceBadge';
+
+export { AILabelOverlay, AISectionHeader } from './AILabelOverlay';
+export type { AILabelOverlayProps, AILabelSize, AILabelVariant } from './AILabelOverlay';

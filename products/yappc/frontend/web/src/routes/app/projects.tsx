@@ -12,9 +12,11 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Plus as Add, Filter as FilterList, LayoutGrid as ViewModule, List as ViewList, Search, Folder, Clock as Schedule, User as Person } from 'lucide-react';
 
 import { useWorkspaceContext } from '../../hooks/useWorkspaceData';
+import { projectQueryKeys } from '../../lib/query-keys';
 import { RouteLoadingSpinner } from '../../components/route/LoadingSpinner';
 import { LifecyclePhaseBadge } from '../../components/lifecycle/LifecyclePhaseBadge';
 import { CreateProjectDialog } from '../../components/workspace';
@@ -56,10 +58,11 @@ export default function ProjectsRoute() {
     const [sortBy, setSortBy] = useState<SortBy>('updated');
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const queryClient = useQueryClient();
 
     const handleRetry = useCallback(() => {
-        window.location.reload();
-    }, []);
+        void queryClient.invalidateQueries({ queryKey: projectQueryKeys.all });
+    }, [queryClient]);
 
     // Combine and normalize projects
     const allProjects = useMemo<ProjectItem[]>(() => {

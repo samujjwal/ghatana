@@ -92,7 +92,6 @@ export {
   alignmentGuidesAtom,
   // Constants
   PHASE_ZONE_CENTERS,
-  MAX_HISTORY_SIZE,
   // Lifecycle & tasks
   lifecyclePhaseAtom,
   phaseProgressAtom,
@@ -129,6 +128,9 @@ export type {
   Collaborator,
   CanvasProjectMetadata,
 } from './canvasSharedState';
+
+// Local fallback constant when canonical library export is missing
+const MAX_HISTORY_SIZE = 50;
 
 /**
  * Backward-compat alias for `hybridCanvasStateAtom`.
@@ -371,4 +373,6 @@ export interface CanvasState {
   isReadOnly?: boolean;
   layers?: unknown[];
   history?: unknown;
+  lifecyclePhase?: import('../../../types/lifecycle').LifecyclePhase;
+  phaseHistory?: import('../../../types/lifecycle').PhaseTransition[];
 }

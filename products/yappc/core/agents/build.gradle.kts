@@ -75,9 +75,15 @@ dependencies {
 
 tasks.test {
     // useJUnitPlatform() already applied by java-module
+    maxParallelForks = 1
     testLogging {
         events("passed", "skipped", "failed")
-        showStandardStreams = true
+        showStandardStreams = false
+    }
+    reports {
+        junitXml.required.set(true)
+        junitXml.includeSystemOutLog.set(false)
+        junitXml.includeSystemErrLog.set(false)
     }
     finalizedBy(tasks.jacocoTestReport)
 }

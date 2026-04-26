@@ -16,9 +16,20 @@ export type CreateProjectRequestContract = components['schemas']['CreateProjectR
 export type UpdateWorkspaceRequestContract = components['schemas']['UpdateWorkspaceRequest'];
 export type UpdateProjectRequestContract = components['schemas']['UpdateProjectRequest'];
 export type ProjectStatusContract = components['schemas']['ProjectStatus'];
-export type SaveSyncStatusContract = 'local-only' | 'syncing' | 'remote-saved' | 'remote-failed';
+export type SaveSyncStatusContract =
+  | 'local-only'
+  | 'syncing'
+  | 'remote-saved'
+  | 'remote-failed'
+  | 'stale'
+  | 'conflict';
 export type ProjectActivitySourceContract = 'lifecycle' | 'audit';
-export type PreviewStatusContract = 'unconfigured' | 'external-ready';
+export type PreviewStatusContract =
+  | 'unconfigured'
+  | 'loading'
+  | 'external-ready'
+  | 'unavailable'
+  | 'error';
 export type ReleasePlanningStatusContract =
 	| 'final-phase'
 	| 'blocked'

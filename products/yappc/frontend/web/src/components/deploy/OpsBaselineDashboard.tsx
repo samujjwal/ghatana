@@ -12,7 +12,7 @@
 
 import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, Gauge as Speed, Cpu as Memory, AlertTriangle as Warning, CheckCircle } from 'lucide-react';
-import { useLifecycleArtifacts } from '../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from '../../services/canvas/lifecycle/LifecycleArtifactService';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 
 export interface OpsBaselineDashboardProps {

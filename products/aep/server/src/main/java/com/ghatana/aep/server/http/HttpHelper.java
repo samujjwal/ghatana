@@ -90,7 +90,10 @@ public final class HttpHelper {
      * Resolves tenant ID from request header/query, falling back to a payload map, then "default".
      */
     public static String resolveTenantId(HttpRequest request, Map<String, Object> payload) {
-        String tenantId = request.getQueryParameter("tenantId");
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = request.getQueryParameter("tenantId");
+        }
         if ((tenantId == null || tenantId.isBlank()) && payload != null) {
             Object v = payload.get("tenantId");
             tenantId = v != null ? String.valueOf(v) : null;

@@ -3,6 +3,7 @@ import {
   parseJsonResponse as sharedParseJsonResponse,
   readErrorResponse as sharedReadErrorResponse,
 } from '@/lib/http';
+import { getAccessToken } from './session/SessionManager';
 import {
   BaseAgent,
   AgentOrchestrator,
@@ -355,13 +356,15 @@ class AgentService {
    * Get authentication token
    */
   private getAuthToken(): string {
-    // Try localStorage first
-    const localToken = localStorage.getItem('auth_token');
-    if (localToken) return localToken;
+    // Centralized token retrieval via SessionManager
+    const token = getAccessToken();
+    if (token) return token;
 
-    // Try sessionStorage
-    const sessionToken = sessionStorage.getItem('auth_token');
-    if (sessionToken) return sessionToken;
+    // Try sessionStorage as fallback
+    if (typeof sessionStorage !== 'undefined') {
+      const sessionToken = sessionStorage.getItem('auth_token');
+      if (sessionToken) return sessionToken;
+    }
 
     // Fall back to development token
     if (import.meta.env.DEV) {

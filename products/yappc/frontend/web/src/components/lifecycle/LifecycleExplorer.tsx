@@ -12,7 +12,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronRight, Circle, Lock, CheckCircle, Info, Copy as ContentCopy } from 'lucide-react';
-import { useLifecycleArtifacts, usePhaseGates } from '../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from '../../services/canvas/lifecycle/LifecycleArtifactService';
+import { usePhaseGates } from '../../services/canvas/lifecycle/PhaseGateService';
 import { useSearchParams } from 'react-router';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { LifecyclePhase } from '@/shared/types/lifecycle';
@@ -212,7 +213,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
 
         // Search filter
         if (filterValues.search) {
-            const search = filterValues.search.toLowerCase();
+            const search = String(filterValues.search).toLowerCase();
             filtered = filtered.filter(a => a.title.toLowerCase().includes(search));
         }
 

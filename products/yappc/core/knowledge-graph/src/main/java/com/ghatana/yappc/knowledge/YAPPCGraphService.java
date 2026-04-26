@@ -10,6 +10,7 @@ import com.ghatana.yappc.knowledge.query.KGSemanticSearchService;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphNode;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphEdge;
 import com.ghatana.yappc.knowledge.model.YAPPCImpactAnalysis;
+import com.ghatana.platform.domain.auth.TenantId;
 import io.activej.promise.Promise;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
@@ -115,7 +116,7 @@ public class YAPPCGraphService {
                                 ? persisted
                                 : persisted.then(savedNode -> {
                                         DataStorePort.GraphNode portNode = mapper.toPortNode(savedNode);
-                                        return dataStorePort.createNode(savedNode.metadata().tenantId(), portNode)
+                                        return dataStorePort.createNode(TenantId.of(savedNode.metadata().tenantId()), portNode)
                                                 .map(mapper::fromPortNode);
                                 });
 

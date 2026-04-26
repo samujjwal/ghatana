@@ -20,11 +20,8 @@ import {
     Plus as Add,
     X as Close,
 } from 'lucide-react';
-import {
-    useLifecycleArtifacts,
-    type ArtifactSummary,
-    type LifecycleArtifact,
-} from '../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from '../../services/canvas/lifecycle/LifecycleArtifactService';
+import type { ArtifactSummary, LifecycleArtifact } from '../../services/canvas/lifecycle/LifecycleArtifactService';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import type { IncidentReportPayload } from '@/shared/types/lifecycle-artifacts';
 import { useCurrentUser } from '../../providers/AuthProvider';

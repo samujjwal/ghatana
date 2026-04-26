@@ -11,8 +11,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { User, Mail } from 'lucide-react';
-import { parseJsonResponse } from '@/lib/http';
 import { useCurrentUser } from '../providers/AuthProvider';
+import { fetchAuthSession, mapAuthSessionToUser } from '../providers/auth-session';
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
 
 interface UserProfile {
@@ -30,9 +30,17 @@ export default function Component() {
     const { data: profile, isLoading } = useQuery<UserProfile>({
         queryKey: ['user-profile'],
         queryFn: async () => {
-            const res = await fetch('/api/auth/me');
-            if (!res.ok) throw new Error('Failed to load profile');
-            return parseJsonResponse<UserProfile>(res, 'profile load');
+            const sessionUser = await fetchAuthSession();
+            if (!sessionUser) throw new Error('Failed to load profile');
+            const user = mapAuthSessionToUser(sessionUser);
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                avatar: sessionUser.avatarUrl,
+                role: user.role,
+                // createdAt not available from auth session; omit or derive if needed
+            } as UserProfile;
         },
         enabled: currentUser.isAuthenticated,
     });

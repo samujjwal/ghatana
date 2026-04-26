@@ -9,8 +9,8 @@
  * - Error handling and validation
  */
 
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { v4 as uuidv4 } from 'uuid';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+const uuidv4 = (): string => crypto.randomUUID();
 
 import type {
   AIServiceConfig,
@@ -80,8 +80,8 @@ export class AIServiceClient {
 
     // Add response interceptor for error handling
     this.httpClient.interceptors.response.use(
-      (response: unknown) => response,
-      (error: unknown) => this.handleError(error as AxiosError)
+      (response: AxiosResponse) => response,
+      (error: AxiosError) => this.handleError(error)
     );
   }
 

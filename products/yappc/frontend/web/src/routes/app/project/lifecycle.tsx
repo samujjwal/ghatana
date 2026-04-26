@@ -15,7 +15,7 @@ import { useParams } from 'react-router';
 import type { LifecycleReviewStatusContract } from '@/contracts/workspace-project';
 import { LifecycleExplorer } from '../../../components/lifecycle';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
-import { usePhaseGates } from '../../../services/canvas/lifecycle';
+import { usePhaseGates } from '../../../services/canvas/lifecycle/PhaseGateService';
 import {
     useAIInsights,
     useAIRecommendations,

@@ -59,8 +59,8 @@ class PluginSecurityTest extends EventloopTestBase {
             PluginRegistry registryA = new PluginRegistry();
             PluginRegistry registryB = new PluginRegistry();
 
-            Object tenantASecret = new Object();
-            Object tenantBSecret = new Object();
+            TenantAConfig tenantASecret = new TenantAConfig();
+            TenantBConfig tenantBSecret = new TenantBConfig();
 
             DefaultPluginContext ctxA = new DefaultPluginContext(
                     registryA, Map.of(TenantAConfig.class, tenantASecret));

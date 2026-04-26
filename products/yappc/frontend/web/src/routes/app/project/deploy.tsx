@@ -24,8 +24,9 @@ import { RouteErrorBoundary } from "../../../components/route/ErrorBoundary";
 import { DeployPanelHost } from '../../../components/deploy/DeployPanelHost';
 import type { CapacityRecommendationView } from '../../../components/deploy/CapacityDashboard';
 import type { DeploymentPlanSummary } from '../../../components/deploy/DeploymentPanel';
-import { useLifecycleArtifacts, usePhaseGates } from "../../../services/canvas/lifecycle";
-import type { TransitionResult } from '../../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from "../../../services/canvas/lifecycle/LifecycleArtifactService";
+import { usePhaseGates } from "../../../services/canvas/lifecycle/PhaseGateService";
+import type { TransitionResult } from '../../../services/canvas/lifecycle/PhaseGateService';
 import { phaseTransitionAPI, type PhaseTransitionPreview } from '@/services/lifecycle/phase-transition-api';
 
 function getReleasePlanningStatusView(
@@ -149,6 +150,13 @@ export default function Component() {
     const [isAdvancing, setIsAdvancing] = useState<boolean>(false);
     const [operatorNote, setOperatorNote] = useState<string>('');
     const [operatorFeedback, setOperatorFeedback] = useState<string | null>(null);
+    const [showConfirmAdvance, setShowConfirmAdvance] = useState<boolean>(false);
+    const [rejectionHistory, setRejectionHistory] = useState<Array<{
+        gateId: string;
+        reason: string;
+        actor: string;
+        timestamp: string;
+    }>>([]);
 
     const phasePredictionSummary = phasePreview?.estimatedReadyIn
         ? phasePreview.estimatedReadyIn === 'Ready now'
@@ -270,11 +278,40 @@ export default function Component() {
         await handleAdvancePhase(comments);
     }, [handleAdvancePhase]);
 
-    // Handler: Reject gate transition
+    // Handler: Reject gate transition — persists decision as artifact and local history
     const handleReject = useCallback(async (gateId: string, reason: string) => {
-        console.log('Gate rejected:', gateId, 'Reason:', reason);
-        // Gate rejections prevent transitions - no action needed beyond logging
-    }, []);
+        if (!projectId) return;
+
+        const timestamp = new Date().toISOString();
+
+        // Record in local decision history for immediate UI feedback
+        setRejectionHistory((prev) => [
+            ...prev,
+            { gateId, reason, actor: userId, timestamp },
+        ]);
+
+        // Persist as incident report artifact for durability
+        try {
+            const artifact = await createArtifact(INCIDENT_REPORT_KIND, userId);
+            await updateArtifact(
+                artifact.id,
+                {
+                    payload: {
+                        type: 'rejection_decision',
+                        gateId,
+                        reason,
+                        actor: userId,
+                        timestamp,
+                        projectId,
+                    },
+                },
+                userId
+            );
+            setOperatorFeedback(`Rejection recorded for gate ${gateId}. Decision is durable.`);
+        } catch (err) {
+            setOperatorFeedback(`Rejection noted for gate ${gateId} (artifact persistence failed).`);
+        }
+    }, [projectId, createArtifact, updateArtifact, userId]);
 
     // Handler: Create incident (creates artifact)
     const handleCreateIncident = useCallback(async () => {
@@ -343,8 +380,9 @@ export default function Component() {
                 </div>
                 <button
                     type="button"
+                    data-testid="advance-phase-trigger"
                     onClick={() => {
-                        void handleAdvancePhase();
+                        setShowConfirmAdvance(true);
                     }}
                     disabled={
                         isAdvancing ||
@@ -361,6 +399,72 @@ export default function Component() {
                             : 'Advance Phase'}
                 </button>
             </div>
+
+            {/* Advance confirmation with risk controls */}
+            {showConfirmAdvance && phasePreview?.canAdvance && phasePreview.nextPhase && (
+                <div
+                    className="border-b border-divider bg-bg-paper px-6 py-4"
+                    data-testid="advance-confirmation-panel"
+                >
+                    <h3 className="text-sm font-semibold text-text-primary">
+                        Confirm lifecycle promotion
+                    </h3>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3 text-xs text-text-secondary">
+                        <div className="rounded-lg border border-divider p-3">
+                            <span className="block text-[10px] uppercase tracking-wide text-text-secondary">Readiness</span>
+                            <span className="block text-lg font-semibold text-text-primary">{deploymentPlan.readiness}%</span>
+                        </div>
+                        <div className="rounded-lg border border-divider p-3">
+                            <span className="block text-[10px] uppercase tracking-wide text-text-secondary">Risk score</span>
+                            <span className={`block text-lg font-semibold ${deploymentPlan.riskScore >= 7 ? 'text-red-600' : deploymentPlan.riskScore >= 4 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                {deploymentPlan.riskScore}/10
+                            </span>
+                        </div>
+                        <div className="rounded-lg border border-divider p-3">
+                            <span className="block text-[10px] uppercase tracking-wide text-text-secondary">Prediction confidence</span>
+                            <span className="block text-lg font-semibold text-text-primary">
+                                {Math.round((phasePreview.predictionConfidence ?? 0) * 100)}%
+                            </span>
+                        </div>
+                    </div>
+                    {phasePreview.blockers.length > 0 && (
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-xs font-medium text-amber-800">Remaining blockers:</p>
+                            <ul className="mt-1 list-disc pl-4 text-xs text-amber-700">
+                                {phasePreview.blockers.map((blocker) => (
+                                    <li key={blocker}>{blocker}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    <p className="mt-3 text-xs text-text-secondary">
+                        Strategy: {deploymentPlan.strategy}. Rollback: an incident report artifact will be auto-created if the promotion triggers an anomaly. You can also create one manually below.
+                    </p>
+                    <div className="mt-3 flex gap-3">
+                        <button
+                            type="button"
+                            data-testid="confirm-advance-button"
+                            onClick={() => {
+                                setShowConfirmAdvance(false);
+                                void handleAdvancePhase(operatorNote.trim() || undefined);
+                            }}
+                            disabled={isAdvancing}
+                            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isAdvancing ? 'Advancing...' : 'Confirm advance'}
+                        </button>
+                        <button
+                            type="button"
+                            data-testid="cancel-advance-button"
+                            onClick={() => setShowConfirmAdvance(false)}
+                            disabled={isAdvancing}
+                            className="rounded-lg border border-divider px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-grey-100 dark:hover:bg-grey-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {(phasePreviewError || (phasePreview?.blockers.length ?? 0) > 0) && (
                 <div className="border-b border-divider bg-amber-50 px-6 py-3 text-sm text-amber-900">
@@ -449,6 +553,35 @@ export default function Component() {
                     </div>
                 </div>
             </section>
+
+            {/* Rejection decision history */}
+            {rejectionHistory.length > 0 && (
+                <section
+                    className="border-b border-divider bg-bg-paper px-6 py-3"
+                    data-testid="rejection-history-card"
+                >
+                    <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
+                        Decision history ({rejectionHistory.length})
+                    </h3>
+                    <ul className="mt-2 space-y-2">
+                        {rejectionHistory.map((entry, index) => (
+                            <li
+                                key={`${entry.gateId}-${entry.timestamp}-${index}`}
+                                className="text-xs text-text-secondary"
+                            >
+                                <span className="font-medium text-text-primary">
+                                    {new Date(entry.timestamp).toLocaleString()}
+                                </span>{' '}
+                                — Gate <span className="font-medium">{entry.gateId}</span> rejected by{' '}
+                                <span className="font-medium">{entry.actor}</span>
+                                {entry.reason && (
+                                    <span className="block mt-0.5 italic">Reason: {entry.reason}</span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
 
             {/* DeployPanelHost - URL-driven segment navigation */}
             <div className="flex-1 overflow-hidden">

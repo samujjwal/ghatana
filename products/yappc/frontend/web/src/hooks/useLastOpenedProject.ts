@@ -10,8 +10,7 @@
  */
 
 import { useCallback } from 'react';
-
-const STORAGE_KEY = 'yappc_last_opened_projects';
+import { readStorage, writeStorage } from '../services/storage';
 
 interface LastOpenedProjects {
     [workspaceId: string]: {
@@ -29,10 +28,8 @@ export function useLastOpenedProject() {
      */
     const getLastOpenedProject = useCallback((workspaceId: string): string | null => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return null;
-
-            const data: LastOpenedProjects = JSON.parse(stored);
+            const data = readStorage<LastOpenedProjects>('yappc_last_opened_projects');
+            if (!data) return null;
             return data[workspaceId]?.projectId || null;
         } catch (error) {
             console.error('Failed to get last opened project:', error);
@@ -45,15 +42,14 @@ export function useLastOpenedProject() {
      */
     const setLastOpenedProject = useCallback((workspaceId: string, projectId: string) => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            const data: LastOpenedProjects = stored ? JSON.parse(stored) : {};
+            const data = readStorage<LastOpenedProjects>('yappc_last_opened_projects') ?? {};
 
             data[workspaceId] = {
                 projectId,
                 timestamp: Date.now(),
             };
 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            writeStorage('yappc_last_opened_projects', data);
         } catch (error) {
             console.error('Failed to set last opened project:', error);
         }
@@ -64,13 +60,12 @@ export function useLastOpenedProject() {
      */
     const clearLastOpenedProject = useCallback((workspaceId: string) => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) return;
+            const data = readStorage<LastOpenedProjects>('yappc_last_opened_projects');
+            if (!data) return;
 
-            const data: LastOpenedProjects = JSON.parse(stored);
             delete data[workspaceId];
 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            writeStorage('yappc_last_opened_projects', data);
         } catch (error) {
             console.error('Failed to clear last opened project:', error);
         }
@@ -81,8 +76,7 @@ export function useLastOpenedProject() {
      */
     const getAllLastOpenedProjects = useCallback((): LastOpenedProjects => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            return stored ? JSON.parse(stored) : {};
+            return readStorage<LastOpenedProjects>('yappc_last_opened_projects') ?? {};
         } catch (error) {
             console.error('Failed to get all last opened projects:', error);
             return {};

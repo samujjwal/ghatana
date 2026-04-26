@@ -18,6 +18,8 @@ import { useSetAtom } from 'jotai';
 import type { ProjectTypeContract } from '@/contracts/workspace-project';
 import { useCreateWorkspace, useNameSuggestions } from '@/hooks/useWorkspaceData';
 import { currentWorkspaceIdAtom } from '@/state/atoms/workspaceAtom';
+import { writeStorage, writeFlag } from '../../services/storage';
+import { useOnboardingStatus } from '../../services/onboarding/OnboardingStatusService';
 import { PERSONA_DEFINITIONS, ALL_PERSONA_TYPES, type PersonaType } from '../../context/PersonaContext';
 
 // ============================================================================
@@ -565,6 +567,7 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
     }, []);
 
     const setCurrentWorkspaceId = useSetAtom(currentWorkspaceIdAtom);
+    const { markComplete } = useOnboardingStatus();
 
     const handleCreate = useCallback(async () => {
         setCurrentStep(3);
@@ -577,21 +580,21 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
                 createDefaultProject: true,
             });
 
-            localStorage.setItem('yappc_active_personas', JSON.stringify(selectedPersonas));
-            localStorage.setItem('yappc_primary_persona', selectedPersonas[0] || 'developer');
+            // Sync onboarding completion and persona preferences to server
+            await markComplete({
+                primary: selectedPersonas[0] || 'developer',
+                active: selectedPersonas,
+            });
 
             // Set the newly created workspace as current
             setCurrentWorkspaceId(workspace.id);
-
-            // Mark onboarding as complete
-            localStorage.setItem('onboarding_complete', 'true');
 
             setIsCreating(false);
         } catch (error: unknown) {
             console.error('Failed to create workspace:', error);
 
             // Check if it's a duplicate name error (P2002)
-            const errorMessage = error?.message || '';
+            const errorMessage = error instanceof Error ? error.message : '';
             if (errorMessage.includes('P2002') || errorMessage.includes('unique')) {
                 // Go back to workspace step with inline error message
                 setWorkspaceError(`A workspace named "${workspaceName}" already exists. Please try a different name.`);
@@ -604,7 +607,7 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
             setCurrentStep(1);
             setIsCreating(false);
         }
-    }, [workspaceName, projectName, projectType, selectedPersonas, createWorkspace, setCurrentWorkspaceId]);
+    }, [workspaceName, projectName, projectType, selectedPersonas, createWorkspace, setCurrentWorkspaceId, markComplete]);
 
     const handleFinish = useCallback(() => {
         onComplete?.();

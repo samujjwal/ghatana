@@ -7,6 +7,7 @@
 
 import { useEffect } from "react";
 import { useRouteError, Link } from "react-router";
+import { removeStorage, writeFlag } from '../../services/storage';
 
 /**
  *
@@ -102,13 +103,11 @@ export function RouteErrorBoundary({
                         onClick={() => {
                             // Clear error flag and reload
                             try {
-                                if (typeof window !== 'undefined' && window.localStorage) {
-                                    localStorage.removeItem('E2E_FORCE_NETWORK_ERROR');
-                                    // Set a flag to prevent immediate re-error
-                                    localStorage.setItem('E2E_RETRY_ATTEMPTED', 'true');
-                                }
+                                removeStorage('E2E_FORCE_NETWORK_ERROR');
+                                // Set a flag to prevent immediate re-error
+                                writeFlag('E2E_RETRY_ATTEMPTED', true);
                             } catch {
-                                // Ignore localStorage errors
+                                // Ignore storage errors
                             }
                             // Use a slight delay to ensure localStorage is updated
                             setTimeout(() => {

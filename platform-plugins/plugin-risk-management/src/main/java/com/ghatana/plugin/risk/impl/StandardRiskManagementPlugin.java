@@ -149,9 +149,7 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
 
     @Override
     public Promise<List<RiskAlert>> getActiveAlerts(String entityId) {
-        List<RiskAlert> active = alerts.getOrDefault(entityId, Collections.emptyList()).stream()
-            .filter(a -> a.severity() >= 0.7) // High severity threshold
-            .collect(Collectors.toList());
+        List<RiskAlert> active = new ArrayList<>(alerts.getOrDefault(entityId, Collections.emptyList()));
         return Promise.of(active);
     }
 
@@ -266,7 +264,9 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
         if (entityLimits == null) return;
 
         // Check various limits based on risk type
-        if (type == RiskType.MARKET && score.score() > 0.7) {
+        boolean isHighOrCritical = score.level() == RiskScore.RiskLevel.HIGH
+                || score.level() == RiskScore.RiskLevel.CRITICAL;
+        if (type == RiskType.MARKET && isHighOrCritical) {
             RiskAlert alert = new RiskAlert(
                 UUID.randomUUID().toString(),
                 entityId,

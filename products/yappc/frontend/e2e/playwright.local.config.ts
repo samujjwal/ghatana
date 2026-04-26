@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // Local Playwright config for running tests against an already-running dev server
 export default defineConfig({
-  testDir: './',
+  testDir: './current-release',
   timeout: 30000,
   expect: { timeout: 5000 },
   reporter: [ ['list'], ['json', { outputFile: '../test-results/e2e-results-local.json' }] ],

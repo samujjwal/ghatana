@@ -1,24 +1,26 @@
 package com.ghatana.yappc.agent.benchmark;
 
 import com.ghatana.agent.AgentResult;
+import com.ghatana.agent.AgentDescriptor;
+import com.ghatana.agent.AgentType;
+import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.platform.health.HealthStatus;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.agent.ParallelAgentExecutor;
 import com.ghatana.yappc.agent.ParallelAgentExecutor.AggregationStrategy;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,31 +46,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("Agent Scheduling Benchmarks")
 @Tag("benchmark")
-class AgentSchedulingBenchmark {
+class AgentSchedulingBenchmark extends EventloopTestBase {
 
     private static final int WARMUP_ITERATIONS = 50;
     private static final int MEASURED_ITERATIONS = 200;
-
-    private Eventloop eventloop;
-    private Thread eventloopThread;
-
-    @BeforeEach
-    void setUp() throws InterruptedException {
-        eventloop = Eventloop.builder().build();
-        CountDownLatch started = new CountDownLatch(1);
-        eventloopThread = new Thread(() -> {
-            started.countDown();
-            eventloop.run();
-        }, "benchmark-eventloop");
-        eventloopThread.setDaemon(true);
-        eventloopThread.start();
-        started.await(5, TimeUnit.SECONDS);
-    }
-
-    @AfterEach
-    void tearDown() {
-        eventloop.execute(eventloop::breakEventloop);
-    }
 
     // -------------------------------------------------------------------------
     // Benchmark 1: Single-agent dispatch latency
@@ -76,7 +57,7 @@ class AgentSchedulingBenchmark {
 
     @Test
     @DisplayName("single-agent dispatch: warm-path p99 < 5 ms")
-    void singleAgentDispatchP99Under5ms() throws InterruptedException {
+    void singleAgentDispatchP99Under5ms() {
         TypedAgent<String, String> fastAgent = instantAgent("fast-dispatch");
         AgentContext ctx = syntheticContext("bench-tenant");
 
@@ -103,7 +84,7 @@ class AgentSchedulingBenchmark {
 
     @Test
     @DisplayName("parallel fan-out (10 agents): aggregate p95 < 50 ms")
-    void parallelFanOut10AgentsP95Under50ms() throws InterruptedException {
+    void parallelFanOut10AgentsP95Under50ms() {
         int agentCount = 10;
         List<TypedAgent<String, String>> agents = new ArrayList<>();
         for (int i = 0; i < agentCount; i++) {
@@ -135,7 +116,7 @@ class AgentSchedulingBenchmark {
 
     @Test
     @DisplayName("MAJORITY_VOTE (5 agents): p95 < 20 ms")
-    void majorityVote5AgentsP95Under20ms() throws InterruptedException {
+    void majorityVote5AgentsP95Under20ms() {
         int agentCount = 5;
         List<TypedAgent<String, String>> agents = new ArrayList<>();
         for (int i = 0; i < agentCount; i++) {
@@ -168,7 +149,7 @@ class AgentSchedulingBenchmark {
 
     @Test
     @DisplayName("50-task concurrent batch: throughput > 1000 tasks/sec")
-    void largeConurrentBatchThroughputOver1000TasksPerSec() throws InterruptedException {
+    void largeConurrentBatchThroughputOver1000TasksPerSec() {
         TypedAgent<String, String> fastAgent = instantAgent("throughput-agent");
         AgentContext ctx = syntheticContext("bench-tenant");
         int batchSize = 50;
@@ -200,39 +181,49 @@ class AgentSchedulingBenchmark {
     private TypedAgent<String, String> instantAgent(String name) {
         return new TypedAgent<>() {
             @Override
-            public Promise<AgentResult<String>> process(AgentContext ctx, String input) {
-                return Promise.of(AgentResult.success(input));
+            public AgentDescriptor descriptor() {
+                return AgentDescriptor.builder()
+                        .agentId(name)
+                        .name(name)
+                        .type(AgentType.DETERMINISTIC)
+                        .build();
             }
 
             @Override
-            public String getAgentId() { return name; }
+            public Promise<Void> initialize(AgentConfig config) {
+                return Promise.complete();
+            }
 
             @Override
-            public Class<String> getInputType() { return String.class; }
+            public Promise<Void> shutdown() {
+                return Promise.complete();
+            }
 
             @Override
-            public Class<String> getOutputType() { return String.class; }
+            public Promise<HealthStatus> healthCheck() {
+                return Promise.of(HealthStatus.healthy());
+            }
+
+            @Override
+            public Promise<AgentResult<String>> process(AgentContext ctx, String input) {
+                return Promise.of(AgentResult.success(input, name, Duration.ZERO));
+            }
         };
     }
 
     private AgentContext syntheticContext(String tenantId) {
         return AgentContext.builder()
+                .agentId("benchmark-agent")
+                .turnId("benchmark-turn")
                 .tenantId(tenantId)
-                .correlationId("bench-corr-id")
+                .memoryStore(MemoryStore.noOp())
+                .logger(LoggerFactory.getLogger(AgentSchedulingBenchmark.class))
+                .traceId("bench-corr-id")
                 .build();
     }
 
-    private String dispatchSync(TypedAgent<String, String> agent, AgentContext ctx, String input)
-            throws InterruptedException {
-        AtomicLong result = new AtomicLong();
-        CountDownLatch latch = new CountDownLatch(1);
-        eventloop.execute(() ->
-                agent.process(ctx, input)
-                        .whenComplete((r, e) -> {
-                            result.set(0);
-                            latch.countDown();
-                        }));
-        latch.await(2, TimeUnit.SECONDS);
+    private String dispatchSync(TypedAgent<String, String> agent, AgentContext ctx, String input) {
+        runPromise(() -> agent.process(ctx, input));
         return input;
     }
 
@@ -240,15 +231,11 @@ class AgentSchedulingBenchmark {
                                       List<TypedAgent<String, String>> agents,
                                       AgentContext ctx,
                                       String input,
-                                      AggregationStrategy strategy) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        eventloop.execute(() ->
-                executor.executeParallel(agents, ctx, input, strategy)
-                        .whenComplete((r, e) -> latch.countDown()));
-        latch.await(5, TimeUnit.SECONDS);
+                                      AggregationStrategy strategy) {
+        runPromise(() -> executor.executeAndAggregate(agents, ctx, input, strategy));
     }
 
-    private void warmUp(RunnableWithInterrupt task, int iterations) throws InterruptedException {
+    private void warmUp(Runnable task, int iterations) {
         for (int i = 0; i < iterations; i++) {
             task.run();
         }
@@ -261,8 +248,4 @@ class AgentSchedulingBenchmark {
         return sorted[Math.max(0, Math.min(index, sorted.length - 1))];
     }
 
-    @FunctionalInterface
-    interface RunnableWithInterrupt {
-        void run() throws InterruptedException;
-    }
 }

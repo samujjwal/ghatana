@@ -12,31 +12,35 @@
 import { useEffect } from 'react';
 import { useNavigate } from "react-router";
 import { OnboardingFlow } from '@/components/workspace';
-
-/**
- * Check if user has completed onboarding
- */
-function useOnboardingCheck() {
-    const isComplete = localStorage.getItem('onboarding_complete') === 'true';
-    return isComplete;
-}
+import { useOnboardingStatus } from '../services/onboarding/OnboardingStatusService';
 
 /**
  * Onboarding page component
  */
 export function Component() {
     const navigate = useNavigate();
-    const isOnboardingComplete = useOnboardingCheck();
+    const { status, isLoading } = useOnboardingStatus();
     const redirectTarget = '/workspaces';
+
+    const isOnboardingComplete = status?.completed ?? false;
 
     // Redirect if already onboarded
     useEffect(() => {
         if (isOnboardingComplete) {
             navigate(redirectTarget, { replace: true });
         }
-    }, [isOnboardingComplete, navigate, redirectTarget]);
+    }, [isOnboardingComplete, navigate]);
 
-    // Don't render if already complete (prevents flash)
+    // Loading state while checking server
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-pulse text-text-secondary text-sm">Checking onboarding status...</div>
+            </div>
+        );
+    }
+
+    // Don't render the flow if already complete to avoid flash
     if (isOnboardingComplete) {
         return null;
     }

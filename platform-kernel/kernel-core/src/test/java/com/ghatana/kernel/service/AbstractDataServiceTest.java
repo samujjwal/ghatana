@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,7 +46,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
         when(mockAuditService.recordAuditEvent(any(), any(), any(), any(), any())) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
 
-        service = new TestDataService(mockContext, Executors.newCachedThreadPool()); // GH-90000
+        service = new TestDataService(mockContext, Runnable::run); // GH-90000
     }
 
     @Test

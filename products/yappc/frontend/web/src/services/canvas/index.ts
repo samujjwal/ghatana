@@ -43,3 +43,33 @@ export {
 
 // Lifecycle Services
 export * from './lifecycle';
+
+// Canvas Sync Service
+export {
+    CanvasSyncService,
+    getCanvasSyncService,
+    clearCanvasSyncService,
+} from './CanvasSyncService';
+export type {
+    CanvasSyncState,
+    SyncHistoryEntry,
+    CanvasSyncSnapshot,
+} from './CanvasSyncService';
+
+// Canvas Sync Hook
+export { useCanvasSync } from './useCanvasSync';
+export type { UseCanvasSyncResult } from './useCanvasSync';
+
+// Intent-first Canvas Generation
+export {
+  parseIntent,
+  generateNodes,
+  generateConnections,
+  generatePreview,
+} from './intent/IntentCanvasGenerator';
+export type {
+  IntentCanvasNode,
+  IntentCanvasConnection,
+  IntentCanvasPreview,
+  IntentParseResult,
+} from './intent/IntentCanvasGenerator';

@@ -22,6 +22,8 @@ import { ApiUnavailableFallback } from "../../components/route/ApiUnavailableFal
 import { LoadingContainer, SkeletonProjectList } from "../../components/route/Skeleton";
 import { CreateWorkspaceDialog } from "../../components/workspace/CreateWorkspaceDialog";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { workspaceQueryKeys } from '../../lib/query-keys';
 
 function getErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
@@ -52,6 +54,9 @@ export default function Component() {
     }, [navigate, setWorkspaceBreadcrumb, switchWorkspace, workspaces]);
 
     const [suggestedWorkspaceName, setSuggestedWorkspaceName] = useState<string | null>(null);
+    const [suggestionError, setSuggestionError] = useState<string | null>(null);
+    const [starterCreateError, setStarterCreateError] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
     const handleCreateWorkspace = useCallback(() => {
         setShowCreateWorkspace(true);
@@ -64,8 +69,21 @@ export default function Component() {
     }, [navigate, setWorkspaceBreadcrumb, switchWorkspace]);
 
     const handleRetry = useCallback(() => {
-        window.location.reload();
-    }, []);
+        void queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.all });
+    }, [queryClient]);
+
+    const loadSuggestion = useCallback(async (): Promise<void> => {
+        setSuggestionError(null);
+        setStarterCreateError(null);
+        try {
+            const suggestedName = await suggestWorkspace();
+            setSuggestedWorkspaceName(suggestedName);
+        } catch (err) {
+            const message = getErrorMessage(err);
+            setSuggestionError(message);
+            setSuggestedWorkspaceName(null);
+        }
+    }, [suggestWorkspace]);
 
     useEffect(() => {
         if (
@@ -79,22 +97,12 @@ export default function Component() {
         }
 
         hasAttemptedStarterCreation.current = true;
-
-        const loadSuggestion = async (): Promise<void> => {
-            try {
-                const suggestedName = await suggestWorkspace();
-                setSuggestedWorkspaceName(suggestedName);
-            } catch {
-                setSuggestedWorkspaceName(null);
-            }
-        };
-
         void loadSuggestion();
     }, [
         createWorkspace,
         error,
         isLoading,
-        suggestWorkspace,
+        loadSuggestion,
         workspaces.length,
     ]);
 
@@ -220,7 +228,7 @@ export default function Component() {
                             </div>
                         ))}
                     </div>
-                ) : suggestedWorkspaceName || createWorkspace.isPending ? (
+                ) : suggestedWorkspaceName || suggestionError || createWorkspace.isPending ? (
                     <div className="text-center py-12" data-testid="starter-workspace-creation">
                         {createWorkspace.isPending ? (
                             <LoadingContainer message={`Creating "${suggestedWorkspaceName ?? 'starter'}" workspace...`}>
@@ -234,37 +242,70 @@ export default function Component() {
                                     <FolderOpen className="w-16 h-16 text-text-secondary mx-auto opacity-50" />
                                 </div>
                                 <h2 className="text-xl font-semibold text-text-primary mb-2">Welcome to YAPPC</h2>
-                                <p className="text-text-secondary mb-6">We suggest starting with a workspace called <strong className="text-text-primary">{suggestedWorkspaceName}</strong></p>
-                                <div className="flex gap-3 justify-center">
-                                    <button
-                                        onClick={async () => {
-                                            setIsAutoCreatingStarter(true);
-                                            try {
-                                                const workspace = await createWorkspace.mutateAsync({
-                                                    name: suggestedWorkspaceName!,
-                                                    createDefaultProject: true,
-                                                });
-                                                switchWorkspace(workspace.id);
-                                                setWorkspaceBreadcrumb({ id: workspace.id, name: workspace.name });
-                                                navigate('/projects');
-                                            } catch (err) {
-                                                console.error('Failed to create suggested workspace:', err);
-                                            } finally {
-                                                setIsAutoCreatingStarter(false);
-                                            }
-                                        }}
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-                                    >
-                                        <Add className="w-5 h-5" />
-                                        Create "{suggestedWorkspaceName}" Workspace
-                                    </button>
-                                    <button
-                                        onClick={handleCreateWorkspace}
-                                        className="inline-flex items-center gap-2 px-4 py-2 border border-surface-secondary text-text-primary rounded-lg hover:bg-surface-secondary transition-colors"
-                                    >
-                                        Choose Different Name
-                                    </button>
-                                </div>
+                                {suggestionError ? (
+                                    <>
+                                        <p className="text-error-700 mb-2">Could not load a workspace suggestion: {suggestionError}</p>
+                                        <div className="flex gap-3 justify-center mb-4">
+                                            <button
+                                                onClick={() => {
+                                                    hasAttemptedStarterCreation.current = false;
+                                                    void loadSuggestion();
+                                                }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                                            >
+                                                <Add className="w-5 h-5" />
+                                                Retry Suggestion
+                                            </button>
+                                            <button
+                                                onClick={handleCreateWorkspace}
+                                                className="inline-flex items-center gap-2 px-4 py-2 border border-surface-secondary text-text-primary rounded-lg hover:bg-surface-secondary transition-colors"
+                                            >
+                                                Create Manually
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : suggestedWorkspaceName ? (
+                                    <>
+                                        <p className="text-text-secondary mb-6">We suggest starting with a workspace called <strong className="text-text-primary">{suggestedWorkspaceName}</strong></p>
+                                        {starterCreateError && (
+                                            <div className="bg-error-50 border border-error-200 rounded-lg p-3 mb-4 max-w-md mx-auto">
+                                                <p className="text-error-700 text-sm">{starterCreateError}</p>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-3 justify-center">
+                                            <button
+                                                onClick={async () => {
+                                                    setStarterCreateError(null);
+                                                    setIsAutoCreatingStarter(true);
+                                                    try {
+                                                        const workspace = await createWorkspace.mutateAsync({
+                                                            name: suggestedWorkspaceName,
+                                                            createDefaultProject: true,
+                                                        });
+                                                        switchWorkspace(workspace.id);
+                                                        setWorkspaceBreadcrumb({ id: workspace.id, name: workspace.name });
+                                                        navigate('/projects');
+                                                    } catch (err) {
+                                                        const message = getErrorMessage(err);
+                                                        setStarterCreateError(`Failed to create workspace: ${message}`);
+                                                    } finally {
+                                                        setIsAutoCreatingStarter(false);
+                                                    }
+                                                }}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                                            >
+                                                <Add className="w-5 h-5" />
+                                                Create "{suggestedWorkspaceName}" Workspace
+                                            </button>
+                                            <button
+                                                onClick={handleCreateWorkspace}
+                                                className="inline-flex items-center gap-2 px-4 py-2 border border-surface-secondary text-text-primary rounded-lg hover:bg-surface-secondary transition-colors"
+                                            >
+                                                Choose Different Name
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : null}
                             </>
                         )}
                     </div>

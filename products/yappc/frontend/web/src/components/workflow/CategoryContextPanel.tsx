@@ -9,8 +9,25 @@
 
 import React from 'react';
 import { Box, Typography, Surface as Paper, Chip, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Collapse, IconButton, Tooltip } from '@ghatana/design-system';
-import { alpha } from '@mui/material/styles';
 import { ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Shield as SecurityIcon, Gavel as GavelIcon, Bug as BugIcon, Hammer as BuildIcon, CloudUpload as DeployIcon, HeartPulse as OpsIcon, Brain as IdeaIcon, Building2 as ArchIcon, TrendingUp as OptimizeIcon, GraduationCap as LearnIcon, CheckCircle as CheckIcon, AlertTriangle as WarningIcon, Info as InfoIcon } from 'lucide-react';
+
+function alpha(color: string, opacity: number): string {
+  // Convert hex or rgb to rgba with given opacity
+  if (color.startsWith('#')) {
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  if (color.startsWith('rgb(')) {
+    return color.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
+  }
+  if (color.startsWith('rgba(')) {
+    return color.replace(/,\s*[^,)]+\)$/, `, ${opacity})`);
+  }
+  return color;
+}
 
 import type { WorkflowCategory, WorkflowStep } from '@yappc/core/types';
 

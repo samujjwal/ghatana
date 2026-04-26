@@ -8,6 +8,8 @@ const DEFAULT_LABELS: SaveSyncStatusLabels = {
   syncing: 'Syncing remote draft',
   'remote-saved': 'Remote draft saved',
   'remote-failed': 'Remote sync failed',
+  stale: 'Remote draft stale',
+  conflict: 'Sync conflict detected',
 };
 
 function getStatusClassName(status: SaveSyncStatusContract): string {
@@ -18,6 +20,10 @@ function getStatusClassName(status: SaveSyncStatusContract): string {
       return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200';
     case 'remote-failed':
       return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200';
+    case 'stale':
+      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200';
+    case 'conflict':
+      return 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200';
     default:
       return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200';
   }

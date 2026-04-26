@@ -357,7 +357,7 @@ export function AICommandBar({
                         aria-label="Submit"
                     >
                         {isProcessing ? (
-                            <CircularProgress size={16} tone="neutral" />
+                            <CircularProgress size={16} color="inherit" />
                         ) : (
                             <Send className="w-4 h-4" />
                         )}

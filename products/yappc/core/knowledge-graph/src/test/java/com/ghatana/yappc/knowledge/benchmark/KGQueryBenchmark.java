@@ -15,13 +15,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
@@ -77,24 +81,37 @@ class KGQueryBenchmark {
     static void buildFixtures() {
         nodes100 = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            nodes100.add(new YAPPCGraphNode(
-                    "node-" + i, "ARTIFACT_COMPONENT", "Component " + i,
-                    java.util.Map.of("index", String.valueOf(i)), TENANT,
-                    java.time.Instant.now(), java.time.Instant.now(), null));
+            Instant now = Instant.now();
+            nodes100.add(YAPPCGraphNode.builder()
+                .id("node-" + i)
+                .type(YAPPCGraphNode.YAPPCNodeType.ARTIFACT_COMPONENT)
+                .name("Component " + i)
+                .description("benchmark node")
+                .properties(Map.of("index", String.valueOf(i)))
+                .tags(Set.of())
+                .metadata(new com.ghatana.yappc.knowledge.model.YAPPCGraphMetadata(
+                    TENANT, null, null, "benchmark", now, now, "1", Map.of()))
+                .build());
         }
 
         edges50 = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
-            edges50.add(new YAPPCGraphEdge(
-                    UUID.randomUUID().toString(), "node-" + i, "node-" + (i + 1),
-                    YAPPCGraphEdge.YAPPCRelationshipType.USES.name(), java.util.Map.of(),
-                    TENANT, java.time.Instant.now()));
+            Instant now = Instant.now();
+            edges50.add(YAPPCGraphEdge.builder()
+                .id(UUID.randomUUID().toString())
+                .sourceNodeId("node-" + i)
+                .targetNodeId("node-" + (i + 1))
+                .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.USES)
+                .properties(Map.of())
+                .metadata(new com.ghatana.yappc.knowledge.model.YAPPCGraphMetadata(
+                    TENANT, null, null, "benchmark", now, now, "1", Map.of()))
+                .build());
         }
 
         semanticMatches10 = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             semanticMatches10.add(new KGSemanticSearchService.SemanticNodeMatch(
-                    nodes100.get(i), 0.9 - i * 0.05));
+                    nodes100.get(i), 0.9 - i * 0.05, Map.of("tenantId", TENANT)));
         }
     }
 
@@ -103,13 +120,13 @@ class KGQueryBenchmark {
                 .thenReturn(Promise.of(nodes100.subList(0, 5)));
         lenient().when(nodeRepository.findNodesByType(anyString(), anyString(), anyInt()))
                 .thenReturn(Promise.of(nodes100));
-        lenient().when(edgeRepository.findEdgesFromNode(anyString(), anyString()))
+        lenient().when(edgeRepository.findEdgesFromSource(anyString(), anyString(), any()))
                 .thenReturn(Promise.of(List.of()));
         lenient().when(edgeRepository.findAllTargetIds(anyString()))
                 .thenReturn(Promise.of(List.of()));
         lenient().when(edgeRepository.findArtifactEdges(anyString()))
                 .thenReturn(Promise.of(edges50));
-        lenient().when(semanticSearchService.findSimilarNodes(anyString(), anyString(), anyInt(), any()))
+        lenient().when(semanticSearchService.findSimilarNodes(anyString(), anyString(), anyInt(), anyDouble()))
                 .thenReturn(Promise.of(semanticMatches10));
 
         queryService = new KGQueryService(nodeRepository, edgeRepository, semanticSearchService);
@@ -123,7 +140,7 @@ class KGQueryBenchmark {
     @DisplayName("single-hop traversal: p99 < 10 ms")
     void singleHopTraversalP99Under10ms() {
         setUpService();
-        when(edgeRepository.findEdgesFromNode(anyString(), anyString()))
+        when(edgeRepository.findEdgesFromSource(anyString(), anyString(), any()))
                 .thenReturn(Promise.of(List.of()));
 
         warmUp(() -> queryService.traverse("node-0", 1, TENANT).getResult(), WARMUP_ITERATIONS);

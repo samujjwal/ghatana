@@ -38,6 +38,7 @@ const PHASE_COLORS: Record<LifecyclePhase, string> = {
     [LifecyclePhase.RUN]: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     [LifecyclePhase.OBSERVE]: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
     [LifecyclePhase.IMPROVE]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    [LifecyclePhase.INSTITUTIONALIZE]: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
 };
 
 /**
@@ -51,6 +52,7 @@ const PHASE_ICONS: Record<LifecyclePhase, string> = {
     [LifecyclePhase.RUN]: '🚀',
     [LifecyclePhase.OBSERVE]: '👁️',
     [LifecyclePhase.IMPROVE]: '⚡',
+    [LifecyclePhase.INSTITUTIONALIZE]: '🏛️',
 };
 
 /**

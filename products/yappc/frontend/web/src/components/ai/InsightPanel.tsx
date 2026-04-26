@@ -2,6 +2,7 @@ import { Bell, CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { InsightStreamItem } from '@/hooks/useInsightStream';
+import { ConfidenceBadge } from './ConfidenceBadge';
 
 export interface InsightPanelProps {
   open: boolean;
@@ -18,10 +19,6 @@ const severityStyles: Record<InsightStreamItem['severity'], { badge: string; ico
   error: { badge: 'bg-rose-100 text-rose-700', icon: CircleAlert },
   critical: { badge: 'bg-red-100 text-red-700', icon: CircleAlert },
 };
-
-function formatConfidence(confidence: number): string {
-  return `${Math.round(confidence * 100)}% confidence`;
-}
 
 function formatCategory(category: InsightStreamItem['category']): string {
   return category.replace(/-/g, ' ');
@@ -120,7 +117,7 @@ export function InsightPanel({
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                      <span>{formatConfidence(insight.confidence)}</span>
+                      <ConfidenceBadge score={insight.confidence} size="sm" />
                       {insight.sourceRef && <span>{insight.sourceRef}</span>}
                       <span>{new Date(insight.createdAt).toLocaleString()}</span>
                     </div>

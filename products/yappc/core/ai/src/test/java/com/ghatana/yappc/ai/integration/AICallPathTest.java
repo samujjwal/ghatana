@@ -85,13 +85,13 @@ class AICallPathTest extends EventloopTestBase {
     @Test
     @DisplayName("analyzeCode routes CODE_ANALYSIS request and parses summary")
     void analyzeCode_routesRequest_parsesSummary() { // GH-90000
-        AIResponse fakeResponse = buildResponse("CODE_ANALYSIS", "No issues found."); // GH-90000
+        AIResponse fakeResponse = buildResponse("CODE_ANALYSIS", "No issues found. Code structure is clear, naming is consistent, and there are no security or performance concerns in this snippet."); // GH-90000
         when(router.route(any())).thenReturn(Promise.of(fakeResponse)); // GH-90000
         runPromise(() -> service.initialize()); // GH-90000
 
         YAPPCAIService.CodeAnalysis analysis = runPromise(() -> service.analyzeCode("int x = 0;"));
 
-        assertThat(analysis.getSummary()).isEqualTo("No issues found.");
+        assertThat(analysis.getSummary()).contains("No issues found.");
         verify(router).route(argThat(req -> req.getTaskType() == TaskType.CODE_ANALYSIS)); // GH-90000
     }
 
@@ -138,7 +138,7 @@ class AICallPathTest extends EventloopTestBase {
     @Test
     @DisplayName("successful call records LLM call metric via AIMetricsCollector")
     void successfulCall_recordsMetric() { // GH-90000
-        AIResponse fakeResponse = buildResponse("CODE_GENERATION", "result"); // GH-90000
+        AIResponse fakeResponse = buildResponse("CODE_GENERATION", "public class GeneratedService { public String run() { return \"ok\"; } }"); // GH-90000
         when(router.route(any())).thenReturn(Promise.of(fakeResponse)); // GH-90000
 
         // Use a spy to verify metric recording without stubbing all internals

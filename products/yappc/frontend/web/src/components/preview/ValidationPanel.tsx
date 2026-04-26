@@ -12,7 +12,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Play as PlayArrow, Bug as BugReport, Accessibility as Accessible, Gauge as Speed, CheckCircle, AlertTriangle as Warning, AlertCircle as ErrorIcon } from 'lucide-react';
-import { useLifecycleArtifacts } from '../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from '../../services/canvas/lifecycle/LifecycleArtifactService';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 
 export interface ValidationPanelProps {

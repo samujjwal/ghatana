@@ -11,6 +11,8 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { readStorage, writeStorage } from '../services/storage';
+import { setOnboardingStatus } from '../services/onboarding/OnboardingStatusService';
 
 // Persona types
 export type PersonaType =
@@ -202,7 +204,7 @@ export function PersonaProvider({
   // Load from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(PERSONA_STORAGE_KEY);
+      const stored = readStorage<string>(PERSONA_STORAGE_KEY);
       if (stored) {
         const parsed: StoredPersonaState = JSON.parse(stored);
         if (parsed.activePersonas?.length > 0) {
@@ -221,7 +223,7 @@ export function PersonaProvider({
     setIsLoaded(true);
   }, []);
 
-  // Persist to localStorage on change
+  // Persist to localStorage and server on change
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -231,7 +233,14 @@ export function PersonaProvider({
         primaryPersona,
         disabledVirtualPersonas,
       };
-      localStorage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(state));
+      writeStorage(PERSONA_STORAGE_KEY, state);
+
+      // Also sync to server onboarding status for cross-device resilience
+      void setOnboardingStatus({
+        completed: true,
+        primaryPersona,
+        activePersonas,
+      });
     } catch (error) {
       console.warn('Failed to save persona state to localStorage:', error);
     }

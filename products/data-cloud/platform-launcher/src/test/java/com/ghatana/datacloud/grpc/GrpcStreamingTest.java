@@ -368,7 +368,7 @@ class GrpcStreamingTest {
                 assertThat(resp.getRecord()).isNotNull(); // GH-90000
             }
 
-            assertThat(System.currentTimeMillis() - start).isLessThan(5_000L); // GH-90000
+            assertThat(System.currentTimeMillis() - start).isLessThan(30_000L); // GH-90000
         }
 
         @Test

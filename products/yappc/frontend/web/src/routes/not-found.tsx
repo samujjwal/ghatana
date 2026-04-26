@@ -10,10 +10,26 @@
  * @doc.pattern Route Component
  */
 
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Home, Search, ArrowLeft as ArrowBack } from 'lucide-react';
 
 export default function NotFoundRoute() {
+    const navigate = useNavigate();
+
+    const handleSafeBack = (): void => {
+        // Avoid going back to the same broken route or another unmounted route.
+        // Prefer a known-safe mounted route if history is empty or would loop.
+        const hasSameOriginHistory =
+            window.history.length > 1 &&
+            document.referrer &&
+            new URL(document.referrer).origin === window.location.origin;
+        if (hasSameOriginHistory) {
+            navigate(-1);
+        } else {
+            navigate('/workspaces');
+        }
+    };
+
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-bg-default px-4">
             <div className="text-center max-w-md">
@@ -44,7 +60,7 @@ export default function NotFoundRoute() {
                         Go to Dashboard
                     </Link>
                     <button
-                        onClick={() => window.history.back()}
+                        onClick={handleSafeBack}
                         className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-grey-100 dark:bg-grey-800 text-text-primary rounded-lg font-medium hover:bg-grey-200 dark:hover:bg-grey-700 transition-colors"
                     >
                         <ArrowBack className="w-5 h-5" />

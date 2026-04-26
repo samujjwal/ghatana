@@ -236,7 +236,7 @@ export default function OnboardingChecklist() {
               </Typography>
             </Box>
             <div style={{ marginTop: 4 }}>
-              <ProgressBar percentage={progressPercent} height="h-2" />
+              <ProgressBar value={progressPercent} />
             </div>
           </Box>
         }

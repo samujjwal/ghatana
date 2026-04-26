@@ -153,7 +153,7 @@ describe('Lifecycle route', () => {
 
     expect(screen.getByTestId('lifecycle-explorer')).toBeDefined();
     expect(screen.getByTestId('lifecycle-insights-section')).toBeDefined();
-    expect(screen.getByTestId('lifecycle-phase-summary-card')).toBeDefined();
+    expect(screen.getByTestId('lifecycle-summary-status-card')).toBeDefined();
     expect(screen.getByText('Phase summary')).toBeDefined();
     expect(screen.getByText(/readiness is under active risk\./)).toBeDefined();
     expect(screen.getByText('1 critical anomaly signal should be resolved before promotion decisions.')).toBeDefined();

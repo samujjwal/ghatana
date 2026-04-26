@@ -23,6 +23,8 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams, Outlet } from 'react-router';
 import { useSetAtom, useAtomValue } from 'jotai';
 import { useIsDarkMode, useThemeToggle } from '@ghatana/theme';
+import { readStorage } from '../services/storage';
+import { useOnboardingStatus } from '../services/onboarding/OnboardingStatusService';
 import {
   headerVisibleAtom,
   headerContextActionsAtom,
@@ -53,6 +55,7 @@ import { CommandPalette } from '../components/command/CommandPalette';
 import { CreateWorkspaceDialog } from '../components/workspace';
 import { UnifiedContextHeader } from '../components/navigation';
 import { InsightPanel } from '../components/ai';
+import { BackendStatusIndicator } from '../components/status/BackendStatusIndicator';
 import type { Action } from '../components/navigation/ActionsToolbar';
 import type { CanvasMode as BreadcrumbCanvasMode } from '../components/navigation/NavigationBreadcrumb';
 import {
@@ -90,9 +93,11 @@ export function Layout() {
 
   const allProjects = [...ownedProjects, ...includedProjects];
 
+  const { status: onboardingStatus } = useOnboardingStatus();
+
   // Check if user needs onboarding
   useEffect(() => {
-    const isOnboarded = localStorage.getItem('onboarding_complete') === 'true';
+    const isOnboarded = onboardingStatus?.completed ?? false;
 
     // Debug logging
     if (import.meta.env.DEV) {
@@ -103,8 +108,8 @@ export function Layout() {
         hasCurrentWorkspace: !!currentWorkspace,
         error: error instanceof Error ? error.message : undefined,
         storedKeys: {
-          onboardingComplete: localStorage.getItem('onboarding_complete'),
-          currentWorkspaceId: localStorage.getItem('yappc:currentWorkspaceId'),
+          onboardingComplete: onboardingStatus?.completed ?? false,
+          currentWorkspaceId: readStorage<string>('yappc:currentWorkspaceId'),
         },
       });
     }
@@ -117,7 +122,7 @@ export function Layout() {
       }
       navigate('/onboarding', { replace: true });
     }
-  }, [isLoading, navigate, workspaces.length]);
+  }, [isLoading, navigate, workspaces.length, onboardingStatus?.completed]);
 
   // Update breadcrumbs
   useEffect(() => {
@@ -233,7 +238,8 @@ function ShellContent({
   const showAgentActivity = useAtomValue(headerShowAgentActivityAtom);
 
   const actionState = useActionState();
-  const { isOpen: shortcutsOpen, close: closeShortcuts } =
+  const [commandOpen, setCommandOpen] = useState(false);
+  const { isOpen: shortcutsOpen, open: openShortcuts, close: closeShortcuts } =
     useKeyboardShortcutsPanel();
   const isDarkMode = useIsDarkMode();
   const toggleTheme = useThemeToggle();
@@ -345,17 +351,8 @@ function ShellContent({
           showAgentActivity={showAgentActivity}
           darkMode={isDarkMode}
           onSearch={() => {
-            // Dispatch mod+k to open CommandPalette (which listens on window)
-            const isMac = navigator.platform.toUpperCase().includes('MAC');
-            window.dispatchEvent(
-              new KeyboardEvent('keydown', {
-                key: 'k',
-                metaKey: isMac,
-                ctrlKey: !isMac,
-                bubbles: true,
-                cancelable: true,
-              })
-            );
+            // Directly open CommandPalette instead of dispatching synthetic key event
+            setCommandOpen(true);
           }}
           onNotifications={() => setShowInsightPanel((currentValue) => !currentValue)}
           onHelp={() => {
@@ -363,7 +360,7 @@ function ShellContent({
             setShowGuidance(!showGuidance);
           }}
           onKeyboardShortcuts={() => {
-            /* Open shortcuts panel */
+            openShortcuts();
           }}
           onThemeToggle={toggleTheme}
           onProfile={() => navigate('/profile')}
@@ -380,8 +377,8 @@ function ShellContent({
 
       {/* Main Content Area - full width without sidebar */}
       <div className="flex flex-1 overflow-visible">
-        {/* Guidance Panel (Collapsible Left Panel) - optional */}
-        {showGuidance && projectId && (
+        {/* Guidance Panel (Collapsible Left Panel) - available on all routes */}
+        {showGuidance && (
           <GuidancePanel
             position="left"
             onToggle={(collapsed) => setShowGuidance(!collapsed)}
@@ -410,13 +407,23 @@ function ShellContent({
       </div>
 
       {/* Command Palette - Global action discovery (Cmd+K) */}
-      <CommandPalette state={actionState} triggerKey="mod+k" />
+      <CommandPalette
+        state={actionState}
+        triggerKey="mod+k"
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+      />
 
       {/* Create Workspace Dialog */}
       <CreateWorkspaceDialog
         isOpen={showCreateWorkspace}
         onClose={() => setShowCreateWorkspace(false)}
       />
+
+      {/* Backend Health Indicator — transparent, non-intrusive */}
+      <div className="fixed bottom-2 left-2 z-[60]">
+        <BackendStatusIndicator />
+      </div>
     </div>
   );
 }

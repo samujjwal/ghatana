@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,8 +63,8 @@ class TranscriptPrivacySecurityTest {
 
     @BeforeEach
     void setUp() {
-        service = new SttGrpcService(mockLibrary, new SimpleMeterRegistry());
-        when(mockLibrary.getSttEngine()).thenReturn(mockEngine);
+        service = SttGrpcService.forTesting(mockLibrary, new SimpleMeterRegistry());
+        lenient().when(mockLibrary.getSttEngine()).thenReturn(mockEngine);
     }
 
     // ── PrivacyLevel proto contract ───────────────────────────────────────────

@@ -13,6 +13,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useFeatureFlag } from '@yappc/core/config/features/feature-flags';
 import type { ReactNode } from 'react';
+import { readStorage, writeStorage } from '../../services/storage';
 
 interface FeatureHighlight {
     id: string;
@@ -127,17 +128,13 @@ export function FeatureDiscoveryTooltip({
 export function FeatureDiscoveryProvider({ children }: { children: React.ReactNode }) {
     const [activeFeature, setActiveFeature] = useState<string | null>(null);
     const [dismissedFeatures, setDismissedFeatures] = useState<string[]>(() => {
-        if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem('yappc:dismissed-features');
-            return stored ? JSON.parse(stored) : [];
-        }
-        return [];
+        return readStorage<string[]>('yappc:dismissed-features') ?? [];
     });
 
     const dismissFeature = (featureId: string) => {
         setDismissedFeatures(prev => {
             const updated = [...prev, featureId];
-            localStorage.setItem('yappc:dismissed-features', JSON.stringify(updated));
+            writeStorage('yappc:dismissed-features', updated);
             return updated;
         });
         setActiveFeature(null);

@@ -27,6 +27,10 @@ export interface CommandPaletteProps {
     triggerKey?: string; // default: "mod+k"
     /** Additional class names */
     className?: string;
+    /** Controlled open state (omit for uncontrolled) */
+    open?: boolean;
+    /** Controlled open change callback */
+    onOpenChange?: (open: boolean) => void;
 }
 
 // ============================================================================
@@ -115,8 +119,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     state,
     triggerKey = 'mod+k',
     className = '',
+    open: controlledOpen,
+    onOpenChange,
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+    const isOpen = controlledOpen ?? internalOpen;
+    const setIsOpen = useCallback((value: boolean) => {
+        if (controlledOpen === undefined) {
+            setInternalOpen(value);
+        }
+        onOpenChange?.(value);
+    }, [controlledOpen, onOpenChange]);
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = React.useRef<HTMLInputElement>(null);

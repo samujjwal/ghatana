@@ -318,6 +318,32 @@ const DEFAULT_PHASE_TASKS: Record<LifecyclePhase, Array<Omit<ProjectTask, 'id' |
             subtasks: [],
         },
     ],
+    [LifecyclePhase.INSTITUTIONALIZE]: [
+        {
+            name: 'Document patterns',
+            description: 'Capture reusable patterns and standards',
+            phase: LifecyclePhase.INSTITUTIONALIZE,
+            status: 'pending',
+            priority: 'medium',
+            automationLevel: 'assisted',
+            progress: 0,
+            tags: ['documentation', 'standards'],
+            dependencies: [],
+            subtasks: [],
+        },
+        {
+            name: 'Update runbooks',
+            description: 'Maintain operational procedures and guides',
+            phase: LifecyclePhase.INSTITUTIONALIZE,
+            status: 'pending',
+            priority: 'low',
+            automationLevel: 'manual',
+            progress: 0,
+            tags: ['operations', 'documentation'],
+            dependencies: [],
+            subtasks: [],
+        },
+    ],
 };
 
 // ============================================================================

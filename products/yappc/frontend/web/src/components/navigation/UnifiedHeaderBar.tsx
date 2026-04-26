@@ -25,6 +25,7 @@ import { Sparkles as AutoAwesome, Bell as Notifications } from 'lucide-react';
 import { Z_INDEX } from '../../styles/design-tokens';
 import { EnhancedBreadcrumb } from './EnhancedBreadcrumb';
 import { NewButton, QuickActionsPanel } from './QuickActionsPanel';
+import { readStorage } from '../../services/storage';
 
 import { AgentActivityBadge } from '../workspace/AgentActivityBadge';
 import { ThemeToggleButton } from '../../theme';
@@ -111,9 +112,8 @@ export function UnifiedHeaderBar({
 
     // Build projects list for dropdown with last opened tracking
     const projectsForBreadcrumb = allProjects.map(p => {
-        // Get last opened from localStorage
-        const lastOpenedData = localStorage.getItem('yappc_last_opened_projects');
-        const lastOpenedMap = lastOpenedData ? JSON.parse(lastOpenedData) : {};
+        // Get last opened from storage
+        const lastOpenedMap = readStorage<Record<string, Record<string, { timestamp: number }>>>('yappc_last_opened_projects') ?? {};
         const lastOpened = lastOpenedMap[currentWorkspace?.id || '']?.[p.id]?.timestamp;
 
         return {

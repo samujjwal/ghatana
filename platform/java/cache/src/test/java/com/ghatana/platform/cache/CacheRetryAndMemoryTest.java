@@ -52,8 +52,8 @@ class CacheRetryAndMemoryTest {
             }
 
             @Override
-            public Object deserialize(String serialized, Class<?> type) {
-                return serialized;
+            public <T> T deserialize(String serialized, Class<T> type) {
+                return type.cast(serialized);
             }
         };
     }
@@ -77,15 +77,13 @@ class CacheRetryAndMemoryTest {
             DistributedCacheService.CacheBackend backend,
             String key,
             Class<T> type) {
-        RuntimeException last = null;
         for (int i = 0; i < maxAttempts; i++) {
-            try {
-                return new DistributedCacheService(backend, TENANT).get(key, type);
-            } catch (RuntimeException e) {
-                last = e;
+            Optional<T> result = new DistributedCacheService(backend, TENANT).get(key, type);
+            if (result.isPresent()) {
+                return result;
             }
         }
-        throw last != null ? last : new RuntimeException("Unknown error");
+        return Optional.empty();
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────────
@@ -188,7 +186,7 @@ class CacheRetryAndMemoryTest {
                 public String getValue(String key) { return "v"; }
 
                 @Override
-                public Object deserialize(String s, Class<?> t) { return s; }
+                public <T> T deserialize(String s, Class<T> t) { return t.cast(s); }
             };
             DistributedCacheService cache = new DistributedCacheService(backend, TENANT);
 

@@ -18,6 +18,8 @@ import {
     type ArtifactSuggestion,
     type SuggestionContext,
 } from '../../services/ai';
+import { ConfidenceBadge } from '../ai/ConfidenceBadge';
+import { AILabelOverlay } from '../ai/AILabelOverlay';
 
 export interface AISuggestionPanelProps {
     context: SuggestionContext;
@@ -137,9 +139,11 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                                         <h4 className="text-sm font-semibold text-text-primary truncate">
                                             {suggestion.title}
                                         </h4>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getConfidenceColor(suggestion.confidence)}`}>
-                                            {suggestion.confidence}%
-                                        </span>
+                                        <ConfidenceBadge
+                                            score={suggestion.confidence}
+                                            type={suggestion.confidenceType}
+                                            size="sm"
+                                        />
                                     </div>
                                     <p className="text-xs text-text-secondary line-clamp-2">
                                         {suggestion.summary}
@@ -161,6 +165,11 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                                         <TrendingUp className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                         <span>{suggestion.reasoning}</span>
                                     </div>
+                                    {suggestion.confidenceReason && (
+                                        <p className="mt-1 text-[11px] text-text-secondary/70">
+                                            {suggestion.confidenceReason}
+                                        </p>
+                                    )}
                                 </div>
                             )}
 

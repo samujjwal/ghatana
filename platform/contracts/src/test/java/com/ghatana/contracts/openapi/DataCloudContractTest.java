@@ -239,7 +239,7 @@ class DataCloudContractTest {
             JsonNode params = spec.at("/paths/~1api~1v1~1events/post/parameters");
             if (!params.isArray()) return; // may be on component level
             Set<String> paramNames = StreamSupport.stream(params.spliterator(), false)
-                    .map(p -> p.path("name").asText())
+                .map(DataCloudContractTest::parameterName)
                     .collect(Collectors.toSet());
             assertThat(paramNames)
                     .as("POST /api/v1/events must accept tenantId parameter for multi-tenant isolation")
@@ -252,7 +252,7 @@ class DataCloudContractTest {
             JsonNode params = spec.at("/paths/~1api~1v1~1pipelines/get/parameters");
             if (!params.isArray()) return;
             Set<String> paramNames = StreamSupport.stream(params.spliterator(), false)
-                    .map(p -> p.path("name").asText())
+                .map(DataCloudContractTest::parameterName)
                     .collect(Collectors.toSet());
             assertThat(paramNames)
                     .as("GET /api/v1/pipelines must accept tenantId parameter")
@@ -270,5 +270,21 @@ class DataCloudContractTest {
         return StreamSupport.stream(req.spliterator(), false)
                 .map(JsonNode::asText)
                 .collect(Collectors.toSet());
+    }
+
+    private static String parameterName(JsonNode parameterNode) {
+        String inlineName = parameterNode.path("name").asText();
+        if (!inlineName.isBlank()) {
+            return inlineName;
+        }
+
+        String ref = parameterNode.path("$ref").asText();
+        String prefix = "#/components/parameters/";
+        if (!ref.startsWith(prefix)) {
+            return "";
+        }
+
+        String paramKey = ref.substring(prefix.length());
+        return spec.at("/components/parameters/" + paramKey).path("name").asText("");
     }
 }

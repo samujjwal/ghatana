@@ -109,11 +109,18 @@ class AnomalyMLThresholdTest extends EventloopTestBase {
         @Test
         @DisplayName("gradual drift does not fire until threshold is crossed")
         void gradualDriftFiresOnlyAboveThreshold() {
-            // Training: mean=10, stdDev≈1
-            List<Entity> training = cluster("v", 10, 20);
+            // Training set with meaningful variance so threshold checks are based on real sigma.
+            List<Entity> training = syntheticNormal("v", 10.0, 1.0, 200, 12345);
+
+            stubRepository(training, List.of(entity("v", 10.0)));
+            runPromise(() -> detector.updateBaseline(TENANT, COLLECTION));
+            BaselineStatistics baseline = runPromise(() -> detector.getBaseline(TENANT, COLLECTION, "v"));
+
+            double mean = baseline.getMean();
+            double stdDev = baseline.getStandardDeviation();
 
             // Detection: single value at mean + (threshold-0.5)σ — should NOT fire at default 3σ
-            double justBelow = 10.0 + (StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD - 0.5);
+            double justBelow = mean + (StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD - 0.5) * stdDev;
             List<Entity> belowThreshold = List.of(entity("v", justBelow));
 
             stubRepository(training, belowThreshold);
@@ -123,7 +130,7 @@ class AnomalyMLThresholdTest extends EventloopTestBase {
             assertThat(noAnomalies).isEmpty();
 
             // Detection: single value at mean + (threshold+1)σ — MUST fire
-            double aboveThreshold = 10.0 + (StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD + 1.0);
+            double aboveThreshold = mean + (StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD + 1.0) * stdDev;
             List<Entity> aboveList = List.of(entity("v", aboveThreshold));
 
             stubRepository(training, aboveList);

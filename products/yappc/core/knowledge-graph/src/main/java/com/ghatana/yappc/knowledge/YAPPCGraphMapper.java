@@ -1,5 +1,6 @@
 package com.ghatana.yappc.knowledge;
 
+import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.yappc.knowledge.spi.DataStorePort;
 import com.ghatana.yappc.knowledge.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class YAPPCGraphMapper {
                 yappcNode.type().name(),
                 properties,
                 yappcNode.tags(),
-                yappcNode.metadata().tenantId(),
+            TenantId.of(yappcNode.metadata().tenantId()),
                 yappcNode.metadata().createdAt(),
                 yappcNode.metadata().updatedAt(),
                 Long.parseLong(yappcNode.metadata().version())
@@ -50,7 +51,7 @@ public class YAPPCGraphMapper {
         String workspaceId = (String) props.remove("workspaceId");
 
         YAPPCGraphMetadata metadata = new YAPPCGraphMetadata(
-                portNode.tenantId(),
+            portNode.tenantId().value(),
                 projectId,
                 workspaceId,
                 "system",
@@ -78,7 +79,7 @@ public class YAPPCGraphMapper {
                 yappcEdge.targetNodeId(),
                 yappcEdge.relationshipType().name(),
                 yappcEdge.properties(),
-                yappcEdge.metadata().tenantId(),
+            TenantId.of(yappcEdge.metadata().tenantId()),
                 yappcEdge.metadata().createdAt(),
                 yappcEdge.metadata().updatedAt(),
                 Long.parseLong(yappcEdge.metadata().version())
@@ -87,7 +88,7 @@ public class YAPPCGraphMapper {
 
     public YAPPCGraphEdge fromPortEdge(DataStorePort.GraphEdge portEdge) {
         YAPPCGraphMetadata metadata = new YAPPCGraphMetadata(
-                portEdge.tenantId(),
+            portEdge.tenantId().value(),
                 null,
                 null,
                 "system",

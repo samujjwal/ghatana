@@ -1,6 +1,12 @@
 import type { User } from '@/types/dashboard';
 import type { components } from '@/clients/generated/openapi';
 import { parseJsonResponse } from '@/lib/http';
+import {
+  readStoredSession as readSession,
+  persistStoredSession as persistSession,
+  clearStoredSession as clearSession,
+  getAccessToken,
+} from '../services/session/SessionManager';
 
 export const AUTH_ME_ENDPOINT = '/api/auth/me';
 export const AUTH_REFRESH_ENDPOINT = '/api/auth/refresh';
@@ -8,11 +14,8 @@ export const AUTH_REFRESH_ENDPOINT = '/api/auth/refresh';
 type RefreshTokenRequest = components['schemas']['RefreshTokenRequest'];
 type RefreshTokenResponse = components['schemas']['RefreshTokenResponse'];
 
-export type StoredSession = {
-  token?: string;
-  refreshToken?: string;
-  expiresAt?: string;
-};
+// Re-export storage types for backward compatibility
+export type StoredSession = import('../services/session/SessionManager').StoredSession;
 
 type GeneratedAuthSessionUser = components['schemas']['UserInfo'];
 
@@ -79,9 +82,9 @@ function readStoredSession(): StoredSession | null {
   }
 }
 
+// Cookie helper kept local because SessionManager uses a regex-based reader
 function getAccessTokenFromCookie(): string | null {
   try {
-    // Try to get token from cookie
     const cookies = document.cookie.split(';');
     for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
@@ -95,28 +98,12 @@ function getAccessTokenFromCookie(): string | null {
   }
 }
 
-function persistStoredSession(session: StoredSession): void {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-
-  localStorage.setItem('auth-session', JSON.stringify(session));
-}
-
-function clearStoredSession(): void {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-
-  localStorage.removeItem('auth-session');
-}
-
 const VALID_ROLES = new Set<User['role']>(['ADMIN', 'USER', 'VIEWER']);
 
 export function mapAuthSessionToUser(user: AuthSessionUser): User {
   const first = user.firstName?.trim() ?? '';
   const last = user.lastName?.trim() ?? '';
-  const name = `${first} ${last}`.trim() || user.name?.trim() || user.id;
+  const name = `${first} ${last}`.trim() || user.name?.trim() || user.id || 'Unknown';
   const role = getPrimaryRole(user);
 
   // Reject default-tenant fallback - tenantId must be explicitly set
@@ -128,7 +115,7 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
   }
 
   return {
-    id: user.id,
+    id: user.id ?? '',
     email: user.email ?? '',
     name,
     role,
@@ -138,15 +125,8 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
 }
 
 export function getStoredAccessToken(): string | null {
-  // Try cookie first (httpOnly, more secure)
-  const cookieToken = getAccessTokenFromCookie();
-  if (cookieToken) {
-    return cookieToken;
-  }
-
-  // Fall back to localStorage (for backward compatibility)
-  const session = readStoredSession();
-  return session?.token ?? null;
+  // Delegate to centralized SessionManager (cookie → localStorage → legacy)
+  return getAccessToken();
 }
 
 async function refreshStoredSession(
@@ -186,7 +166,7 @@ async function refreshStoredSession(
       ).toISOString(),
     };
 
-    persistStoredSession(nextSession);
+    persistSession(nextSession);
     return nextSession;
   } catch {
     return null;
@@ -223,7 +203,7 @@ export async function fetchAuthSession(
         effectiveFetch
       );
       if (!refreshedSession?.token) {
-        clearStoredSession();
+        clearSession();
         return null;
       }
 
@@ -232,7 +212,7 @@ export async function fetchAuthSession(
 
     if (!response.ok) {
       if (response.status === 401) {
-        clearStoredSession();
+        clearSession();
       }
       return null;
     }

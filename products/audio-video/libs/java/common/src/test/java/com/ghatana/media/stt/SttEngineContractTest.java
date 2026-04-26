@@ -108,7 +108,7 @@ class SttEngineContractTest {
             TranscriptionResult actual = engine.transcribe(audio, TranscriptionOptions.defaults());
 
             assertThat(actual.processingTime())
-                .isNotNegative();
+                .isGreaterThanOrEqualTo(Duration.ZERO);
         }
 
         @Test
@@ -265,7 +265,7 @@ class SttEngineContractTest {
             ModelInfo active = engine.getActiveModel();
 
             assertThat(active).isNotNull();
-            assertThat(active.id()).isNotBlank();
+            assertThat(active.modelId()).isNotBlank();
         }
 
         @Test

@@ -35,7 +35,9 @@ public class DefaultPluginContext implements PluginContext {
 
     @Override
     public <T> @Nullable T getConfig(@NotNull Class<T> configType) {
-        return configType.cast(configuration.get(configType));
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Map rawConfig = configuration;
+        return (T) rawConfig.get(configType);
     }
 
     @Override

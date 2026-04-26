@@ -49,6 +49,13 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
             .register(metrics);
     }
 
+    /**
+     * Public test hook for constructing the service with a mocked/injected library.
+     */
+    public static SttGrpcService forTesting(AudioVideoLibrary library, MeterRegistry metrics) {
+        return new SttGrpcService(library, metrics);
+    }
+
     public SttGrpcService(MeterRegistry metrics) {
         SttConfig config = SttConfig.builder()
             .modelPath(Paths.get(System.getenv().getOrDefault("STT_MODEL_PATH", "/models/whisper-base.onnx")))

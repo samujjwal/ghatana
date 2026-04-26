@@ -98,9 +98,12 @@ class YappcContractTest {
         }
 
         @Test
-        @DisplayName("POST /designs must return 200 on success")
-        void createDesignMustReturn200() {
-            assertThat(spec.at("/paths/~1designs/post/responses/200").isMissingNode()).isFalse();
+        @DisplayName("POST /designs must declare a success response")
+        void createDesignMustDeclareSuccessResponse() {
+            JsonNode responses = spec.at("/paths/~1designs/post/responses");
+            assertThat(responses.has("200") || responses.has("201"))
+                    .as("POST /designs must declare a 2xx success response")
+                    .isTrue();
         }
 
         @Test
@@ -155,9 +158,12 @@ class YappcContractTest {
         }
 
         @Test
-        @DisplayName("POST /generated-code must return 200 on success")
-        void generateCodeMustReturn200() {
-            assertThat(spec.at("/paths/~1generated-code/post/responses/200").isMissingNode()).isFalse();
+        @DisplayName("POST /generated-code must declare a success response")
+        void generateCodeMustDeclareSuccessResponse() {
+            JsonNode responses = spec.at("/paths/~1generated-code/post/responses");
+            assertThat(responses.has("200") || responses.has("202"))
+                    .as("POST /generated-code must declare a 2xx success response")
+                    .isTrue();
         }
 
         @Test

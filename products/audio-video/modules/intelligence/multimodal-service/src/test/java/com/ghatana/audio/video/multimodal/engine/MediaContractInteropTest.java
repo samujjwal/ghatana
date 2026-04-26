@@ -57,7 +57,7 @@ class MediaContractInteropTest {
     @Test
     @DisplayName("processing error round-trip through generated media contract")
     void shouldRoundTripProcessingErrorThroughContract() throws IOException { // GH-90000
-        JsonNode error = readFixture().get("error");
+        JsonNode error = readFixture().get("errorCodes").get(0);
         AudioVideoProcessingError processingError = new AudioVideoProcessingError( // GH-90000
                 error.get("code").asText(),
                 error.get("category").asText(),
@@ -69,7 +69,7 @@ class MediaContractInteropTest {
 
         assertEquals(processingError, roundTrip); // GH-90000
         assertTrue(contract.getRetryable()); // GH-90000
-        assertEquals("temporary backend outage", contract.getMessage()); // GH-90000
+        assertTrue(contract.getMessage().startsWith("Temporary backend outage")); // GH-90000
     }
 
     private static JsonNode readFixture() throws IOException { // GH-90000

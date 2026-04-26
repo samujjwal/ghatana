@@ -11,7 +11,8 @@ const quarantineRetries = Number.parseInt(
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  testDir: './e2e',
+  // CI runs only current-release tests for mounted surfaces
+  testDir: './e2e/current-release',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: Number.isFinite(quarantineRetries) && quarantineRetries > 0 ? quarantineRetries : 0,

@@ -16,8 +16,7 @@ import {
   type SaveSyncStatusLabels,
 } from '../../../../components/status/SaveSyncStatusBadge';
 import type { DrawingTool } from './types';
-
-export type CanvasSyncStatus = 'local-only' | 'syncing' | 'remote-saved' | 'remote-failed';
+import type { SaveSyncStatusContract } from '@/contracts/workspace-project';
 
 interface CanvasStatusBarProps {
   calmMode: boolean;
@@ -28,7 +27,7 @@ interface CanvasStatusBarProps {
   selectedCount: number;
   currentPhase: string;
   zoom: number;
-  syncStatus: CanvasSyncStatus;
+  syncStatus: SaveSyncStatusContract;
 }
 
 const canvasSyncStatusLabels: SaveSyncStatusLabels = {
@@ -36,6 +35,8 @@ const canvasSyncStatusLabels: SaveSyncStatusLabels = {
   syncing: 'Syncing remote draft',
   'remote-saved': 'Remote draft saved',
   'remote-failed': 'Remote sync failed',
+  stale: 'Remote draft stale',
+  conflict: 'Sync conflict detected',
 };
 
 export function CanvasStatusBar({
