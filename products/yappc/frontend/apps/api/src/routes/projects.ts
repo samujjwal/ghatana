@@ -13,6 +13,11 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { requirePermission } from '../middleware/rbac.middleware';
+import {
+  requireProjectReadable,
+  requireProjectWritable,
+  getProjectCapabilities,
+} from '../middleware/resource-auth.middleware';
 import { getAuditService } from '../services/audit/audit.service';
 
 // ============================================================================
@@ -783,7 +788,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
     Querystring: { workspaceId: string };
   }>(
     '/projects/:projectId',
-    { preHandler: requirePermission('project', 'update') },
+    { preHandler: [requirePermission('project', 'update'), requireProjectWritable()] },
     async (request, reply) => {
       const { projectId } = request.params;
       const { workspaceId } = request.query;
@@ -805,6 +810,10 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           .send({ error: 'Cannot edit project you do not own' });
       }
 
+      // P2-8: Fix No-op Lifecycle Saves - only update if phase has actually changed
+      const hasLifecyclePhaseChanged =
+        normalizedLifecyclePhase && normalizedLifecyclePhase !== existing.lifecyclePhase;
+
       const project = await prisma.project.update({
         where: { id: projectId },
         data: {
@@ -812,7 +821,7 @@ export default async function projectRoutes(fastify: FastifyInstance) {
           ...(description !== undefined && { description }),
           ...(type && { type }),
           ...(status && { status }),
-          ...(normalizedLifecyclePhase && { lifecyclePhase: normalizedLifecyclePhase }),
+          ...(hasLifecyclePhaseChanged && { lifecyclePhase: normalizedLifecyclePhase }),
           aiNextActions: generateNextActions({
             name: name || existing.name,
             type: type || existing.type,
@@ -1127,6 +1136,37 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       });
 
       return reply.send({ project: updated });
+    }
+  );
+
+  /**
+   * GET /api/projects/:projectId/capabilities
+   * Get capability payload for a project - what actions the current user can perform
+   */
+  fastify.get<{
+    Params: ProjectParams;
+    Querystring: { workspaceId?: string };
+  }>(
+    '/projects/:projectId/capabilities',
+    { preHandler: requireProjectReadable() },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      const { workspaceId } = request.query;
+
+      if (!request.user?.userId) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const capabilities = await getProjectCapabilities(
+        request.user.userId,
+        projectId,
+        workspaceId
+      );
+
+      return reply.send({
+        projectId,
+        capabilities,
+      });
     }
   );
 }

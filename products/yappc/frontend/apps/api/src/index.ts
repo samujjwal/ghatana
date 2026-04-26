@@ -105,13 +105,39 @@ export interface CreateAppOptions {
   jwtSecret?: string;
 }
 
+/**
+ * Canonical API prefix configuration
+ * - `/api/v1` is the canonical prefix
+ * - `/api` and `/v1` are deprecated and will be removed
+ */
 function registerApiPrefixes(
   app: FastifyInstance,
   route: Parameters<FastifyInstance['register']>[0]
 ) {
-  app.register(route, { prefix: '/api' });
-  app.register(route, { prefix: '/v1' });
+  // Canonical prefix: /api/v1
   app.register(route, { prefix: '/api/v1' });
+
+  // Deprecated: /api - redirect to canonical with deprecation header
+  app.register(async (instance, opts) => {
+    instance.addHook('onSend', async (request, reply, payload) => {
+      reply.header('Deprecation', 'true');
+      reply.header('Sunset', new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()); // 90 days
+      reply.header('Link', '</api/v1>; rel="canonical"');
+      return payload;
+    });
+    instance.register(route, opts);
+  }, { prefix: '/api' });
+
+  // Deprecated: /v1 - redirect to canonical with deprecation header
+  app.register(async (instance, opts) => {
+    instance.addHook('onSend', async (request, reply, payload) => {
+      reply.header('Deprecation', 'true');
+      reply.header('Sunset', new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()); // 90 days
+      reply.header('Link', '</api/v1>; rel="canonical"');
+      return payload;
+    });
+    instance.register(route, opts);
+  }, { prefix: '/v1' });
 }
 
 export async function createApp(
@@ -126,6 +152,26 @@ export async function createApp(
     throw new Error('JWT_ACCESS_SECRET environment variable is required but not set. Aborting startup.');
   }
 
+  // In production, require secure configuration - no defaults
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    if (!process.env.COOKIE_SECRET) {
+      throw new Error('COOKIE_SECRET environment variable is required in production. Aborting startup.');
+    }
+
+    if (!process.env.JWT_REFRESH_SECRET) {
+      throw new Error('JWT_REFRESH_SECRET environment variable is required in production. Aborting startup.');
+    }
+
+    if (!process.env.JAVA_BACKEND_API_KEY) {
+      throw new Error('JAVA_BACKEND_API_KEY environment variable is required in production. Aborting startup.');
+    }
+
+    if (process.env.COOKIE_SECRET === 'change-me-in-production') {
+      throw new Error('Default COOKIE_SECRET detected in production. Set a secure secret. Aborting startup.');
+    }
+  }
+
   if (options.jwtSecret) {
     process.env.JWT_ACCESS_SECRET = options.jwtSecret;
   }
@@ -133,6 +179,9 @@ export async function createApp(
   const app = fastify({ logger: true });
 
   instrumentFastify(app);
+
+  // GraphQL configuration - GraphiQL only in non-production
+  const enableGraphiql = process.env.NODE_ENV !== 'production';
 
   const yoga = createYoga({
     schema,
@@ -142,7 +191,17 @@ export async function createApp(
       warn: (...args) => args.forEach((arg) => app.log.warn(arg)),
       error: (...args) => args.forEach((arg) => app.log.error(arg)),
     },
-    graphiql: true,
+    graphiql: enableGraphiql,
+    context: ({ request }) => {
+      // Require authentication for GraphQL in production
+      if (process.env.NODE_ENV === 'production' && !request.headers.authorization) {
+        throw new Error('Authentication required');
+      }
+      return {
+        userId: (request as unknown as { user?: { userId: string } }).user?.userId,
+        role: (request as unknown as { user?: { role: string } }).user?.role,
+      };
+    },
   });
 
   // @ts-ignore - CORS plugin type issue
@@ -224,6 +283,11 @@ export async function createApp(
     httpRequestTotal.labels(method, route, statusCode).inc();
   });
 
+  /**
+   * Health check endpoint
+   * Returns current status but remains available for load balancers
+   * even when degraded. Returns 503 only if database is down.
+   */
   app.get('/health', async (request, reply) => {
     const checks: Record<string, 'ok' | 'degraded' | 'down'> = {};
 
@@ -257,7 +321,120 @@ export async function createApp(
     });
   });
 
-  app.get('/metrics', async (_request, reply) => {
+  /**
+   * Liveness probe - always returns 200 if the process is running
+   */
+  app.get('/live', async (_request, reply) => {
+    return reply.status(200).send({
+      status: 'alive',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * Readiness probe - strict semantics for deployment decisions
+   * Returns non-200 if any critical dependency is unavailable.
+   * Used by orchestrators to determine if the service should receive traffic.
+   */
+  app.get('/ready', async (request, reply) => {
+    const checks: Record<string, { status: 'ok' | 'down'; message?: string }> = {};
+    let allReady = true;
+
+    // Check database connectivity (critical)
+    try {
+      const prisma = await import('./database/client.js').then(m => m.getPrismaClient());
+      await prisma.$queryRaw`SELECT 1`;
+      checks.database = { status: 'ok' };
+    } catch (error) {
+      checks.database = {
+        status: 'down',
+        message: error instanceof Error ? error.message : 'Database connection failed',
+      };
+      allReady = false;
+    }
+
+    // Check Java backend (critical dependency)
+    const javaBackendUrl = process.env.JAVA_BACKEND_URL ?? 'http://localhost:7003';
+    try {
+      const res = await fetch(`${javaBackendUrl}/health`, { signal: AbortSignal.timeout(2000) });
+      if (res.ok) {
+        checks.javaBackend = { status: 'ok' };
+      } else {
+        checks.javaBackend = {
+          status: 'down',
+          message: `Java backend returned ${res.status}`,
+        };
+        allReady = false;
+      }
+    } catch (error) {
+      checks.javaBackend = {
+        status: 'down',
+        message: error instanceof Error ? error.message : 'Java backend unreachable',
+      };
+      allReady = false;
+    }
+
+    const httpStatus = allReady ? 200 : 503;
+    const status = allReady ? 'ready' : 'not_ready';
+
+    return reply.status(httpStatus).send({
+      status,
+      checks,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * Secure /metrics endpoint
+   * - In production: requires authentication or internal network
+   * - In development: accessible without auth
+   */
+  app.get('/metrics', async (request, reply) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction) {
+      // Check if request has valid authentication
+      const hasAuth = request.user && request.user.userId;
+
+      // Check if request is from internal/private network
+      const clientIp = request.ip;
+      const isInternalNetwork =
+        clientIp === '127.0.0.1' ||
+        clientIp === '::1' ||
+        clientIp?.startsWith('10.') ||
+        clientIp?.startsWith('172.16.') ||
+        clientIp?.startsWith('172.17.') ||
+        clientIp?.startsWith('172.18.') ||
+        clientIp?.startsWith('172.19.') ||
+        clientIp?.startsWith('172.20.') ||
+        clientIp?.startsWith('172.21.') ||
+        clientIp?.startsWith('172.22.') ||
+        clientIp?.startsWith('172.23.') ||
+        clientIp?.startsWith('172.24.') ||
+        clientIp?.startsWith('172.25.') ||
+        clientIp?.startsWith('172.26.') ||
+        clientIp?.startsWith('172.27.') ||
+        clientIp?.startsWith('172.28.') ||
+        clientIp?.startsWith('172.29.') ||
+        clientIp?.startsWith('172.30.') ||
+        clientIp?.startsWith('172.31.') ||
+        clientIp?.startsWith('192.168.');
+
+      // Check for metrics API key header
+      const metricsApiKey = request.headers['x-metrics-api-key'];
+      const validMetricsKey = process.env.METRICS_API_KEY;
+      const hasValidApiKey =
+        validMetricsKey &&
+        metricsApiKey === validMetricsKey;
+
+      if (!hasAuth && !isInternalNetwork && !hasValidApiKey) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Metrics endpoint requires authentication, internal network access, or valid API key',
+        });
+      }
+    }
+
     reply.type(register.contentType);
     return register.metrics();
   });
@@ -306,7 +483,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
-          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY || 'service-to-service-token'}`,
+          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY}`,
         },
         body:
           request.method !== 'GET' && request.method !== 'HEAD'
@@ -344,7 +521,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
-          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY || 'service-to-service-token'}`,
+          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY}`,
         },
         body:
           request.method !== 'GET' && request.method !== 'HEAD'
@@ -382,7 +559,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
-          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY || 'service-to-service-token'}`,
+          Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY}`,
         },
         body:
           request.method !== 'GET' && request.method !== 'HEAD'

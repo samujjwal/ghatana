@@ -16,23 +16,21 @@ import { getPrismaClient } from '../database/client.js';
 import { requirePermission, requireRole } from '../middleware/rbac.middleware';
 import { getAuditService } from '../services/audit/audit.service';
 import { AIService } from '../services/ai/ai.service';
-
-type LifecyclePhaseId =
-  | 'INTENT'
-  | 'CONTEXT'
-  | 'PLAN'
-  | 'EXECUTE'
-  | 'VERIFY'
-  | 'OBSERVE'
-  | 'LEARN'
-  | 'INSTITUTIONALIZE';
-
-type LegacyLifecyclePhaseId =
-  | 'SHAPE'
-  | 'VALIDATE'
-  | 'GENERATE'
-  | 'RUN'
-  | 'IMPROVE';
+import {
+  type LifecyclePhaseId,
+  type LegacyLifecyclePhaseId,
+  LIFECYCLE_PHASES,
+  LIFECYCLE_PHASE_ORDER,
+  LIFECYCLE_PHASES_BY_ID,
+  normalizeLifecyclePhaseId,
+  isCanonicalLifecyclePhaseId,
+  isValidLifecyclePhaseId,
+  getNextPhase,
+  getPreviousPhase,
+  isValidPhaseTransition,
+  getPhaseMetadata,
+  getPhaseExitRequirements,
+} from '../domain/lifecycle/lifecycle-taxonomy';
 
 interface LifecyclePhaseDefinition {
   id: LifecyclePhaseId;
@@ -76,119 +74,8 @@ interface ProgressiveDisclosureModel {
   secondaryActions: string[];
 }
 
-const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
-  {
-    id: 'INTENT',
-    name: 'Intent',
-    description: 'Define the problem and strategic intent',
-    stage: 0,
-    color: '#3B82F6',
-    icon: '💡',
-    gates: ['problem-defined', 'stakeholders-aligned'],
-    personas: ['Product Owner', 'Product Manager'],
-    keyArtifacts: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
-  },
-  {
-    id: 'CONTEXT',
-    name: 'Context',
-    description: 'Capture the requirements, architecture, and delivery context',
-    stage: 1,
-    color: '#8B5CF6',
-    icon: '🧭',
-    gates: ['architecture-approved', 'tech-stack-selected'],
-    personas: ['Architect', 'Tech Lead'],
-    keyArtifacts: ['Architecture Diagram', 'Tech Stack', 'API Design'],
-  },
-  {
-    id: 'PLAN',
-    name: 'Plan',
-    description: 'Validate the approach and plan safe execution',
-    stage: 2,
-    color: '#10B981',
-    icon: '🧪',
-    gates: ['tests-passed', 'quality-gates-met'],
-    personas: ['QA Engineer', 'Test Lead'],
-    keyArtifacts: ['Test Plan', 'Test Cases', 'Test Results'],
-  },
-  {
-    id: 'EXECUTE',
-    name: 'Execute',
-    description: 'Build and implement the solution',
-    stage: 3,
-    color: '#F59E0B',
-    icon: '⚙️',
-    gates: ['code-complete', 'code-reviewed'],
-    personas: ['Developer', 'Engineer'],
-    keyArtifacts: ['Source Code', 'Documentation', 'Build Artifacts'],
-  },
-  {
-    id: 'VERIFY',
-    name: 'Verify',
-    description: 'Verify release readiness before live promotion',
-    stage: 4,
-    color: '#EF4444',
-    icon: '🛡️',
-    gates: ['deployment-successful', 'smoke-tests-passed'],
-    personas: ['DevOps Engineer', 'SRE'],
-    keyArtifacts: [
-      'Deployment Scripts',
-      'Infrastructure Code',
-      'Monitoring Setup',
-    ],
-  },
-  {
-    id: 'OBSERVE',
-    name: 'Observe',
-    description: 'Monitor and observe solution performance',
-    stage: 5,
-    color: '#6366F1',
-    icon: '👁️',
-    gates: ['metrics-stable', 'alerts-configured'],
-    personas: ['SRE', 'Operations'],
-    keyArtifacts: ['Dashboards', 'Alerts', 'SLOs'],
-  },
-  {
-    id: 'LEARN',
-    name: 'Learn',
-    description: 'Capture lessons, follow-ups, and improvement signals',
-    stage: 6,
-    color: '#EC4899',
-    icon: '📚',
-    gates: ['improvements-identified', 'next-iteration-planned'],
-    personas: ['Product Manager', 'All'],
-    keyArtifacts: [
-      'Improvement Backlog',
-      'Metrics Analysis',
-      'Lessons Learned',
-    ],
-  },
-  {
-    id: 'INSTITUTIONALIZE',
-    name: 'Institutionalize',
-    description: 'Roll validated practices back into the operating model',
-    stage: 7,
-    color: '#14B8A6',
-    icon: '🏛️',
-    gates: ['changes-adopted', 'standards-updated'],
-    personas: ['Platform Lead', 'Engineering Manager'],
-    keyArtifacts: ['Standards Update', 'Reusable Playbook', 'Adoption Plan'],
-  },
-];
-
-const LIFECYCLE_PHASE_ORDER: LifecyclePhaseId[] = LIFECYCLE_PHASES.map(
-  (phase) => phase.id
-);
-
-const LIFECYCLE_PHASES_BY_ID: Record<
-  LifecyclePhaseId,
-  LifecyclePhaseDefinition
-> = LIFECYCLE_PHASES.reduce(
-  (accumulator, phase) => ({
-    ...accumulator,
-    [phase.id]: phase,
-  }),
-  {} as Record<LifecyclePhaseId, LifecyclePhaseDefinition>
-);
+// Use canonical taxonomy from domain module
+// LIFECYCLE_PHASES, LIFECYCLE_PHASE_ORDER, LIFECYCLE_PHASES_BY_ID imported from '../domain/lifecycle/lifecycle-taxonomy'
 
 // Stage-specific gate requirements derived from lifecycle phases
 const STAGE_GATE_REQUIREMENTS: Record<number, string[]> = LIFECYCLE_PHASES.reduce(
@@ -257,34 +144,7 @@ async function logStageTransitionAuditEvent(params: {
   }
 }
 
-function isLifecyclePhaseId(value: string): value is LifecyclePhaseId {
-  return value in LIFECYCLE_PHASES_BY_ID;
-}
-
-function normalizeLifecyclePhaseId(
-  value: string | undefined | null
-): LifecyclePhaseId | null {
-  if (!value) {
-    return null;
-  }
-
-  const normalizedValue = value.toUpperCase();
-
-  const legacyPhaseMap: Record<LegacyLifecyclePhaseId, LifecyclePhaseId> = {
-    SHAPE: 'CONTEXT',
-    VALIDATE: 'PLAN',
-    GENERATE: 'EXECUTE',
-    RUN: 'VERIFY',
-    IMPROVE: 'LEARN',
-  };
-
-  if (normalizedValue in legacyPhaseMap) {
-    return legacyPhaseMap[normalizedValue as LegacyLifecyclePhaseId];
-  }
-
-  return isLifecyclePhaseId(normalizedValue) ? normalizedValue : null;
-}
-
+// Use getNextPhase from canonical taxonomy module instead of getNextLifecyclePhase
 function getNextLifecyclePhase(
   currentPhase: LifecyclePhaseId
 ): LifecyclePhaseId | null {
@@ -676,7 +536,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const normalizedPhase = normalizeLifecyclePhaseId(phase);
-    if (!isLifecyclePhaseId(normalizedPhase)) {
+    if (!normalizedPhase || !isCanonicalLifecyclePhaseId(normalizedPhase)) {
       return reply.status(400).send({
         error: 'Invalid phase',
         validPhases: LIFECYCLE_PHASE_ORDER,
@@ -1137,6 +997,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: requirePermission('workflow', 'create') },
     async (request, reply) => {
       const prisma = getPrismaClient();
+      const userId = request.user?.userId ?? 'system';
       const body = request.body as unknown;
 
       const artifactBody = body as {
@@ -1153,17 +1014,81 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         metadata?: Record<string, unknown>;
       };
 
+      // P2-5: Validate projectId - reject empty or missing projectId
+      const projectId = artifactBody.projectId?.trim();
+      if (!projectId) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'projectId is required and cannot be empty',
+        });
+      }
+
+      // P2-5: Verify project exists and user has access
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: {
+          ownerWorkspace: { select: { id: true } },
+          workspaceProjects: { select: { workspaceId: true } },
+        },
+      });
+
+      if (!project) {
+        return reply.status(404).send({
+          error: 'Not Found',
+          message: `Project not found: ${projectId}`,
+        });
+      }
+
+      // Check if user is member of owning workspace or any workspace that includes this project
+      const userWorkspaceIds = await prisma.workspaceMember
+        .findMany({
+          where: { userId },
+          select: { workspaceId: true },
+        })
+        .then((members) => members.map((m) => m.workspaceId));
+
+      const projectWorkspaceIds = [
+        project.ownerWorkspaceId,
+        ...project.workspaceProjects.map((wp) => wp.workspaceId),
+      ];
+
+      const hasAccess = projectWorkspaceIds.some((id) => userWorkspaceIds.includes(id));
+      if (!hasAccess) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'You do not have access to create artifacts in this project',
+        });
+      }
+
+      // P2-5: Validate title and type are not empty
+      const title = artifactBody.title?.trim();
+      const type = artifactBody.type?.trim();
+
+      if (!title) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'title is required and cannot be empty',
+        });
+      }
+
+      if (!type) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: 'type is required and cannot be empty',
+        });
+      }
+
       const artifact = await prisma.lifecycleArtifact.create({
         data: {
-          projectId: artifactBody.projectId ?? '',
-          title: artifactBody.title ?? '',
-          type: artifactBody.type ?? '',
+          projectId,
+          title,
+          type,
           description: artifactBody.description,
           content: artifactBody.content,
           status: artifactBody.status ?? 'draft',
           phase: (artifactBody.phase ?? 'INTENT') as LifecyclePhase,
           flowStage: artifactBody.flowStage ?? 0,
-          createdBy: artifactBody.createdBy ?? 'system',
+          createdBy: artifactBody.createdBy ?? userId,
           linkedArtifacts: artifactBody.linkedArtifacts ?? [],
           metadata: (artifactBody.metadata ?? {}) as Prisma.InputJsonValue,
         },

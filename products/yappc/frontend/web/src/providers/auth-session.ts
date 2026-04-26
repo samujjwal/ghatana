@@ -1,20 +1,27 @@
+/**
+ * Auth Session Provider
+ *
+ * Cookie-based authentication - no localStorage for tokens.
+ * All requests use credentials: 'include' to send httpOnly cookies.
+ *
+ * @doc.type module
+ * @doc.purpose Cookie-based auth session management
+ * @doc.layer product
+ * @doc.security httpOnly cookies, no token storage
+ */
+
 import type { User } from '@/types/dashboard';
 import type { components } from '@/clients/generated/openapi';
 import { parseJsonResponse } from '@/lib/http';
 import {
-  readStoredSession as readSession,
-  persistStoredSession as persistSession,
   clearStoredSession as clearSession,
-  getAccessToken,
+  hasSession,
 } from '../services/session/SessionManager';
 
 export const AUTH_ME_ENDPOINT = '/api/auth/me';
 export const AUTH_REFRESH_ENDPOINT = '/api/auth/refresh';
 
-type RefreshTokenRequest = components['schemas']['RefreshTokenRequest'];
-type RefreshTokenResponse = components['schemas']['RefreshTokenResponse'];
-
-// Re-export storage types for backward compatibility
+// Re-export types for backward compatibility
 export type StoredSession = import('../services/session/SessionManager').StoredSession;
 
 type GeneratedAuthSessionUser = components['schemas']['UserInfo'];
@@ -56,48 +63,6 @@ function getPrimaryRole(user: AuthSessionUser): User['role'] {
   return typeof firstRole === 'string' ? mapGeneratedRole(firstRole) : 'USER';
 }
 
-function parseStoredSession(raw: string): StoredSession {
-  const payload = JSON.parse(raw) as unknown;
-  if (typeof payload !== 'object' || payload === null) {
-    throw new Error('Stored auth session was invalid');
-  }
-
-  return payload as StoredSession;
-}
-
-function readStoredSession(): StoredSession | null {
-  try {
-    if (typeof localStorage === 'undefined') {
-      return null;
-    }
-
-    const raw = localStorage.getItem('auth-session');
-    if (!raw) {
-      return null;
-    }
-
-    return parseStoredSession(raw);
-  } catch {
-    return null;
-  }
-}
-
-// Cookie helper kept local because SessionManager uses a regex-based reader
-function getAccessTokenFromCookie(): string | null {
-  try {
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'accessToken' && value) {
-        return value;
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 const VALID_ROLES = new Set<User['role']>(['ADMIN', 'USER', 'VIEWER']);
 
 export function mapAuthSessionToUser(user: AuthSessionUser): User {
@@ -124,60 +89,43 @@ export function mapAuthSessionToUser(user: AuthSessionUser): User {
   };
 }
 
-export function getStoredAccessToken(): string | null {
-  // Delegate to centralized SessionManager (cookie → localStorage → legacy)
-  return getAccessToken();
+/**
+ * Check if user has an active session (cookie present).
+ * No token returned - cookies are httpOnly.
+ */
+export function hasActiveSession(): boolean {
+  return hasSession();
 }
 
-async function refreshStoredSession(
-  session: StoredSession,
-  fetchImpl: typeof fetch
-): Promise<StoredSession | null> {
-  if (!session.refreshToken) {
-    return null;
-  }
-
+/**
+ * Refresh session using httpOnly cookie.
+ * Server reads refreshToken from cookie, issues new accessToken cookie.
+ */
+async function refreshSession(fetchImpl: typeof fetch): Promise<boolean> {
   try {
     const response = await fetchImpl(AUTH_REFRESH_ENDPOINT, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        refreshToken: session.refreshToken,
-      } satisfies RefreshTokenRequest),
     });
 
-    if (!response.ok) {
-      return null;
-    }
-
-    const refreshed = await parseJsonResponse<RefreshTokenResponse>(
-      response,
-      'refresh auth session'
-    );
-    const nextSession: StoredSession = {
-      ...session,
-      token: refreshed.accessToken,
-      refreshToken: refreshed.refreshToken,
-      expiresAt: new Date(
-        Date.now() + refreshed.expiresIn * 1000
-      ).toISOString(),
-    };
-
-    persistSession(nextSession);
-    return nextSession;
+    return response.ok;
   } catch {
-    return null;
+    return false;
   }
 }
 
+/**
+ * Fetch current user session using httpOnly cookies.
+ * Credentials are sent automatically via cookies.
+ */
 export async function fetchAuthSession(
   fetchImpl?: typeof fetch
 ): Promise<AuthSessionUser | null> {
-  const storedSession = readStoredSession();
-  if (!storedSession?.token) {
+  // Check if we have a session cookie
+  if (!hasSession()) {
     return null;
   }
 
@@ -187,27 +135,29 @@ export async function fetchAuthSession(
   }
 
   try {
-    const fetchCurrentUser = async (accessToken: string): Promise<Response> =>
-      effectiveFetch(AUTH_ME_ENDPOINT, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+    // Fetch with credentials to send httpOnly cookies
+    let response = await effectiveFetch(AUTH_ME_ENDPOINT, {
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+      },
+    });
 
-    let response = await fetchCurrentUser(storedSession.token);
-
+    // If unauthorized, try to refresh
     if (response.status === 401) {
-      const refreshedSession = await refreshStoredSession(
-        storedSession,
-        effectiveFetch
-      );
-      if (!refreshedSession?.token) {
+      const refreshed = await refreshSession(effectiveFetch);
+      if (!refreshed) {
         clearSession();
         return null;
       }
 
-      response = await fetchCurrentUser(refreshedSession.token);
+      // Retry with new cookies
+      response = await effectiveFetch(AUTH_ME_ENDPOINT, {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
     }
 
     if (!response.ok) {

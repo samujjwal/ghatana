@@ -131,6 +131,10 @@ export function PipelineBuilderPage() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
+  // ── Discard-changes confirmation dialog ──────────────────────────
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [pendingNewAction, setPendingNewAction] = useState(false);
+
   // ── Mobile viewport advisory ──────────────────────────────────
   const [mobileAdvisoryDismissed, setMobileAdvisoryDismissed] = useState(false);
   const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 1024;
@@ -363,8 +367,7 @@ export function PipelineBuilderPage() {
 
   // ── New Pipeline ───────────────────────────────────────────────
 
-  const handleNew = useCallback(() => {
-    if (isDirty && !window.confirm('You have unsaved changes. Discard them?')) return;
+  const executeNewPipeline = useCallback(() => {
     setPipeline({ name: 'Untitled Pipeline', stages: [], status: 'DRAFT', version: 1 });
     setNodes([]);
     setEdges([]);
@@ -373,7 +376,27 @@ export function PipelineBuilderPage() {
     setDirty(false);
     setValidation(null);
     setStatus('DRAFT');
-  }, [isDirty, setPipeline, setNodes, setEdges, setHistory, setHistoryIndex, setDirty, setValidation, setStatus]);
+  }, [setPipeline, setNodes, setEdges, setHistory, setHistoryIndex, setDirty, setValidation, setStatus]);
+
+  const handleNew = useCallback(() => {
+    if (isDirty) {
+      setPendingNewAction(true);
+      setDiscardDialogOpen(true);
+      return;
+    }
+    executeNewPipeline();
+  }, [isDirty, executeNewPipeline]);
+
+  const handleDiscardConfirm = useCallback(() => {
+    setDiscardDialogOpen(false);
+    setPendingNewAction(false);
+    executeNewPipeline();
+  }, [executeNewPipeline]);
+
+  const handleDiscardCancel = useCallback(() => {
+    setDiscardDialogOpen(false);
+    setPendingNewAction(false);
+  }, []);
 
   const handleAiSuggest = useCallback(async () => {
     if (!aiDescription.trim()) return;
@@ -463,6 +486,56 @@ export function PipelineBuilderPage() {
   return (
     <>
       <Toaster richColors position="top-right" />
+
+      {/* T-13: Accessible discard-changes confirmation dialog (replaces window.confirm) */}
+      {discardDialogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="discard-dialog-title"
+          aria-describedby="discard-dialog-desc"
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+        >
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={handleDiscardCancel}
+            aria-hidden="true"
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white shadow-xl p-6">
+            <h2
+              id="discard-dialog-title"
+              className="text-base font-semibold text-gray-900 mb-2"
+            >
+              Discard unsaved changes?
+            </h2>
+            <p
+              id="discard-dialog-desc"
+              className="text-sm text-gray-600 mb-5"
+            >
+              You have unsaved changes. Starting a new pipeline will discard them permanently.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleDiscardCancel}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardConfirm}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus
+              >
+                Discard changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showMobileAdvisory && (
         <div className="lg:hidden fixed bottom-4 left-4 right-4 z-50 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-lg dark:border-amber-900 dark:bg-amber-950/80 dark:text-amber-100">
           <div className="flex items-start gap-3">

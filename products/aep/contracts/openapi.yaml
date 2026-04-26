@@ -2029,6 +2029,225 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  # ========== AI Stage Suggestions ==========
+  /api/v1/ai/suggestions/stages:
+    post:
+      summary: Suggest pipeline stages using AI based on event context
+      operationId: suggestPipelineStages
+      tags: [AI]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventType]
+              properties:
+                eventType:
+                  type: string
+                description:
+                  type: string
+                tenantId:
+                  type: string
+      responses:
+        '200':
+          description: Suggested pipeline stages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stages:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  tenantId:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          description: Rate limit exceeded
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ========== SSE Authentication ==========
+  /api/v1/auth/sse-token:
+    post:
+      summary: Mint a short-lived SSE authentication token
+      operationId: mintSseToken
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Short-lived SSE token (60 seconds)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Unauthorized
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ========== Audit Log ==========
+  /api/v1/audit/log:
+    post:
+      summary: Write an audit log entry
+      operationId: logAuditEvent
+      tags: [Audit]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventType, actor]
+              properties:
+                eventType:
+                  type: string
+                actor:
+                  type: string
+                resource:
+                  type: string
+                outcome:
+                  type: string
+                  enum: [success, failure, denied]
+                detail:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Audit entry recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auditId:
+                    type: string
+                  tenantId:
+                    type: string
+                  recordedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Unauthorized
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/audit/query:
+    get:
+      summary: Query audit log entries for a tenant
+      operationId: queryAuditLog
+      tags: [Audit]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  total:
+                    type: integer
+                  tenantId:
+                    type: string
+        '401':
+          description: Unauthorized
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ========== Marketplace Install ==========
+  /api/v1/catalog/marketplace/agents/{agentId}/install:
+    post:
+      summary: Install a marketplace agent for a tenant
+      operationId: installMarketplaceAgent
+      tags: [Marketplace]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          description: Marketplace agent identifier
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdQuery'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Agent installed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  installId:
+                    type: string
+                  agentId:
+                    type: string
+                  tenantId:
+                    type: string
+                  installedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Agent not found
+        '401':
+          description: Unauthorized
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 # ========================================================================
 # Components
 # ========================================================================

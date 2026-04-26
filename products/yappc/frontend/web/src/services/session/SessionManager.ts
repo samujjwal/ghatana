@@ -1,114 +1,128 @@
 /**
  * Session Manager
  *
- * Centralized session storage and token access.
- * All auth/session/token reads and writes must go through this module.
- * Direct `localStorage.getItem('auth_token')` and similar patterns are banned.
+ * Centralized session storage using httpOnly cookies only.
+ * No localStorage usage for auth credentials - prevents XSS attacks.
  *
  * @doc.type service
- * @doc.purpose Centralized authentication session storage
+ * @doc.purpose Cookie-based authentication session
  * @doc.layer product
  * @doc.pattern Service
+ * @doc.security httpOnly cookies, no localStorage
  */
 
-import { logger } from '../../utils/Logger';
-
-const AUTH_SESSION_KEY = 'auth-session';
-const AUTH_TOKEN_KEY = 'auth_token';
-
+/**
+ * Session metadata interface (non-sensitive data only)
+ * Sensitive tokens are stored in httpOnly cookies only
+ */
 export interface StoredSession {
-  token?: string;
-  refreshToken?: string;
   expiresAt?: string;
-}
-
-function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+  userId?: string;
 }
 
 /**
- * Read the raw stored session object from storage.
+ * Retrieve the access token from httpOnly cookie only.
+ * No localStorage fallback - this is intentional for security.
+ */
+export function getAccessToken(): string | null {
+  return getAccessTokenFromCookie();
+}
+
+/**
+ * Retrieve the refresh token from httpOnly cookie only.
+ */
+export function getRefreshToken(): string | null {
+  return getRefreshTokenFromCookie();
+}
+
+/**
+ * Check if user appears to have an active session (cookie present)
+ */
+export function hasSession(): boolean {
+  return !!getAccessTokenFromCookie();
+}
+
+/**
+ * Clear session by calling the logout endpoint.
+ * Server should clear httpOnly cookies.
+ */
+export async function clearSession(): Promise<void> {
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    // Silent fail - cookies will expire naturally
+  }
+}
+
+/**
+ * Read non-sensitive session metadata.
+ * Note: Tokens are NOT stored in localStorage - they remain in httpOnly cookies.
  */
 export function readStoredSession(): StoredSession | null {
-  if (!canUseStorage()) {
-    return null;
-  }
+  // Only read non-sensitive metadata, never tokens
   try {
-    const raw = window.localStorage.getItem(AUTH_SESSION_KEY);
-    if (!raw) {
+    if (typeof window === 'undefined' || !window.localStorage) {
       return null;
     }
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed !== 'object' || parsed === null) {
-      return null;
-    }
-    return parsed as StoredSession;
+    const raw = window.localStorage.getItem('auth-session-meta');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredSession;
+    return parsed;
   } catch {
     return null;
   }
 }
 
 /**
- * Persist a session object to storage.
+ * Persist non-sensitive session metadata only.
+ * Tokens remain in httpOnly cookies only.
  */
 export function persistStoredSession(session: StoredSession): void {
-  if (!canUseStorage()) {
-    return;
+  // Only store non-sensitive metadata, never tokens
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+    window.localStorage.setItem('auth-session-meta', JSON.stringify(session));
+  } catch {
+    // Silent fail
   }
-  window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
 }
 
 /**
- * Remove the session from storage.
+ * Clear non-sensitive session metadata.
  */
 export function clearStoredSession(): void {
-  if (!canUseStorage()) {
-    return;
-  }
-  window.localStorage.removeItem(AUTH_SESSION_KEY);
-}
-
-/**
- * Retrieve the access token from the preferred secure source.
- * Priority: httpOnly cookie → localStorage auth-session → legacy localStorage auth_token.
- */
-export function getAccessToken(): string | null {
-  // Try cookie first (httpOnly, more secure)
-  const cookieToken = getAccessTokenFromCookie();
-  if (cookieToken) {
-    return cookieToken;
-  }
-
-  // Fall back to structured session in localStorage
-  const session = readStoredSession();
-  if (session?.token) {
-    return session.token;
-  }
-
-  // Legacy fallback for backward compatibility
-  if (canUseStorage()) {
-    const legacyToken = window.localStorage.getItem(AUTH_TOKEN_KEY);
-    if (legacyToken) {
-      logger.warn('Legacy auth_token used; migrate to auth-session', 'session');
-      return legacyToken;
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
     }
+    // Clear only metadata, not tokens (they're in cookies)
+    window.localStorage.removeItem('auth-session-meta');
+    // Also clear legacy keys if they exist
+    window.localStorage.removeItem('auth-session');
+    window.localStorage.removeItem('auth_token');
+    window.localStorage.removeItem('api_key');
+  } catch {
+    // Silent fail
   }
-
-  return null;
-}
-
-/**
- * Retrieve the refresh token from storage.
- */
-export function getRefreshToken(): string | null {
-  const session = readStoredSession();
-  return session?.refreshToken ?? null;
 }
 
 function getAccessTokenFromCookie(): string | null {
   if (typeof document === 'undefined') {
     return null;
   }
-  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+  const match = document.cookie.match(/(?:^|;\s*)accessToken=([^;]+)/);
+  return match?.[1] ?? null;
+}
+
+function getRefreshTokenFromCookie(): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const match = document.cookie.match(/(?:^|;\s*)refreshToken=([^;]+)/);
   return match?.[1] ?? null;
 }

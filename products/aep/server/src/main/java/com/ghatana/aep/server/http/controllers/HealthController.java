@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Health check controller for liveness and readiness probes.
@@ -39,6 +40,11 @@ public class HealthController implements AepController {
     private volatile boolean ready = false;
     private final String version;
     private volatile Supplier<Map<String, Object>> deepResponseMetadataSupplier = Map::of;
+    /**
+     * Required dependency names: when any of these are not "ok" or "disabled" in production
+     * mode the readiness probe returns 503 rather than 200.
+     */
+    private final List<String> requiredDependencies = new CopyOnWriteArrayList<>();
     /** Synchronous dependency-status checks registered at startup. */
     private final List<Map.Entry<String, Supplier<String>>> componentChecks = new CopyOnWriteArrayList<>();
     /** Deeper startup/runtime checks used by {@code /health/deep}. */
@@ -62,6 +68,16 @@ public class HealthController implements AepController {
      */
     public void addDependencyCheck(String name, Supplier<String> check) {
         componentChecks.add(Map.entry(name, check));
+    }
+
+    /**
+     * Marks a dependency as required for readiness. If this dependency is not "ok" or "disabled"
+     * the readiness probe returns 503 in production mode.
+     *
+     * @param name dependency name (must already be registered via {@link #addDependencyCheck})
+     */
+    public void requireForReadiness(String name) {
+        requiredDependencies.add(name);
     }
 
     /**
@@ -146,10 +162,42 @@ public class HealthController implements AepController {
                 "timestamp", Instant.now().toString()
             )));
         }
-        return Promise.of(HttpHelper.jsonResponse(Map.of(
-            "ready", true,
-            "timestamp", Instant.now().toString()
-        )));
+
+        // T-04: evaluate required dependency checks to determine true readiness
+        Map<String, Object> components = evaluateChecks(componentChecks);
+        List<String> degraded = requiredDependencies.stream()
+            .filter(name -> {
+                Object status = components.get(name);
+                return !("ok".equals(status) || "disabled".equals(status));
+            })
+            .collect(Collectors.toList());
+
+        boolean productionMode = isProductionMode();
+        if (!degraded.isEmpty() && productionMode) {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("ready", false);
+            response.put("reason", "Required dependencies are degraded");
+            response.put("degradedDependencies", degraded);
+            response.put("timestamp", Instant.now().toString());
+            return Promise.of(HttpHelper.jsonResponse(503, response));
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("ready", true);
+        if (!degraded.isEmpty()) {
+            response.put("degraded", true);
+            response.put("degradedDependencies", degraded);
+        }
+        response.put("timestamp", Instant.now().toString());
+        return Promise.of(HttpHelper.jsonResponse(response));
+    }
+
+    private static boolean isProductionMode() {
+        String profile = System.getenv("AEP_PROFILE");
+        if (profile == null || profile.isBlank()) {
+            profile = System.getProperty("AEP_PROFILE", "");
+        }
+        return "production".equalsIgnoreCase(profile.trim());
     }
 
     private Promise<HttpResponse> handleLive() {

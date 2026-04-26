@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Typography, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, Avatar, Chip, Button, IconButton, Stack, Divider, Surface as Paper, LinearProgress } from '@ghatana/design-system';
+import { Box, Typography, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, Avatar, Chip, Button, IconButton, Stack, Divider, Surface as Paper, LinearProgress, Snackbar } from '@ghatana/design-system';
 import { Users as Group, Shield as Security, Rocket as RocketLaunch, MoreVertical as MoreVert, Plus as Add, Globe as Public, CloudCheck as CloudDone, AlertCircle as ErrorOutline, Download as FileDownload, FileText as Description } from 'lucide-react';
 
 export interface ProjectMember {
@@ -33,6 +33,12 @@ export interface DeploymentStatus {
  */
 export const GovernancePanel: React.FC = () => {
     const [isExporting, setIsExporting] = useState(false);
+    // P2-7: Fix Native Alert - use proper notification state instead of native alert
+    const [notification, setNotification] = useState<{ open: boolean; message: string }>({
+        open: false,
+        message: '',
+    });
+
     const [members] = useState<ProjectMember[]>([
         { id: '1', name: 'Alice Chen', role: 'Architect', status: 'online' },
         { id: '2', name: 'Bob Smith', role: 'Developer', status: 'online' },
@@ -50,9 +56,16 @@ export const GovernancePanel: React.FC = () => {
         setTimeout(() => {
             setIsExporting(false);
             console.log(`Exported project in ${format} format`);
-            // In a real app, this would trigger a file download
-            alert(`Project specification exported as ${format.toUpperCase()}. Check your downloads.`);
+            // P2-7: Use proper notification instead of native alert
+            setNotification({
+                open: true,
+                message: `Project specification exported as ${format.toUpperCase()}. Check your downloads.`,
+            });
         }, 1500);
+    };
+
+    const handleCloseNotification = () => {
+        setNotification((prev) => ({ ...prev, open: false }));
     };
 
     return (
@@ -194,6 +207,15 @@ export const GovernancePanel: React.FC = () => {
                     ))}
                 </Stack>
             </Box>
+
+            {/* P2-7: Fix Native Alert - Use Snackbar notification instead of native alert */}
+            <Snackbar
+                open={notification.open}
+                autoHideDuration={4000}
+                onClose={handleCloseNotification}
+                message={notification.message}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            />
         </Box>
     );
 };

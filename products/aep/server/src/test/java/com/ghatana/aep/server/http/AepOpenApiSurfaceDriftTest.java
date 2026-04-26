@@ -73,6 +73,11 @@ class AepOpenApiSurfaceDriftTest {
         "/api/v1/sessions/current",
         "/api/v1/sessions",
         "/api/v1/ai/suggestions",
+        "/api/v1/ai/suggestions/stages",
+        "/api/v1/auth/sse-token",
+        "/api/v1/audit/log",
+        "/api/v1/audit/query",
+        "/api/v1/catalog/marketplace/agents/{agentId}/install",
         "/api/v1/nlp/parse"
     );
 
@@ -132,7 +137,6 @@ class AepOpenApiSurfaceDriftTest {
     );
 
     @Test
-    @Disabled("Temporarily disabled due to classpath resource loading issues - files are synced but test fails to load from classpath")
     @DisplayName("contracts and server OpenAPI specs stay in sync and document exercised public routes")
     void specsStayInSyncAndCoverRequiredRoutes() throws IOException { // GH-90000
         String contractsSpec = normalizeSpec(Files.readString(findRepoFile("products/aep/contracts/openapi.yaml")));

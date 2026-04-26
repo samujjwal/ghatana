@@ -235,7 +235,7 @@ export async function suggestPipelineStages(
   tenantId = "default",
 ): Promise<AiSuggestStagesResponse> {
   const { data } = await client.post<AiSuggestStagesResponse>(
-    "/api/v1/aep/pipelines/ai-suggest-stages",
+    "/api/v1/ai/suggestions/stages",
     request,
     { params: { tenantId } },
   );

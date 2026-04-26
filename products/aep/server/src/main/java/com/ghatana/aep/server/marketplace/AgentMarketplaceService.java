@@ -37,6 +37,7 @@ public final class AgentMarketplaceService {
 
     static final String MARKETPLACE_AGENT_COLLECTION = "aep_marketplace_agents";
     static final String MARKETPLACE_REVIEW_COLLECTION = "aep_marketplace_reviews";
+    static final String MARKETPLACE_INSTALL_COLLECTION = "aep_marketplace_installs";
 
     @Nullable
     private final DataCloudClient dataCloudClient;
@@ -112,6 +113,43 @@ public final class AgentMarketplaceService {
                 .filter(review -> review.agentId().equals(agentId))
                 .sorted(Comparator.comparing(MarketplaceReview::createdAt).reversed())
                 .toList());
+    }
+
+    /**
+     * T-07: Records a marketplace agent installation for a tenant.
+     *
+     * <p>Validates that the requested agent exists in the marketplace, then persists an
+     * install record to Data Cloud (or to the in-memory fallback in dev mode).
+     *
+     * @param tenantId tenant performing the install
+     * @param agentId  marketplace agent to install
+     * @param request  optional install-time configuration
+     * @return install confirmation record
+     */
+    public Promise<MarketplaceInstallRecord> installAgent(
+            String tenantId,
+            String agentId,
+            InstallAgentRequest request) {
+        return getAgent(tenantId, agentId).then(detail -> {
+            if (detail.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException(
+                    "Marketplace agent not found: " + agentId));
+            }
+            MarketplaceAgentListing listing = detail.get().listing();
+            MarketplaceInstallRecord record = MarketplaceInstallRecord.create(tenantId, listing, request);
+
+            if (dataCloudClient == null) {
+                log.info("[marketplace] install recorded in-memory tenantId={}, agentId={}", tenantId, agentId);
+                return Promise.of(record);
+            }
+            return dataCloudClient.save(tenantId, MARKETPLACE_INSTALL_COLLECTION, record.toData())
+                    .map(saved -> record)
+                    .then(Promise::of, err -> {
+                        log.warn("[marketplace] DataCloud install persist failed for tenantId={}, agentId={}: {}",
+                            tenantId, agentId, err.getMessage());
+                        return Promise.of(record);
+                    });
+        });
     }
 
     public Promise<MarketplaceReview> addReview(String tenantId, String agentId, CreateReviewRequest request) {
@@ -478,6 +516,61 @@ public final class AgentMarketplaceService {
             data.put("owner", owner);
             data.put("publishedAt", publishedAt.toString());
             data.put("updatedAt", updatedAt.toString());
+            return data;
+        }
+    }
+
+    /**
+     * @doc.type record
+     * @doc.purpose Install request payload for marketplace agent installation
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record InstallAgentRequest(
+            @Nullable String targetEnvironment,
+            @Nullable Map<String, Object> config) {
+    }
+
+    /**
+     * @doc.type record
+     * @doc.purpose Durable install confirmation record persisted to DataCloud
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record MarketplaceInstallRecord(
+            String installId,
+            String agentId,
+            String agentName,
+            String agentVersion,
+            String tenantId,
+            @Nullable String targetEnvironment,
+            Instant installedAt) {
+
+        static MarketplaceInstallRecord create(
+                String tenantId,
+                MarketplaceAgentListing listing,
+                InstallAgentRequest request) {
+            return new MarketplaceInstallRecord(
+                    java.util.UUID.randomUUID().toString(),
+                    listing.id(),
+                    listing.name(),
+                    listing.version(),
+                    tenantId,
+                    request.targetEnvironment(),
+                    Instant.now());
+        }
+
+        Map<String, Object> toData() {
+            Map<String, Object> data = new HashMap<>();
+            data.put("installId", installId);
+            data.put("agentId", agentId);
+            data.put("agentName", agentName);
+            data.put("agentVersion", agentVersion);
+            data.put("tenantId", tenantId);
+            data.put("installedAt", installedAt.toString());
+            if (targetEnvironment != null) {
+                data.put("targetEnvironment", targetEnvironment);
+            }
             return data;
         }
     }

@@ -91,6 +91,68 @@ public final class AgentMarketplaceController {
         });
     }
 
+    /**
+     * T-07: Records a marketplace agent installation.
+     *
+     * <p>Validates the agent exists, persists an install record to DataCloud (or in-memory
+     * fallback in dev mode), and returns the install confirmation.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleInstallAgent(HttpRequest request) {
+        return request.loadBody().then(buffer -> {
+            try {
+                String tenantId = HttpHelper.resolveTenantId(request);
+                String agentId = request.getPathParameter("agentId");
+                if (agentId == null || agentId.isBlank()) {
+                    return Promise.of(HttpHelper.errorResponse(400, "agentId path parameter is required"));
+                }
+
+                String body = buffer.getString(java.nio.charset.StandardCharsets.UTF_8);
+                java.util.Map<String, Object> payload = body.isBlank()
+                    ? java.util.Map.of()
+                    : HttpHelper.mapper().readValue(body, java.util.Map.class);
+
+                String targetEnv = asNullableString(payload.get("targetEnvironment"));
+                Object rawConfig = payload.get("config");
+                java.util.Map<String, Object> config = rawConfig instanceof java.util.Map<?, ?> m
+                    ? m.entrySet().stream().collect(
+                        java.util.stream.Collectors.toMap(
+                            e -> e.getKey().toString(),
+                            java.util.Map.Entry::getValue))
+                    : java.util.Map.of();
+
+                com.ghatana.aep.server.marketplace.AgentMarketplaceService.InstallAgentRequest installRequest =
+                    new com.ghatana.aep.server.marketplace.AgentMarketplaceService.InstallAgentRequest(
+                        targetEnv, config);
+
+                return marketplaceService.installAgent(tenantId, agentId, installRequest)
+                    .map(record -> HttpHelper.jsonResponse(java.util.Map.of(
+                        "installId",     record.installId(),
+                        "agentId",       record.agentId(),
+                        "agentName",     record.agentName(),
+                        "agentVersion",  record.agentVersion(),
+                        "tenantId",      record.tenantId(),
+                        "installedAt",   record.installedAt().toString(),
+                        "status",        "INSTALLED"
+                    )))
+                    .then(Promise::of, err -> {
+                        if (err instanceof IllegalArgumentException) {
+                            return Promise.of(HttpHelper.errorResponse(404, err.getMessage()));
+                        }
+                        log.error("[marketplace] install failed agentId={}", agentId, err);
+                        return Promise.of(HttpHelper.errorResponse(500,
+                            "Failed to install agent: " + err.getMessage()));
+                    });
+            } catch (Exception error) {
+                log.error("[marketplace] failed to parse install request", error);
+                return Promise.of(HttpHelper.errorResponse(400, "Invalid install request: " + error.getMessage()));
+            }
+        }, error -> {
+            log.error("[marketplace] failed to read install request body", error);
+            return Promise.of(HttpHelper.errorResponse(400, "Failed to read request body"));
+        });
+    }
+
     public Promise<HttpResponse> handleListReviews(HttpRequest request) {
         String tenantId = HttpHelper.resolveTenantId(request);
         String agentId = request.getPathParameter("agentId");

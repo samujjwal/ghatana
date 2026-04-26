@@ -1,4 +1,4 @@
-const PUBLIC_PATHS = new Set(['/health', '/metrics', '/graphql', '/graphiql']);
+const PUBLIC_PATHS = new Set(['/health', '/live', '/ready']);
 
 const PUBLIC_AUTH_PATH_SUFFIXES = new Set([
   '/auth/login',

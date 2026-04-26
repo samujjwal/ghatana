@@ -13,6 +13,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { requirePermission } from '../middleware/rbac.middleware';
+import {
+  requireCanvasReadable,
+  requireCanvasWritable,
+} from '../middleware/resource-auth.middleware';
 
 interface GetCanvasParams {
   projectId: string;
@@ -46,6 +50,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{ Params: { projectId: string } }>(
     '/projects/:projectId/canvas',
+    { preHandler: requireCanvasReadable() },
     async (request, reply) => {
       const { projectId } = request.params;
       const canvasId = 'unified-canvas'; // Default unified canvas
@@ -134,7 +139,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
     };
   }>(
     '/projects/:projectId/canvas',
-    { preHandler: requirePermission('canvas', 'update') },
+    { preHandler: [requirePermission('canvas', 'update'), requireCanvasWritable()] },
     async (request, reply) => {
       if (!request.user?.userId) {
         return reply.status(401).send({ error: 'Unauthorized' });
@@ -435,20 +440,42 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/canvas/validate
    * Validate canvas structure
+   *
+   * NOTE: Real validation is not yet implemented. Returns
+   * 'validation unavailable' to avoid giving false confidence.
    */
-  fastify.post('/canvas/validate', async (request, reply) => {
-    // Mock validation response for now
-    return {
-      valid: true,
-      issues: [],
-      score: 100,
-      summary: {
-        errors: 0,
-        warnings: 0,
-        info: 0,
-      },
-      gaps: [],
-      risks: [],
-    };
-  });
+  fastify.post<{ Body: { projectId: string; canvasId?: string; data?: unknown } }>(
+    '/canvas/validate',
+    { preHandler: requireCanvasReadable() },
+    async (request, reply) => {
+      const { projectId } = request.body;
+
+      // Verify project exists and user has access
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: { id: true },
+      });
+
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
+
+      // Return validation unavailable - real validation not yet implemented
+      // This is intentional to avoid giving false confidence with mock data
+      return reply.status(503).send({
+        valid: false,
+        status: 'unavailable',
+        message: 'Canvas validation is not yet available. Please review your canvas manually.',
+        issues: [],
+        score: null,
+        summary: {
+          errors: 0,
+          warnings: 0,
+          info: 0,
+        },
+        gaps: [],
+        risks: [],
+      });
+    }
+  );
 }

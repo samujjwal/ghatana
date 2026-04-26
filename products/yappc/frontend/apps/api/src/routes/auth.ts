@@ -290,6 +290,124 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // P2-6: Onboarding Status Endpoint
+  fastify.get(
+    '/auth/onboarding-status',
+    {
+      preHandler: [authenticateToken],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const userId = (request as AuthenticatedRequest).user?.userId;
+        if (!userId) {
+          return reply.code(401).send({
+            error: 'Unauthorized',
+            message: 'User not authenticated',
+          });
+        }
+
+        // Get user profile
+        const user = await authService.getCurrentUser(userId);
+
+        // Get user's workspaces
+        const workspaces = user.workspaces || [];
+
+        // Determine onboarding status based on user actions
+        const hasCompletedProfile = !!(
+          user.name &&
+          user.name.trim().length > 0 &&
+          user.email &&
+          user.email.length > 0
+        );
+
+        const hasCreatedWorkspace = workspaces.length > 0;
+
+        const hasCreatedProject = await checkUserHasProjects(userId);
+
+        const hasInvitedTeamMember = await checkUserHasInvitedMembers(
+          userId,
+          workspaces.map((w) => w.id)
+        );
+
+        const onboardingStatus = {
+          userId,
+          completed: hasCompletedProfile && hasCreatedWorkspace && hasCreatedProject,
+          steps: {
+            profile: {
+              completed: hasCompletedProfile,
+              label: 'Complete your profile',
+            },
+            workspace: {
+              completed: hasCreatedWorkspace,
+              label: 'Create a workspace',
+            },
+            project: {
+              completed: hasCreatedProject,
+              label: 'Create your first project',
+            },
+            invite: {
+              completed: hasInvitedTeamMember,
+              label: 'Invite a team member (optional)',
+              optional: true,
+            },
+          },
+          progress: {
+            total: 4,
+            completed: [
+              hasCompletedProfile,
+              hasCreatedWorkspace,
+              hasCreatedProject,
+              hasInvitedTeamMember,
+            ].filter(Boolean).length,
+            percentage: Math.round(
+              ([
+                hasCompletedProfile,
+                hasCreatedWorkspace,
+                hasCreatedProject,
+                hasInvitedTeamMember,
+              ].filter(Boolean).length /
+                4) *
+                100
+            ),
+          },
+          workspaces: workspaces.map((w) => ({
+            id: w.id,
+            name: w.name,
+            role: w.role,
+          })),
+          canSkip: true, // Users can skip onboarding if they want
+          lastUpdated: new Date().toISOString(),
+        };
+
+        reply.send(onboardingStatus);
+      } catch (error: unknown) {
+        reply.code(500).send({
+          error: 'Failed to get onboarding status',
+          message: getErrorMessage(error),
+        });
+      }
+    }
+  );
+
+}
+
+// ============================================================================
+// Onboarding Helper Functions
+// ============================================================================
+
+async function checkUserHasProjects(userId: string): Promise<boolean> {
+  // This would query the database to check if user has created any projects
+  // For now, return a placeholder that can be implemented with actual Prisma queries
+  return false;
+}
+
+async function checkUserHasInvitedMembers(
+  _userId: string,
+  _workspaceIds: string[]
+): Promise<boolean> {
+  // This would check if user has invited any members to their workspaces
+  // For now, return a placeholder that can be implemented with actual queries
+  return false;
 }
 
 // ============================================================================

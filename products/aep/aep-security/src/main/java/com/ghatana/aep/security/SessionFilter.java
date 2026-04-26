@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP session filter for AEP.
@@ -31,6 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * in the servlet chain. An authenticated caller may request a session
  * token and then use that token for repeated requests within the same
  * connection lifetime.
+ *
+ * <p>T-20: Session storage is backed by a pluggable {@link SessionStore}.
+ * Use {@link RedisSessionStore} in production; {@link InMemorySessionStore}
+ * is the default for development and test environments.
  *
  * @doc.type class
  * @doc.purpose Per-request session management for AEP HTTP server
@@ -47,23 +50,37 @@ public final class SessionFilter implements AsyncServlet {
 
     private final AsyncServlet next;
     private final Duration sessionTtl;
-    /** In-memory session store: token → expiry epoch-second */
-    private final ConcurrentHashMap<String, Long> sessions = new ConcurrentHashMap<>();
+    /** T-20: Pluggable session store — Redis in production, in-memory in dev. */
+    private final SessionStore store;
 
     /**
+     * Primary constructor — accepts a pluggable {@link SessionStore}.
+     *
+     * @param next       downstream servlet; never {@code null}
+     * @param sessionTtl how long a session token remains valid; never {@code null}
+     * @param store      session backing store; never {@code null}
+     */
+    public SessionFilter(AsyncServlet next, Duration sessionTtl, SessionStore store) {
+        this.next       = Objects.requireNonNull(next,       "next");
+        this.sessionTtl = Objects.requireNonNull(sessionTtl, "sessionTtl");
+        this.store      = Objects.requireNonNull(store,      "store");
+    }
+
+    /**
+     * Convenience constructor — uses {@link InMemorySessionStore} (dev/test default).
+     *
      * @param next       downstream servlet; never {@code null}
      * @param sessionTtl how long a session token remains valid; never {@code null}
      */
     public SessionFilter(AsyncServlet next, Duration sessionTtl) {
-        this.next       = Objects.requireNonNull(next,       "next");
-        this.sessionTtl = Objects.requireNonNull(sessionTtl, "sessionTtl");
+        this(next, sessionTtl, new InMemorySessionStore());
     }
 
     /**
-     * Creates a {@code SessionFilter} with the default TTL ({@value DEFAULT_TTL}).
+     * Creates a {@code SessionFilter} with the default TTL and in-memory store.
      */
     public SessionFilter(AsyncServlet next) {
-        this(next, DEFAULT_TTL);
+        this(next, DEFAULT_TTL, new InMemorySessionStore());
     }
 
     @Override
@@ -97,9 +114,8 @@ public final class SessionFilter implements AsyncServlet {
     // ---- Internals ---------------------------------------------------------
 
     private Promise<HttpResponse> issueSession(HttpRequest request) {
-        String token       = UUID.randomUUID().toString().replace("-", "");
-        long   expiryEpoch = System.currentTimeMillis() / 1000 + sessionTtl.toSeconds();
-        sessions.put(token, expiryEpoch);
+        String token = UUID.randomUUID().toString().replace("-", "");
+        store.put(token, sessionTtl);
 
         log.debug("[session] Issued token={} ttlSeconds={}", token.substring(0, 8), sessionTtl.toSeconds());
 
@@ -115,20 +131,12 @@ public final class SessionFilter implements AsyncServlet {
     }
 
     private boolean isValid(String token) {
-        Long expiry = sessions.get(token);
-        if (expiry == null) {
-            return false;
-        }
-        if (System.currentTimeMillis() / 1000 > expiry) {
-            sessions.remove(token);
-            log.debug("[session] Expired token={}", token.substring(0, Math.min(8, token.length())));
-            return false;
-        }
-        return true;
+        return store.isValid(token);
     }
 
     private void evictExpiredSessions() {
-        long now = System.currentTimeMillis() / 1000;
-        sessions.entrySet().removeIf(e -> e.getValue() < now);
+        if (store instanceof InMemorySessionStore inMem) {
+            inMem.evictExpired();
+        }
     }
 }

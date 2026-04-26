@@ -45,7 +45,11 @@ export type ClientMessage =
   | { type: 'node-update'; nodeId: string; updates: Record<string, unknown> }
   | { type: 'ping' }
   | { type: 'crdt-update'; data: string } // Base64 Yjs update
-  | { type: 'auth'; token: string }; // Added for Auth
+  | { type: 'auth'; token: string } // Added for Auth
+  // P1-10: Realtime Version History
+  | { type: 'save-version'; versionId: string; label?: string; description?: string }
+  | { type: 'get-versions'; limit?: number }
+  | { type: 'restore-version'; versionId: string };
 
 export type ServerMessage =
   | { type: 'user-joined'; user: CollaboratorInfo }
@@ -62,7 +66,24 @@ export type ServerMessage =
   | { type: 'crdt-update'; userId: string; data: string }
   | { type: 'pong' }
   | { type: 'error'; message: string }
-  | { type: 'notification'; payload: Record<string, unknown> };
+  | { type: 'notification'; payload: Record<string, unknown> }
+  // P1-10: Realtime Version History
+  | { type: 'version-saved'; versionId: string; timestamp: number; savedBy: string }
+  | { type: 'versions-list'; versions: VersionInfo[] }
+  | { type: 'version-restored'; versionId: string; timestamp: number; restoredBy: string }
+  | { type: 'version-error'; message: string };
+
+// P1-10: Version History Types
+export interface VersionInfo {
+  versionId: string;
+  timestamp: number;
+  savedBy: string;
+  savedByName: string;
+  label?: string;
+  description?: string;
+  nodeCount: number;
+  connectionCount: number;
+}
 
 // =============================================================================
 // Service Implementation
@@ -180,10 +201,10 @@ export class RealTimeService {
     const projectId = params.projectId;
 
     let userId: string | null = null;
+    let userEmail: string | null = null;
+    let userName: string | null = null;
     let room: CanvasRoom | null = null;
-
-    // Basic Auth Check (Placeholder - should validate token)
-    // For Week 0/1, we allow connection but expect 'auth' message or 'join'
+    let isAuthenticated = false;
 
     ws.on('message', async (data: Buffer) => {
       try {
@@ -191,7 +212,7 @@ export class RealTimeService {
 
         switch (message.type) {
           case 'auth': {
-            // Validate JWT token from client
+            // Validate JWT token from client - REQUIRED before any other operations
             try {
               const jwt = await import('jsonwebtoken');
               const { getJwtAccessSecret } = await import('./auth/jwt-config');
@@ -200,8 +221,26 @@ export class RealTimeService {
                 userId: string;
                 email: string;
                 role: string;
+                name?: string;
               };
               userId = decoded.userId;
+              userEmail = decoded.email;
+              userName = decoded.name || decoded.email.split('@')[0];
+              isAuthenticated = true;
+
+              // Verify project access
+              const { checkProjectAccess } = await import('../middleware/resource-auth.middleware');
+              const access = await checkProjectAccess(userId, projectId);
+
+              if (!access.allowed) {
+                this.sendToClient(ws, {
+                  type: 'error',
+                  message: 'Access denied: you do not have permission to access this project',
+                });
+                ws.close(4003, 'Access denied');
+                return;
+              }
+
               this.sendToClient(ws, {
                 type: 'users-list',
                 users: [],
@@ -216,13 +255,27 @@ export class RealTimeService {
             break;
           }
 
-          case 'join':
-            userId = message.userId;
+          case 'join': {
+            // Require authentication before join
+            if (!isAuthenticated || !userId) {
+              this.sendToClient(ws, {
+                type: 'error',
+                message: 'Authentication required: send auth message first',
+              });
+              ws.close(4001, 'Authentication required');
+              return;
+            }
+
+            // Derive identity from verified token, NOT from client input
+            // Client can provide display name preference, but email comes from token
+            const displayName = message.userName || userName || userEmail?.split('@')[0] || 'Unknown';
+            const displayEmail = userEmail || message.userEmail || 'unknown@example.com';
+
             room = await this.joinCanvasRoom(
               projectId,
-              message.userId,
-              message.userName,
-              message.userEmail,
+              userId, // Always use token-derived userId
+              displayName,
+              displayEmail,
               ws
             );
             this.broadcastToRoom(
@@ -240,6 +293,7 @@ export class RealTimeService {
               ),
             });
             break;
+          }
 
           case 'leave':
             if (userId && room) await this.leaveCanvasRoom(room, userId);
@@ -330,6 +384,39 @@ export class RealTimeService {
               if (user) user.lastActive = Date.now();
             }
             this.sendToClient(ws, { type: 'pong' });
+            break;
+
+          // P1-10: Realtime Version History Handlers
+          case 'save-version':
+            if (userId && room && userEmail) {
+              await this.handleSaveVersion(
+                projectId,
+                message.versionId,
+                userId,
+                userEmail,
+                message.label,
+                message.description,
+                ws
+              );
+            }
+            break;
+
+          case 'get-versions':
+            if (userId && room) {
+              await this.handleGetVersions(projectId, message.limit ?? 10, ws);
+            }
+            break;
+
+          case 'restore-version':
+            if (userId && room && userEmail) {
+              await this.handleRestoreVersion(
+                projectId,
+                message.versionId,
+                userId,
+                userEmail,
+                ws
+              );
+            }
             break;
         }
       } catch (error) {
@@ -430,28 +517,152 @@ export class RealTimeService {
   // Notification Logic
   // =========================================================================
 
-  private handleNotificationConnection(ws: WebSocket, req: FastifyRequest) {
-    this.notificationClients.add(ws);
+  // P2-10: Secure Notification WebSocket - track authenticated clients with user info
+  private authenticatedNotificationClients = new Map<
+    WebSocket,
+    { userId: string; email: string; workspaceIds: string[] }
+  >();
 
-    ws.on('message', (data) => {
-      // Handle subscriptions, etc.
+  private handleNotificationConnection(ws: WebSocket, req: FastifyRequest) {
+    // P2-10: Authentication is required before adding to notification clients
+    let isAuthenticated = false;
+    let userId: string | null = null;
+    let userEmail: string | null = null;
+    let userWorkspaces: string[] = [];
+
+    ws.on('message', async (data: Buffer) => {
       try {
-        const msg = JSON.parse(data.toString());
-        if (msg.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
-      } catch {}
+        const msg = JSON.parse(data.toString()) as
+          | { type: 'auth'; token: string }
+          | { type: 'ping' }
+          | { type: 'subscribe'; workspaceId: string };
+
+        switch (msg.type) {
+          case 'auth': {
+            // P2-10: Validate JWT token before allowing notification access
+            try {
+              const jwt = await import('jsonwebtoken');
+              const { getJwtAccessSecret } = await import('./auth/jwt-config');
+              const secret = getJwtAccessSecret();
+              const decoded = jwt.default.verify(msg.token, secret) as {
+                userId: string;
+                email: string;
+                role: string;
+              };
+
+              userId = decoded.userId;
+              userEmail = decoded.email;
+
+              // Get user's workspaces for scoped notifications
+              const { getPrismaClient } = await import('../database/client');
+              const prisma = getPrismaClient();
+              const memberships = await prisma.workspaceMember.findMany({
+                where: { userId },
+                select: { workspaceId: true },
+              });
+              userWorkspaces = memberships.map((m) => m.workspaceId);
+
+              // Store authenticated client
+              this.authenticatedNotificationClients.set(ws, {
+                userId,
+                email: userEmail,
+                workspaceIds: userWorkspaces,
+              });
+              isAuthenticated = true;
+
+              this.sendToClient(ws, {
+                type: 'notification',
+                payload: { message: 'Authentication successful' },
+              });
+            } catch (err) {
+              this.sendToClient(ws, {
+                type: 'error',
+                message: 'Authentication failed: invalid or expired token',
+              });
+              ws.close(4001, 'Authentication required');
+            }
+            break;
+          }
+
+          case 'ping':
+            if (isAuthenticated) {
+              this.sendToClient(ws, { type: 'pong' });
+            }
+            break;
+
+          case 'subscribe':
+            // P2-10: Verify workspace access before subscribing
+            if (!isAuthenticated || !userId) {
+              this.sendToClient(ws, {
+                type: 'error',
+                message: 'Authentication required to subscribe',
+              });
+              return;
+            }
+
+            if (!userWorkspaces.includes(msg.workspaceId)) {
+              this.sendToClient(ws, {
+                type: 'error',
+                message: 'Access denied: not a member of this workspace',
+              });
+              return;
+            }
+
+            // Subscription successful
+            this.sendToClient(ws, {
+              type: 'notification',
+              payload: { message: `Subscribed to workspace ${msg.workspaceId}` },
+            });
+            break;
+        }
+      } catch {
+        // Invalid message format
+      }
     });
 
     ws.on('close', () => {
-      this.notificationClients.delete(ws);
+      this.authenticatedNotificationClients.delete(ws);
     });
+
+    // P2-10: Require auth within 10 seconds or close connection
+    setTimeout(() => {
+      if (!isAuthenticated && ws.readyState === WebSocket.OPEN) {
+        this.sendToClient(ws, {
+          type: 'error',
+          message: 'Authentication timeout',
+        });
+        ws.close(4001, 'Authentication timeout');
+      }
+    }, 10000);
   }
 
-  public broadcastNotification(payload: unknown) {
+  /**
+   * P2-10: Broadcast notification only to authenticated, authorized clients
+   * @param payload - Notification payload
+   * @param options - Optional filters (workspaceId, userId)
+   */
+  public broadcastNotification(
+    payload: unknown,
+    options?: { workspaceId?: string; userId?: string }
+  ) {
     const msg = JSON.stringify({ type: 'notification', payload });
-    for (const client of this.notificationClients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(msg);
+
+    for (const [client, userInfo] of this.authenticatedNotificationClients) {
+      if (client.readyState !== WebSocket.OPEN) continue;
+
+      // P2-10: Filter by workspace if specified
+      if (options?.workspaceId) {
+        if (!userInfo.workspaceIds.includes(options.workspaceId)) {
+          continue;
+        }
       }
+
+      // P2-10: Filter by user if specified
+      if (options?.userId && userInfo.userId !== options.userId) {
+        continue;
+      }
+
+      client.send(msg);
     }
   }
 
@@ -562,4 +773,201 @@ export class RealTimeService {
       }
     }
   }
+
+  // ============================================================================
+  // P1-10: Realtime Version History Methods
+  // ============================================================================
+
+  /**
+   * Handle save-version message from client
+   * Saves current canvas state as a version snapshot
+   */
+  private async handleSaveVersion(
+    projectId: string,
+    versionId: string,
+    userId: string,
+    userEmail: string,
+    label?: string,
+    description?: string,
+    ws?: WebSocket
+  ): Promise<void> {
+    try {
+      const { getPrismaClient } = await import('../database/client');
+      const prisma = getPrismaClient();
+
+      // Get current canvas document
+      const doc = await (prisma as unknown).canvasDocument.findFirst({
+        where: { projectId },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      if (!doc) {
+        if (ws) {
+          this.sendToClient(ws, {
+            type: 'version-error',
+            message: 'No canvas document found for this project',
+          });
+        }
+        return;
+      }
+
+      // Parse content to get node/connection counts
+      let content: Record<string, unknown> = {};
+      try {
+        content = typeof doc.content === 'string' ? JSON.parse(doc.content) : (doc.content ?? {});
+      } catch {
+        content = {};
+      }
+
+      const nodes = (content.nodes as Record<string, unknown>) ?? {};
+      const connections = (content.connections as unknown[]) ?? [];
+
+      // Create version record in Redis for realtime access
+      const versionInfo: VersionInfo = {
+        versionId,
+        timestamp: Date.now(),
+        savedBy: userId,
+        savedByName: userEmail.split('@')[0],
+        label,
+        description,
+        nodeCount: Object.keys(nodes).length,
+        connectionCount: connections.length,
+      };
+
+      // Store version metadata in Redis (content stays in database)
+      await redisCanvasRoomStore.saveVersion(projectId, versionInfo, doc.content);
+
+      // Notify all collaborators in the room
+      const room = this.canvasRooms.get(projectId);
+      if (room) {
+        this.broadcastToRoom(
+          room,
+          {
+            type: 'version-saved',
+            versionId,
+            timestamp: versionInfo.timestamp,
+            savedBy: userId,
+          },
+          userId
+        );
+      }
+
+      // Also notify the sender
+      if (ws) {
+        this.sendToClient(ws, {
+          type: 'version-saved',
+          versionId,
+          timestamp: versionInfo.timestamp,
+          savedBy: userId,
+        });
+      }
+
+      console.info(`[RealTimeService] Version saved: ${versionId} for project ${projectId}`);
+    } catch (error) {
+      console.error('[RealTimeService] handleSaveVersion error:', error);
+      if (ws) {
+        this.sendToClient(ws, {
+          type: 'version-error',
+          message: 'Failed to save version',
+        });
+      }
+    }
+  }
+
+  /**
+   * Handle get-versions message from client
+   * Returns list of saved versions for the project
+   */
+  private async handleGetVersions(
+    projectId: string,
+    limit: number,
+    ws: WebSocket
+  ): Promise<void> {
+    try {
+      // Get versions from Redis
+      const versions = await redisCanvasRoomStore.getVersions(projectId, limit);
+
+      this.sendToClient(ws, {
+        type: 'versions-list',
+        versions: versions || [],
+      });
+    } catch (error) {
+      console.error('[RealTimeService] handleGetVersions error:', error);
+      this.sendToClient(ws, {
+        type: 'version-error',
+        message: 'Failed to retrieve versions',
+      });
+    }
+  }
+
+  /**
+   * Handle restore-version message from client
+   * Restores canvas to a previous version
+   */
+  private async handleRestoreVersion(
+    projectId: string,
+    versionId: string,
+    userId: string,
+    userEmail: string,
+    ws: WebSocket
+  ): Promise<void> {
+    try {
+      const { getPrismaClient } = await import('../database/client');
+      const prisma = getPrismaClient();
+
+      // Get version content from Redis
+      const versionData = await redisCanvasRoomStore.getVersion(projectId, versionId);
+
+      if (!versionData) {
+        this.sendToClient(ws, {
+          type: 'version-error',
+          message: `Version ${versionId} not found`,
+        });
+        return;
+      }
+
+      // Update canvas document with restored content
+      await (prisma as unknown).canvasDocument.updateMany({
+        where: { projectId },
+        data: {
+          content: versionData.content,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Notify all collaborators about the restore
+      const room = this.canvasRooms.get(projectId);
+      if (room) {
+        this.broadcastToRoom(
+          room,
+          {
+            type: 'version-restored',
+            versionId,
+            timestamp: Date.now(),
+            restoredBy: userId,
+          },
+          userId
+        );
+      }
+
+      // Notify the restorer
+      this.sendToClient(ws, {
+        type: 'version-restored',
+        versionId,
+        timestamp: Date.now(),
+        restoredBy: userId,
+      });
+
+      console.info(`[RealTimeService] Version restored: ${versionId} for project ${projectId}`);
+    } catch (error) {
+      console.error('[RealTimeService] handleRestoreVersion error:', error);
+      this.sendToClient(ws, {
+        type: 'version-error',
+        message: 'Failed to restore version',
+      });
+    }
+  }
+
+  // In-memory storage for canvas rooms (used for broadcasting)
+  private canvasRooms = new Map<string, CanvasRoom>();
 }

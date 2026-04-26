@@ -216,7 +216,7 @@ describe('WebSocket /tail/events — backend proxy contract', () => {
     await new Promise<void>((resolve) => backendWss.close(() => resolve()));
   });
 
-  it('forwards a message from backend to connected client', async () => {
+  it('forwards a message from backend to connected client', { timeout: 10_000 }, async () => {
     backendWss.once('connection', (serverSide) => {
       serverSide.send('{"event":"forwarded"}');
     });
@@ -225,13 +225,14 @@ describe('WebSocket /tail/events — backend proxy contract', () => {
     const message = await new Promise<string>((resolve, reject) => {
       client.once('message', (data) => resolve(data.toString()));
       client.once('error', reject);
+      setTimeout(() => reject(new Error('Timeout: no message received')), 8_000);
     });
     client.close();
 
     expect(JSON.parse(message)).toEqual({ event: 'forwarded' });
   });
 
-  it('propagates backend close to the client with code 1000', async () => {
+  it('propagates backend close to the client with code 1000', { timeout: 10_000 }, async () => {
     backendWss.once('connection', (serverSide) => {
       serverSide.close(1000, 'Backend closed connection');
     });
@@ -240,21 +241,27 @@ describe('WebSocket /tail/events — backend proxy contract', () => {
     const code = await new Promise<number>((resolve, reject) => {
       client.once('close', (c) => resolve(c));
       client.once('error', reject);
+      setTimeout(() => reject(new Error('Timeout: client close event not received')), 8_000);
     });
 
     // Gateway maps backend close → client close; 1000 = normal close
     expect(code).toBe(1000);
   });
 
-  it('relays a message from client to the backend', async () => {
-    const backendReceived = new Promise<string>((resolve) => {
+  it('relays a message from client to the backend', { timeout: 10_000 }, async () => {
+    const backendReceived = new Promise<string>((resolve, reject) => {
       backendWss.once('connection', (serverSide) => {
         serverSide.once('message', (data) => resolve(data.toString()));
       });
+      setTimeout(() => reject(new Error('Timeout: backend did not receive client message')), 8_000);
     });
 
     const client = new WebSocket(`${gatewayBaseUrl}/tail/events?token=${validToken()}`);
-    await new Promise<void>((resolve) => { client.once('open', resolve); });
+    await new Promise<void>((resolve, reject) => {
+      client.once('open', resolve);
+      client.once('error', reject);
+      setTimeout(() => reject(new Error('Timeout: client did not connect')), 8_000);
+    });
     client.send('{"client":"ping"}');
 
     const received = await backendReceived;

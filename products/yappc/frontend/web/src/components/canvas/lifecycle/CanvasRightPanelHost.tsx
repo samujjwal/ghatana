@@ -125,6 +125,20 @@ const PanelLoadingFallback: React.FC = () => (
     </div>
 );
 
+// P2-8: Read-only fallback when save handler is not available
+const ReadOnlyPanelFallback: React.FC<{ title: string; reason: string }> = ({ title, reason }) => (
+    <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-grey-100 dark:bg-grey-800 flex items-center justify-center mb-4">
+            <svg className="w-6 h-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+        <h3 className="text-sm font-medium text-text-primary mb-1">{title}</h3>
+        <p className="text-xs text-text-secondary mb-2">Read-only mode</p>
+        <p className="text-xs text-text-tertiary">{reason}</p>
+    </div>
+);
+
 /**
  * Canvas Right Panel Host - URL-driven panel router.
  */
@@ -174,9 +188,24 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
     const hasPrev = currentIndex > 0;
     const hasNext = currentIndex < PANEL_ORDER.length - 1 && currentIndex >= 0;
 
-    // Default handlers for when dataContext doesn't provide them
-    const noOpAsync = useCallback(async () => { }, []);
-    const noOpAsyncNull = useCallback(async () => null, []);
+    // P2-8: Check which panels have persistence handlers
+    const hasSaveRequirements = !!dataContext.onSaveRequirements;
+    const hasSaveAdr = !!dataContext.onSaveAdr;
+    const hasSaveUxSpec = !!dataContext.onSaveUxSpec;
+    const hasSaveThreatModel = !!dataContext.onSaveThreatModel;
+    const hasSaveImprove = !!dataContext.onSaveImprove;
+    const hasLinkArtifacts = !!dataContext.onLinkArtifacts;
+
+    // Map panels to their save handler availability
+    const panelSaveAvailability: Record<PanelType, boolean> = {
+        artifacts: true, // Artifacts panel has its own internal handling
+        requirements: hasSaveRequirements,
+        adr: hasSaveAdr,
+        'ux-spec': hasSaveUxSpec,
+        'threat-model': hasSaveThreatModel,
+        improve: hasSaveImprove,
+        traceability: hasLinkArtifacts,
+    };
 
     // Render nothing if no panel is open
     if (!currentPanel) {
@@ -255,73 +284,101 @@ export const CanvasRightPanelHost: React.FC<CanvasRightPanelHostProps> = ({
                             onOpenPanel={handleOpenPanel}
                         />
                     )}
-                    {currentPanel === 'requirements' && (
+                    {/* P2-8: Only render panels that have persistence handlers */}
+                    {currentPanel === 'requirements' && hasSaveRequirements && (
                         <RequirementsPanel
                             data={dataContext.requirements as unknown}
-                            onSave={dataContext.onSaveRequirements || noOpAsync}
+                            onSave={dataContext.onSaveRequirements!}
                             onAIAssist={dataContext.onAIAssist as unknown}
                             onClose={handleClose}
                         />
                     )}
-                    {currentPanel === 'adr' && (
+                    {currentPanel === 'requirements' && !hasSaveRequirements && (
+                        <ReadOnlyPanelFallback title="Requirements" reason="Save handler not configured" />
+                    )}
+                    {currentPanel === 'adr' && hasSaveAdr && (
                         <AdrPanel
                             data={dataContext.adr as unknown}
-                            onSave={dataContext.onSaveAdr || noOpAsync}
+                            onSave={dataContext.onSaveAdr!}
                             onAIAssist={dataContext.onAIAssist as unknown}
                             onClose={handleClose}
                         />
                     )}
-                    {currentPanel === 'ux-spec' && (
+                    {currentPanel === 'adr' && !hasSaveAdr && (
+                        <ReadOnlyPanelFallback title="Architecture Decisions" reason="Save handler not configured" />
+                    )}
+                    {currentPanel === 'ux-spec' && hasSaveUxSpec && (
                         <UxSpecPanel
                             data={dataContext.uxSpec as unknown}
-                            onSave={dataContext.onSaveUxSpec || noOpAsync}
+                            onSave={dataContext.onSaveUxSpec!}
                             onAIAssist={dataContext.onAIAssist as unknown}
                             onClose={handleClose}
                         />
                     )}
-                    {currentPanel === 'threat-model' && (
+                    {currentPanel === 'ux-spec' && !hasSaveUxSpec && (
+                        <ReadOnlyPanelFallback title="UX Specification" reason="Save handler not configured" />
+                    )}
+                    {currentPanel === 'threat-model' && hasSaveThreatModel && (
                         <ThreatModelPanel
                             data={dataContext.threatModel as unknown}
-                            onSave={dataContext.onSaveThreatModel || noOpAsync}
+                            onSave={dataContext.onSaveThreatModel!}
                             onAIAssist={dataContext.onAIAssist as unknown}
                             onClose={handleClose}
                         />
                     )}
-                    {currentPanel === 'improve' && (
+                    {currentPanel === 'threat-model' && !hasSaveThreatModel && (
+                        <ReadOnlyPanelFallback title="Threat Model" reason="Save handler not configured" />
+                    )}
+                    {currentPanel === 'improve' && hasSaveImprove && (
                         <ImprovePanel
                             enhancements={dataContext.enhancements as unknown}
                             learnings={dataContext.learnings as unknown}
-                            onSave={dataContext.onSaveImprove || noOpAsync}
+                            onSave={dataContext.onSaveImprove!}
                             onAIAssist={dataContext.onAIAssist as unknown}
                             onClose={handleClose}
                         />
                     )}
-                    {currentPanel === 'traceability' && (
+                    {currentPanel === 'improve' && !hasSaveImprove && (
+                        <ReadOnlyPanelFallback title="Improve" reason="Save handler not configured" />
+                    )}
+                    {currentPanel === 'traceability' && hasLinkArtifacts && (
                         <TraceabilityPanel
                             artifacts={dataContext.artifacts as unknown || []}
-                            onLinkArtifacts={dataContext.onLinkArtifacts || noOpAsync}
-                            onUnlinkArtifacts={dataContext.onUnlinkArtifacts || noOpAsync}
-                            onRefresh={dataContext.onRefreshArtifacts || noOpAsync}
+                            onLinkArtifacts={dataContext.onLinkArtifacts!}
+                            onUnlinkArtifacts={dataContext.onUnlinkArtifacts || (async () => {})}
+                            onRefresh={dataContext.onRefreshArtifacts || (async () => {})}
                             onAIAnalyze={dataContext.onAIAssist as unknown}
                         />
+                    )}
+                    {currentPanel === 'traceability' && !hasLinkArtifacts && (
+                        <ReadOnlyPanelFallback title="Traceability" reason="Link handler not configured" />
                     )}
                 </Suspense>
             </div>
 
-            {/* Quick Panel Navigation Tabs */}
+            {/* Quick Panel Navigation Tabs - P2-8: Disable tabs without save handlers */}
             <div className="flex items-center gap-1 px-2 py-2 border-t border-divider bg-grey-50 dark:bg-grey-800/50 overflow-x-auto">
-                {PANEL_ORDER.map((panel) => (
-                    <button
-                        key={panel}
-                        onClick={() => handleOpenPanel(panel)}
-                        className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${currentPanel === panel
-                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                                : 'text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800'
+                {PANEL_ORDER.map((panel) => {
+                    const hasHandler = panelSaveAvailability[panel];
+                    return (
+                        <button
+                            key={panel}
+                            onClick={() => hasHandler && handleOpenPanel(panel)}
+                            disabled={!hasHandler}
+                            title={hasHandler ? PANEL_TITLES[panel] : `${PANEL_TITLES[panel]} (Save handler not configured)`}
+                            className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-colors ${
+                                currentPanel === panel
+                                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                    : hasHandler
+                                        ? 'text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800'
+                                        : 'text-text-tertiary cursor-not-allowed opacity-50'
                             }`}
-                    >
-                        {PANEL_TITLES[panel]}
-                    </button>
-                ))}
+                        >
+                            {PANEL_TITLES[panel]}
+                            {!hasHandler && ' 🔒'}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

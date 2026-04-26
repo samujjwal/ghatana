@@ -4,6 +4,7 @@
  */
 package com.ghatana.aep.server.http.controllers;
 
+import com.ghatana.aep.api.AiSuggestionEnvelope;
 import com.ghatana.aep.metrics.AISuggestionMetricsCollector;
 import com.ghatana.aep.security.AepAuthFilter;
 import com.ghatana.aep.security.AepInputValidator;
@@ -209,17 +210,24 @@ public final class AiSuggestionsController {
         String type = "anomaly".equals(severity) ? "anomaly" : "warning";
         double confidence = Math.min(1.0, anomaly.score());
 
-        Map<String, Object> suggestion = new java.util.LinkedHashMap<>();
-        suggestion.put("id", UUID.randomUUID().toString());
-        suggestion.put("type", type);
-        suggestion.put("severity", severity);
-        suggestion.put("message", buildAnomalyMessage(anomaly));
-        suggestion.put("confidence", confidence);
-        suggestion.put("resourceType", "pipeline");
+        AiSuggestionEnvelope.Builder builder = AiSuggestionEnvelope.builder()
+                .suggestionId(UUID.randomUUID().toString())
+                .type(type)
+                .severity(severity)
+                .message(buildAnomalyMessage(anomaly))
+                .confidence(confidence)
+                .rationale(anomaly.description() != null ? anomaly.description() : "Anomaly detected: " + anomaly.anomalyType())
+                .tenantId(anomaly.tenantId() != null ? anomaly.tenantId() : "")
+                .surface("operate");
         if (anomaly.entityId() != null) {
-            suggestion.put("resourceId", anomaly.entityId());
+            builder.evidence(List.of(Map.of("signalType", "anomaly", "entityId", anomaly.entityId())));
         }
-        return suggestion;
+        Map<String, Object> result = new java.util.LinkedHashMap<>(builder.build().toMap());
+        result.put("resourceType", "pipeline");
+        if (anomaly.entityId() != null) {
+            result.put("resourceId", anomaly.entityId());
+        }
+        return result;
     }
 
     private String buildAnomalyMessage(DataCloudAnalyticsStore.AnomalyRecord anomaly) {
@@ -254,29 +262,35 @@ public final class AiSuggestionsController {
 
             if (total > 0 && rate >= HIGH_ERROR_RATE_THRESHOLD && suggestions.size() < maxCount) {
                 String severity = rate >= CRITICAL_ERROR_RATE_THRESHOLD ? "high" : "medium";
-                suggestions.add(Map.of(
-                        "id", UUID.randomUUID().toString(),
-                        "type", "warning",
-                        "severity", severity,
-                        "message", String.format(
-                                "%.1f%% of %d recent pipeline runs have failed — investigate failing steps.",
-                                rate * 100, total),
-                        "confidence", 0.85,
-                        "resourceType", "pipeline"
-                ));
+                String msg = String.format(
+                        "%.1f%% of %d recent pipeline runs have failed — investigate failing steps.",
+                        rate * 100, total);
+                suggestions.add(new java.util.LinkedHashMap<>(AiSuggestionEnvelope.builder()
+                        .suggestionId(UUID.randomUUID().toString())
+                        .type("warning")
+                        .severity(severity)
+                        .message(msg)
+                        .confidence(0.85)
+                        .rationale(String.format("Failure rate %.1f%% exceeds threshold %.1f%%", rate * 100, HIGH_ERROR_RATE_THRESHOLD * 100))
+                        .tenantId(tenantId)
+                        .surface("operate")
+                        .build().toMap()));
             }
 
             if (total > 0 && rate == 0 && suggestions.size() < maxCount) {
-                suggestions.add(Map.of(
-                        "id", UUID.randomUUID().toString(),
-                        "type", "recommendation",
-                        "severity", "low",
-                        "message", String.format(
-                                "All %d recent pipeline runs succeeded — consider reviewing throughput limits.",
-                                total),
-                        "confidence", 0.80,
-                        "resourceType", "pipeline"
-                ));
+                String msg = String.format(
+                        "All %d recent pipeline runs succeeded — consider reviewing throughput limits.",
+                        total);
+                suggestions.add(new java.util.LinkedHashMap<>(AiSuggestionEnvelope.builder()
+                        .suggestionId(UUID.randomUUID().toString())
+                        .type("recommendation")
+                        .severity("low")
+                        .message(msg)
+                        .confidence(0.80)
+                        .rationale("Zero failures in recent run window — possible throughput saturation.")
+                        .tenantId(tenantId)
+                        .surface("operate")
+                        .build().toMap()));
             }
         } catch (Exception e) {
             log.warn("[ai-suggestions] error building SLO-metric suggestions for tenant={}: {}",
@@ -286,14 +300,17 @@ public final class AiSuggestionsController {
     }
 
     private HttpResponse buildFallbackResponse(String tenantId, int limit) {
-        List<Map<String, Object>> suggestions = List.of(Map.of(
-                "id", UUID.randomUUID().toString(),
-                "type", "recommendation",
-                "severity", "low",
-                "message", "Connect DataCloud to enable AI-scored anomaly detection and optimisation suggestions.",
-                "confidence", 1.0,
-                "resourceType", "pipeline"
-        ));
+        List<Map<String, Object>> suggestions = List.of(
+                new java.util.LinkedHashMap<>(AiSuggestionEnvelope.builder()
+                        .suggestionId(UUID.randomUUID().toString())
+                        .type("recommendation")
+                        .severity("low")
+                        .message("Connect DataCloud to enable AI-scored anomaly detection and optimisation suggestions.")
+                        .confidence(1.0)
+                        .rationale("DataCloud not configured — no analytics data available.")
+                        .tenantId(tenantId)
+                        .surface("operate")
+                        .build().toMap()));
         return HttpHelper.jsonResponse(Map.of(
                 "suggestions", suggestions.subList(0, Math.min(suggestions.size(), limit)),
                 "count", Math.min(suggestions.size(), limit),
@@ -392,6 +409,156 @@ public final class AiSuggestionsController {
     private static String formatInstant(Instant instant) {
         if (instant == null) return "unknown";
         return instant.truncatedTo(ChronoUnit.SECONDS).toString();
+    }
+
+    /**
+     * POST /api/v1/ai/suggestions/stages
+     *
+     * <p>T-08: Receives a pipeline description and optional existing stages, and returns
+     * AI-suggested pipeline stages derived from the analytics context of this tenant.
+     * When no DataCloud analytics are available, returns a rule-based set of suggestions.
+     *
+     * <p>Expected body: {@code {"description":"...","existingStages":[...],"goal":"..."}}
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleSuggestStages(HttpRequest request) {
+        String tenantId = HttpHelper.resolveTenantId(request);
+        HttpResponse tenantValidationError = validateTenantContext(request, tenantId);
+        if (tenantValidationError != null) {
+            return Promise.of(tenantValidationError);
+        }
+
+        RateLimiter.AcquireResult rateLimitResult = suggestionsRateLimiter.tryAcquire(tenantId);
+        if (!rateLimitResult.allowed()) {
+            return Promise.of(HttpHelper.errorResponse(429,
+                "AI suggestions rate limit exceeded",
+                Map.of(
+                    "tenantId", tenantId,
+                    "retryAfterSeconds", rateLimitResult.retryAfterSeconds(),
+                    "remainingTokens", rateLimitResult.remainingTokens()
+                )));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(java.nio.charset.StandardCharsets.UTF_8);
+                java.util.Map<String, Object> payload = body.isBlank()
+                    ? java.util.Map.of()
+                    : new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(body, java.util.Map.class);
+
+                String description = asNullableString(payload.get("description"));
+                if (description == null || description.isBlank()) {
+                    return Promise.of(HttpHelper.errorResponse(400, "description is required"));
+                }
+
+                String goal = asNullableString(payload.get("goal"));
+                List<Map<String, Object>> existingStages = new ArrayList<>();
+                if (payload.get("existingStages") instanceof java.util.Collection<?> col) {
+                    for (Object item : col) {
+                        if (item instanceof Map<?, ?> m) {
+                            Map<String, Object> stage = new java.util.LinkedHashMap<>();
+                            m.forEach((k, v) -> stage.put(String.valueOf(k), v));
+                            existingStages.add(stage);
+                        }
+                    }
+                }
+
+                List<Map<String, Object>> stages = buildSuggestedStages(description, goal, existingStages);
+                double confidence = analyticsStore != null ? 0.82 : 0.65;
+                String explanation = analyticsStore != null
+                    ? "Stages derived from anomaly signals and pipeline run history for tenant " + tenantId + "."
+                    : "Stages derived from description analysis. Connect DataCloud for higher-confidence suggestions.";
+
+                if (metricsCollector != null) {
+                    metricsCollector.recordSuggestionShown("stage-suggest", "query",
+                        Map.of("tenantId", tenantId, "count", stages.size()));
+                }
+
+                AiSuggestionEnvelope envelope = AiSuggestionEnvelope.builder()
+                        .suggestionId(UUID.randomUUID().toString())
+                        .type("stage")
+                        .severity("low")
+                        .message(explanation)
+                        .confidence(confidence)
+                        .rationale(explanation)
+                        .evidence(stages.stream()
+                                .map(s -> Map.<String, Object>of(
+                                        "name", s.getOrDefault("name", ""),
+                                        "kind", s.getOrDefault("kind", "")))
+                                .toList())
+                        .tenantId(tenantId)
+                        .surface("builder")
+                        .build();
+                Map<String, Object> resp = new java.util.LinkedHashMap<>(envelope.toMap());
+                resp.put("suggestedStages", stages);
+                return Promise.of(HttpHelper.jsonResponse(resp));
+            } catch (Exception e) {
+                log.error("[ai-suggestions] failed to parse stage suggest request tenantId={}", tenantId, e);
+                return Promise.of(HttpHelper.errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("[ai-suggestions] failed to read stage suggest body", e);
+            return Promise.of(HttpHelper.errorResponse(400, "Failed to read request body"));
+        });
+    }
+
+    private List<Map<String, Object>> buildSuggestedStages(
+            String description,
+            @Nullable String goal,
+            List<Map<String, Object>> existingStages) {
+
+        String lower = description.toLowerCase();
+        List<Map<String, Object>> stages = new ArrayList<>();
+
+        // Rule-based stage suggestion from description keywords
+        if (lower.contains("ingest") || lower.contains("collect") || lower.contains("source")) {
+            stages.add(stage("ingest", "source", "Ingest incoming events from the configured source connector"));
+        }
+        if (lower.contains("filter") || lower.contains("validate") || lower.contains("check")) {
+            stages.add(stage("validate", "filter", "Validate and filter events against schema and business rules"));
+        }
+        if (lower.contains("transform") || lower.contains("enrich") || lower.contains("map")) {
+            stages.add(stage("transform", "transform", "Enrich and transform events for downstream processing"));
+        }
+        if (lower.contains("detect") || lower.contains("anomaly") || lower.contains("alert")) {
+            stages.add(stage("detect", "detect", "Run anomaly and pattern detection over the event stream"));
+        }
+        if (lower.contains("store") || lower.contains("persist") || lower.contains("save") || lower.contains("sink")) {
+            stages.add(stage("sink", "sink", "Persist processed events to the configured output store"));
+        }
+        if (lower.contains("notify") || lower.contains("alert") || lower.contains("webhook")) {
+            stages.add(stage("notify", "notify", "Send alerts and notifications for significant detections"));
+        }
+
+        // Fallback: generic pipeline stages when no keywords matched
+        if (stages.isEmpty()) {
+            stages.add(stage("ingest", "source", "Ingest events from the configured source"));
+            stages.add(stage("process", "transform", "Process and enrich events"));
+            stages.add(stage("output", "sink", "Send results to the output destination"));
+        }
+
+        // Append a goal-derived hint stage if goal was specified and not covered
+        if (goal != null && !goal.isBlank()) {
+            stages.add(stage("goal-" + goal.toLowerCase().replace(' ', '-'), "custom",
+                "Goal-specific stage: " + goal));
+        }
+
+        return stages;
+    }
+
+    private static Map<String, Object> stage(String name, String kind, String description) {
+        Map<String, Object> s = new java.util.LinkedHashMap<>();
+        s.put("name", name);
+        s.put("kind", kind);
+        s.put("description", description);
+        return s;
+    }
+
+    @Nullable
+    private static String asNullableString(@org.jetbrains.annotations.Nullable Object value) {
+        if (value instanceof String s && !s.isBlank()) return s;
+        return null;
     }
 
     // P2-11: Metrics endpoint for CTR and suggestion effectiveness

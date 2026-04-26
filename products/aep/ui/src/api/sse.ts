@@ -6,15 +6,24 @@
  *   - Exponential-backoff auto-reconnect on error or unexpected close
  *   - Clean resource management via `close()`
  *
+ * T-05: The browser `EventSource` API cannot send `Authorization` headers.
+ * Authentication is handled by:
+ *   1. Fetching a short-lived SSE token from `POST /api/v1/auth/sse-token`
+ *      using the caller-supplied bearer JWT.
+ *   2. Appending the returned token as `?token=<sseToken>` to the EventSource URL.
+ *   3. The gateway validates the token on `/events/stream` (existing `token` query-param path).
+ *
  * @doc.type api-client
- * @doc.purpose Server-Sent Events subscription for AEP real-time updates
+ * @doc.purpose Authenticated Server-Sent Events subscription for AEP real-time updates
  * @doc.layer frontend
  */
-import { API_BASE_URL } from '@/lib/http-client';
+import { API_BASE_URL, getAuthToken } from '@/lib/http-client';
 
 const KNOWN_EVENTS = ['connected', 'heartbeat', 'run.update', 'hitl_request_created', 'hitl.update', 'agent.output'] as const;
 const RECONNECT_BASE_MS = 3_000;
 const RECONNECT_MAX_MS = 30_000;
+/** SSE tokens are valid for 60 s on the backend; refresh 15 s early. */
+const SSE_TOKEN_REFRESH_MS = 45_000;
 
 export type SseEventType = (typeof KNOWN_EVENTS)[number] | string;
 
@@ -33,11 +42,49 @@ export interface SseSubscription {
   readonly connected: boolean;
 }
 
+interface SseTokenResponse {
+  token: string;
+  expiresInMs: number;
+}
+
+/**
+ * Requests a short-lived SSE token from the backend.
+ * Sends the current bearer JWT in the Authorization header so the backend can
+ * validate identity before minting the token.
+ *
+ * @param tenantId - tenant context to embed in the SSE token
+ * @returns short-lived SSE token string, or `null` on failure
+ */
+async function fetchSseToken(tenantId: string): Promise<string | null> {
+  const bearerToken = getAuthToken();
+  if (!bearerToken) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/sse-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bearerToken}`,
+      },
+      body: JSON.stringify({ tenantId }),
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return null;
+    const body = await res.json() as SseTokenResponse;
+    return typeof body.token === 'string' ? body.token : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Opens a persistent Server-Sent Events connection to the AEP event stream.
  *
  * Automatically reconnects with exponential backoff (3 s → 30 s) on network
  * errors or unexpected server closes. Call `.close()` to permanently stop.
+ *
+ * T-05: Before opening `EventSource`, fetches a short-lived SSE token from
+ * `/api/v1/auth/sse-token` using the current bearer JWT. The token is appended
+ * as `?token=` so the browser SSE connection is authenticated.
  *
  * @param tenantId  - tenant to subscribe to (forwarded as `tenantId` query param)
  * @param onMessage - called for every received SSE event
@@ -49,12 +96,11 @@ export function subscribeToAepStream(
   onMessage: SseHandler,
   onError?: SseErrorHandler,
 ): SseSubscription {
-  const url = `${API_BASE_URL}/events/stream?tenantId=${encodeURIComponent(tenantId)}`;
-
   let es: EventSource | null = null;
   let closed = false;
   let retryDelay = RECONNECT_BASE_MS;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let tokenRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Per-instance listener map so removeEventListener always references the same functions.
   const listeners = new Map<string, (e: MessageEvent) => void>();
@@ -102,24 +148,54 @@ export function subscribeToAepStream(
     reconnectTimer = setTimeout(() => {
       if (closed) return;
       retryDelay = Math.min(retryDelay * 2, RECONNECT_MAX_MS);
-      connect();
+      void connect();
     }, retryDelay);
   }
 
-  function connect(): void {
+  function scheduleTokenRefresh(): void {
     if (closed) return;
-    es = new EventSource(url);
-    attach(es);
-    // Reset backoff when the stream opens successfully.
-    es.addEventListener('connected', () => { retryDelay = RECONNECT_BASE_MS; }, { once: true });
+    tokenRefreshTimer = setTimeout(() => {
+      if (closed) return;
+      // Reconnect with a fresh SSE token before the current one expires
+      if (es) detach(es);
+      es = null;
+      void connect();
+    }, SSE_TOKEN_REFRESH_MS);
   }
 
-  connect();
+  async function connect(): Promise<void> {
+    if (closed) return;
+
+    // T-05: fetch a short-lived authenticated SSE token before opening EventSource
+    const sseToken = await fetchSseToken(tenantId);
+
+    if (closed) return;
+
+    const params = new URLSearchParams({ tenantId });
+    if (sseToken) {
+      params.set('token', sseToken);
+    } else {
+      console.warn('[sse] SSE token unavailable — stream will be unauthenticated');
+    }
+
+    const url = `${API_BASE_URL}/events/stream?${params.toString()}`;
+    es = new EventSource(url);
+    attach(es);
+
+    // Reset backoff when the stream opens successfully, and schedule token refresh.
+    es.addEventListener('connected', () => {
+      retryDelay = RECONNECT_BASE_MS;
+      scheduleTokenRefresh();
+    }, { once: true });
+  }
+
+  void connect();
 
   return {
     close() {
       closed = true;
       if (reconnectTimer !== null) clearTimeout(reconnectTimer);
+      if (tokenRefreshTimer !== null) clearTimeout(tokenRefreshTimer);
       if (es) detach(es);
       es = null;
     },

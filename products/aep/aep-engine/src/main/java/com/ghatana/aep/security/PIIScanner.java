@@ -25,15 +25,49 @@ import java.util.regex.Pattern;
  *   <li>Bank account numbers</li>
  * </ul>
  *
- * <p>This scanner can be used before event persistence to detect and log potential PII leaks.
- * For production use, consider integrating with ML-based detection for higher accuracy.
+ * <p>T-14: Enforcement is controlled by {@link PiiEnforcementPolicy}:
+ * <ul>
+ *   <li>{@code LOG} — detect and log only (no payload change)</li>
+ *   <li>{@code REDACT} — replace each matching value with a type-labelled placeholder</li>
+ *   <li>{@code BLOCK} — reject the event entirely when PII is found</li>
+ * </ul>
  *
  * @doc.type class
- * @doc.purpose Detect PII in text data using regex patterns
+ * @doc.purpose Detect and optionally enforce PII policy in event payloads
  * @doc.layer product
  * @doc.pattern Scanner
  */
 public final class PIIScanner {
+
+    /**
+     * T-14: Controls what happens when PII is detected in an event payload.
+     *
+     * <p>The active policy is resolved at startup from the {@code AEP_PII_ENFORCEMENT}
+     * environment variable. Defaults to {@code LOG} so existing behaviour is unchanged
+     * unless the operator explicitly opts in to stricter enforcement.
+     */
+    public enum PiiEnforcementPolicy {
+        /** Detect and log PII; pass the payload unchanged. */
+        LOG,
+        /** Replace each PII-matched field value with a redaction placeholder. */
+        REDACT,
+        /** Reject the entire event when any PII is found. */
+        BLOCK;
+
+        /**
+         * Resolves the active policy from the environment.
+         * Falls back to {@link #LOG} when the variable is absent or unrecognised.
+         */
+        public static PiiEnforcementPolicy resolve() {
+            String raw = System.getenv("AEP_PII_ENFORCEMENT");
+            if (raw == null || raw.isBlank()) return LOG;
+            try {
+                return valueOf(raw.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return LOG;
+            }
+        }
+    }
 
     private static final Logger log = LoggerFactory.getLogger(PIIScanner.class);
 
@@ -167,6 +201,34 @@ public final class PIIScanner {
         }
 
         return new PIIResult(hasPII, allItems);
+    }
+
+    /**
+     * T-14: Returns a sanitised copy of the map where every string-typed value that
+     * contains PII is replaced with a {@code [REDACTED:<type>]} placeholder.
+     *
+     * <p>The replacement uses the first detected PII type for each field. The original
+     * map is never mutated.
+     *
+     * @param data the original payload map
+     * @return a new map where PII-bearing string values are redacted
+     */
+    public Map<String, Object> redactMap(Map<String, Object> data) {
+        Map<String, Object> redacted = new java.util.LinkedHashMap<>(data.size());
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            if (entry.getValue() instanceof String text) {
+                PIIResult result = scan(text);
+                if (result.hasPII()) {
+                    String firstType = result.items().get(0).type();
+                    redacted.put(entry.getKey(), "[REDACTED:" + firstType.toUpperCase() + "]");
+                } else {
+                    redacted.put(entry.getKey(), entry.getValue());
+                }
+            } else {
+                redacted.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return Map.copyOf(redacted);
     }
 
     private void scanPattern(String text, Pattern pattern, String type, List<PIIItem> items) {

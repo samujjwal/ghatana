@@ -12,6 +12,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import prisma from '../db';
 import { requirePermission } from '../middleware/rbac.middleware';
+import {
+  requireWorkspaceMember,
+  requireWorkspaceOwner,
+} from '../middleware/resource-auth.middleware';
 
 // ============================================================================
 // Types
@@ -211,6 +215,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{ Params: WorkspaceParams }>(
     '/workspaces/:workspaceId',
+    { preHandler: requireWorkspaceMember() },
     async (request, reply) => {
       try {
         const { workspaceId } = request.params;
@@ -348,7 +353,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
    */
   fastify.patch<{ Params: WorkspaceParams; Body: UpdateWorkspaceBody }>(
     '/workspaces/:workspaceId',
-    { preHandler: requirePermission('workspace', 'update') },
+    { preHandler: [requirePermission('workspace', 'update'), requireWorkspaceOwner()] },
     async (request, reply) => {
       const { workspaceId } = request.params;
       const { name, description } = request.body;
@@ -371,7 +376,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
    */
   fastify.delete<{ Params: WorkspaceParams }>(
     '/workspaces/:workspaceId',
-    { preHandler: requirePermission('workspace', 'delete') },
+    { preHandler: [requirePermission('workspace', 'delete'), requireWorkspaceOwner()] },
     async (request, reply) => {
       const { workspaceId } = request.params;
 

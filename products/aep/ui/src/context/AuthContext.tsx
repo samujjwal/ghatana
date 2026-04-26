@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       authToken: authTokenState,
       sessionToken: sessionTokenState,
-      isAuthenticated: authTokenState !== null || sessionTokenState !== null,
+      isAuthenticated: authTokenState !== null,
       isBootstrappingSession,
       roles,
       hasRole,

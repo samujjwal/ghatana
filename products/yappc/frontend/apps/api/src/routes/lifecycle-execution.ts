@@ -1,19 +1,34 @@
 /**
  * Lifecycle Execution API Routes
- * 
+ *
  * Provides endpoints for persisting and retrieving lifecycle execution results
  * from the Java backend execution engine.
+ *
+ * Security features:
+ * - Signed service token authentication
+ * - Idempotency key support
+ * - Project binding verification
  *
  * @doc.type route
  * @doc.purpose Lifecycle execution persistence
  * @doc.layer product
  * @doc.pattern REST Controller
+ * @doc.security Service token auth, idempotency keys
  */
 
 import { FastifyPluginAsync } from 'fastify';
 import { type PrismaClient } from '@prisma/client';
 import { getPrismaClient } from '../database/client.js';
 import { requirePermission } from '../middleware/rbac.middleware';
+import { createHash, timingSafeEqual } from 'crypto';
+
+// In-memory idempotency store (use Redis in production)
+const idempotencyStore = new Map<string, { processedAt: Date; response: unknown }>();
+
+// Service token secret (from environment)
+function getServiceTokenSecret(): string {
+  return process.env.JAVA_BACKEND_API_KEY || '';
+}
 
 /**
  * Extended PrismaClient type that includes lifecycleExecutionResult.
@@ -87,6 +102,102 @@ interface LifecycleExecutionRequest {
   fallbacksUsed?: string[];
 }
 
+/**
+ * Verify service token from request headers
+ */
+function verifyServiceToken(request: { headers: Record<string, string | string[] | undefined> }): { valid: boolean; error?: string } {
+  const authHeader = request.headers.authorization;
+  const secret = getServiceTokenSecret();
+
+  if (!secret) {
+    return { valid: false, error: 'Service authentication not configured' };
+  }
+
+  if (!authHeader || typeof authHeader !== 'string') {
+    return { valid: false, error: 'Missing authorization header' };
+  }
+
+  // Expect: "Bearer <service-token>"
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    return { valid: false, error: 'Invalid authorization format' };
+  }
+
+  const token = parts[1];
+
+  // Simple HMAC verification (use proper JWT or signed tokens in production)
+  const expectedHash = createHash('sha256').update(secret).digest('hex');
+  const providedHash = createHash('sha256').update(token).digest('hex');
+
+  try {
+    const expected = Buffer.from(expectedHash);
+    const provided = Buffer.from(providedHash);
+
+    if (expected.length !== provided.length) {
+      return { valid: false, error: 'Invalid token' };
+    }
+
+    if (!timingSafeEqual(expected, provided)) {
+      return { valid: false, error: 'Invalid service token' };
+    }
+
+    return { valid: true };
+  } catch {
+    return { valid: false, error: 'Token verification failed' };
+  }
+}
+
+/**
+ * Get or check idempotency key
+ */
+function checkIdempotency(idempotencyKey: string): { processed: boolean; response?: unknown } {
+  const stored = idempotencyStore.get(idempotencyKey);
+  if (stored) {
+    // Clean up old entries (older than 24 hours)
+    const now = new Date();
+    const age = now.getTime() - stored.processedAt.getTime();
+    if (age > 24 * 60 * 60 * 1000) {
+      idempotencyStore.delete(idempotencyKey);
+      return { processed: false };
+    }
+    return { processed: true, response: stored.response };
+  }
+  return { processed: false };
+}
+
+/**
+ * Store idempotency key response
+ */
+function storeIdempotencyResponse(idempotencyKey: string, response: unknown): void {
+  idempotencyStore.set(idempotencyKey, {
+    processedAt: new Date(),
+    response,
+  });
+}
+
+/**
+ * Verify project binding - ensure execution belongs to claimed project
+ */
+async function verifyProjectBinding(
+  prisma: PrismaClientWithExecution,
+  executionId: string,
+  claimedProjectId: string
+): Promise<{ valid: boolean; error?: string }> {
+  // Check if execution already exists with different project
+  const existing = await prisma.lifecycleExecutionResult.findUnique({
+    where: { executionId },
+  });
+
+  if (existing && existing.projectId !== claimedProjectId) {
+    return {
+      valid: false,
+      error: `Project binding mismatch: execution ${executionId} belongs to project ${existing.projectId}, not ${claimedProjectId}`,
+    };
+  }
+
+  return { valid: true };
+}
+
 const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
   // ========================================================================
   // Lifecycle Execution Results
@@ -95,12 +206,33 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
   /**
    * POST /lifecycle-execution/results
    * Persists lifecycle execution results from Java backend
+   *
+   * Security:
+   * - Requires valid service token
+   * - Supports idempotency key for retries
+   * - Verifies project binding
    */
   fastify.post(
     '/results',
     { preHandler: requirePermission('workflow', 'create') },
     async (request, reply) => {
+      // Verify service token
+      const tokenResult = verifyServiceToken(request);
+      if (!tokenResult.valid) {
+        return reply.status(401).send({
+          error: 'Unauthorized',
+          message: tokenResult.error,
+        });
+      }
+
       const body = request.body as LifecycleExecutionRequest;
+      const idempotencyKey = (request.headers['idempotency-key'] as string) || body.executionId;
+
+      // Check idempotency
+      const idempotencyCheck = checkIdempotency(idempotencyKey);
+      if (idempotencyCheck.processed) {
+        return reply.status(200).send(idempotencyCheck.response);
+      }
 
       // Validate required fields
       if (!body.projectId || !body.executionId || !body.status) {
@@ -109,7 +241,23 @@ const lifecycleExecutionRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      // Validate projectId is not empty
+      if (!body.projectId.trim()) {
+        return reply.status(400).send({
+          error: 'Invalid projectId: cannot be empty',
+        });
+      }
+
       const prisma = getPrismaClient() as unknown as PrismaClientWithExecution;
+
+      // Verify project binding
+      const bindingCheck = await verifyProjectBinding(prisma, body.executionId, body.projectId);
+      if (!bindingCheck.valid) {
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: bindingCheck.error,
+        });
+      }
 
       try {
         // Check if execution already exists

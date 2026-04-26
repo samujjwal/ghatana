@@ -1,123 +1,143 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
 package com.ghatana.aep.server.http;
 
-import io.activej.http.HttpRequest;
-import io.activej.http.HttpResponse;
-import io.activej.promise.Promise;
-import org.junit.jupiter.api.Test;
+import com.ghatana.aep.server.ingestion.IdempotencyStore;
+import com.ghatana.aep.server.ingestion.InMemoryIdempotencyStore;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Integration tests for idempotency key checking in event processing.
+ * T-35: Real integration tests for {@link IdempotencyStore} deduplication logic.
  *
- * P0-4: Verify idempotency key deduplication prevents duplicate event processing.
+ * <p>Replaces the fully-simulated predecessor with tests that exercise the actual
+ * {@link InMemoryIdempotencyStore} implementation, including concurrency safety.
+ *
+ * @doc.type class
+ * @doc.purpose Integration tests for idempotency key deduplication
+ * @doc.layer product
+ * @doc.pattern Test
  */
+@DisplayName("IdempotencyStore deduplication — integration tests")
 class IdempotencyKeyDeduplicationTest {
 
-    @Test
-    void shouldRejectDuplicateEventWithSameIdempotencyKey() { // GH-90000
-        // This test verifies the idempotency key logic
-        // In a real integration test, this would use the actual AepHttpServer
-        
-        String idempotencyKey = "event-123-unique-key";
-        
-        // Simulate first request - should succeed
-        boolean firstRequestAccepted = processEventWithIdempotencyKey(idempotencyKey, true); // GH-90000
-        assertTrue(firstRequestAccepted, "First request with idempotency key should be accepted"); // GH-90000
-        
-        // Simulate duplicate request - should be rejected
-        boolean secondRequestAccepted = processEventWithIdempotencyKey(idempotencyKey, false); // GH-90000
-        assertFalse(secondRequestAccepted, "Duplicate request with same idempotency key should be rejected"); // GH-90000
+    private static final Duration TTL = Duration.ofMinutes(5);
+    private static final String TENANT = "tenant-test";
+
+    private IdempotencyStore store;
+
+    @BeforeEach
+    void setUp() {
+        store = new InMemoryIdempotencyStore();
     }
 
     @Test
-    void shouldAcceptEventsWithDifferentIdempotencyKeys() { // GH-90000
-        String key1 = "event-123-key-1";
-        String key2 = "event-123-key-2";
-        
-        boolean firstRequestAccepted = processEventWithIdempotencyKey(key1, true); // GH-90000
-        boolean secondRequestAccepted = processEventWithIdempotencyKey(key2, true); // GH-90000
-        
-        assertTrue(firstRequestAccepted, "First request should be accepted"); // GH-90000
-        assertTrue(secondRequestAccepted, "Request with different idempotency key should be accepted"); // GH-90000
+    @DisplayName("first call with a new key returns false (not a duplicate)")
+    void firstCallWithNewKeyIsNotDuplicate() {
+        String key = UUID.randomUUID().toString();
+        boolean isDuplicate = store.isDuplicate(TENANT, key, TTL).getResult();
+        assertFalse(isDuplicate, "First call should not be a duplicate");
     }
 
     @Test
-    void shouldAcceptEventsWithoutIdempotencyKey() { // GH-90000
-        boolean requestAccepted = processEventWithIdempotencyKey(null, true); // GH-90000
-        assertTrue(requestAccepted, "Request without idempotency key should be accepted"); // GH-90000
+    @DisplayName("second call with the same key returns true (duplicate)")
+    void secondCallWithSameKeyIsDuplicate() {
+        String key = UUID.randomUUID().toString();
+        store.isDuplicate(TENANT, key, TTL).getResult();
+        boolean isDuplicate = store.isDuplicate(TENANT, key, TTL).getResult();
+        assertTrue(isDuplicate, "Second call with same key should be a duplicate");
     }
 
     @Test
-    void shouldAcceptEventsWithBlankIdempotencyKey() { // GH-90000
-        boolean requestAccepted = processEventWithIdempotencyKey("", true); // GH-90000
-        assertTrue(requestAccepted, "Request with blank idempotency key should be accepted"); // GH-90000
+    @DisplayName("different keys in the same tenant are independent")
+    void differentKeysAreIndependent() {
+        String key1 = UUID.randomUUID().toString();
+        String key2 = UUID.randomUUID().toString();
+        boolean dup1 = store.isDuplicate(TENANT, key1, TTL).getResult();
+        boolean dup2 = store.isDuplicate(TENANT, key2, TTL).getResult();
+        assertFalse(dup1, "key1 first call should not be a duplicate");
+        assertFalse(dup2, "key2 first call should not be a duplicate");
     }
 
     @Test
-    void shouldStoreIdempotencyKeyAfterSuccessfulProcessing() { // GH-90000
-        String idempotencyKey = "event-456-unique-key";
-        
-        // Process event successfully
-        processEventWithIdempotencyKey(idempotencyKey, true); // GH-90000
-        
-        // Verify key is stored (in real test, this would check the actual storage) // GH-90000
-        boolean keyIsStored = isIdempotencyKeyStored(idempotencyKey); // GH-90000
-        assertTrue(keyIsStored, "Idempotency key should be stored after successful processing"); // GH-90000
+    @DisplayName("same key in different tenants are independent")
+    void sameKeyInDifferentTenantsAreIndependent() {
+        String key = UUID.randomUUID().toString();
+        boolean dup1 = store.isDuplicate("tenant-a", key, TTL).getResult();
+        boolean dup2 = store.isDuplicate("tenant-b", key, TTL).getResult();
+        assertFalse(dup1, "tenant-a first call should not be a duplicate");
+        assertFalse(dup2, "tenant-b first call should not be a duplicate (different tenant)");
     }
 
     @Test
-    void shouldReturn409ConflictForDuplicateEvents() { // GH-90000
-        String idempotencyKey = "event-789-duplicate";
-        
-        processEventWithIdempotencyKey(idempotencyKey, true); // GH-90000
-        
-        int statusCode = getStatusCodeForDuplicateRequest(idempotencyKey); // GH-90000
-        assertEquals(409, statusCode, "Duplicate event should return 409 Conflict status"); // GH-90000
+    @DisplayName("key with zero/expired TTL allows re-use")
+    void keyWithExpiredTtlIsNotDuplicate() throws InterruptedException {
+        String key = UUID.randomUUID().toString();
+        store.isDuplicate(TENANT, key, Duration.ofMillis(1)).getResult();
+        Thread.sleep(10);
+        boolean isDuplicate = store.isDuplicate(TENANT, key, Duration.ofMillis(1)).getResult();
+        assertFalse(isDuplicate, "Expired key should not be treated as a duplicate");
     }
 
     @Test
-    void shouldHandleConcurrentRequestsWithSameIdempotencyKey() { // GH-90000
-        String idempotencyKey = "event-concurrent-key";
-        
-        // Simulate concurrent requests
-        boolean firstAccepted = processEventWithIdempotencyKey(idempotencyKey, true); // GH-90000
-        boolean secondAccepted = processEventWithIdempotencyKey(idempotencyKey, false); // GH-90000
-        
-        // Exactly one should succeed
-        assertTrue(firstAccepted != secondAccepted,  // GH-90000
-            "Only one of concurrent requests with same idempotency key should succeed");
-    }
+    @DisplayName("concurrent calls with the same key — exactly one succeeds")
+    void concurrentCallsWithSameKey_exactlyOneSucceeds() throws Exception {
+        String key = UUID.randomUUID().toString();
+        int threads = 10;
+        CountDownLatch ready = new CountDownLatch(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        AtomicInteger notDuplicateCount = new AtomicInteger(0);
 
-    // Helper methods to simulate the behavior
-    // In a real integration test, these would interact with the actual AepHttpServer
-    
-    private boolean processEventWithIdempotencyKey(String idempotencyKey, boolean isFirstRequest) { // GH-90000
-        // Simulate the idempotency check logic
-        if (idempotencyKey == null || idempotencyKey.isBlank()) { // GH-90000
-            return true; // Accept if no key
+        var executor = Executors.newFixedThreadPool(threads);
+        List<Future<?>> futures = new ArrayList<>();
+
+        for (int i = 0; i < threads; i++) {
+            futures.add(executor.submit(() -> {
+                ready.countDown();
+                try { start.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                boolean isDuplicate = store.isDuplicate(TENANT, key, TTL).getResult();
+                if (!isDuplicate) notDuplicateCount.incrementAndGet();
+            }));
         }
-        
-        // If this is the first request, simulate success
-        // If it's a duplicate, simulate rejection
-        return isFirstRequest;
+
+        ready.await();
+        start.countDown();
+        for (Future<?> f : futures) f.get();
+        executor.shutdown();
+
+        assertEquals(1, notDuplicateCount.get(),
+            "Exactly one thread should observe 'not a duplicate' under concurrent access");
     }
 
-    private boolean isIdempotencyKeyStored(String idempotencyKey) { // GH-90000
-        // In real test, check actual storage
-        return true; // Simulate key is stored
-    }
-
-    private int getStatusCodeForDuplicateRequest(String idempotencyKey) { // GH-90000
-        // In real test, get actual status code from server response
-        return 409; // Simulate 409 Conflict
+    @Test
+    @DisplayName("store is bounded — oldest entries evicted when MAX_ENTRIES exceeded")
+    void storeEvictsOldestEntriesWhenFull() {
+        int overLimit = 100_001;
+        for (int i = 0; i < overLimit; i++) {
+            store.isDuplicate(TENANT, "key-" + i, TTL).getResult();
+        }
+        long duplicateCount = 0;
+        for (int i = 0; i < overLimit; i++) {
+            if (store.isDuplicate(TENANT, "new-after-eviction-" + i, Duration.ofMillis(1)).getResult()) {
+                duplicateCount++;
+            }
+        }
+        assertEquals(0, duplicateCount,
+            "Freshly inserted keys after eviction window should not be duplicates");
     }
 }

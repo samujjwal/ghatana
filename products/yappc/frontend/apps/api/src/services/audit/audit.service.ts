@@ -136,6 +136,208 @@ export class AuditService {
     }
     return this.prisma.auditLogEntry.count({ where });
   }
+
+  // =============================================================================
+  // Typed Audit Event Builders (P2-4: Centralized Audit Service)
+  // =============================================================================
+
+  /**
+   * Log resource creation
+   */
+  async logResourceCreate(params: {
+    actor: string;
+    actorRole: string;
+    resourceType: string;
+    resourceId: string;
+    tenantId?: string;
+    details?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    return this.log({
+      action: `${params.resourceType.toUpperCase()}_CREATED`,
+      actor: params.actor,
+      actorRole: params.actorRole,
+      resource: `${params.resourceType}/${params.resourceId}`,
+      severity: 'info',
+      details: params.details || `${params.resourceType} ${params.resourceId} created`,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      tenantId: params.tenantId,
+      success: true,
+    });
+  }
+
+  /**
+   * Log resource update
+   */
+  async logResourceUpdate(params: {
+    actor: string;
+    actorRole: string;
+    resourceType: string;
+    resourceId: string;
+    tenantId?: string;
+    changes?: Record<string, unknown>;
+    details?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    return this.log({
+      action: `${params.resourceType.toUpperCase()}_UPDATED`,
+      actor: params.actor,
+      actorRole: params.actorRole,
+      resource: `${params.resourceType}/${params.resourceId}`,
+      severity: 'info',
+      details: params.details || `${params.resourceType} ${params.resourceId} updated`,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      tenantId: params.tenantId,
+      success: true,
+      metadata: params.changes ? { changes: params.changes } : undefined,
+    });
+  }
+
+  /**
+   * Log resource deletion
+   */
+  async logResourceDelete(params: {
+    actor: string;
+    actorRole: string;
+    resourceType: string;
+    resourceId: string;
+    tenantId?: string;
+    details?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    return this.log({
+      action: `${params.resourceType.toUpperCase()}_DELETED`,
+      actor: params.actor,
+      actorRole: params.actorRole,
+      resource: `${params.resourceType}/${params.resourceId}`,
+      severity: 'warn',
+      details: params.details || `${params.resourceType} ${params.resourceId} deleted`,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      tenantId: params.tenantId,
+      success: true,
+    });
+  }
+
+  /**
+   * Log access denied
+   */
+  async logAccessDenied(params: {
+    actor: string;
+    actorRole: string;
+    resourceType: string;
+    resourceId: string;
+    action: string;
+    tenantId?: string;
+    reason: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    return this.log({
+      action: 'ACCESS_DENIED',
+      actor: params.actor,
+      actorRole: params.actorRole,
+      resource: `${params.resourceType}/${params.resourceId}`,
+      severity: 'warn',
+      details: `Access denied: ${params.action} on ${params.resourceType}/${params.resourceId}. Reason: ${params.reason}`,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      tenantId: params.tenantId,
+      success: false,
+      error: params.reason,
+    });
+  }
+
+  /**
+   * Log authentication event
+   */
+  async logAuthEvent(params: {
+    action: 'LOGIN' | 'LOGOUT' | 'REFRESH' | 'FAILED';
+    actor: string;
+    success: boolean;
+    tenantId?: string;
+    error?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    return this.log({
+      action: `AUTH_${params.action}`,
+      actor: params.actor,
+      actorRole: 'user',
+      severity: params.success ? 'info' : 'warn',
+      details: `Authentication ${params.action}: ${params.success ? 'success' : 'failed'}`,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      tenantId: params.tenantId,
+      success: params.success,
+      error: params.error,
+    });
+  }
+
+  /**
+   * Log lifecycle phase transition
+   */
+  async logLifecycleTransition(params: {
+    actor: string;
+    actorRole: string;
+    projectId: string;
+    fromPhase: string;
+    toPhase: string;
+    tenantId?: string;
+    autoApproved?: boolean;
+    ipAddress?: string;
+    userAgent?: string;
+  }) {
+    return this.log({
+      action: 'LIFECYCLE_TRANSITION',
+      actor: params.actor,
+      actorRole: params.actorRole,
+      resource: `project/${params.projectId}`,
+      severity: params.autoApproved ? 'warn' : 'info',
+      details: `Phase transition: ${params.fromPhase} → ${params.toPhase}`,
+      ipAddress: params.ipAddress,
+      userAgent: params.userAgent,
+      tenantId: params.tenantId,
+      success: true,
+      metadata: {
+        projectId: params.projectId,
+        fromPhase: params.fromPhase,
+        toPhase: params.toPhase,
+        autoApproved: params.autoApproved,
+      },
+    });
+  }
+
+  /**
+   * Infer resource from URL path
+   */
+  static inferResourceFromPath(path: string): { type: string; id?: string } | null {
+    const patterns = [
+      { regex: /^\/api\/v1\/workspaces\/([^\/]+)/, type: 'workspace' },
+      { regex: /^\/api\/v1\/projects\/([^\/]+)/, type: 'project' },
+      { regex: /^\/api\/v1\/canvas\/([^\/]+)/, type: 'canvas' },
+      { regex: /^\/api\/v1\/users\/([^\/]+)/, type: 'user' },
+      { regex: /^\/api\/v1\/lifecycle\/([^\/]+)/, type: 'lifecycle' },
+      // Legacy patterns (deprecated)
+      { regex: /^\/(?:api|v1)\/workspaces\/([^\/]+)/, type: 'workspace' },
+      { regex: /^\/(?:api|v1)\/projects\/([^\/]+)/, type: 'project' },
+      { regex: /^\/(?:api|v1)\/canvas\/([^\/]+)/, type: 'canvas' },
+    ];
+
+    for (const pattern of patterns) {
+      const match = path.match(pattern.regex);
+      if (match) {
+        return { type: pattern.type, id: match[1] };
+      }
+    }
+
+    return null;
+  }
 }
 
 // Lazy singleton

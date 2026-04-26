@@ -49,6 +49,16 @@ public final class HttpHelper {
     }
 
     /**
+     * Creates a JSON response with an explicit HTTP status code.
+     * Use for non-200 success responses (e.g. 503 readiness failure with body).
+     */
+    public static HttpResponse jsonResponse(int status, Map<String, Object> data) {
+        return RequestTraceSupport.applyTo(ResponseBuilder.status(status))
+            .json(data)
+            .build();
+    }
+
+    /**
      * Creates an error JSON response with the given HTTP status code.
      * Delegates to platform ResponseBuilder and ErrorResponse.
      */

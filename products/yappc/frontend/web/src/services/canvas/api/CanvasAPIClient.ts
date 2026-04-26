@@ -1,19 +1,85 @@
-// @ts-nocheck
 /**
  * Canvas API Client
  * 
  * HTTP client for syncing canvas data with backend server.
  * Handles authentication, retry logic, and error handling.
+ * Uses cookie-based authentication (credentials: include).
  * 
  * @doc.type service
  * @doc.purpose Backend API integration for canvas persistence
  * @doc.layer product
  * @doc.pattern Repository Pattern
+ * @doc.security Cookie-based auth, no localStorage tokens
  */
 
-import type { CanvasSnapshot } from '../CanvasPersistence';
 import { parseJsonResponse } from '@/lib/http';
-import { getAccessToken } from '../../session/SessionManager';
+
+// Local type definitions (mirror of canonical schema)
+// Source of truth: apps/api/src/domain/canvas/canvas-schema.ts
+
+export interface CanvasPosition {
+  x: number;
+  y: number;
+}
+
+export interface CanvasSize {
+  width: number;
+  height: number;
+}
+
+export interface CanvasViewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export interface CanvasNode {
+  id: string;
+  kind: 'node';
+  type: string;
+  position: CanvasPosition;
+  size?: CanvasSize;
+  data?: Record<string, unknown>;
+  label?: string;
+  description?: string;
+}
+
+export interface CanvasEdge {
+  id: string;
+  kind: 'edge';
+  type: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  label?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface CanvasState {
+  projectId: string;
+  canvasId: string;
+  nodes: CanvasNode[];
+  connections: CanvasEdge[];
+  groups: unknown[];
+  layers: unknown[];
+  viewport: CanvasViewport;
+  lastSaved?: string | null;
+}
+
+export interface CanvasSnapshot {
+  id: string;
+  projectId: string;
+  canvasId: string;
+  version: number;
+  timestamp: number;
+  data: CanvasState;
+  checksum: string;
+  label?: string;
+  description?: string;
+  author?: string;
+  tags?: string[];
+}
 
 export interface APIConfig {
     baseUrl: string;
@@ -47,22 +113,19 @@ async function readApiErrorResponse(
 export class CanvasAPIClient {
     private readonly config: Required<APIConfig>;
 
-    constructor(config: APIConfig & { baseURL?: string; maxRetries?: number; getAuthToken?: () => string | null }) {
+    constructor(config: APIConfig & { baseURL?: string; maxRetries?: number }) {
+        const baseUrl = config.baseURL ?? config.baseUrl ?? '';
+        const retryAttempts = config.maxRetries ?? config.retryAttempts ?? 3;
+        const timeout = config.timeout ?? 30000;
+        const retryDelay = config.retryDelay ?? 1000;
+        
         this.config = {
-            timeout: 30000,
-            retryAttempts: 3,
-            retryDelay: 1000,
-            baseUrl: config.baseURL ?? config.baseUrl ?? '',
-            retryAttempts: config.maxRetries ?? config.retryAttempts ?? 3,
-            timeout: config.timeout ?? 30000,
-            retryDelay: config.retryDelay ?? 1000,
+            baseUrl,
+            retryAttempts,
+            timeout,
+            retryDelay,
         };
-        if (config.getAuthToken) {
-            this._getAuthToken = config.getAuthToken;
-        }
     }
-
-    private _getAuthToken: (() => string | null) | null = null;
 
     /**
      * Save snapshot to backend
@@ -197,7 +260,8 @@ export class CanvasAPIClient {
     }
 
     /**
-     * Fetch with timeout and auth
+     * Fetch with timeout and cookie auth
+     * Uses credentials: 'include' to send httpOnly cookies automatically
      */
     private async fetch(path: string, options: RequestInit = {}): Promise<Response> {
         const controller = new AbortController();
@@ -206,9 +270,9 @@ export class CanvasAPIClient {
         try {
             const response = await fetch(`${this.config.baseUrl}${path}`, {
                 ...options,
+                credentials: 'include', // Send httpOnly cookies
                 headers: {
                     'Content-Type': 'application/json',
-                    ...this.getAuthHeaders(),
                     ...options.headers,
                 },
                 signal: controller.signal,
@@ -254,56 +318,6 @@ export class CanvasAPIClient {
         }
 
         throw lastError;
-    }
-
-    /**
-     * Get authentication headers
-     */
-    private getAuthHeaders(): Record<string, string> {
-        const headers: Record<string, string> = {};
-
-        // Get JWT token from localStorage or auth service
-        const token = this.getAuthToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        // Add API key if available
-        const apiKey = this.getApiKey();
-        if (apiKey) {
-            headers['X-API-Key'] = apiKey;
-        }
-
-        // Add content type
-        headers['Content-Type'] = 'application/json';
-
-        return headers;
-    }
-
-    /**
-     * Get authentication token from various sources
-     */
-    private getAuthToken(): string | null {
-        if (this._getAuthToken) return this._getAuthToken();
-
-        // Centralized token retrieval via SessionManager
-        return getAccessToken();
-    }
-
-    /**
-     * Get API key from environment or storage
-     */
-    private getApiKey(): string | null {
-        // Try environment variable (in development)
-        if (import.meta.env.VITE_API_KEY) {
-            return import.meta.env.VITE_API_KEY;
-        }
-
-        // Try localStorage
-        const storedKey = localStorage.getItem('api_key');
-        if (storedKey) return storedKey;
-
-        return null;
     }
 
     /**

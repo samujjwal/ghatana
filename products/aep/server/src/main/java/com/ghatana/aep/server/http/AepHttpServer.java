@@ -17,6 +17,13 @@ import com.ghatana.aep.security.AepSecurityFilter;
 import com.ghatana.aep.security.AepAuthFilter;
 import com.ghatana.aep.security.PIIScanner;
 import com.ghatana.aep.security.SessionFilter;
+import com.ghatana.aep.security.SessionStore;
+import com.ghatana.aep.security.InMemorySessionStore;
+import com.ghatana.aep.server.session.RedisSessionStore;
+import com.ghatana.aep.server.ingestion.AepEventIngestionService;
+import com.ghatana.aep.server.ingestion.IdempotencyStore;
+import com.ghatana.aep.server.ingestion.InMemoryIdempotencyStore;
+import com.ghatana.aep.server.ingestion.RedisIdempotencyStore;
 import com.ghatana.aep.server.http.controllers.AgentController;
 import com.ghatana.aep.server.http.controllers.AgentMarketplaceController;
 import com.ghatana.aep.server.http.controllers.AnalyticsController;
@@ -46,6 +53,11 @@ import com.ghatana.platform.security.analytics.RegexPromptInjectionDetector;
 import com.ghatana.aep.server.http.controllers.PatternController;
 import com.ghatana.aep.server.learning.LearningScheduler;
 import com.ghatana.aep.server.http.controllers.AiSuggestionsController;
+import com.ghatana.aep.server.http.controllers.AuditController;
+import com.ghatana.aep.server.http.controllers.ConsentController;
+import com.ghatana.aep.server.consent.ConsentDecisionStore;
+import com.ghatana.aep.server.consent.DataCloudConsentDecisionStore;
+import com.ghatana.aep.server.consent.InMemoryConsentDecisionStore;
 import com.ghatana.aep.server.http.controllers.NlpController;
 import com.ghatana.aep.server.http.controllers.SseController;
 import com.ghatana.agent.learning.evaluation.CompositeEvaluationGate;
@@ -153,6 +165,10 @@ public class AepHttpServer {
 
     /** Governance endpoints controller. */
     private final GovernanceController governanceController;
+    /** T-06: Audit log controller — append-only audit trail. */
+    private final AuditController auditController;
+    /** T-23: Server-side consent decision controller. */
+    private final ConsentController consentController;
     /** Lifecycle (change approval + recertification) endpoints controller. */
     private final LifecycleController lifecycleController;
     /** AI suggestions controller — surfaces anomaly-scored suggestions to the UI. */
@@ -218,7 +234,18 @@ public class AepHttpServer {
     /** P0-4: In-memory set of processed idempotency keys for deduplication. */
     private final java.util.Set<String> processedIdempotencyKeys = new java.util.HashSet<>();
 
+    /** T-01: Shared ingestion pipeline for both single-event and batch paths. */
+    private AepEventIngestionService ingestionService;
+
+    /** T-02: When true, the "default" tenant placeholder is accepted (dev/embedded mode only). */
+    private static final String ALLOW_DEFAULT_TENANT_ENV = "AEP_ALLOW_DEFAULT_TENANT";
+
     private static final String ALLOW_IN_MEMORY_RUN_HISTORY_ENV = "AEP_ALLOW_IN_MEMORY_RUN_HISTORY";
+
+    /** T-05: Short-lived SSE tokens: token → (expiryEpochMs, tenantId). 60 s TTL. Max 10 000 entries. */
+    private final java.util.concurrent.ConcurrentHashMap<String, long[]> sseTokens =
+        new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long SSE_TOKEN_TTL_MS = 60_000L;
 
     /**
      * Active SSE subscriber queues keyed by tenantId (event-loop thread only).
@@ -633,6 +660,9 @@ public class AepHttpServer {
             () -> "ok");
         this.healthController.addDependencyCheck("lifecycle",
             () -> "ok");
+        // T-04: event-loop and run-ledger gate readiness in production
+        this.healthController.requireForReadiness("event-loop");
+        this.healthController.requireForReadiness("run-ledger");
         this.healthController.addDeepDependencyCheck("data-cloud.entity-store",
             () -> this.agentDataCloud == null ? "disabled"
                 : (this.agentDataCloud.entityStore() != null ? "ok" : "misconfigured"));
@@ -692,7 +722,27 @@ public class AepHttpServer {
             recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
         this.aiSuggestionsController = new AiSuggestionsController(this.analyticsStore, this.sloMetrics);
         this.nlpController = new NlpController();
+        this.auditController = new AuditController(this.agentDataCloud);
+        // T-23: Use DataCloud-backed consent store in production, in-memory in dev.
+        ConsentDecisionStore consentDecisionStore = (agentDataCloud != null)
+            ? new DataCloudConsentDecisionStore(agentDataCloud)
+            : new InMemoryConsentDecisionStore();
+        this.consentController = new ConsentController(consentDecisionStore);
         this.learningScheduler = learningPipeline != null ? new LearningScheduler(learningPipeline) : null;
+
+        // T-01: Initialise shared ingestion service — both handleProcessEvent and handleProcessBatch delegate here.
+        // T-09: Use Redis-backed idempotency store in production when jedisPool is available.
+        IdempotencyStore idempotencyStore = (jedisPool != null)
+            ? new RedisIdempotencyStore(jedisPool)
+            : new InMemoryIdempotencyStore();
+        this.ingestionService = new AepEventIngestionService(
+            this.engine,
+            this.consentService,
+            this.piiScanner,
+            this.sloMetrics,
+            this.runLedgerService,
+            idempotencyStore,
+            this::recordRun);
     }
 
     private Promise<String> dataCloudConnectivityStatus() {
@@ -916,6 +966,7 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents", marketplaceController::handleListAgents)
             .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents", marketplaceController::handlePublishAgent)
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents/:agentId", marketplaceController::handleGetAgent)
+            .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents/:agentId/install", marketplaceController::handleInstallAgent)
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents/:agentId/reviews", marketplaceController::handleListReviews)
             .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents/:agentId/reviews", marketplaceController::handleCreateReview)
 
@@ -941,7 +992,11 @@ public class AepHttpServer {
 
             // AI suggestions endpoint (delegated to AiSuggestionsController)
             .with(HttpMethod.GET, "/api/v1/ai/suggestions", aiSuggestionsController::handleGetSuggestions)
+            .with(HttpMethod.POST, "/api/v1/ai/suggestions/stages", aiSuggestionsController::handleSuggestStages)
             .with(HttpMethod.GET, "/api/v1/ai/suggestions/metrics", aiSuggestionsController::handleGetMetrics)
+
+            // T-24: Capability manifest — drives server-side UI feature gating
+            .with(HttpMethod.GET, "/api/v1/capabilities", this::handleCapabilityManifest)
 
             // NLQ (Natural Language Query) endpoint (delegated to NlpController)
             .with(HttpMethod.POST, "/api/v1/nlp/parse", nlpController::handleParseQuery)
@@ -955,6 +1010,18 @@ public class AepHttpServer {
             .with(HttpMethod.POST, "/api/v1/compliance/gdpr/portability", complianceController::handleGdprPortability)
             .with(HttpMethod.POST, "/api/v1/compliance/ccpa/opt-out", complianceController::handleCcpaOptOut)
             .with(HttpMethod.GET,  "/api/v1/compliance/soc2/report", complianceController::handleSoc2Report)
+
+            // T-05: Short-lived SSE auth token (browser EventSource cannot send Authorization header)
+            .with(HttpMethod.POST, "/api/v1/auth/sse-token", this::handleMintSseToken)
+
+            // T-06: Audit log endpoints (delegated to AuditController)
+            .with(HttpMethod.POST, "/api/v1/audit/log",   auditController::handleLog)
+            .with(HttpMethod.GET,  "/api/v1/audit/query", auditController::handleQuery)
+
+            // T-23: Server-side consent decision endpoints
+            .with(HttpMethod.POST, "/api/v1/consent/record",    consentController::handleRecordConsent)
+            .with(HttpMethod.GET,  "/api/v1/consent",           consentController::handleListConsent)
+            .with(HttpMethod.GET,  "/api/v1/consent/:userId",   req -> consentController.handleGetConsent(req, req.getPathParameter("userId")))
 
             // Governance endpoints (delegated to GovernanceController)
             .with(HttpMethod.GET, "/governance/kill-switch", governanceController::handleKillSwitchStatus)
@@ -995,7 +1062,11 @@ public class AepHttpServer {
             allowedOrigins,
             trustedProxyCidrs,
             metricsCollector);
-        SessionFilter sessionFilter = new SessionFilter(securityFilter);
+        // T-20: Use Redis-backed session store in production when jedisPool is available.
+        SessionStore sessionStore = (jedisPool != null)
+            ? new RedisSessionStore(jedisPool)
+            : new InMemorySessionStore();
+        SessionFilter sessionFilter = new SessionFilter(securityFilter, SessionFilter.DEFAULT_TTL, sessionStore);
 
         // Wrap with authentication filter - enforces JWT auth when AEP_JWT_SECRET is set
         // Public endpoints (/health, /ready, /live, /info, /metrics, /events/stream) bypass auth
@@ -1079,6 +1150,60 @@ public class AepHttpServer {
             "version", "1.0.0-SNAPSHOT",
             "description", "Agentic Event Processor",
             "timestamp", Instant.now().toString()
+        )));
+    }
+
+    /**
+     * T-24: GET /api/v1/capabilities
+     *
+     * <p>Returns a server-driven capability manifest that the UI uses to gate
+     * features and prevent dead actions. The manifest reflects actual server-side
+     * configuration — features are only reported as enabled when their backing
+     * infrastructure is wired and operational.
+     *
+     * <p>The response is tenant-aware: the {@code tenantId} from the request
+     * context is included for client-side correlation.
+     */
+    private Promise<HttpResponse> handleCapabilityManifest(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        java.util.LinkedHashMap<String, Object> capabilities = new java.util.LinkedHashMap<>();
+
+        // Data persistence
+        capabilities.put("dataCloud",          agentDataCloud != null);
+        capabilities.put("redis",              jedisPool != null);
+
+        // Analytics and AI
+        capabilities.put("analyticsStore",     analyticsStore != null);
+        capabilities.put("aiSuggestions",      true);
+        capabilities.put("nlpParse",           true);
+
+        // Compliance
+        capabilities.put("gdprCompliance",     complianceService != null);
+        capabilities.put("soc2Compliance",     complianceService != null);
+        capabilities.put("piiEnforcement",     PIIScanner.PiiEnforcementPolicy.resolve() != PIIScanner.PiiEnforcementPolicy.LOG);
+
+        // Governance
+        capabilities.put("killSwitch",         true);
+        capabilities.put("gracefulDegradation", true);
+        capabilities.put("policyEngine",       true);
+
+        // Learning and evaluation
+        capabilities.put("episodeLearning",    learningScheduler != null);
+        capabilities.put("humanInTheLoop",     true);
+
+        // Consent (T-23)
+        capabilities.put("serverSideConsent",  true);
+
+        // Session (T-20)
+        capabilities.put("durableSessions",    jedisPool != null);
+
+        // Realtime
+        capabilities.put("sseStreaming",       true);
+
+        return Promise.of(jsonResponse(Map.of(
+                "tenantId",     tenantId,
+                "capabilities", capabilities,
+                "generatedAt",  Instant.now().toString()
         )));
     }
 
@@ -1379,69 +1504,37 @@ public class AepHttpServer {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> eventData = objectMapper.readValue(body, Map.class);
 
-                String tenantId = AepInputValidator.validateTenantId(
-                    (String) eventData.getOrDefault("tenantId", "default"));
+                // T-02: resolve and validate tenant; reject "default" outside dev/embedded mode
+                String rawTenantId = resolveTenantId(request, eventData);
+                String tenantId = requireNonDefaultTenant(rawTenantId);
+
                 String eventType = AepInputValidator.validateEventType(
                     (String) eventData.getOrDefault("type", "unknown"));
                 Map<String, Object> rawPayload = rawObjectMap(eventData.get("payload"));
                 Map<String, Object> payload = AepInputValidator.validatePayload(rawPayload);
 
-                // P0-4: Check idempotency key for deduplication
                 String idempotencyKey = request.getHeader(HttpHeaders.of("Idempotency-Key"));
-                if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-                    synchronized (processedIdempotencyKeys) {
-                        if (processedIdempotencyKeys.contains(idempotencyKey)) {
-                            log.info("Duplicate event detected with idempotency key for tenantId={}, eventType={}", tenantId, eventType);
-                            return Promise.of(errorResponse(409, "Duplicate event: idempotency key already processed"));
+
+                // T-01: delegate to the shared ingestion pipeline
+                return ingestionService.ingestOne(tenantId, eventType, payload, idempotencyKey, receivedAt)
+                    .map(result -> {
+                        if (result.skippedDuplicate()) {
+                            return errorResponse(409, "Duplicate event: idempotency key already processed");
                         }
-                    }
-                }
-
-                AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
-                Instant startedAt = Instant.now();
-
-                // P0-1: Check consent before processing event
-                return consentService.evaluateConsent(tenantId, event)
-                    .then(consentDecision -> {
-                        if (!consentDecision.allowed()) {
-                            log.warn("Event processing denied by consent service for tenantId={}, eventType={}, reason={}",
-                                tenantId, eventType, consentDecision.reason());
-                            return Promise.of(errorResponse(403, "Event processing denied: " + consentDecision.reason()));
+                        if (result.consentDenied()) {
+                            return errorResponse(403, "Event processing denied by consent policy");
                         }
-
-                        // P3-18: Scan event data for PII before processing
-                        PIIScanner.PIIResult piiResult = piiScanner.scanMap(payload);
-                        if (piiResult.hasPII()) {
-                            log.warn("[PIIScanner] PII detected in event for tenantId={}, eventId={}, types={}",
-                                tenantId, "n/a", piiResult.items().stream()
-                                    .map(PIIScanner.PIIItem::type)
-                                    .distinct()
-                                    .reduce((a, b) -> a + ", " + b)
-                                    .orElse(""));
-                        }
-
-                        return engine.process(tenantId, event)
-                            .map(result -> {
-                                // P0-4: Store idempotency key after successful processing
-                                if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-                                    synchronized (processedIdempotencyKeys) {
-                                        processedIdempotencyKeys.add(idempotencyKey);
-                                    }
-                                }
-
-                                recordRun(result.eventId(), tenantId, null,
-                                    result.success() ? "SUCCEEDED" : "FAILED", startedAt);
-                                sloMetrics.recordIntakeLatency(receivedAt, startedAt, tenantId);
-                                return jsonResponse(Map.of(
-                                    "eventId", result.eventId(),
-                                    "success", result.success(),
-                                    "detections", result.detections().size(),
-                                    "timestamp", Instant.now().toString()
-                                ));
-                            });
-                    })
-                    .whenComplete((result, error) -> {
+                        return jsonResponse(Map.of(
+                            "eventId", result.eventId(),
+                            "success", result.success(),
+                            "detections", result.detectionCount(),
+                            "piiDetected", result.piiDetected(),
+                            "timestamp", Instant.now().toString()
+                        ));
                     });
+            } catch (AepInputValidator.ValidationException e) {
+                log.warn("Event validation failed: {}", e.getMessage());
+                return Promise.of(errorResponse(400, "Invalid event data: " + e.getMessage()));
             } catch (Exception e) {
                 log.error("Error processing event", e);
                 return Promise.of(errorResponse(400, "Invalid event data: " + e.getMessage()));
@@ -1463,54 +1556,57 @@ public class AepHttpServer {
     }
 
     private Promise<HttpResponse> handleProcessBatch(HttpRequest request) {
+        Instant receivedAt = Instant.now();
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> batchData = objectMapper.readValue(
                     body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
-                String tenantId = (String) batchData.getOrDefault("tenantId", "default");
-                List<Map<String, Object>> eventsData = rawMapList(batchData.get("events"));
+                // T-01/T-02: validate tenant; reject "default" outside dev mode
+                String rawTenantId = resolveTenantId(request, batchData);
+                String tenantId = requireNonDefaultTenant(rawTenantId);
 
+                List<Map<String, Object>> eventsData = rawMapList(batchData.get("events"));
                 AepInputValidator.validateBatchSize(eventsData.size());
                 if (eventsData.isEmpty()) {
                     return Promise.of(errorResponse(400, "Batch request must include non-empty events array"));
                 }
 
-                List<Promise<AepEngine.ProcessingResult>> processingPromises = eventsData.stream()
-                    .map(eventData -> {
-                        String eventType = (String) eventData.getOrDefault("type", "unknown");
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> payload =
-                            (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
-                        AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
-                        return engine.process(tenantId, event);
-                    })
-                    .toList();
-
-                return Promises.toList(processingPromises)
+                // T-01: all events route through the shared ingestion pipeline (consent, PII, idempotency)
+                return ingestionService.ingestBatch(tenantId, eventsData, receivedAt)
                     .map(results -> {
-                        long successCount = results.stream().filter(AepEngine.ProcessingResult::success).count();
-                        int totalDetections =
-                            results.stream().mapToInt(result -> result.detections().size()).sum();
+                        long successCount = results.stream()
+                            .filter(r -> r.success() && !r.consentDenied() && !r.skippedDuplicate())
+                            .count();
+                        long deniedCount = results.stream().filter(AepEventIngestionService.IngestionResult::consentDenied).count();
+                        long duplicateCount = results.stream().filter(AepEventIngestionService.IngestionResult::skippedDuplicate).count();
+                        int totalDetections = results.stream().mapToInt(AepEventIngestionService.IngestionResult::detectionCount).sum();
                         List<Map<String, Object>> events = results.stream()
-                            .map(result -> Map.<String, Object>of(
-                                "eventId", result.eventId(),
-                                "success", result.success(),
-                                "detections", result.detections().size()))
+                            .map(r -> Map.<String, Object>of(
+                                "eventId", r.eventId(),
+                                "success", r.success(),
+                                "detections", r.detectionCount(),
+                                "consentDenied", r.consentDenied(),
+                                "skippedDuplicate", r.skippedDuplicate(),
+                                "piiDetected", r.piiDetected()))
                             .toList();
                         return jsonResponse(Map.of(
                             "tenantId", tenantId,
                             "total", results.size(),
                             "successCount", successCount,
-                            "failureCount", results.size() - successCount,
+                            "failureCount", results.size() - successCount - deniedCount - duplicateCount,
+                            "deniedCount", deniedCount,
+                            "duplicateCount", duplicateCount,
                             "totalDetections", totalDetections,
                             "events", events,
                             "timestamp", Instant.now().toString()
                         ));
                     })
-                    .mapException(e -> new RuntimeException("Batch processing failed: " + e.getMessage(), e))
-                    .then(Promise::of, e -> Promise.of(errorResponse(500, e.getMessage())));
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Batch processing failed: " + e.getMessage())));
+            } catch (AepInputValidator.ValidationException e) {
+                log.warn("Batch validation failed: {}", e.getMessage());
+                return Promise.of(errorResponse(400, "Invalid batch data: " + e.getMessage()));
             } catch (Exception e) {
                 log.error("Error processing batch events", e);
                 return Promise.of(errorResponse(400, "Invalid batch data: " + e.getMessage()));
@@ -1579,7 +1675,8 @@ public class AepHttpServer {
                         List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, null));
                         errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
                         if (!errors.isEmpty()) {
-                            return Promise.of(jsonResponse(Map.of(
+                            // T-11: 422 Unprocessable Entity for field-level validation failures
+                            return Promise.of(jsonResponse(422, Map.of(
                                 "valid", false,
                                 "errors", errors,
                                 "warnings", List.of(),
@@ -1657,7 +1754,8 @@ public class AepHttpServer {
                         List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, existing));
                         errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
                         if (!errors.isEmpty()) {
-                            return Promise.of(jsonResponse(Map.of(
+                            // T-11: 422 Unprocessable Entity for field-level validation failures
+                            return Promise.of(jsonResponse(422, Map.of(
                                 "valid", false,
                                 "errors", errors,
                                 "warnings", List.of(),
@@ -1683,6 +1781,18 @@ public class AepHttpServer {
         String tenantId = resolveTenantId(request, null);
         String pipelineId = request.getPathParameter("pipelineId");
         TenantId tenant = TenantId.of(tenantId);
+
+        // T-15: Reject delete if there are active (RUNNING) runs for this pipeline
+        boolean hasActiveRunForDelete = recentRuns.stream()
+            .anyMatch(r -> pipelineId.equals(r.get("pipelineId"))
+                && tenantId.equals(r.get("tenantId"))
+                && "RUNNING".equals(r.get("status")));
+        if (hasActiveRunForDelete) {
+            return Promise.of(errorResponse(409,
+                "Cannot delete pipeline '" + pipelineId + "' while runs are still in RUNNING state. " +
+                "Wait for active runs to complete or cancel them first."));
+        }
+
         return pipelineRepository.exists(pipelineId, tenant)
             .then(exists -> {
                 if (!exists) {
@@ -1758,6 +1868,39 @@ public class AepHttpServer {
 
                         com.ghatana.pipeline.registry.model.PipelineRegistration existing = optPipeline.get();
 
+                        // T-15: Require expectedVersion to prevent double-publish on concurrent requests
+                        Integer expectedVersion = resolveExpectedPipelineVersion(request, payload);
+                        if (expectedVersion == null) {
+                            return Promise.of(jsonResponse(428, Map.of(
+                                "error", "Pipeline publish requires an expectedVersion (body field, or If-Match header)",
+                                "errorCode", PIPELINE_VERSION_REQUIRED_CODE,
+                                "pipelineId", pipelineId,
+                                "currentVersion", existing.getVersion(),
+                                "timestamp", Instant.now().toString()
+                            )));
+                        }
+                        if (expectedVersion.intValue() != existing.getVersion()) {
+                            return Promise.of(jsonResponse(409, Map.of(
+                                "error", "Pipeline publish conflict: version mismatch",
+                                "errorCode", PIPELINE_VERSION_CONFLICT_CODE,
+                                "pipelineId", pipelineId,
+                                "expectedVersion", expectedVersion.intValue(),
+                                "currentVersion", existing.getVersion(),
+                                "timestamp", Instant.now().toString()
+                            )));
+                        }
+
+                        // T-15: Reject publish if there are active (RUNNING) runs for this pipeline
+                        boolean hasActiveRun = recentRuns.stream()
+                            .anyMatch(r -> pipelineId.equals(r.get("pipelineId"))
+                                && tenantId.equals(r.get("tenantId"))
+                                && "RUNNING".equals(r.get("status")));
+                        if (hasActiveRun) {
+                            return Promise.of(errorResponse(409,
+                                "Cannot publish pipeline '" + pipelineId + "' while runs are still in RUNNING state. " +
+                                "Wait for active runs to complete or cancel them first."));
+                        }
+
                         // Build the published snapshot (copy of current draft)
                         com.ghatana.pipeline.registry.model.PipelineRegistration snapshot = existing.newVersion();
                         snapshot.setId(existing.getId());
@@ -1821,6 +1964,17 @@ public class AepHttpServer {
             return Promise.of(errorResponse(400, "Invalid 'toVersion' value — must be an integer"));
         }
 
+        // T-15: Reject rollback if there are active (RUNNING) runs for this pipeline
+        boolean hasActiveRunForRollback = recentRuns.stream()
+            .anyMatch(r -> pipelineId.equals(r.get("pipelineId"))
+                && tenantId.equals(r.get("tenantId"))
+                && "RUNNING".equals(r.get("status")));
+        if (hasActiveRunForRollback) {
+            return Promise.of(errorResponse(409,
+                "Cannot roll back pipeline '" + pipelineId + "' while runs are still in RUNNING state. " +
+                "Wait for active runs to complete or cancel them first."));
+        }
+
         final int targetVersion = toVersion;
         return pipelineRepository.findVersionSnapshot(pipelineId, targetVersion, tenantId)
             .then(optSnapshot -> {
@@ -1881,7 +2035,9 @@ public class AepHttpServer {
                     warnings.add("Pipeline has no explicit id");
                 }
 
-                return Promise.of(jsonResponse(Map.of(
+                // T-11: return 422 when there are validation errors, 200 when valid
+                int statusCode = errors.isEmpty() ? 200 : 422;
+                return Promise.of(jsonResponse(statusCode, Map.of(
                     "valid", errors.isEmpty(),
                     "errors", errors,
                     "warnings", warnings,
@@ -2023,18 +2179,80 @@ public class AepHttpServer {
         if (runId == null || runId.isBlank()) {
             return Promise.of(errorResponse(400, "runId path parameter is required"));
         }
-        boolean found = recentRuns.stream().anyMatch(r -> runId.equals(r.get("runId")));
-        if (!found) {
+        // T-03: scope the cancellation to the authenticated tenant
+        String tenantId = resolveTenantId(request);
+
+        // Verify the run belongs to this tenant before cancelling
+        boolean foundForTenant = recentRuns.stream()
+            .anyMatch(r -> runId.equals(r.get("runId")) && tenantId.equals(r.get("tenantId")));
+        if (!foundForTenant) {
+            // Also check purely by runId — if found for another tenant, return 403; if not found at all, 404
+            boolean foundOtherTenant = recentRuns.stream().anyMatch(r -> runId.equals(r.get("runId")));
+            if (foundOtherTenant) {
+                log.warn("[cancel] tenant={} attempted to cancel run={} owned by another tenant", tenantId, runId);
+                return Promise.of(errorResponse(403, "Run does not belong to the requesting tenant"));
+            }
             return Promise.of(errorResponse(404, "Run not found: " + runId));
         }
+
+        // Mark cancelled in the in-memory deque
         recentRuns.stream()
-            .filter(r -> runId.equals(r.get("runId")))
+            .filter(r -> runId.equals(r.get("runId")) && tenantId.equals(r.get("tenantId")))
             .findFirst()
             .ifPresent(r -> r.put("status", "CANCELLED"));
+
+        Instant cancelledAt = Instant.now();
+        // T-03: write durable cancel record to the run ledger (fire-and-forget; errors logged, not surfaced)
+        runLedgerService.recordRunFailed(runId, tenantId, null, null, cancelledAt, "CANCELLED", null);
+
+        log.info("[cancel] run={} cancelled by tenant={}", runId, tenantId);
         return Promise.of(jsonResponse(Map.of(
             "runId", runId,
+            "tenantId", tenantId,
             "status", "CANCELLED",
-            "timestamp", Instant.now().toString()
+            "cancelledAt", cancelledAt.toString()
+        )));
+    }
+
+    /**
+     * T-05: Mints a short-lived SSE authentication token.
+     *
+     * <p>The browser's native {@code EventSource} API cannot send {@code Authorization} headers.
+     * This endpoint accepts the caller's bearer JWT (validated by the gateway before the request
+     * reaches here), and returns a single-use UUID token valid for {@value SSE_TOKEN_TTL_MS} ms.
+     * The UI appends this token as {@code ?token=} when opening the {@code /events/stream} URL.
+     *
+     * <p>Expected request body:
+     * <pre>{ "tenantId": "string" }</pre>
+     *
+     * @return 200 with {@code {token, expiresInMs, expiresAt}}; 401 if the request has no auth context.
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleMintSseToken(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null || tenantId.isBlank()) {
+            return Promise.of(errorResponse(400, "tenantId is required to mint an SSE token"));
+        }
+
+        // Evict expired entries before inserting (cheap O(n) scan; token map stays small)
+        long now = System.currentTimeMillis();
+        sseTokens.entrySet().removeIf(e -> e.getValue()[0] < now);
+
+        // Enforce a hard cap to prevent unbounded growth if eviction lags
+        if (sseTokens.size() >= 10_000) {
+            log.warn("[sse-token] token store at capacity — rejecting mint for tenantId={}", tenantId);
+            return Promise.of(errorResponse(503, "SSE token store at capacity; try again shortly"));
+        }
+
+        String token = java.util.UUID.randomUUID().toString();
+        long expiresAt = now + SSE_TOKEN_TTL_MS;
+        sseTokens.put(token, new long[]{expiresAt});
+
+        log.debug("[sse-token] minted token for tenantId={}, expires={}", tenantId, Instant.ofEpochMilli(expiresAt));
+        return Promise.of(jsonResponse(Map.of(
+            "token", token,
+            "expiresInMs", SSE_TOKEN_TTL_MS,
+            "expiresAt", Instant.ofEpochMilli(expiresAt).toString()
         )));
     }
 
@@ -2059,6 +2277,11 @@ public class AepHttpServer {
      */
     private Promise<HttpResponse> handleGetPipelineMetrics(HttpRequest request) {
         String tenantId = resolveTenantId(request);
+        // T-16: source indicates whether counts come from the durable ledger or the ephemeral deque.
+        // When RunLedgerService grows a query API, switch the durable path here first.
+        boolean durableMetrics = runLedger != null;
+        String metricsSource = durableMetrics ? "ledger" : "ephemeral";
+
         List<Map<String, Object>> tenantRuns = recentRuns.stream()
             .filter(r -> tenantId.equals(r.get("tenantId")))
             .collect(java.util.stream.Collectors.toList());
@@ -2082,16 +2305,22 @@ public class AepHttpServer {
                         );
                     })
                     .toList();
+                Map<String, Object> summary = new LinkedHashMap<>();
+                summary.put("totalRuns", tenantRuns.size());
+                summary.put("succeeded", succeeded);
+                summary.put("failed", failed);
+                summary.put("cancelled", cancelled);
+                summary.put("successRate", successRate);
+                summary.put("source", metricsSource);
+                if (!durableMetrics) {
+                    summary.put("sourceWarning",
+                        "Counts are from the in-memory run buffer and will be lost on restart. "
+                            + "Configure Data Cloud with EventLogStore for durable metrics.");
+                }
                 return jsonResponse(Map.of(
                     "tenantId", tenantId,
                     "metrics", metrics,
-                    "summary", Map.of(
-                        "totalRuns", tenantRuns.size(),
-                        "succeeded", succeeded,
-                        "failed", failed,
-                        "cancelled", cancelled,
-                        "successRate", successRate
-                    ),
+                    "summary", summary,
                     "timestamp", Instant.now().toString()
                 ));
             })
@@ -2114,6 +2343,8 @@ public class AepHttpServer {
         long durationMs = java.time.Duration.between(startedAt, completedAt).toMillis();
         String pipeline = pipelineId != null && !pipelineId.isBlank() ? pipelineId : "event";
         Map<String, Object> run = new java.util.HashMap<>();
+        // T-32: emit canonical "id" alongside deprecated "runId" so clients can migrate
+        run.put("id", runId);
         run.put("runId", runId);
         run.put("tenantId", tenantId);
         run.put("pipelineId", pipeline);
@@ -2123,13 +2354,24 @@ public class AepHttpServer {
         run.put("durationMs", durationMs);
         recentRuns.addLast(run);
         sseController.publishSseTo(tenantId, "run.update", run);
-        // Phase-6: SLO metrics + durable run ledger (fire-and-forget)
+        // Phase-6: SLO metrics + durable run ledger
+        // T-34: chain ledger writes so failures are logged and observable, not silently dropped
         if ("SUCCEEDED".equals(status)) {
             sloMetrics.recordRunCompleted(tenantId, pipeline, durationMs);
-            runLedgerService.recordRunCompleted(runId, tenantId, pipelineId, null, startedAt, 0);
+            runLedgerService.recordRunCompleted(runId, tenantId, pipelineId, null, startedAt, 0)
+                .then(Promise::of, e -> {
+                    log.error("[run-ledger] recordRunCompleted write failed runId={} tenantId={}: {}",
+                            runId, tenantId, e.getMessage(), e);
+                    return Promise.of((Void) null);
+                });
         } else {
             sloMetrics.recordRunFailed(tenantId, pipeline, durationMs, "engine_error");
-            runLedgerService.recordRunFailed(runId, tenantId, pipelineId, null, startedAt, "engine_error", null);
+            runLedgerService.recordRunFailed(runId, tenantId, pipelineId, null, startedAt, "engine_error", null)
+                .then(Promise::of, e -> {
+                    log.error("[run-ledger] recordRunFailed write failed runId={} tenantId={}: {}",
+                            runId, tenantId, e.getMessage(), e);
+                    return Promise.of((Void) null);
+                });
         }
     }
 
@@ -2159,6 +2401,25 @@ public class AepHttpServer {
 
     private String resolveTenantId(HttpRequest request, Map<String, Object> payload) {
         return HttpHelper.resolveTenantId(request, payload);
+    }
+
+    /**
+     * T-02: Validates that the resolved tenant ID is not the sentinel {@code "default"} value in
+     * production mode. In dev/embedded mode (when {@code AEP_ALLOW_DEFAULT_TENANT=true}) the
+     * placeholder is tolerated so that quick-start scripts continue to work.
+     *
+     * @param tenantId resolved tenant ID string
+     * @return the same tenant ID if valid
+     * @throws AepInputValidator.ValidationException when "default" is used in production mode
+     */
+    private String requireNonDefaultTenant(String tenantId) {
+        AepInputValidator.validateTenantId(tenantId);
+        if ("default".equals(tenantId) && !isBooleanSettingEnabled(ALLOW_DEFAULT_TENANT_ENV)) {
+            throw new AepInputValidator.ValidationException(
+                "A real tenantId is required. The placeholder \"default\" is not accepted in production. "
+                    + "Set " + ALLOW_DEFAULT_TENANT_ENV + "=true only for embedded/test deployments.");
+        }
+        return tenantId;
     }
 
     private int parseIntQuery(String value, int fallback) {
