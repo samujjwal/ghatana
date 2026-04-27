@@ -469,6 +469,7 @@ export function registerDefaultActions(handlers: {
   preview?: () => void;
   deploy?: () => void;
   help?: () => void;
+  whatCanIDoHere?: () => void;
 }): void {
   const defaultActions: ActionDefinition[] = [
     // Edit actions
@@ -653,6 +654,17 @@ export function registerDefaultActions(handlers: {
       context: {},
       handler: () => handlers.help?.(),
       priority: 50,
+    },
+    {
+      id: 'help.what-can-i-do',
+      label: 'What can I do here?',
+      description: 'Show context-sensitive feature guidance for the current view',
+      icon: 'help-circle',
+      category: 'help',
+      shortcut: 'mod+shift+?',
+      context: {},
+      handler: () => handlers.whatCanIDoHere?.(),
+      priority: 60,
     },
   ];
 

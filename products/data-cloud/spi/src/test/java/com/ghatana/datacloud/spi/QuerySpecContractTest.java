@@ -16,13 +16,11 @@ class QuerySpecContractTest {
     @Test
     @DisplayName("EntityStore query spec normalizes defaults and bounds")
     void entityStoreQuerySpecNormalizesDefaultsAndBounds() { // GH-90000
-        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
-                "orders",
-                null,
-                null,
-                -5,
-                0
-        );
+        EntityStore.QuerySpec spec = EntityStore.QuerySpec.builder() // GH-90000
+                .collection("orders")
+                .offset(-5)
+                .limit(0)
+                .build();
 
         assertThat(spec.collection()).isEqualTo("orders");
         assertThat(spec.filters()).isEmpty(); // GH-90000
@@ -34,13 +32,14 @@ class QuerySpecContractTest {
     @Test
     @DisplayName("EntityStore query spec rejects runaway limits")
     void entityStoreQuerySpecRejectsRunawayLimits() { // GH-90000
-        assertThatThrownBy(() -> new EntityStore.QuerySpec( // GH-90000
-                "orders",
-                List.of(), // GH-90000
-                List.of(), // GH-90000
-                0,
-                EntityStore.QuerySpec.MAX_LIMIT + 1
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> EntityStore.QuerySpec.builder() // GH-90000
+                .collection("orders")
+                .filters(List.of())
+                .sorts(List.of())
+                .offset(0)
+                .limit(EntityStore.QuerySpec.MAX_LIMIT + 1)
+                .build()
+        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
                 .hasMessageContaining("exceeds maximum allowed value");
     }
 

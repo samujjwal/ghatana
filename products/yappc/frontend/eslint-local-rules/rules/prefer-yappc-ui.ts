@@ -1,5 +1,7 @@
 /**
- * @fileoverview Rule to require @ghatana/ui components instead of custom implementations
+ * @fileoverview Rule to require @ghatana/design-system components instead of custom
+ * implementations or deprecated package aliases. Blocks all imports from @ghatana/ui
+ * and other removed packages (fix-forward policy — no backward compatibility).
  * @author YAPPC Team
  */
 
@@ -7,7 +9,26 @@ import type { Rule } from 'eslint';
 import type { Node } from 'estree';
 
 /**
- * Component names that should be imported from @ghatana/ui
+ * Forbidden (deprecated / removed) package names.
+ * Any import from these must be migrated to the canonical package listed in
+ * the repo copilot-instructions.md Section 32.
+ */
+const DEPRECATED_PACKAGES: ReadonlySet<string> = new Set([
+  '@ghatana/ui',
+  '@ghatana/utils',
+  '@ghatana/accessibility-audit',
+  '@ghatana/canvas-core',
+  '@ghatana/canvas-plugins',
+  '@ghatana/canvas-tools',
+  '@ghatana/canvas-react',
+  '@ghatana/canvas-chrome',
+]);
+
+/** Canonical package replacing most deprecated UI packages. */
+const CANONICAL_UI_PACKAGE = '@ghatana/design-system';
+
+/**
+ * Component names that should be imported from @ghatana/design-system
  */
 const YAPPC_UI_COMPONENTS = [
   'Button', 'Input', 'Card', 'Text', 'Select', 'Checkbox', 'Radio',
@@ -80,8 +101,9 @@ const rule: Rule.RuleModule = {
       recommended: true,
     },
     messages: {
-      preferYappcUI: 'Custom "{{componentName}}" component detected. Use @ghatana/ui instead: import { {{componentName}} } from \'@ghatana/ui\';',
-      missingImport: 'Component "{{componentName}}" is not imported from @ghatana/ui. Add: import { {{componentName}} } from \'@ghatana/ui\';',
+      preferYappcUI: 'Custom "{{componentName}}" component detected. Use @ghatana/design-system instead: import { {{componentName}} } from \'@ghatana/design-system\';',
+      missingImport: 'Component "{{componentName}}" is not imported from @ghatana/design-system. Add: import { {{componentName}} } from \'@ghatana/design-system\';',
+      deprecatedPackage: 'Import from deprecated package "{{packageName}}" is forbidden. Migrate to "{{canonical}}" (fix-forward — no backward compatibility shims).',
     },
     schema: [],
   },
@@ -95,7 +117,7 @@ const rule: Rule.RuleModule = {
     
     return {
       /**
-       * Track @ghatana/ui imports
+       * Block deprecated packages; track canonical design-system imports.
        */
       ImportDeclaration(node: Node): void {
         if (node.type !== 'ImportDeclaration') return;
@@ -103,8 +125,21 @@ const rule: Rule.RuleModule = {
         const source = node.source.type === 'Literal' && typeof node.source.value === 'string'
           ? node.source.value
           : '';
+
+        // Block deprecated packages — no compatibility shims (fix-forward policy)
+        if (DEPRECATED_PACKAGES.has(source)) {
+          context.report({
+            node,
+            messageId: 'deprecatedPackage',
+            data: {
+              packageName: source,
+              canonical: CANONICAL_UI_PACKAGE,
+            },
+          });
+          return;
+        }
         
-        if (source === '@ghatana/design-system' || source.startsWith('@ghatana/yappc-shared-ui-core/')) {
+        if (source === CANONICAL_UI_PACKAGE || source.startsWith('@ghatana/design-system/')) {
           node.specifiers.forEach((specifier) => {
             if (specifier.type === 'ImportSpecifier') {
               const importedName = specifier.imported.type === 'Identifier'
@@ -132,7 +167,7 @@ const rule: Rule.RuleModule = {
         if (isLikelyDuplicateComponent(node)) {
           localComponents.set(componentName, node);
           
-          // Only report if NOT imported from @ghatana/ui
+          // Only report if NOT imported from @ghatana/design-system
           if (!yappcUIImports.has(componentName)) {
             context.report({
               node: node.id,
@@ -161,7 +196,7 @@ const rule: Rule.RuleModule = {
         if (isLikelyDuplicateComponent(node)) {
           localComponents.set(componentName, node);
           
-          // Only report if NOT imported from @ghatana/ui
+          // Only report if NOT imported from @ghatana/design-system
           if (!yappcUIImports.has(componentName)) {
             context.report({
               node: node.id,
@@ -185,7 +220,7 @@ const rule: Rule.RuleModule = {
         
         // Check if using a known component that should be from @ghatana/ui
         if (YAPPC_UI_COMPONENTS.includes(componentName)) {
-          // If not imported from @ghatana/yappc-ui and not declared locally
+          // If not imported from @ghatana/design-system and not declared locally
           if (!yappcUIImports.has(componentName) && !localComponents.has(componentName)) {
             context.report({
               node: node.name,

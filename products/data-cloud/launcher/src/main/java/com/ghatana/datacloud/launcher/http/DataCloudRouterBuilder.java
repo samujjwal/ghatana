@@ -100,6 +100,7 @@ public class DataCloudRouterBuilder {
             EntityValidationHandler validationHandler) {
         builder
             .with(HttpMethod.GET, "/api/v1/collections", entityHandler::handleListCollections)
+            .with(HttpMethod.POST, "/api/v1/collections/:collection/metadata", entityHandler::handleUpsertCollectionMetadata)
             .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", sseHandler::handleEntityCdcStream)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/search", entityHandler::handleFullTextSearch)
@@ -112,6 +113,7 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/entities/:collection/batch", entityHandler::handleBatchSaveEntities)
             .with(HttpMethod.DELETE, "/api/v1/entities/:collection/batch", entityHandler::handleBatchDeleteEntities)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/export", exportHandler::handleExportEntitiesWithApproval)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
             .with(HttpMethod.GET, "/api/v1/anomalies", anomalyHandler::handleQueryAnomalies)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate", validationHandler::handleValidateEntity)
@@ -342,7 +344,8 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/governance/privacy/redact", dataLifecycleHandler::handleRedact)
             .with(HttpMethod.GET, "/api/v1/governance/privacy/pii-fields", dataLifecycleHandler::handleListPiiFields)
             .with(HttpMethod.GET, "/api/v1/governance/privacy/verify", dataLifecycleHandler::handleVerifyRedaction)
-            .with(HttpMethod.GET, "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary);
+            .with(HttpMethod.GET, "/api/v1/governance/compliance/summary", dataLifecycleHandler::handleComplianceSummary)
+            .with(HttpMethod.GET, "/api/v1/governance/inventory", dataLifecycleHandler::handleGovernanceInventory);
         return this;
     }
 
@@ -489,6 +492,8 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/settings/security", settingsHandler::handleUpdateSecuritySettings)
             .with(HttpMethod.GET, "/api/v1/settings/keys", settingsHandler::handleListApiKeys)
             .with(HttpMethod.POST, "/api/v1/settings/keys", settingsHandler::handleCreateApiKey)
+            .with(HttpMethod.GET, "/api/v1/settings/keys/:id", settingsHandler::handleGetApiKey)
+            .with(HttpMethod.POST, "/api/v1/settings/keys/:id/rotate", settingsHandler::handleRotateApiKey)
             .with(HttpMethod.DELETE, "/api/v1/settings/keys/:id/revoke", settingsHandler::handleRevokeApiKey)
             .with(HttpMethod.GET, "/api/v1/settings/profile", settingsHandler::handleGetProfile)
             .with(HttpMethod.PATCH, "/api/v1/settings/profile", settingsHandler::handleUpdateProfile)

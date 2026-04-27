@@ -462,8 +462,34 @@ public final class CollectionContextHandler {
         LinkedHashMap<String, Object> governance = new LinkedHashMap<>();
         Map<String, Object> policyData = retentionPolicy.map(DataCloudClient.Entity::data).orElse(Map.of());
         Map<String, Object> metadataData = metadata.map(DataCloudClient.Entity::data).orElse(Map.of());
-        governance.put("retentionTier", firstNonBlank(policyData.get("tier"), metadataData.get("retentionTier"), "standard"));
-        governance.put("complianceStatus", firstNonBlank(policyData.get("status"), metadataData.get("complianceStatus"), "default"));
+
+        boolean hasPolicyEvidence = !policyData.isEmpty();
+        boolean hasMetadataEvidence = metadataData.containsKey("complianceStatus");
+
+        String retentionTier = firstNonBlank(policyData.get("tier"), metadataData.get("retentionTier"), "standard");
+        String complianceStatus;
+        String evidenceSource;
+
+        if (hasPolicyEvidence && hasMetadataEvidence) {
+            complianceStatus = firstNonBlank(policyData.get("status"), metadataData.get("complianceStatus"), "unknown");
+            evidenceSource = "policy_inventory+metadata";
+        } else if (hasPolicyEvidence) {
+            complianceStatus = String.valueOf(policyData.getOrDefault("status", "unknown"));
+            evidenceSource = "policy_inventory";
+        } else if (hasMetadataEvidence) {
+            complianceStatus = String.valueOf(metadataData.getOrDefault("complianceStatus", "unknown"));
+            evidenceSource = "collection_metadata";
+        } else {
+            complianceStatus = "unknown";
+            evidenceSource = "none";
+        }
+
+        governance.put("retentionTier", retentionTier);
+        governance.put("complianceStatus", complianceStatus);
+        governance.put("evidenceSource", evidenceSource);
+        if (!hasPolicyEvidence && !hasMetadataEvidence) {
+            governance.put("evidenceGap", "No policy inventory or collection metadata found for compliance assessment");
+        }
 
         List<String> piiFields = extractStringList(policyData.get("piiFields"));
         if (piiFields.isEmpty()) {

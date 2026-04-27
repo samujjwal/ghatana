@@ -3379,6 +3379,23 @@ paths:
       responses:
         "200": { description: Query execution plan. }
 
+  /api/v1/analytics/query/{queryId}/cancel:
+    post:
+      summary: Cancel a running analytics query
+      operationId: apiV1AnalyticsQueryQueryIdCancelPost
+      tags: [analytics]
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Cancellation accepted or query not running. }
+        "501": { description: Cancellation not supported by analytics engine. }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/analytics/aggregate:
     post:
       summary: Run an aggregation query
@@ -4344,6 +4361,18 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /api/v1/governance/inventory:
+    get:
+      summary: Detailed governance inventory for the tenant
+      operationId: apiV1GovernanceInventoryGet
+      tags: [governance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Governance inventory with collections, policies, holds, audit events. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   # ── Runtime capability registry and autonomy ─────────────────────────────
 
   /api/v1/capabilities:
@@ -4452,6 +4481,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/settings/keys/{id}:
+    get:
+      summary: Get a single API key by ID
+      operationId: apiV1SettingsKeysIdGet
+      tags: [settings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: API key metadata (secret excluded). }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/settings/keys/{id}/rotate:
+    post:
+      summary: Rotate API key secret
+      operationId: apiV1SettingsKeysIdRotatePost
+      tags: [settings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Rotated API key with one-time secret reveal. }
+        "404": { $ref: "#/components/responses/NotFound" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
   /api/v1/settings/keys/{id}/revoke:
@@ -5063,6 +5126,42 @@ paths:
         "200":
           description: List of collections.
         "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/collections/{collection}/metadata:
+    post:
+      summary: Upsert collection metadata in the registry
+      operationId: apiV1CollectionsCollectionMetadataPost
+      tags: [entities]
+      parameters:
+        - name: collection
+          in: path
+          required: true
+          schema: { type: string }
+          description: Collection name.
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+            description: |
+              Collection metadata payload. Allowed fields include `lifecycleStatus`, `qualityScore`,
+              `qualityMetrics`, `retentionPolicy`, `lineage`, `operationalStatus`, `label`,
+              `description`, `active`, `validationSchema`, `storageProfile`, `physicalMapping`,
+              `schemaVersion`. `lifecycleStatus` must be one of DRAFT, PUBLISHED, DEPRECATED, ARCHIVED.
+              `operationalStatus` must be one of healthy, degraded, unavailable, maintenance.
+              `qualityScore` must be a number between 0.0 and 1.0.
+      responses:
+        "200":
+          description: Metadata upserted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/BadRequest" }
 
   /api/v1/collections/{id}/cost-report:
     get:

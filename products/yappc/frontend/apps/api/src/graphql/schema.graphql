@@ -325,6 +325,27 @@ extend type Query {
 
   # Get flow definition by ID
   flowDefinition(id: String!): FlowDefinition
+
+  # List requirements for a project
+  requirements(projectId: ID!, status: String): [Requirement!]!
+
+  # Get a single requirement by ID
+  requirement(id: ID!): Requirement
+
+  # List approval requests for a project (optionally filter by status)
+  approvalRequests(projectId: ID!, status: String): [ApprovalRequest!]!
+
+  # List agent runs for a project (optionally filter by requirementId)
+  agentRuns(projectId: ID!, requirementId: ID): [AgentRun!]!
+
+  # List export artifacts for a project
+  exportArtifacts(projectId: ID!): [ExportArtifact!]!
+
+  # Get an export artifact by ID
+  exportArtifact(id: ID!): ExportArtifact
+
+  # Global search across requirements, projects, pages and canvas documents
+  globalSearch(workspaceId: ID!, query: String!, limit: Int): GlobalSearchResults!
 }
 
 type FlowDefinition {
@@ -332,4 +353,195 @@ type FlowDefinition {
   initialState: String!
   states: JSON!
   guards: [String!]
+}
+
+# ============================================================================
+# REQUIREMENT LIFECYCLE TYPES
+# ============================================================================
+
+type Requirement {
+  id: ID!
+  projectId: ID!
+  title: String!
+  description: String
+  status: String!
+  type: String
+  priority: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  versions: [RequirementVersion!]!
+  approvalRequests: [ApprovalRequest!]!
+  agentRuns: [AgentRun!]!
+}
+
+type RequirementVersion {
+  id: ID!
+  requirementId: ID!
+  version: Int!
+  title: String!
+  description: String
+  metadata: JSON
+  changeSummary: String
+  createdAt: DateTime!
+}
+
+type ApprovalRequest {
+  id: ID!
+  projectId: ID!
+  requirementId: ID
+  requesterId: ID!
+  reviewerId: ID
+  requestedAction: String!
+  status: String!
+  decisionReason: String
+  createdAt: DateTime!
+  reviewedAt: DateTime
+  updatedAt: DateTime!
+}
+
+type AgentRun {
+  id: ID!
+  projectId: ID!
+  requirementId: ID
+  triggeredById: ID!
+  agentName: String!
+  status: String!
+  stage: String!
+  retryCount: Int!
+  input: JSON
+  output: JSON
+  errorMessage: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  startedAt: DateTime
+  completedAt: DateTime
+}
+
+# ============================================================================
+# EXPORT TYPES
+# ============================================================================
+
+enum ExportFormat {
+  JSON
+  MARKDOWN
+  PDF
+  ZIP
+  HTML
+}
+
+enum ExportStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+type ExportArtifact {
+  id: ID!
+  projectId: ID!
+  createdById: ID!
+  format: ExportFormat!
+  status: ExportStatus!
+  includeRequirements: Boolean!
+  includeDiagrams: Boolean!
+  includeCode: Boolean!
+  downloadUrl: String
+  errorMessage: String
+  createdAt: DateTime!
+  completedAt: DateTime
+}
+
+# ============================================================================
+# GLOBAL SEARCH TYPES
+# ============================================================================
+
+type SearchResultItem {
+  id: ID!
+  category: String!
+  title: String!
+  description: String
+  path: String!
+  score: Float!
+}
+
+type GlobalSearchResults {
+  query: String!
+  totalCount: Int!
+  items: [SearchResultItem!]!
+}
+
+# ============================================================================
+# BULK OPERATION RESULT TYPE
+# ============================================================================
+
+type BulkOperationResult {
+  id: ID!
+  success: Boolean!
+  error: String
+}
+
+# ============================================================================
+# AI ENRICHMENT MUTATIONS
+# ============================================================================
+
+extend type Mutation {
+  # Submit a requirement for AI enrichment (normalisation + acceptance criteria + story trace)
+  enrichRequirement(requirementId: ID!): Requirement!
+
+  # Bulk approve multiple approval requests (returns per-item results)
+  bulkApproveRequirements(
+    approvalRequestIds: [ID!]!
+    reason: String
+  ): [BulkOperationResult!]!
+
+  # Bulk reject multiple approval requests (returns per-item results)
+  bulkRejectRequirements(
+    approvalRequestIds: [ID!]!
+    reason: String!
+  ): [BulkOperationResult!]!
+
+  # Submit a requirement for review
+  submitRequirement(
+    projectId: ID!
+    title: String!
+    description: String!
+    type: String
+    priority: String
+    requiresApproval: Boolean
+  ): Requirement!
+
+  # Approve a requirement via its approval request
+  approveRequirement(approvalRequestId: ID!, reason: String): ApprovalRequest!
+
+  # Reject a requirement via its approval request
+  rejectRequirement(approvalRequestId: ID!, reason: String!): ApprovalRequest!
+
+  # Request changes on a requirement
+  requestRequirementChanges(approvalRequestId: ID!, reason: String!): ApprovalRequest!
+
+  # Start an agent run for a project/requirement
+  startAgentRun(
+    projectId: ID!
+    requirementId: ID
+    agentName: String!
+    input: JSON
+  ): AgentRun!
+
+  # Update agent run status (called by backend agent workers)
+  updateAgentRun(
+    runId: ID!
+    status: String!
+    stage: String
+    output: JSON
+    errorMessage: String
+  ): AgentRun!
+
+  # Create an export artifact for a project
+  createExport(
+    projectId: ID!
+    format: ExportFormat!
+    includeRequirements: Boolean
+    includeDiagrams: Boolean
+    includeCode: Boolean
+  ): ExportArtifact!
 }

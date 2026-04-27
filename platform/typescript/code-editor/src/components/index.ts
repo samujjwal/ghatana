@@ -8,3 +8,5 @@
 
 export { CodeEditor } from './CodeEditor';
 export { default } from './CodeEditor';
+export { CodeDiffViewer } from './CodeDiffViewer';
+export { VisualBlockEditor } from './VisualBlockEditor';

@@ -6,6 +6,8 @@ import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
+import com.ghatana.datacloud.governance.TenantQuotaService;
+import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
@@ -25,6 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 /**
@@ -60,6 +64,14 @@ public class EntityCrudHandler {
 
     private EntitySchemaValidator schemaValidator;
     private OpenSearchConnector openSearchConnector;
+    private TenantQuotaService tenantQuotaService;
+
+    /** P0.2: In-memory idempotency key store for entity writes — bounded, tenant-scoped. */
+    private final Map<String, IdempotencyEntry> idempotencyStore = new ConcurrentHashMap<>();
+    private static final int IDEMPOTENCY_MAX_ENTRIES = 10_000;
+    private static final long IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000L; // 24 hours
+
+    private record IdempotencyEntry(Map<String, Object> responseBody, Instant storedAt) {}
 
     /**
      * Creates an entity handler with required dependencies.
@@ -86,6 +98,11 @@ public class EntityCrudHandler {
         return this;
     }
 
+    public EntityCrudHandler withTenantQuotaService(TenantQuotaService service) {
+        this.tenantQuotaService = service;
+        return this;
+    }
+
     public EntityCrudHandler withTraceSupport(TraceSpanSupport traceSupport) {
         this.traceSupport = traceSupport != null ? traceSupport : TraceSpanSupport.disabled();
         return this;
@@ -97,6 +114,52 @@ public class EntityCrudHandler {
         this.semanticIndexPort = semanticIndexPort;
         this.semanticDeletePort = semanticDeletePort;
         return this;
+    }
+
+    // ==================== Quota Enforcement ====================
+
+    /**
+     * P0.5: Check tenant quota before write operations.
+     * Returns an error promise if quota is exceeded, otherwise null.
+     */
+    private Promise<HttpResponse> checkQuotaOrNull(String tenantId,
+                                                   String operationType,
+                                                   int resourceAmount) {
+        if (tenantQuotaService == null) return null;
+        QuotaCheckResult result = tenantQuotaService.checkQuota(tenantId, operationType, resourceAmount);
+        if (!result.isAllowed()) {
+            return Promise.of(http.errorResponse(429,
+                "Quota exceeded: " + result.message() + " (quota=" + result.quotaValue()
+                    + ", used=" + result.usedAmount() + ")"));
+        }
+        return null;
+    }
+
+    // ==================== Idempotency Key Support (P0.2) ====================
+
+    private String idempotencyKey(String tenantId, String collection, String idempotencyKey) {
+        return tenantId + "/" + collection + "/" + idempotencyKey;
+    }
+
+    private Promise<HttpResponse> checkIdempotencyOrNull(String tenantId, String collection, String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) return null;
+        String key = idempotencyKey(tenantId, collection, idempotencyKey);
+        IdempotencyEntry entry = idempotencyStore.get(key);
+        if (entry != null && Instant.now().minusMillis(IDEMPOTENCY_TTL_MS).isBefore(entry.storedAt())) {
+            log.info("[idempotency] Returning cached response for key={}", key);
+            return Promise.of(http.jsonResponse(entry.responseBody()));
+        }
+        return null;
+    }
+
+    private void storeIdempotency(String tenantId, String collection, String idempotencyKey, Map<String, Object> responseBody) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) return;
+        if (idempotencyStore.size() >= IDEMPOTENCY_MAX_ENTRIES) {
+            // Evict oldest entries by removing expired ones first
+            Instant cutoff = Instant.now().minusMillis(IDEMPOTENCY_TTL_MS);
+            idempotencyStore.entrySet().removeIf(e -> e.getValue().storedAt().isBefore(cutoff));
+        }
+        idempotencyStore.put(idempotencyKey(tenantId, collection, idempotencyKey), new IdempotencyEntry(responseBody, Instant.now()));
     }
 
     // ==================== Entity CRUD ====================
@@ -115,6 +178,10 @@ public class EntityCrudHandler {
         Optional<String> collErr = ApiInputValidator.validateCollection(collection);
         if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
+        String idempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenantId, collection, idempotencyKey);
+        if (idempotencyResponse != null) return idempotencyResponse;
+
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
             request,
             resolvedTenantId,
@@ -122,7 +189,15 @@ public class EntityCrudHandler {
             traceSupport.requestSpanId(request),
             Map.of("collection", collection));
 
+        Promise<HttpResponse> quotaErr = checkQuotaOrNull(
+            resolvedTenantId, "ENTITY", 1);
+        if (quotaErr != null) return quotaErr;
+
         return request.loadBody().then(buf -> {
+            Promise<HttpResponse> quotaErr1 = checkQuotaOrNull(
+                resolvedTenantId, "ENTITY", 1);
+            if (quotaErr1 != null) return quotaErr1;
+
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
@@ -137,16 +212,17 @@ public class EntityCrudHandler {
                     }
                 }
 
+                Map<String, Object> provenanced = withProvenance(data, request, handlerSpan.spanId());
                 return traceSupport.trace(
                     request,
                     resolvedTenantId,
                     "datacloud.entity.store.save",
                     handlerSpan.spanId(),
                     Map.of("collection", collection),
-                    () -> client.save(resolvedTenantId, collection, data))
+                    () -> client.save(resolvedTenantId, collection, provenanced))
                     .then(entity -> {
                         DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved",
-                            buildCdcEnvelope(entity, "upsert"));
+                            buildCdcEnvelope(resolvedTenantId, handlerSpan.spanId(), entity, "upsert", null));
                         return traceSupport.trace(
                             request,
                             resolvedTenantId,
@@ -167,13 +243,17 @@ public class EntityCrudHandler {
                                 : semanticIndexPort.index(resolvedTenantId, collection, savedEntity)
                                     .map(ignored -> savedEntity));
                     })
-                    .map(entity -> http.jsonResponse(Map.of(
-                        "id", entity.id(),
-                        "collection", entity.collection(),
-                        "version", entity.version(),
-                        "createdAt", entity.createdAt().toString(),
-                        "timestamp", Instant.now().toString()
-                    )));
+                    .map(entity -> {
+                        Map<String, Object> responseBody = Map.of(
+                            "id", entity.id(),
+                            "collection", entity.collection(),
+                            "version", entity.version(),
+                            "createdAt", entity.createdAt().toString(),
+                            "timestamp", Instant.now().toString()
+                        );
+                        storeIdempotency(resolvedTenantId, collection, idempotencyKey, responseBody);
+                        return http.jsonResponse(responseBody);
+                    });
             } catch (Exception e) {
                 log.error("Error saving entity", e);
                 return Promise.of(http.errorResponse(400, "Invalid entity data: " + e.getMessage()));
@@ -420,6 +500,9 @@ public class EntityCrudHandler {
         Optional<String> idErr = ApiInputValidator.validateId(id);
         if (idErr.isPresent()) return Promise.of(http.errorResponse(400, idErr.get()));
 
+        Promise<HttpResponse> delQuotaErr = checkQuotaOrNull(resolvedTenantId, "ENTITY", 1);
+        if (delQuotaErr != null) return delQuotaErr;
+
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 resolvedTenantId,
@@ -448,7 +531,7 @@ public class EntityCrudHandler {
                     () -> client.delete(resolvedTenantId, collection, id))
                     .then(v -> {
                         DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted",
-                            buildDeleteCdcEnvelope(existingEntity, collection, id));
+                            buildDeleteCdcEnvelope(resolvedTenantId, handlerSpan.spanId(), existingEntity, collection, id));
                         return traceSupport.trace(
                             request,
                             resolvedTenantId,
@@ -490,6 +573,19 @@ public class EntityCrudHandler {
 
     // ==================== Bulk Entity Endpoints ====================
 
+    /**
+     * Batch entity save (upsert) endpoint.
+     *
+     * <p><b>Batch semantics</b>: Each entity in the batch is validated independently.
+     * If <em>any</em> entity fails schema validation the entire batch is rejected with
+     * {@code 422}.  Storage is best-effort per-item; storage-level failures on
+     * individual items do <b>not</b> roll back already-saved siblings.  Each saved
+     * entity triggers its own CDC {@code entity.saved} event.  A single idempotency
+     * key applies to the whole batch.
+     *
+     * <p>Automatic semantic indexing (if configured) and provenance enrichment
+     * (actor/timestamp/correlation-id/classification) are applied to every entity.
+     */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchSaveEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
@@ -504,6 +600,16 @@ public class EntityCrudHandler {
         if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
 
         final String resolvedTenant = tenantId;
+        String batchIdempotencyKey = request.getHeader(HttpHeaders.of("X-Idempotency-Key"));
+        Promise<HttpResponse> idempotencyResponse = checkIdempotencyOrNull(resolvedTenant, collection, batchIdempotencyKey);
+        if (idempotencyResponse != null) return idempotencyResponse;
+
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+            request,
+            resolvedTenant,
+            "datacloud.http.entity.batch-save",
+            traceSupport.requestSpanId(request),
+            Map.of("collection", collection));
 
         return request.loadBody().then(buf -> {
             try {
@@ -519,6 +625,9 @@ public class EntityCrudHandler {
             Optional<String> batchErr = ApiInputValidator.validateBatchSize(entityList);
             if (batchErr.isPresent()) return Promise.of(http.errorResponse(400, batchErr.get()));
 
+            Promise<HttpResponse> batchQuotaErr = checkQuotaOrNull(resolvedTenant, "ENTITY", entityList.size());
+            if (batchQuotaErr != null) return batchQuotaErr;
+
             if (schemaValidator != null) {
                 List<String> allViolations = new ArrayList<>();
                 for (int i = 0; i < entityList.size(); i++) {
@@ -533,16 +642,25 @@ public class EntityCrudHandler {
             }
 
             List<Promise<DataCloudClient.Entity>> savePromises = entityList.stream()
-                .map(data -> client.save(resolvedTenant, collection, data))
+                .map(data -> client.save(resolvedTenant, collection, withProvenance(data, request, handlerSpan.spanId())))
                 .toList();
 
             return Promises.toList(savePromises)
+                .then(savedEntities -> {
+                    if (semanticIndexPort != null) {
+                        List<Promise<Void>> indexPromises = savedEntities.stream()
+                            .map(e -> semanticIndexPort.index(resolvedTenant, collection, e))
+                            .toList();
+                        return Promises.toList(indexPromises).map(ignored -> savedEntities);
+                    }
+                    return Promise.of(savedEntities);
+                })
                 .then(savedEntities -> {
                     List<String> ids = savedEntities.stream()
                         .map(DataCloudClient.Entity::id)
                         .toList();
                     List<Map<String, Object>> entitySnapshots = savedEntities.stream()
-                        .map(e -> buildCdcEnvelope(e, "upsert"))
+                        .map(e -> buildCdcEnvelope(resolvedTenant, handlerSpan.spanId(), e, "upsert", null))
                         .toList();
                     DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-saved", Map.of(
                         "collection", collection,
@@ -558,13 +676,15 @@ public class EntityCrudHandler {
                                 "count",      savedEntities.size(),
                                 "tenantId",   resolvedTenant
                             ));
-                            return http.jsonResponse(Map.of(
+                            Map<String, Object> responseBody = Map.of(
                                 "saved", savedEntities.size(),
                                 "collection", collection,
                                 "ids", ids,
                                 "errors", List.of(),
                                 "timestamp", Instant.now().toString()
-                            ));
+                            );
+                            storeIdempotency(resolvedTenant, collection, batchIdempotencyKey, responseBody);
+                            return http.jsonResponse(responseBody);
                         });
                 })
                 .then(Promise::of, e -> {
@@ -578,6 +698,19 @@ public class EntityCrudHandler {
         });
     }
 
+    /**
+     * Batch entity delete endpoint.
+     *
+     * <p><b>Batch semantics</b>: Supports dry-run ({@code preview=true}) returning a
+     * preview of affected entities plus a scoped HMAC confirmation token.  Actual
+     * execution requires the returned token in the {@code confirmationToken} field.
+     * Deletion is best-effort per-item; failures on individual items do <b>not</b>
+     * roll back already-deleted siblings.  Each successfully deleted entity triggers
+     * its own CDC {@code entity.deleted} event.  A single idempotency key applies to
+     * the whole batch.
+     *
+     * <p>Approval flow: dry-run → token (5 min validity) → validate token → execute.
+     */
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchDeleteEntities(HttpRequest request) {
         String collection = request.getPathParameter("collection");
@@ -599,105 +732,220 @@ public class EntityCrudHandler {
                 Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
 
                 Object rawIds = payload.get("ids");
-            if (!(rawIds instanceof List)) {
-                return Promise.of(http.errorResponse(400, "Request body must contain an 'ids' array"));
-            }
+                if (!(rawIds instanceof List)) {
+                    return Promise.of(http.errorResponse(400, "Request body must contain an 'ids' array"));
+                }
 
-            List<String> ids = (List<String>) rawIds;
-            Optional<String> batchErr = ApiInputValidator.validateDeleteBatch(ids);
-            if (batchErr.isPresent()) return Promise.of(http.errorResponse(400, batchErr.get()));
+                boolean dryRun = Boolean.TRUE.equals(payload.get("dryRun"));
+                String confirmationToken = payload.getOrDefault("confirmationToken", "").toString();
 
-            List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
-                .map(id -> client.delete(resolvedTenant, collection, id)
-                    .map(ignored -> {
-                        Map<String, Object> result = new LinkedHashMap<>();
-                        result.put("id", id);
-                        result.put("success", true);
-                        return result;
+                @SuppressWarnings("unchecked")
+                List<String> ids = (List<String>) rawIds;
+                Optional<String> batchErr = ApiInputValidator.validateDeleteBatch(ids);
+                if (batchErr.isPresent()) return Promise.of(http.errorResponse(400, batchErr.get()));
+
+                // P0.4: Dry-run path returns preview and confirmation token
+                if (dryRun) {
+                    long issuedAtMs = Instant.now().toEpochMilli();
+                    String token = buildBatchDeleteToken(tenantId, collection, ids.size(), issuedAtMs);
+                    log.info("[batch-delete] DRY RUN tenant={} collection={} ids={}",
+                        tenantId, collection, ids.size());
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("collection", collection);
+                    result.put("dryRun", true);
+                    result.put("status", "DRY_RUN_COMPLETE");
+                    result.put("confirmationToken", token);
+                    result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
+                    result.put("estimatedCount", ids.size());
+                    result.put("ids", ids);
+                    return Promise.of(http.jsonResponse(result));
+                }
+
+                // Execute path: token is mandatory and must pass HMAC verification
+                if (confirmationToken.isBlank()) {
+                    return Promise.of(http.errorResponse(400,
+                        "confirmationToken is required to authorise batch deletion. " +
+                        "Perform a dry-run first to obtain a valid token."));
+                }
+
+                DestructiveActionToken.TokenValidationResult tokenResult =
+                    validateBatchDeleteToken(confirmationToken, tenantId, collection);
+                if (!tokenResult.valid()) {
+                    log.warn("[batch-delete] REJECTED invalid token: {} collection={} tenant={}",
+                        tokenResult.reason(), collection, tenantId);
+                    return Promise.of(http.errorResponse(403,
+                        "Confirmation token is invalid or expired: " + tokenResult.reason()));
+                }
+
+                List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
+                    .map(id -> client.delete(resolvedTenant, collection, id)
+                        .map(ignored -> {
+                            Map<String, Object> result = new LinkedHashMap<>();
+                            result.put("id", id);
+                            result.put("success", true);
+                            return result;
+                        })
+                        .then(Promise::of, e -> {
+                            Map<String, Object> result = new LinkedHashMap<>();
+                            result.put("id", id);
+                            result.put("success", false);
+                            result.put("error", e.getMessage());
+                            return Promise.of(result);
+                        }))
+                    .toList();
+
+                return Promises.toList(trackedDeletes)
+                    .then(results -> {
+                        List<String> deletedIds = results.stream()
+                            .filter(r -> Boolean.TRUE.equals(r.get("success")))
+                            .map(r -> (String) r.get("id"))
+                            .toList();
+                        List<Map<String, Object>> errors = results.stream()
+                            .filter(r -> !Boolean.TRUE.equals(r.get("success")))
+                            .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
+                            .toList();
+
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-deleted", Map.of(
+                            "collection", collection,
+                            "count", deletedIds.size(),
+                            "ids", deletedIds,
+                            "operation", "batch-delete",
+                            "totalRequested", ids.size(),
+                            "errors", errors
+                        ));
+                        return client.appendEvent(resolvedTenant, cdcEvent)
+                            .map(ignored -> {
+                                wsBroadcaster.accept("collection.batch-deleted", Map.of(
+                                    "collection", collection,
+                                    "count",      deletedIds.size(),
+                                    "tenantId",   resolvedTenant
+                                ));
+                                return http.jsonResponse(Map.of(
+                                    "deleted", deletedIds.size(),
+                                    "collection", collection,
+                                    "ids", deletedIds,
+                                    "errors", errors,
+                                    "timestamp", Instant.now().toString()
+                                ));
+                            });
                     })
                     .then(Promise::of, e -> {
-                        Map<String, Object> result = new LinkedHashMap<>();
-                        result.put("id", id);
-                        result.put("success", false);
-                        result.put("error", e.getMessage());
-                        return Promise.of(result);
-                    }))
-                .toList();
-
-            return Promises.toList(trackedDeletes)
-                .then(results -> {
-                    List<String> deletedIds = results.stream()
-                        .filter(r -> Boolean.TRUE.equals(r.get("success")))
-                        .map(r -> (String) r.get("id"))
-                        .toList();
-                    List<Map<String, Object>> errors = results.stream()
-                        .filter(r -> !Boolean.TRUE.equals(r.get("success")))
-                        .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
-                        .toList();
-
-                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-deleted", Map.of(
-                        "collection", collection,
-                        "count", deletedIds.size(),
-                        "ids", deletedIds,
-                        "operation", "batch-delete",
-                        "totalRequested", ids.size(),
-                        "errors", errors
-                    ));
-                    return client.appendEvent(resolvedTenant, cdcEvent)
-                        .map(ignored -> {
-                            wsBroadcaster.accept("collection.batch-deleted", Map.of(
-                                "collection", collection,
-                                "count",      deletedIds.size(),
-                                "tenantId",   resolvedTenant
-                            ));
-                            return http.jsonResponse(Map.of(
-                                "deleted", deletedIds.size(),
-                                "collection", collection,
-                                "ids", deletedIds,
-                                "errors", errors,
-                                "timestamp", Instant.now().toString()
-                            ));
-                        });
-                })
-                .then(Promise::of, e -> {
-                    log.error("Batch delete failed for collection {}", collection, e);
-                    return Promise.of(http.errorResponse(500, "Batch delete failed: " + e.getMessage()));
-                });
-        } catch (Exception e) {
-            log.error("Error parsing batch delete request", e);
-            return Promise.of(http.errorResponse(400, "Invalid batch request body: " + e.getMessage()));
-        }
+                        log.error("Batch delete failed for collection {}", collection, e);
+                        return Promise.of(http.errorResponse(500, "Batch delete failed: " + e.getMessage()));
+                    });
+            } catch (Exception e) {
+                log.error("Error parsing batch delete request", e);
+                return Promise.of(http.errorResponse(400, "Invalid batch request body: " + e.getMessage()));
+            }
         });
     }
 
-    // ==================== CDC Helpers (DC-AUD-010 / DC-AUD-023) ====================
+    // ─────────────────────────────────────────────────────────────────────────
+    // Batch-delete token helpers (P0.4)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static String buildBatchDeleteToken(String tenantId, String collection, int count, long issuedAtMs) {
+        String scope = "batch-delete";
+        String payload = scope + ":" + tenantId + ":" + collection + ":" + count + ":" + issuedAtMs;
+        String hmac = DestructiveActionToken.hmacSha256Hex(
+            DestructiveActionToken.resolveSecret(DestructiveActionToken.runtimeEnvironment()), payload);
+        String raw = issuedAtMs + "." + hmac;
+        return java.util.Base64.getUrlEncoder().withoutPadding()
+            .encodeToString(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private static DestructiveActionToken.TokenValidationResult validateBatchDeleteToken(
+            String token, String tenantId, String collection) {
+        try {
+            byte[] decoded = java.util.Base64.getUrlDecoder().decode(token);
+            String raw = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+            int dotIdx = raw.indexOf('.');
+            if (dotIdx < 1) {
+                return DestructiveActionToken.TokenValidationResult.failure("malformed token");
+            }
+            long issuedAtMs = Long.parseLong(raw.substring(0, dotIdx));
+            String providedHmac = raw.substring(dotIdx + 1);
+
+            long ageMs = System.currentTimeMillis() - issuedAtMs;
+            if (ageMs > DestructiveActionToken.TOKEN_VALIDITY_MS) {
+                return DestructiveActionToken.TokenValidationResult.failure(
+                    "token expired (age=" + (ageMs / 1000) + "s, max=300s)");
+            }
+            if (ageMs < 0) {
+                return DestructiveActionToken.TokenValidationResult.failure("token issued in the future");
+            }
+
+            // We don't validate count in the token; it is only loosely scoped to tenant+collection
+            String payload = "batch-delete:" + tenantId + ":" + collection + ":" + issuedAtMs;
+            String expectedHmac = DestructiveActionToken.hmacSha256Hex(
+                DestructiveActionToken.resolveSecret(DestructiveActionToken.runtimeEnvironment()), payload);
+            if (!DestructiveActionToken.constantTimeEquals(expectedHmac, providedHmac)) {
+                return DestructiveActionToken.TokenValidationResult.failure("token signature mismatch");
+            }
+            return DestructiveActionToken.TokenValidationResult.success();
+        } catch (IllegalArgumentException e) {
+            return DestructiveActionToken.TokenValidationResult.failure("token decode error: " + e.getMessage());
+        }
+    }
+
+    // ==================== CDC Helpers (DC-AUD-010 / DC-AUD-023 / P0.3) ====================
 
     /**
-     * Builds a full CDC event envelope for entity mutations.
+     * Builds a full CDC event envelope for entity mutations (P0.3 canonical event envelope).
      *
-     * <p>The envelope contains enough metadata and data to replay history
-     * from genesis via {@code handleGetEntityAsOf} and satisfy audit requirements.
+     * <p>Required fields: eventId, tenantId, type, version, occurredAt, actor, resource,
+     * operation, before, after, traceId, correlationId, provenance.
      */
-    private static Map<String, Object> buildCdcEnvelope(DataCloudClient.Entity entity, String operation) {
+    private static Map<String, Object> buildCdcEnvelope(String tenantId, String traceId,
+                                                        DataCloudClient.Entity entity,
+                                                        String operation,
+                                                        Map<String, Object> beforeState) {
         Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("eventId", java.util.UUID.randomUUID().toString());
+        envelope.put("tenantId", tenantId);
+        envelope.put("type", "entity.mutated");
+        envelope.put("version", "1.0");
+        envelope.put("occurredAt", Instant.now().toString());
+        envelope.put("actor", Map.of("type", "system", "id", "api"));
+        envelope.put("resource", Map.of("type", "entity", "collection", entity.collection(), "id", entity.id()));
+        envelope.put("operation", operation);
+        envelope.put("before", beforeState != null ? beforeState : Map.of());
+        envelope.put("after", entity.data());
+        envelope.put("traceId", traceId != null ? traceId : "");
+        envelope.put("correlationId", traceId != null ? traceId : "");
+        envelope.put("provenance", Map.of("source", "api", "derivedFrom", List.of()));
+        // Backward compatibility
         envelope.put("collection", entity.collection());
         envelope.put("id", entity.id());
-        envelope.put("version", entity.version());
-        envelope.put("operation", operation);
         envelope.put("eventType", "entity.mutated");
         envelope.put("timestamp", Instant.now().toString());
-        // Full snapshot required for point-in-time replay
         envelope.put("data", entity.data());
+        envelope.put("version", entity.version());
         envelope.put("createdAt", entity.createdAt() != null ? entity.createdAt().toString() : null);
         envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
         return envelope;
     }
 
-    private static Map<String, Object> buildDeleteCdcEnvelope(DataCloudClient.Entity entity, String collection, String id) {
+    private static Map<String, Object> buildDeleteCdcEnvelope(String tenantId, String traceId,
+                                                             DataCloudClient.Entity entity,
+                                                             String collection, String id) {
         Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("eventId", java.util.UUID.randomUUID().toString());
+        envelope.put("tenantId", tenantId);
+        envelope.put("type", "entity.deleted");
+        envelope.put("version", "1.0");
+        envelope.put("occurredAt", Instant.now().toString());
+        envelope.put("actor", Map.of("type", "system", "id", "api"));
+        envelope.put("resource", Map.of("type", "entity", "collection", collection, "id", id));
+        envelope.put("operation", "delete");
+        envelope.put("before", entity != null ? entity.data() : Map.of());
+        envelope.put("after", Map.of());
+        envelope.put("traceId", traceId != null ? traceId : "");
+        envelope.put("correlationId", traceId != null ? traceId : "");
+        envelope.put("provenance", Map.of("source", "api", "derivedFrom", List.of()));
+        // Backward compatibility
         envelope.put("collection", collection);
         envelope.put("id", id);
-        envelope.put("operation", "delete");
         envelope.put("eventType", "entity.deleted");
         envelope.put("timestamp", Instant.now().toString());
         envelope.put("tombstone", true);
@@ -708,6 +956,117 @@ public class EntityCrudHandler {
             envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
         }
         return envelope;
+    }
+
+    // ==================== Provenance Helpers (P0.6) ====================
+
+    private static final Set<String> PII_FIELDS = Set.of(
+        "email", "phone", "ssn", "social_security", "password", "credit_card", "dob", "date_of_birth"
+    );
+
+    /**
+     * Injects an entity-level provenance envelope (who/when/why) into the payload
+     * before it reaches the storage layer.  This is a non-destructive enrichment:
+     * the original fields are preserved and a {@code _provenance} block is added.
+     *
+     * <p>Also performs lightweight policy classification (P0.6) by scanning field
+     * names for known sensitive data indicators.
+     */
+    private static Map<String, Object> withProvenance(Map<String, Object> data,
+                                                        HttpRequest request,
+                                                        String correlationId) {
+        Map<String, Object> enriched = new LinkedHashMap<>(data);
+        Map<String, Object> provenance = new LinkedHashMap<>();
+        provenance.put("actor", Map.of("type", "api", "id", resolveActorId(request)));
+        provenance.put("timestamp", Instant.now().toString());
+        provenance.put("correlationId", correlationId != null ? correlationId : "");
+        provenance.put("source", "rest-api");
+        provenance.put("dataClassification", classifyDataSensitivity(data));
+        enriched.put("_provenance", provenance);
+        return enriched;
+    }
+
+    /** Lightweight heuristic policy classification (P0.6). */
+    private static String classifyDataSensitivity(Map<String, Object> data) {
+        for (String key : data.keySet()) {
+            String lower = key.toLowerCase();
+            if (PII_FIELDS.contains(lower)) return "pii";
+        }
+        return "standard";
+    }
+
+    private static String resolveActorId(HttpRequest request) {
+        String userId = request.getHeader(HttpHeaders.of("X-User-Id"));
+        if (userId != null && !userId.isBlank()) return userId.trim();
+        String clientId = request.getHeader(HttpHeaders.of("X-Client-Id"));
+        if (clientId != null && !clientId.isBlank()) return clientId.trim();
+        return "api";
+    }
+
+    // ==================== Collection Metadata Management (P0.2) ====================
+
+    /**
+     * Upsert collection metadata into the {@code dc_collections} registry.
+     *
+     * <p>Validates allowed metadata fields ({@code lifecycleStatus}, {@code qualityScore},
+     * {@code qualityMetrics}, {@code retentionPolicy}, {@code lineage}, {@code operationalStatus},
+     * {@code label}, {@code description}, {@code active}, {@code validationSchema},
+     * {@code storageProfile}, {@code physicalMapping}, {@code schemaVersion}),
+     * merges with any existing stored metadata, and persists into the entity store.
+     *
+     * <p>Route: {@code POST /api/v1/collections/:collection/metadata}</p>
+     */
+    public Promise<HttpResponse> handleUpsertCollectionMetadata(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String collection = request.getPathParameter("collection");
+        if (collection == null || collection.isBlank()) {
+            return Promise.of(http.errorResponse(400, "collection path parameter is required"));
+        }
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(http.errorResponse(400, collErr.get()));
+
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> metadata = http.objectMapper().readValue(body, Map.class);
+
+                Optional<String> validationErr = ApiInputValidator.validateCollectionMetadata(metadata);
+                if (validationErr.isPresent()) {
+                    return Promise.of(http.errorResponse(422, validationErr.get()));
+                }
+
+                // Merge with existing metadata so we don't lose unspecified fields
+                return client.findById(tenantId, "dc_collections", collection)
+                    .then(existingOpt -> {
+                        Map<String, Object> merged = new LinkedHashMap<>();
+                        if (existingOpt.isPresent() && existingOpt.get().data() != null) {
+                            merged.putAll(existingOpt.get().data());
+                        }
+                        merged.putAll(metadata);
+                        merged.put("id", collection);
+                        merged.put("name", collection);
+                        merged.put("updatedAt", Instant.now().toString());
+
+                        return client.save(tenantId, "dc_collections", merged)
+                            .map(saved -> {
+                                Map<String, Object> response = new LinkedHashMap<>();
+                                response.put("id", saved.id());
+                                response.put("collection", collection);
+                                response.put("metadata", saved.data());
+                                return http.createdResponse(response);
+                            });
+                    });
+            } catch (Exception e) {
+                log.error("[upsertCollectionMetadata] tenant={} collection={}: {}", tenantId, collection, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to upsert collection metadata: " + e.getMessage()));
+            }
+        });
     }
 
     // ==================== Full-Text Search ====================
@@ -848,8 +1207,15 @@ public class EntityCrudHandler {
         );
 
         return client.queryEvents(tenantId, timeQuery).map(events -> {
-            // Filter only events that reference this entity and collection
+            // Filter only events that reference this entity and collection,
+            // and are within the asOf time bound (defensive filter in case
+            // the event store does not fully respect endTime).
             List<DataCloudClient.Event> entityEvents = events.stream()
+                    .filter(ev -> {
+                        Instant eventTime = ev.timestamp() != null ? ev.timestamp()
+                            : Instant.parse((String) ev.payload().getOrDefault("timestamp", Instant.EPOCH.toString()));
+                        return !eventTime.isAfter(asOf);
+                    })
                     .filter(ev -> {
                         Map<String, Object> p = ev.payload();
                         if (!collection.equals(p.get("collection"))) return false;
@@ -988,22 +1354,43 @@ public class EntityCrudHandler {
         // Prefer the backing EntityStore if it supports listCollections
         try {
             EntityStore store = client.entityStore();
-            return store.listCollections(TenantContext.of(tenantId))
-                .map(collections -> {
-                    List<Map<String, Object>> entries = collections.stream()
-                        .map(name -> {
-                            Map<String, Object> m = new LinkedHashMap<>();
-                            m.put("name", name);
-                            m.put("systemCollection", name.startsWith("dc_"));
-                            return m;
-                        })
-                        .toList();
-                    return http.jsonResponse(Map.of(
-                        "tenantId", tenantId,
-                        "collections", entries,
-                        "total", entries.size()
-                    ));
-                });
+            Promise<List<String>> namesPromise = store.listCollections(TenantContext.of(tenantId));
+            Promise<List<DataCloudClient.Entity>> metaPromise = client.query(
+                tenantId, "dc_collections", DataCloudClient.Query.limit(500));
+
+            return namesPromise.combine(metaPromise, (names, metaEntities) -> {
+                Map<String, DataCloudClient.Entity> metaMap = new LinkedHashMap<>();
+                for (DataCloudClient.Entity e : metaEntities) {
+                    metaMap.put(e.id(), e);
+                }
+
+                List<Map<String, Object>> entries = names.stream()
+                    .map(name -> {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("name", name);
+                        m.put("systemCollection", name.startsWith("dc_"));
+                        DataCloudClient.Entity meta = metaMap.get(name);
+                        if (meta != null) {
+                            m.put("lifecycleStatus", meta.data().getOrDefault("lifecycleStatus", "UNKNOWN"));
+                            m.put("qualityScore", meta.data().get("qualityScore"));
+                            m.put("qualityMetrics", meta.data().get("qualityMetrics"));
+                            m.put("retentionPolicy", meta.data().get("retentionPolicy"));
+                            m.put("lineage", meta.data().get("lineage"));
+                            m.put("operationalStatus", meta.data().getOrDefault("operationalStatus", "unknown"));
+                        } else {
+                            m.put("lifecycleStatus", "UNKNOWN");
+                            m.put("operationalStatus", "unknown");
+                        }
+                        return m;
+                    })
+                    .toList();
+                return http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "collections", entries,
+                    "total", entries.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            });
         } catch (Exception e) {
             log.error("[listCollections] tenant={} failed: {}", tenantId, e.getMessage(), e);
             return Promise.of(http.errorResponse(500, "Collection registry query failed: " + e.getMessage()));

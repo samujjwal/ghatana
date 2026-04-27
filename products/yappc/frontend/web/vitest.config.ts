@@ -24,6 +24,7 @@ export default defineConfig({
         find: '@ghatana/design-system',
         replacement: resolve(__dirname, '../../../../platform/typescript/design-system/src'),
       },
+      { find: '@yappc/core', replacement: resolve(__dirname, '../libs/yappc-core/src') },
       { find: '@yappc/api', replacement: resolve(__dirname, '../libs/api/src') },
       {
         find: '@yappc/devsecops',
@@ -139,6 +140,10 @@ export default defineConfig({
         replacement: resolve(__dirname, '../../../../platform/typescript/ui-builder/src/index.ts'),
       },
       { find: '@yappc/ui', replacement: resolve(__dirname, '../libs/yappc-ui/src/index.ts') },
+      {
+        find: '@capacitor/core',
+        replacement: resolve(__dirname, 'src/__mocks__/@capacitor/core.ts'),
+      },
       { find: 'react', replacement: resolve(__dirname, 'node_modules/react') },
       {
         find: 'react/jsx-runtime',

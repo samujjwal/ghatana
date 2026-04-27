@@ -34,7 +34,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRODUCT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-SERVER_FILE="${PRODUCT_DIR}/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudHttpServer.java"
+SERVER_FILE="${PRODUCT_DIR}/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java"
 OPENAPI_FILE="${PRODUCT_DIR}/api/openapi.yaml"
 WARN_ONLY=false
 

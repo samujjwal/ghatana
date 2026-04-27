@@ -9,6 +9,7 @@
  * @doc.pattern Utility Module
  */
 
+import React from 'react';
 import type { KeyboardEvent } from 'react';
 
 /**
@@ -159,4 +160,93 @@ export function createArrowKeyHandler(
     
     return newIndex;
   };
+}
+
+/**
+ * Separates ARIA/accessibility props from the rest of an HTML attribute set.
+ */
+export function getA11yProps<T extends Record<string, unknown>>(
+  props: T
+): { a11yProps: Partial<T>; rest: Partial<T> } {
+  const a11yKeys = new Set([
+    'aria-label',
+    'aria-labelledby',
+    'aria-describedby',
+    'aria-description',
+    'aria-live',
+    'aria-atomic',
+    'aria-relevant',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-disabled',
+    'aria-expanded',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-modal',
+    'aria-multiline',
+    'aria-multiselectable',
+    'aria-orientation',
+    'aria-placeholder',
+    'aria-pressed',
+    'aria-readonly',
+    'aria-required',
+    'aria-roledescription',
+    'aria-selected',
+    'aria-sort',
+    'aria-valuemax',
+    'aria-valuemin',
+    'aria-valuenow',
+    'aria-valuetext',
+    'role',
+    'tabIndex',
+  ]);
+  const a11yProps: Partial<T> = {};
+  const rest: Partial<T> = {};
+  for (const key of Object.keys(props) as Array<keyof T>) {
+    if (a11yKeys.has(key as string)) {
+      (a11yProps as Record<string, unknown>)[key as string] = props[key];
+    } else {
+      (rest as Record<string, unknown>)[key as string] = props[key];
+    }
+  }
+  return { a11yProps, rest };
+}
+
+/**
+ * Computes an aria-label string from React children when one is not explicitly provided.
+ * Falls back to the explicit label if given.
+ */
+export function computeAriaLabel(
+  children: React.ReactNode,
+  explicitLabel?: string
+): string | undefined {
+  if (explicitLabel) return explicitLabel;
+
+  const extractText = (node: React.ReactNode): string => {
+    if (typeof node === 'string') return node;
+    if (typeof node === 'number') return String(node);
+    if (Array.isArray(node)) return node.map(extractText).join('');
+    if (React.isValidElement(node)) {
+      const element = node as React.ReactElement<{ children?: React.ReactNode }>;
+      return extractText(element.props.children);
+    }
+    return '';
+  };
+
+  const text = extractText(children).trim();
+  return text.length > 0 ? text : undefined;
+}
+
+/**
+ * Wraps an element with extra ARIA props for tooltip association.
+ * Returns the element cloned with the additional props merged in.
+ */
+export function wrapForTooltip(
+  element: React.ReactElement,
+  extraProps: Record<string, string>
+): React.ReactElement {
+  return React.cloneElement(element, extraProps);
 }

@@ -76,7 +76,7 @@ export interface SpotlightItem {
   expiresAt: string;
   accessCount: number;
   tags: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface AutonomyAction {
@@ -87,7 +87,7 @@ export interface AutonomyAction {
   status: 'SUCCESS' | 'FAILED' | 'PENDING' | 'ADVISORY';
   confidence: number;
   outcome?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface AutonomyState {
@@ -104,7 +104,7 @@ export interface MemoryRecall {
   tier: 'EPISODIC' | 'SEMANTIC' | 'PROCEDURAL' | 'PREFERENCE';
   similarity: number;
   content: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
 }
 
 export interface PatternMatch {
@@ -114,14 +114,14 @@ export interface PatternMatch {
   description: string;
   historicalOccurrences: number;
   lastSeen?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface FeedbackEvent {
   eventType: string;
   correctValue: string;
   incorrectValue?: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   tags?: string[];
 }
 

@@ -35,6 +35,11 @@ model User {
   canvasDocuments CanvasDocument[]
   pages           Page[]
   ownedItems      ItemOwner[]
+  createdRequirements Requirement[]    @relation("RequirementCreator")
+  requestedApprovals  ApprovalRequest[] @relation("ApprovalRequester")
+  reviewedApprovals   ApprovalRequest[] @relation("ApprovalReviewer")
+  triggeredAgentRuns  AgentRun[]        @relation("AgentRunTrigger")
+  exportArtifacts     ExportArtifact[]  @relation("ExportCreator")
   aiPreferences   UserAIPreferences?
   sessions        UserSession[]
 
@@ -187,6 +192,10 @@ model Project {
   // Content relations
   documents CanvasDocument[]
   pages     Page[]
+  requirements Requirement[]
+  approvalRequests ApprovalRequest[]
+  agentRuns AgentRun[]
+  exportArtifacts ExportArtifact[]
 
   // Lifecycle Hub (project-scoped)
   lifecycleArtifacts      LifecycleArtifact[]
@@ -194,6 +203,9 @@ model Project {
   lifecycleAIInsights     LifecycleAIInsight[]
   lifecycleActivityLogs   LifecycleActivityLog[]
   lifecycleExecutionResults LifecycleExecutionResult[]
+
+  // Sprint Planning
+  sprints Sprint[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -232,6 +244,300 @@ model WorkspaceProject {
   @@unique([workspaceId, projectId])
   @@index([workspaceId])
   @@index([projectId])
+}
+
+// ============================================================================
+// REQUIREMENTS, APPROVALS, AND AGENT EXECUTION
+// ============================================================================
+
+///
+/// Requirement type enumeration.
+///
+enum RequirementType {
+  FUNCTIONAL
+  NON_FUNCTIONAL
+  BUSINESS
+  TECHNICAL
+}
+
+///
+/// Requirement priority enumeration.
+///
+enum RequirementPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+///
+/// Requirement status enumeration.
+///
+enum RequirementStatus {
+  DRAFT
+  PENDING_APPROVAL
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+///
+/// Approval status enumeration.
+///
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  EXPIRED
+}
+
+///
+/// Policy decision status enumeration.
+///
+enum PolicyDecisionStatus {
+  ALLOW
+  DENY
+  CONDITIONAL
+}
+
+///
+/// Agent run status enumeration.
+///
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+///
+/// Requirement entity.
+/// @doc.type model
+/// @doc.purpose Requirement lifecycle entity with versioning and approvals
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model Requirement {
+  id          String              @id @default(cuid())
+  projectId   String
+  createdById String
+  title       String
+  description String
+  type        RequirementType     @default(FUNCTIONAL)
+  priority    RequirementPriority @default(MEDIUM)
+  status      RequirementStatus   @default(DRAFT)
+
+  acceptanceCriteria Json  @default("[]")
+  normalizedContent  Json?
+  aiConfidence       Float?
+  aiRationale        String?
+  currentVersion     Int   @default(1)
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("RequirementCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  versions          RequirementVersion[]
+  approvalRequests  ApprovalRequest[]
+  outgoingTraceLinks TraceLink[] @relation("SourceRequirement")
+  incomingTraceLinks TraceLink[] @relation("TargetRequirement")
+  agentRuns         AgentRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([createdById])
+  @@index([status])
+}
+
+///
+/// Requirement version entity.
+/// @doc.type model
+/// @doc.purpose Immutable version snapshots for requirement history
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model RequirementVersion {
+  id            String @id @default(cuid())
+  requirementId String
+  version       Int
+  content       Json
+  acceptanceCriteria Json @default("[]")
+  changeSummary String?
+  changedById   String?
+
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([requirementId, version])
+  @@index([requirementId])
+}
+
+///
+/// Requirement traceability link.
+/// @doc.type model
+/// @doc.purpose Trace links between requirements for lifecycle traceability
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model TraceLink {
+  id                  String @id @default(cuid())
+  sourceRequirementId String
+  targetRequirementId String
+  relationType        String @default("RELATED")
+  confidence          Float?
+  metadata            Json?
+
+  sourceRequirement Requirement @relation("SourceRequirement", fields: [sourceRequirementId], references: [id], onDelete: Cascade)
+  targetRequirement Requirement @relation("TargetRequirement", fields: [targetRequirementId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceRequirementId, targetRequirementId, relationType])
+  @@index([sourceRequirementId])
+  @@index([targetRequirementId])
+}
+
+///
+/// Approval request entity.
+/// @doc.type model
+/// @doc.purpose Human review gate for policy-sensitive requirement actions
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model ApprovalRequest {
+  id            String         @id @default(cuid())
+  projectId     String
+  requirementId String?
+  requesterId   String
+  reviewerId    String?
+  status        ApprovalStatus @default(PENDING)
+
+  requestedAction String @default("REQUIREMENT_APPROVAL")
+  decisionReason String?
+  policyMetadata Json?
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirement Requirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  requester   User         @relation("ApprovalRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewer    User?        @relation("ApprovalReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  policyDecisions PolicyDecision[]
+
+  createdAt  DateTime @default(now())
+  reviewedAt DateTime?
+  updatedAt  DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([requirementId])
+  @@index([status])
+  @@index([requesterId])
+}
+
+///
+/// Policy decision entity.
+/// @doc.type model
+/// @doc.purpose Structured policy evaluation outcome for approvals
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model PolicyDecision {
+  id                String               @id @default(cuid())
+  approvalRequestId String
+  decision          PolicyDecisionStatus
+  policyName        String?
+  reason            String?
+  confidence        Float?
+  metadata          Json?
+
+  approvalRequest ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([approvalRequestId])
+  @@index([decision])
+}
+
+///
+/// Agent run entity.
+/// @doc.type model
+/// @doc.purpose Tracks AI agent execution progress for user-visible timeline
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model AgentRun {
+  id            String         @id @default(cuid())
+  projectId     String
+  requirementId String?
+  triggeredById String
+  agentName     String
+  status        AgentRunStatus @default(QUEUED)
+  stage         String         @default("QUEUED")
+
+  input        Json?
+  output       Json?
+  errorMessage String?
+  retryCount   Int       @default(0)
+  startedAt    DateTime?
+  completedAt  DateTime?
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requirement Requirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  triggeredBy User         @relation("AgentRunTrigger", fields: [triggeredById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([requirementId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// EXPORT ARTIFACTS
+// ============================================================================
+
+///
+/// ExportArtifact entity representing a project export job and its result.
+/// @doc.type model
+/// @doc.purpose Track project export requests and their generated artifacts
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model ExportArtifact {
+  id          String @id @default(cuid())
+  projectId   String
+  createdById String
+
+  /// Format requested for this export
+  format      String @default("MARKDOWN")
+
+  /// Lifecycle status: PENDING | PROCESSING | READY | FAILED
+  status      String @default("PENDING")
+
+  includeRequirements Boolean @default(true)
+  includeDiagrams     Boolean @default(true)
+  includeCode         Boolean @default(false)
+
+  /// Signed or direct download URL — set when status transitions to READY
+  downloadUrl  String?
+  errorMessage String?
+
+  completedAt DateTime?
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("ExportCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // ============================================================================
@@ -727,6 +1033,35 @@ enum MilestoneStatus {
 }
 
 ///
+/// Sprint entity representing a time-boxed iteration for planning and delivery.
+/// @doc.type model
+/// @doc.purpose Sprint container for planning backlog items
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Sprint {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  goal      String?
+  status    String   @default("PLANNING")
+  startDate DateTime?
+  endDate   DateTime?
+  capacity  Int?
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items   Item[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+}
+
+///
 /// Item entity representing a work item (feature, task, bug, etc.).
 /// @doc.type model
 /// @doc.purpose Work item tracking
@@ -773,6 +1108,10 @@ model Item {
   itemEmbeddings ItemEmbedding[]
   comments       ItemComment[]
 
+  // Sprint Planning
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -782,6 +1121,7 @@ model Item {
   @@index([status])
   @@index([priority])
   @@index([workflowId])
+  @@index([sprintId])
 }
 
 ///

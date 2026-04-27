@@ -97,16 +97,26 @@ export interface UxSpecPayload {
   edgeCases: string[];
 }
 
+export type ThreatModelStrideCategory =
+  | 'spoofing'
+  | 'tampering'
+  | 'repudiation'
+  | 'info_disclosure'
+  | 'denial_of_service'
+  | 'elevation';
+
+export type ThreatModelSeverity = 'low' | 'medium' | 'high' | 'critical';
+
 export interface ThreatModelPayload {
-  assets: string[];
-  actors: string[];
+  assets: Array<{ name: string; description: string }>;
+  actors: Array<{ name: string; description: string; type: 'internal' | 'external' }>;
   threats: Array<{
-    id: string;
-    category: string;
+    asset: string;
+    category: ThreatModelStrideCategory;
     description: string;
-    severity: string;
+    severity: ThreatModelSeverity;
   }>;
-  mitigations: string[];
+  mitigations: Array<{ threat: string; control: string; status: 'planned' | 'implemented' | 'verified' }>;
   residualRisk: string;
 }
 
@@ -177,21 +187,25 @@ export interface IncidentReportPayload {
   postMortemUrl: string;
 }
 
+export type EnhancementStatus = 'proposed' | 'approved' | 'in_progress' | 'completed' | 'declined';
+export type EnhancementSource = 'incident' | 'feedback' | 'metrics' | 'team' | 'ai_suggestion';
+
 export interface EnhancementBacklogPayload {
-  requests: Array<{
-    id: string;
+  items: Array<{
     title: string;
-    priority: string;
-    votes?: number;
+    description: string;
+    source: EnhancementSource;
+    status: EnhancementStatus;
+    priority: 'low' | 'medium' | 'high';
   }>;
-  prioritization: string[];
 }
 
 export interface LearningRecordPayload {
   retrospectives: Array<{
     date: string;
-    summary: string;
-    actionItems: string[];
+    wentWell: string[];
+    improvements: string[];
+    actions: string[];
   }>;
   insights: string[];
   recommendations: string[];
@@ -403,6 +417,17 @@ export const LIFECYCLE_ARTIFACT_CATALOG: Record<
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/**
+ * Get all artifact metadata entries associated with a given surface.
+ */
+export function getArtifactsForSurface(
+  surface: ArtifactPlacement['surface']
+): LifecycleArtifactMetadata[] {
+  return (
+    Object.values(LIFECYCLE_ARTIFACT_CATALOG) as LifecycleArtifactMetadata[]
+  ).filter((m) => m.placement.surface === surface);
+}
 
 /**
  * Get all artifact kinds associated with a given lifecycle phase.

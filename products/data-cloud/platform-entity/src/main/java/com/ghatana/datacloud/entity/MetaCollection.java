@@ -214,6 +214,50 @@ public class MetaCollection {
     @Column(name = DataCloudColumnNames.UPDATED_BY, length = 255)
     private String updatedBy;
 
+    /**
+     * P0.2: Lifecycle status for first-class collection registry.
+     * Beyond simple active flag: DRAFT → PUBLISHED → DEPRECATED → ARCHIVED.
+     */
+    @Column(name = "lifecycle_status", nullable = false, length = 50)
+    private String lifecycleStatus = "DRAFT";
+
+    /**
+     * P0.2: Quality score for collection data quality registry (0.0 – 1.0).
+     */
+    @Column(name = "quality_score")
+    private Double qualityScore;
+
+    /**
+     * P0.2: Quality metrics detail as JSONB.
+     * Format: {"completeness": 0.95, "uniqueness": 0.99, "validity": 0.92}
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "quality_metrics", columnDefinition = "jsonb")
+    private Map<String, Object> qualityMetrics;
+
+    /**
+     * P0.2: Retention policy for governance and lifecycle management.
+     * Format: {"type": "time_based", "durationDays": 365, "action": "archive"}
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "retention_policy", columnDefinition = "jsonb")
+    private Map<String, Object> retentionPolicy;
+
+    /**
+     * P0.2: Lineage tracking for provenance and data lineage.
+     * Format: {"upstream": ["source-collection-1"], "downstream": ["derived-collection-1"]}
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "lineage", columnDefinition = "jsonb")
+    private Map<String, Object> lineage;
+
+    /**
+     * P0.2: Operational status for runtime registry truth.
+     * Values: healthy, degraded, unavailable, maintenance
+     */
+    @Column(name = "operational_status", length = 50)
+    private String operationalStatus = "healthy";
+
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<MetaField> fields = new ArrayList<>();
 
@@ -366,6 +410,54 @@ public class MetaCollection {
         this.updatedBy = updatedBy;
     }
 
+    public String getLifecycleStatus() {
+        return lifecycleStatus;
+    }
+
+    public void setLifecycleStatus(String lifecycleStatus) {
+        this.lifecycleStatus = lifecycleStatus;
+    }
+
+    public Double getQualityScore() {
+        return qualityScore;
+    }
+
+    public void setQualityScore(Double qualityScore) {
+        this.qualityScore = qualityScore;
+    }
+
+    public Map<String, Object> getQualityMetrics() {
+        return qualityMetrics;
+    }
+
+    public void setQualityMetrics(Map<String, Object> qualityMetrics) {
+        this.qualityMetrics = qualityMetrics;
+    }
+
+    public Map<String, Object> getRetentionPolicy() {
+        return retentionPolicy;
+    }
+
+    public void setRetentionPolicy(Map<String, Object> retentionPolicy) {
+        this.retentionPolicy = retentionPolicy;
+    }
+
+    public Map<String, Object> getLineage() {
+        return lineage;
+    }
+
+    public void setLineage(Map<String, Object> lineage) {
+        this.lineage = lineage;
+    }
+
+    public String getOperationalStatus() {
+        return operationalStatus;
+    }
+
+    public void setOperationalStatus(String operationalStatus) {
+        this.operationalStatus = operationalStatus;
+    }
+
     public List<MetaField> getFields() {
         return fields;
     }
@@ -396,6 +488,12 @@ public class MetaCollection {
         private Boolean active = true;
         private String createdBy;
         private String updatedBy;
+        private String lifecycleStatus = "DRAFT";
+        private Double qualityScore;
+        private Map<String, Object> qualityMetrics;
+        private Map<String, Object> retentionPolicy;
+        private Map<String, Object> lineage;
+        private String operationalStatus = "healthy";
         private List<MetaField> fields = new ArrayList<>();
 
         public Builder id(UUID id) {
@@ -473,6 +571,36 @@ public class MetaCollection {
             return this;
         }
 
+        public Builder lifecycleStatus(String lifecycleStatus) {
+            this.lifecycleStatus = lifecycleStatus;
+            return this;
+        }
+
+        public Builder qualityScore(Double qualityScore) {
+            this.qualityScore = qualityScore;
+            return this;
+        }
+
+        public Builder qualityMetrics(Map<String, Object> qualityMetrics) {
+            this.qualityMetrics = qualityMetrics;
+            return this;
+        }
+
+        public Builder retentionPolicy(Map<String, Object> retentionPolicy) {
+            this.retentionPolicy = retentionPolicy;
+            return this;
+        }
+
+        public Builder lineage(Map<String, Object> lineage) {
+            this.lineage = lineage;
+            return this;
+        }
+
+        public Builder operationalStatus(String operationalStatus) {
+            this.operationalStatus = operationalStatus;
+            return this;
+        }
+
         public Builder fields(List<MetaField> fields) {
             this.fields = fields;
             return this;
@@ -495,6 +623,12 @@ public class MetaCollection {
             collection.active = this.active;
             collection.createdBy = this.createdBy;
             collection.updatedBy = this.updatedBy;
+            collection.lifecycleStatus = this.lifecycleStatus;
+            collection.qualityScore = this.qualityScore;
+            collection.qualityMetrics = this.qualityMetrics;
+            collection.retentionPolicy = this.retentionPolicy;
+            collection.lineage = this.lineage;
+            collection.operationalStatus = this.operationalStatus;
             collection.fields = this.fields;
             return collection;
         }
@@ -508,6 +642,8 @@ public class MetaCollection {
                 ", name='" + name + '\'' +
                 ", label='" + label + '\'' +
                 ", active=" + active +
+                ", lifecycleStatus='" + lifecycleStatus + '\'' +
+                ", operationalStatus='" + operationalStatus + '\'' +
                 ", version=" + version +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +

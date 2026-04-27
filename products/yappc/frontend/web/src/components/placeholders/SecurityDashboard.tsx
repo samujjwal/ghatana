@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * SecurityDashboard Component
  *
@@ -30,6 +29,14 @@ import { ROUTES } from '../../router/paths';
 // =============================================================================
 // Types
 // =============================================================================
+
+interface SecurityAlert {
+  id: string;
+  title?: string;
+  message?: string;
+  severity: keyof typeof SEV_STYLES;
+  resolvedAt?: string | null;
+}
 
 interface SecurityDashboardProps {
   projectId?: string;
@@ -119,7 +126,7 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
 
   const vulnerabilities = useAtomValue(vulnerabilitiesAtom);
   const securityScore = useAtomValue(securityScoreAtom);
-  const alerts = useAtomValue(securityAlertsAtom);
+  const alerts = useAtomValue(securityAlertsAtom) as SecurityAlert[];
 
   const openVulns = vulnerabilities.filter((v) => v.status === 'open');
   const bySeverity = {
@@ -136,7 +143,7 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
   const score = securityScore?.overall ?? 0;
 
   const securityPath = activeProjectId
-    ? ROUTES.project.security(activeProjectId)
+    ? ROUTES.security.root(activeProjectId)
     : '#';
 
   return (

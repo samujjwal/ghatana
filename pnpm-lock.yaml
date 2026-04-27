@@ -3812,10 +3812,10 @@ importers:
     dependencies:
       '@libsql/client':
         specifier: ^0.17.2
-        version: 0.17.2(encoding@0.1.13)
+        version: 0.17.2
       '@prisma/adapter-libsql':
         specifier: ^7.7.0
-        version: 7.7.0(encoding@0.1.13)
+        version: 7.7.0
       '@prisma/adapter-pg':
         specifier: ^7.7.0
         version: 7.7.0
@@ -4167,10 +4167,10 @@ importers:
     dependencies:
       '@libsql/client':
         specifier: ^0.17.2
-        version: 0.17.2(encoding@0.1.13)
+        version: 0.17.2
       '@prisma/adapter-libsql':
         specifier: ^7.7.0
-        version: 7.7.0(encoding@0.1.13)
+        version: 7.7.0
       '@prisma/client':
         specifier: 7.7.0
         version: 7.7.0(prisma@7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2))(typescript@6.0.2)
@@ -4608,6 +4608,9 @@ importers:
       ws:
         specifier: ^8.20.0
         version: 8.20.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@types/bcryptjs':
         specifier: ^3.0.0
@@ -31476,10 +31479,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@libsql/client@0.17.2(encoding@0.1.13)':
+  '@libsql/client@0.17.2':
     dependencies:
       '@libsql/core': 0.17.2
-      '@libsql/hrana-client': 0.9.0(encoding@0.1.13)
+      '@libsql/hrana-client': 0.9.0
       js-base64: 3.7.8
       libsql: 0.5.29
       promise-limit: 2.7.0
@@ -31498,7 +31501,7 @@ snapshots:
   '@libsql/darwin-x64@0.5.29':
     optional: true
 
-  '@libsql/hrana-client@0.9.0(encoding@0.1.13)':
+  '@libsql/hrana-client@0.9.0':
     dependencies:
       '@libsql/isomorphic-ws': 0.1.5
       cross-fetch: 4.1.0(encoding@0.1.13)
@@ -33122,9 +33125,9 @@ snapshots:
 
   '@preact/signals-core@1.14.1': {}
 
-  '@prisma/adapter-libsql@7.7.0(encoding@0.1.13)':
+  '@prisma/adapter-libsql@7.7.0':
     dependencies:
-      '@libsql/client': 0.17.2(encoding@0.1.13)
+      '@libsql/client': 0.17.2
       '@prisma/driver-adapter-utils': 7.7.0
       async-mutex: 0.5.0
     transitivePeerDependencies:

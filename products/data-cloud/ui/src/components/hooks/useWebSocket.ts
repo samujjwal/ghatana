@@ -116,7 +116,8 @@ export function useExecutionStream(
     wsRef.current = ws;
 
     const handleWebSocketMessage = useCallback(
-      (message: WebSocketMessage) => {
+      (rawMessage: unknown) => {
+        const message = rawMessage as WebSocketMessage;
         if (message.executionId !== executionId) return;
 
         switch (message.type) {
@@ -296,13 +297,13 @@ export function useExecutionStream(
     ws.on('connection-open', onOpen);
     ws.on('connection-error', onError);
     ws.on('connection-close', onClose);
-    ws.on('execution-start', handleWebSocketMessage as any);
-    ws.on('execution-update', handleWebSocketMessage as any);
-    ws.on('node-start', handleWebSocketMessage as any);
-    ws.on('node-complete', handleWebSocketMessage as any);
-    ws.on('node-error', handleWebSocketMessage as any);
-    ws.on('execution-complete', handleWebSocketMessage as any);
-    ws.on('execution-error', handleWebSocketMessage as any);
+    ws.on('execution-start', handleWebSocketMessage);
+    ws.on('execution-update', handleWebSocketMessage);
+    ws.on('node-start', handleWebSocketMessage);
+    ws.on('node-complete', handleWebSocketMessage);
+    ws.on('node-error', handleWebSocketMessage);
+    ws.on('execution-complete', handleWebSocketMessage);
+    ws.on('execution-error', handleWebSocketMessage);
 
     // Cleanup
     return () => {
@@ -311,13 +312,13 @@ export function useExecutionStream(
         ws.off('connection-open', onOpen);
         ws.off('connection-error', onError);
         ws.off('connection-close', onClose);
-        ws.off('execution-start', handleWebSocketMessage as any);
-        ws.off('execution-update', handleWebSocketMessage as any);
-        ws.off('node-start', handleWebSocketMessage as any);
-        ws.off('node-complete', handleWebSocketMessage as any);
-        ws.off('node-error', handleWebSocketMessage as any);
-        ws.off('execution-complete', handleWebSocketMessage as any);
-        ws.off('execution-error', handleWebSocketMessage as any);
+        ws.off('execution-start', handleWebSocketMessage);
+        ws.off('execution-update', handleWebSocketMessage);
+        ws.off('node-start', handleWebSocketMessage);
+        ws.off('node-complete', handleWebSocketMessage);
+        ws.off('node-error', handleWebSocketMessage);
+        ws.off('execution-complete', handleWebSocketMessage);
+        ws.off('execution-error', handleWebSocketMessage);
         ws.disconnect();
       } catch (_e) {
         // ignore errors on cleanup

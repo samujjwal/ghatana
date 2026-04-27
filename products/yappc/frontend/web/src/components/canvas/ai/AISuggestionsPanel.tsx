@@ -88,11 +88,11 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
     return (
         <Card
             variant="outlined"
-            className="mb-2" style={{ borderLeft: `4px solid`, borderLeftColor: `${color }}
+            className="mb-2" style={{ borderLeft: '4px solid', borderLeftColor: color }}
         >
             <CardContent className="pb-2">
                 <Stack direction="row" alignItems="flex-start" spacing={1}>
-                    <Box style={{ color: `${color }}>
+                    <Box style={{ color: color }}>
                         {icon}
                     </Box>
                     <Box className="flex-1">

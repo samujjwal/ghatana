@@ -109,7 +109,7 @@ export function CanvasProgressWidget({
                                 >
                                     <Box
                                         className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-sm" style={{ backgroundColor: phase.status === 'completed'
-                                                    ? `${config.color, color: config.color }}
+                                                    ? config.color : 'transparent', color: config.color }}
                                         onClick={e => {
                                             e.stopPropagation();
                                             onPhaseClick?.(phase.phase);
@@ -169,7 +169,7 @@ export function CanvasProgressWidget({
                                 <LinearProgress
                                     variant="determinate"
                                     value={phase.progress}
-                                    className="h-[4px] rounded-lg" style={{ backgroundColor: `${config.color }}
+                                    className="h-[4px] rounded-lg" style={{ backgroundColor: config.color }}
                                 />
                             </Box>
                         );

@@ -65,11 +65,15 @@ class DataCloudHttpServerMemoryTest {
     @Test
     @DisplayName("storeMemory: persists AGENT_MEMORY item with ttl-derived expiresAt")
     void storeMemory_persistsAgentMemoryItem() throws Exception { // GH-90000
-        when(mockClient.save(anyString(), eq("dc_memory"), any(Map.class)))
-            .thenAnswer(invocation -> Promise.of(DataCloudClient.Entity.of( // GH-90000
-                "mem-100",
-                "dc_memory",
-                invocation.getArgument(2, Map.class)))); // GH-90000
+        when(mockClient.save(anyString(), eq("dc_memory"), org.mockito.ArgumentMatchers.<Map<String, Object>>any()))
+            .thenAnswer(invocation -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = invocation.getArgument(2);
+                return Promise.of(DataCloudClient.Entity.of(
+                    "mem-100",
+                    "dc_memory",
+                    payload));
+            }); // GH-90000
 
         startServer(); // GH-90000
 

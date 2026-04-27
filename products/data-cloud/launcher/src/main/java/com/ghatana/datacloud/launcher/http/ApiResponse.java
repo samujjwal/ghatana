@@ -157,7 +157,7 @@ public final class ApiResponse {
      * @return a new ApiResponse with the {@code ai} block populated
      */
     public ApiResponse withAiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback) {
-        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback, null), this.meta);
+        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback, null, null, null), this.meta);
     }
 
     /**
@@ -172,7 +172,30 @@ public final class ApiResponse {
      */
     public ApiResponse withAiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback,
                                    Map<String, Object> provenance) {
-        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback, provenance), this.meta);
+        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback, provenance, null, null), this.meta);
+    }
+
+    /**
+     * Attaches full AI/ML metadata including confidence band and review policy.
+     *
+     * @param confidenceBand structured confidence with score, label, and factors
+     * @param model          model name/version that produced the result
+     * @param reasons        human-readable reason codes
+     * @param fallback       true if a fallback path was used instead of the primary model
+     * @param provenance     provider, requestId, latencyMs, tokens, timestamp for auditability
+     * @param reviewPolicy   auto-apply threshold and manual-review requirements
+     * @return a new ApiResponse with the {@code ai} block populated
+     */
+    public ApiResponse withAiMeta(
+            com.ghatana.datacloud.launcher.ai.AiOperation.ConfidenceBand confidenceBand,
+            String model,
+            java.util.List<String> reasons,
+            boolean fallback,
+            Map<String, Object> provenance,
+            com.ghatana.datacloud.launcher.ai.AiOperation.ReviewPolicy reviewPolicy) {
+        return new ApiResponse(this.data, this.error,
+            new AiMeta(confidenceBand.score(), model, reasons, fallback, provenance, confidenceBand, reviewPolicy),
+            this.meta);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -287,13 +310,25 @@ public final class ApiResponse {
         @JsonProperty("provenance")
         private final Map<String, Object> provenance;
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonProperty("confidenceBand")
+        private final com.ghatana.datacloud.launcher.ai.AiOperation.ConfidenceBand confidenceBand;
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonProperty("reviewPolicy")
+        private final com.ghatana.datacloud.launcher.ai.AiOperation.ReviewPolicy reviewPolicy;
+
         private AiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback,
-                         Map<String, Object> provenance) {
+                         Map<String, Object> provenance,
+                         com.ghatana.datacloud.launcher.ai.AiOperation.ConfidenceBand confidenceBand,
+                         com.ghatana.datacloud.launcher.ai.AiOperation.ReviewPolicy reviewPolicy) {
             this.confidence = confidence;
             this.model      = model;
             this.reasons    = (reasons != null) ? java.util.List.copyOf(reasons) : java.util.List.of();
             this.fallback   = fallback;
             this.provenance = (provenance != null && !provenance.isEmpty()) ? new LinkedHashMap<>(provenance) : null;
+            this.confidenceBand = confidenceBand;
+            this.reviewPolicy = reviewPolicy;
         }
 
         public double getConfidence()             { return confidence; }
@@ -301,5 +336,7 @@ public final class ApiResponse {
         public java.util.List<String> getReasons() { return reasons; }
         public boolean isFallback()               { return fallback; }
         public Map<String, Object> getProvenance() { return provenance; }
+        public com.ghatana.datacloud.launcher.ai.AiOperation.ConfidenceBand getConfidenceBand() { return confidenceBand; }
+        public com.ghatana.datacloud.launcher.ai.AiOperation.ReviewPolicy getReviewPolicy() { return reviewPolicy; }
     }
 }

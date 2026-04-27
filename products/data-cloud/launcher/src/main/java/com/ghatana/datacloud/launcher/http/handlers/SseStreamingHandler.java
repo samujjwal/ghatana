@@ -4,6 +4,8 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.brain.DataCloudBrain;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
+import com.ghatana.datacloud.governance.TenantQuotaService;
+import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
@@ -83,6 +85,9 @@ public class SseStreamingHandler {
     /** Optional OpenSearch connector for streaming query SSE. */
     private OpenSearchConnector openSearchConnector;
 
+    /** Optional tenant quota service for streaming subscription enforcement (P0.5). */
+    private TenantQuotaService tenantQuotaService;
+
     /**
      * Creates the SSE/WebSocket streaming handler.
      *
@@ -113,6 +118,16 @@ public class SseStreamingHandler {
     public SseStreamingHandler withOpenSearchConnector(OpenSearchConnector connector) {
         this.openSearchConnector = connector;
         return this;
+    }
+
+    public SseStreamingHandler withTenantQuotaService(TenantQuotaService service) {
+        this.tenantQuotaService = service;
+        return this;
+    }
+
+    private QuotaCheckResult checkStreamingQuotaOrNull(String tenantId, long count) {
+        if (tenantQuotaService == null) return new QuotaCheckResult(true, null, 0, 0);
+        return tenantQuotaService.checkQuota(tenantId, "CONNECTION", (int) count);
     }
 
     /**
@@ -151,6 +166,15 @@ public class SseStreamingHandler {
             return Promise.of(http.errorResponse(400, "collection path parameter is required"));
         }
 
+        QuotaCheckResult quotaResult = checkStreamingQuotaOrNull(tenantId, 1);
+        if (!quotaResult.isAllowed()) {
+            log.warn("[SSE-CDC] REJECTED connection quota exceeded tenant={} reason={}", tenantId, quotaResult.message());
+            return Promise.of(http.errorResponse(429, "Streaming quota exceeded: " + quotaResult.message()));
+        }
+        return openEntityCdcStream(request, tenantId, collection);
+    }
+
+    private Promise<HttpResponse> openEntityCdcStream(HttpRequest request, String tenantId, String collection) {
         long fromOffsetVal = HttpHandlerSupport.parseLongParam(request.getQueryParameter("fromOffset"), 0L);
 
         Set<String> entityEventTypes = Set.of(
@@ -244,6 +268,15 @@ public class SseStreamingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        QuotaCheckResult quotaResult = checkStreamingQuotaOrNull(tenantId, 1);
+        if (!quotaResult.isAllowed()) {
+            log.warn("[SSE] REJECTED connection quota exceeded tenant={} reason={}", tenantId, quotaResult.message());
+            return Promise.of(http.errorResponse(429, "Streaming quota exceeded: " + quotaResult.message()));
+        }
+        return openSseStream(request, tenantId);
+    }
+
+    private Promise<HttpResponse> openSseStream(HttpRequest request, String tenantId) {
         long fromOffsetVal = HttpHandlerSupport.parseLongParam(request.getQueryParameter("fromOffset"), 0L);
         List<String> eventTypesFilter = parseEventTypeFilter(request.getQueryParameter("eventType"));
 
@@ -318,6 +351,15 @@ public class SseStreamingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        QuotaCheckResult quotaResult = checkStreamingQuotaOrNull(tenantId, 1);
+        if (!quotaResult.isAllowed()) {
+            log.warn("[SSE-WS] REJECTED connection quota exceeded tenant={} reason={}", tenantId, quotaResult.message());
+            return Promise.of(http.errorResponse(429, "Streaming quota exceeded: " + quotaResult.message()));
+        }
+        return openBrainWorkspaceStream(request, tenantId);
+    }
+
+    private Promise<HttpResponse> openBrainWorkspaceStream(HttpRequest request, String tenantId) {
         Optional<GlobalWorkspace> wsOpt = brain.getWorkspace();
         if (wsOpt.isEmpty()) {
             return Promise.of(http.errorResponse(503, "Workspace stream not available for this brain implementation"));
@@ -386,6 +428,15 @@ public class SseStreamingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        QuotaCheckResult quotaResult = checkStreamingQuotaOrNull(tenantId, 1);
+        if (!quotaResult.isAllowed()) {
+            log.warn("[SSE-LEARN] REJECTED connection quota exceeded tenant={} reason={}", tenantId, quotaResult.message());
+            return Promise.of(http.errorResponse(429, "Streaming quota exceeded: " + quotaResult.message()));
+        }
+        return openLearningStream(request, tenantId);
+    }
+
+    private Promise<HttpResponse> openLearningStream(HttpRequest request, String tenantId) {
         LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
         queue.offer(Optional.of(buildSseFrame("connected", Map.of(
             "service",   "data-cloud-learning",
@@ -468,6 +519,15 @@ public class SseStreamingHandler {
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
+        QuotaCheckResult quotaResult = checkStreamingQuotaOrNull(tenantId, 1);
+        if (!quotaResult.isAllowed()) {
+            log.warn("[SSE-QUERY] REJECTED connection quota exceeded tenant={} reason={}", tenantId, quotaResult.message());
+            return Promise.of(http.errorResponse(429, "Streaming quota exceeded: " + quotaResult.message()));
+        }
+        return openStreamingQuerySse(request, tenantId, collection, q);
+    }
+
+    private Promise<HttpResponse> openStreamingQuerySse(HttpRequest request, String tenantId, String collection, String q) {
         boolean follow     = "true".equalsIgnoreCase(request.getQueryParameter("follow"));
         long fromOffsetVal = HttpHandlerSupport.parseLongParam(request.getQueryParameter("fromOffset"), 0L);
         ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 100);

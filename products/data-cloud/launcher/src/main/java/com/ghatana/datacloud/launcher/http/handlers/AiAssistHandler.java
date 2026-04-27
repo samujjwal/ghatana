@@ -5,6 +5,8 @@ import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
+import com.ghatana.datacloud.governance.QuotaCheckResult;
+import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.ai.AiRecommendationMetrics;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import io.activej.http.HttpRequest;
@@ -88,6 +90,9 @@ public class AiAssistHandler {
     /** Quality metrics instrumentation — never null (falls back to NOOP). */
     private final AiRecommendationMetrics recommendationMetrics;
 
+    /** Optional tenant quota service for AI token enforcement (P0.5). */
+    private TenantQuotaService tenantQuotaService;
+
     /**
      * Creates a handler backed by a real LLM completion service.
      *
@@ -128,6 +133,26 @@ public class AiAssistHandler {
                 ? recommendationMetrics : AiRecommendationMetrics.NOOP;
     }
 
+    public AiAssistHandler withTenantQuotaService(TenantQuotaService tenantQuotaService) {
+        this.tenantQuotaService = tenantQuotaService;
+        return this;
+    }
+
+    /**
+     * P0.5: Check tenant AI token quota before AI assist operations.
+     * Returns an error promise if quota is exceeded, otherwise null.
+     */
+    private Promise<HttpResponse> checkAiQuotaOrNull(String tenantId, int estimatedTokens) {
+        if (tenantQuotaService == null) return null;
+        QuotaCheckResult result = tenantQuotaService.checkQuota(tenantId, "AI_TOKEN", estimatedTokens);
+        if (!result.isAllowed()) {
+            return Promise.of(http.errorResponse(429,
+                "AI quota exceeded: " + result.message() + " (quota=" + result.quotaValue()
+                    + ", used=" + result.usedAmount() + ")"));
+        }
+        return null;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Route handlers
     // ─────────────────────────────────────────────────────────────────────────
@@ -149,6 +174,9 @@ public class AiAssistHandler {
         }
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
+
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -202,6 +230,9 @@ public class AiAssistHandler {
         }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
+
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -261,6 +292,9 @@ public class AiAssistHandler {
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
 
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
+
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
                 Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
@@ -313,6 +347,9 @@ public class AiAssistHandler {
         }
         String requestId = resolveRequestId(request);
         long startMs = System.currentTimeMillis();
+
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -384,6 +421,9 @@ public class AiAssistHandler {
         }
         String requestId = resolveRequestId(request);
         long startMs = System.currentTimeMillis();
+
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -494,6 +534,9 @@ public class AiAssistHandler {
         String requestId  = resolveRequestId(request);
         long   startMs    = System.currentTimeMillis();
 
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
+
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
                 String pipelineJson = body.getString(StandardCharsets.UTF_8);
@@ -543,6 +586,9 @@ public class AiAssistHandler {
         }
         String requestId = resolveRequestId(request);
         long   startMs   = System.currentTimeMillis();
+
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {
@@ -1320,6 +1366,9 @@ public class AiAssistHandler {
         }
         String requestId = resolveRequestId(request);
         long startMs = System.currentTimeMillis();
+
+        Promise<HttpResponse> quotaErr = checkAiQuotaOrNull(tenantId, MAX_PROMPT_TOKENS);
+        if (quotaErr != null) return quotaErr;
 
         return request.loadBody(MAX_PROMPT_TOKENS * 4)
             .then(body -> {

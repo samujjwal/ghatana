@@ -21,7 +21,7 @@ import {
   fontWeightSemibold,
 } from '@ghatana/yappc-shared-ui-core/tokens';
 
-import { useAccessibility } from '../../hooks';
+import { useAccessibility } from '../../hooks/useAccessibility';
 import useKeyboardActivate from '../../hooks/useKeyboardActivate';
 import {
   getA11yProps,

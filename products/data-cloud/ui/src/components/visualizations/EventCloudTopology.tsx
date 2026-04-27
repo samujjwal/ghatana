@@ -148,8 +148,8 @@ const EventCloudNodeComponent = memo(function EventCloudNodeComponent(props: { d
 /**
  * EventCloud-specific edge component.
  */
-const EventCloudEdgeComponent = memo(function EventCloudEdgeComponent(props: any) {
-    return <BaseTopologyEdge {...props} pathType="smoothstep" showThroughput={true} />;
+const EventCloudEdgeComponent = memo(function EventCloudEdgeComponent(props: Record<string, unknown>) {
+    return <BaseTopologyEdge {...(props as unknown as React.ComponentProps<typeof BaseTopologyEdge>)} pathType="smoothstep" showThroughput={true} />;
 });
 
 // ============================================

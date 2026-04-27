@@ -1,6 +1,8 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.governance.QuotaCheckResult;
+import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import io.activej.http.*;
@@ -30,6 +32,7 @@ public class EventHandler {
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
     private TraceSpanSupport traceSupport = TraceSpanSupport.disabled();
+    private TenantQuotaService tenantQuotaService;
 
     public EventHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
@@ -41,6 +44,26 @@ public class EventHandler {
         return this;
     }
 
+    public EventHandler withTenantQuotaService(TenantQuotaService tenantQuotaService) {
+        this.tenantQuotaService = tenantQuotaService;
+        return this;
+    }
+
+    /**
+     * P0.5: Check tenant quota before event append operations.
+     * Returns an error promise if quota is exceeded, otherwise null.
+     */
+    private Promise<HttpResponse> checkQuotaOrNull(String tenantId, String operationType, int resourceAmount) {
+        if (tenantQuotaService == null) return null;
+        QuotaCheckResult result = tenantQuotaService.checkQuota(tenantId, operationType, resourceAmount);
+        if (!result.isAllowed()) {
+            return Promise.of(http.errorResponse(429,
+                "Quota exceeded: " + result.message() + " (quota=" + result.quotaValue()
+                    + ", used=" + result.usedAmount() + ")"));
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAppendEvent(HttpRequest request) {
         String tenantId = http.requireTenantIdOrFail(request);
@@ -50,6 +73,9 @@ public class EventHandler {
 
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        Promise<HttpResponse> quotaErr = checkQuotaOrNull(tenantId, "EVENT", 1);
+        if (quotaErr != null) return quotaErr;
 
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
             request,

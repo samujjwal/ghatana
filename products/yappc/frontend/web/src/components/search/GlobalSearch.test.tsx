@@ -133,27 +133,27 @@ describe('GlobalSearch', () => {
     it('should filter results based on query', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         if (atom.toString().includes('Open')) return true;
-        if (atom.toString().includes('Query')) return 'dashboard';
+        if (atom.toString().includes('Query')) return 'project';
         if (atom.toString().includes('Loading')) return false;
         return [];
       });
 
       render(<GlobalSearch />);
-      // Should show dashboard-related results
-      expect(screen.getByText('Project Dashboard')).toBeInTheDocument();
+      // Should show Projects result from mountedResults
+      expect(screen.getByText('Projects')).toBeInTheDocument();
     });
 
     it('should perform fuzzy matching', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         if (atom.toString().includes('Open')) return true;
-        if (atom.toString().includes('Query')) return 'dshbrd'; // fuzzy match for dashboard
+        if (atom.toString().includes('Query')) return 'prjcts'; // fuzzy match for projects
         if (atom.toString().includes('Loading')) return false;
         return [];
       });
 
       render(<GlobalSearch />);
-      // Fuzzy match should still find dashboard
-      expect(screen.getByText('Project Dashboard')).toBeInTheDocument();
+      // Fuzzy algorithm matches 'prjcts' to 'Projects' (all chars found in order)
+      expect(screen.getByText('Projects')).toBeInTheDocument();
     });
   });
 
@@ -161,17 +161,17 @@ describe('GlobalSearch', () => {
     it('should navigate to result path on click', async () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         if (atom.toString().includes('Open')) return true;
-        if (atom.toString().includes('Query')) return 'dashboard';
+        if (atom.toString().includes('Query')) return 'settings';
         if (atom.toString().includes('Loading')) return false;
         return [];
       });
 
       render(<GlobalSearch />);
 
-      const result = screen.getByText('Project Dashboard');
+      const result = screen.getByText('Settings');
       fireEvent.click(result);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/project/123/dashboard');
+      expect(mockNavigate).toHaveBeenCalledWith('/settings');
       expect(mockSetIsOpen).toHaveBeenCalledWith(false);
       expect(mockSetQuery).toHaveBeenCalledWith('');
     });
@@ -179,7 +179,7 @@ describe('GlobalSearch', () => {
     it('should navigate on Enter key', async () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         if (atom.toString().includes('Open')) return true;
-        if (atom.toString().includes('Query')) return 'dashboard';
+        if (atom.toString().includes('Query')) return 'settings';
         if (atom.toString().includes('Loading')) return false;
         return [];
       });
@@ -299,17 +299,18 @@ describe('GlobalSearch', () => {
     it('should add to recent searches on selection', async () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         if (atom.toString().includes('Open')) return true;
-        if (atom.toString().includes('Query')) return 'dashboard';
+        if (atom.toString().includes('Query')) return 'settings';
         if (atom.toString().includes('Loading')) return false;
         return [];
       });
 
       render(<GlobalSearch />);
 
-      const result = screen.getByText('Project Dashboard');
+      const result = screen.getByText('Settings');
       fireEvent.click(result);
 
-      // Recent searches should be updated (internal state)
+      // After click, navigation should have been called (proves selection works)
+      expect(mockNavigate).toHaveBeenCalledWith('/settings');
     });
   });
 
@@ -370,22 +371,22 @@ describe('GlobalSearch', () => {
 
       render(<GlobalSearch />);
 
-      // Settings result should have settings icon
-      expect(screen.getByText('Team Settings')).toBeInTheDocument();
+      // Settings result from mountedResults should appear
+      expect(screen.getByText('Settings')).toBeInTheDocument();
     });
 
     it('should apply category-specific colors', () => {
       (useAtomValue as unknown).mockImplementation((atom: unknown) => {
         if (atom.toString().includes('Open')) return true;
-        if (atom.toString().includes('Query')) return 'canvas';
+        if (atom.toString().includes('Query')) return 'workspace';
         if (atom.toString().includes('Loading')) return false;
         return [];
       });
 
       render(<GlobalSearch />);
 
-      // Canvas result should have code category color
-      expect(screen.getByText('Development Canvas')).toBeInTheDocument();
+      // Workspaces result from mountedResults should appear
+      expect(screen.getByText('Workspaces')).toBeInTheDocument();
     });
   });
 
