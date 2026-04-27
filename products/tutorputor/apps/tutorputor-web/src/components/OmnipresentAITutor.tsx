@@ -40,6 +40,12 @@ interface TutorResponse {
   };
 }
 
+interface TutorPromptEventDetail {
+  prompt: string;
+  autoSend?: boolean;
+  source?: string;
+}
+
 // Icons
 const SparklesIcon = () => (
   <svg
@@ -301,6 +307,40 @@ export function OmnipresentAITutor() {
     askTutorMutation.mutate(input.trim());
     setInput("");
   };
+
+  useEffect(() => {
+    const handleExternalPrompt = (event: Event) => {
+      const customEvent = event as CustomEvent<TutorPromptEventDetail>;
+      const prompt = customEvent.detail?.prompt?.trim();
+      if (!prompt) {
+        return;
+      }
+
+      setIsOpen(true);
+      setHasUserInteracted(true);
+
+      if (customEvent.detail?.autoSend && !askTutorMutation.isPending) {
+        const userMessage: Message = {
+          id: `user-${Date.now()}`,
+          role: "user",
+          content: prompt,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, userMessage]);
+        askTutorMutation.mutate(prompt);
+        setInput("");
+        return;
+      }
+
+      setInput(prompt);
+      inputRef.current?.focus();
+    };
+
+    window.addEventListener("tutorputor:ai-tutor-prompt", handleExternalPrompt as EventListener);
+    return () => {
+      window.removeEventListener("tutorputor:ai-tutor-prompt", handleExternalPrompt as EventListener);
+    };
+  }, [askTutorMutation]);
 
   const quickActions = getQuickActions();
 

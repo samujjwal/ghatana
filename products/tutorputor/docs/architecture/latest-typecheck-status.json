@@ -1,19 +1,31 @@
 {
-  "_note": "Generated 2026-04-27. Regenerate by running: cd products/tutorputor/contracts && pnpm exec tsc -p tsconfig.json && cd ../services/tutorputor-platform && pnpm exec tsc --noEmit",
-  "commitSha": "4a5e8c6dc468b518e83448bce6c64f45b462e0e4",
+  "_note": "Generated 2026-04-27T19:20:00-07:00 from command-backed local verification.",
+  "commitSha": "8098a7043953aafe7bf9d8cb0d8738381d6b2ddd",
   "date": "2026-04-27",
   "packages": {
     "@tutorputor/contracts": {
-      "command": "pnpm exec tsc -p tsconfig.json",
+      "command": "pnpm --filter @tutorputor/contracts build",
       "status": "PASS",
       "errorCount": 0,
       "notes": "Must be built first; dist/ is not checked in."
     },
+    "@tutorputor/core": {
+      "command": "pnpm --filter @tutorputor/core type-check",
+      "status": "PASS",
+      "errorCount": 0,
+      "notes": "Strict typing issues resolved in shared core utility modules."
+    },
     "@tutorputor/platform": {
-      "command": "pnpm exec tsc --noEmit",
+      "command": "pnpm --filter @tutorputor/platform type-check",
       "status": "PASS",
       "errorCount": 0,
       "notes": "Requires @tutorputor/contracts dist/ to be present."
+    },
+    "@tutorputor/mobile": {
+      "command": "pnpm type-check (from apps/tutorputor-mobile)",
+      "status": "PASS",
+      "errorCount": 0,
+      "notes": "Includes secure keychain-backed MMKV session storage and conflict-resolution changes."
     }
   },
   "resolvedIssues": [

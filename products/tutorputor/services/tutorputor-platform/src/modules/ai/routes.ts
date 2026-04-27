@@ -220,9 +220,11 @@ export async function registerAIRoutes(
     },
   );
 
-  // AI-generated questions from module content
+  // AI-generated questions from module content — teacher/admin only (resource-intensive)
   app.post("/generate-questions", async (req, reply) => {
     try {
+      requireRole(req, ["teacher", "admin", "superadmin"]);
+
       if (
         !(await enforceAiTenantRateLimit(app, req, reply, "generate-questions"))
       ) {

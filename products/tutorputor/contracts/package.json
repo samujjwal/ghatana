@@ -95,6 +95,11 @@
       "types": "./dist/artifact-manifests.d.ts",
       "import": "./dist/artifact-manifests.js",
       "default": "./dist/artifact-manifests.js"
+    },
+    "./v1/platform-events": {
+      "types": "./dist/platform-events.d.ts",
+      "import": "./dist/platform-events.js",
+      "default": "./dist/platform-events.js"
     }
   },
   "files": [

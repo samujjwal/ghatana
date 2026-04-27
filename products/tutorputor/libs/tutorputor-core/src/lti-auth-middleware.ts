@@ -147,7 +147,7 @@ export async function ltiAuthMiddleware(
     const authHeader = request.headers.authorization;
     const idToken = (request.body as Record<string, unknown>)?.id_token || (request.query as Record<string, unknown>)?.id_token;
     
-    const token = authHeader?.replace('Bearer ', '') || idToken;
+    const token = authHeader?.replace('Bearer ', '') || (typeof idToken === 'string' ? idToken : '');
 
     if (!token) {
       logger.warn({
@@ -221,11 +221,16 @@ export async function ltiAuthMiddleware(
     }
 
     // 5. Attach LTI claims to request for downstream use
+    const roleClaims =
+      validation.claims!['https://purl.imsglobal.org/spec/lti/claim/roles'] ?? [];
+    const contextClaims =
+      validation.claims!['https://purl.imsglobal.org/spec/lti/claim/context'];
+
     (request as any).ltiClaims = validation.claims;
     (request as any).ltiUser = {
       id: validation.claims!.sub,
-      roles: validation.claims!.roles,
-      context: validation.claims!.context,
+      roles: roleClaims,
+      context: contextClaims,
     };
 
     logger.info({

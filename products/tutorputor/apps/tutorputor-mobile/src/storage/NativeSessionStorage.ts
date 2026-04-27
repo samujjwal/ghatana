@@ -1,62 +1,61 @@
-// @ts-nocheck - React Native MMKV types
-import { MMKV } from 'react-native-mmkv';
-
 /**
- * Secure storage configuration for session data.
+ * TutorPutor Mobile - Native Session Storage
+ *
+ * Stores session tokens in MMKV encrypted with a per-device key retrieved
+ * from the system keychain. Call `initSessionStorage()` once on app startup
+ * (after the keychain key has been resolved) before using any session helpers.
+ *
+ * @doc.type module
+ * @doc.purpose Secure session token storage backed by encrypted MMKV
+ * @doc.layer product
+ * @doc.pattern Adapter
  */
-interface SecureStorageConfig {
-  /** Storage ID for isolation */
-  id: string;
-  /** Encryption key for sensitive data */
-  encryptionKey?: string;
+
+import { createMMKV } from 'react-native-mmkv';
+
+// ---------------------------------------------------------------------------
+// Internal state — module-level singleton, initialised by initSessionStorage
+// ---------------------------------------------------------------------------
+
+type MMKVInstance = {
+  getString: (key: string) => string | undefined;
+  set: (key: string, value: string) => void;
+  remove: (key: string) => boolean;
+};
+
+let sessionStorage: MMKVInstance | null = null;
+
+function requireStorage(): MMKVInstance {
+  if (!sessionStorage) {
+    throw new Error(
+      '[NativeSessionStorage] Storage not initialised. ' +
+        'Call initSessionStorage(encryptionKey) on app startup before reading/writing session data.',
+    );
+  }
+  return sessionStorage;
 }
 
 /**
- * Native session storage interface.
+ * Initialise the encrypted MMKV instance.
+ * Must be called once during app startup after the keychain-derived encryption
+ * key has been resolved (see `SecureKeyManager.getMmkvEncryptionKey()`).
  */
-type NativeSessionStorage = {
-  getString: (key: string) => string | undefined;
-  set: (key: string, value: string) => void;
-  delete: (key: string) => void;
-};
+export function initSessionStorage(encryptionKey: string): void {
+  sessionStorage = createMMKV({
+    id: 'tutorputor-session',
+    encryptionKey,
+  });
+}
 
 /**
  * Storage shim interface for localStorage compatibility.
  */
-interface StorageShim {
+export interface StorageShim {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
   removeItem: (key: string) => void;
   clear: () => void;
 }
-
-/**
- * Create secure session storage with optional encryption.
- */
-function createSessionStorage(config?: SecureStorageConfig): NativeSessionStorage {
-  const mmkvConfig: { id: string; encryptionKey?: string } = {
-    id: config?.id || 'tutorputor-session',
-  };
-
-  // Use encryption if key is provided
-  if (config?.encryptionKey) {
-    mmkvConfig.encryptionKey = config.encryptionKey;
-  }
-
-  // @ts-ignore - MMKV constructor types
-  return new MMKV(mmkvConfig);
-}
-
-// Initialize secure storage
-// Encryption key can be provided via environment or passed directly
-const encryptionKey = typeof process !== 'undefined' && process.env?.SESSION_ENCRYPTION_KEY
-  ? process.env.SESSION_ENCRYPTION_KEY
-  : undefined;
-
-const sessionStorage = createSessionStorage({
-  id: 'tutorputor-session',
-  encryptionKey,
-});
 
 export interface SessionSnapshot {
   accessToken: string | null;
@@ -70,10 +69,11 @@ export interface SessionRequestContext {
 }
 
 export function getSessionSnapshot(): SessionSnapshot {
+  const store = requireStorage();
   return {
-    accessToken: sessionStorage.getString('auth_token') ?? null,
-    refreshToken: sessionStorage.getString('refresh_token') ?? null,
-    tenantId: sessionStorage.getString('tenant_id') ?? null,
+    accessToken: store.getString('auth_token') ?? null,
+    refreshToken: store.getString('refresh_token') ?? null,
+    tenantId: store.getString('tenant_id') ?? null,
   };
 }
 
@@ -101,21 +101,22 @@ export function createSessionHeaders(
 }
 
 export function setSessionValue(key: string, value: string): void {
-  sessionStorage.set(key, value);
+  requireStorage().set(key, value);
 }
 
 export function getSessionValue(key: string): string | null {
-  return sessionStorage.getString(key) ?? null;
+  return requireStorage().getString(key) ?? null;
 }
 
 export function removeSessionValue(key: string): void {
-  sessionStorage.delete(key);
+  requireStorage().remove(key);
 }
 
 export function clearSession(): void {
-  sessionStorage.delete('auth_token');
-  sessionStorage.delete('refresh_token');
-  sessionStorage.delete('tenant_id');
+  const store = requireStorage();
+  store.remove('auth_token');
+  store.remove('refresh_token');
+  store.remove('tenant_id');
 }
 
 /**

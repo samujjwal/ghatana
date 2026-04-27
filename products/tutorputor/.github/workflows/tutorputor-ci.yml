@@ -135,11 +135,72 @@ jobs:
             echo "✅ Coverage $COVERAGE% meets threshold 80%"
           fi
 
+  # Phase 5b: Simulation Domain Correctness (path-filtered)
+  # Only runs when the simulation engine or evaluation modules are touched.
+  simulation-correctness:
+    name: Simulation Domain Correctness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect simulation engine changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            simulation:
+              - 'products/tutorputor/services/tutorputor-platform/src/modules/simulation/**'
+              - 'products/tutorputor/services/tutorputor-platform/src/modules/content/evaluation/**'
+              - 'products/tutorputor/services/tutorputor-platform/src/modules/content/simulation-correctness/**'
+
+      - uses: pnpm/action-setup@v3
+        if: steps.filter.outputs.simulation == 'true'
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        if: steps.filter.outputs.simulation == 'true'
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: steps.filter.outputs.simulation == 'true'
+        run: pnpm install --frozen-lockfile --filter @tutorputor/platform...
+
+      - name: Run simulation correctness suites
+        if: steps.filter.outputs.simulation == 'true'
+        run: |
+          pnpm --filter @tutorputor/platform exec vitest run \
+            src/modules/simulation/correctness/__tests__/ \
+            --reporter=verbose
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+          STRIPE_SECRET_KEY: stripe_test_placeholder_secret
+
+      - name: Run content evaluation / misconception benchmark suites
+        if: steps.filter.outputs.simulation == 'true'
+        run: |
+          pnpm --filter @tutorputor/platform exec vitest run \
+            src/modules/content/evaluation/__tests__/ \
+            --reporter=verbose
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+          STRIPE_SECRET_KEY: stripe_test_placeholder_secret
+
+      - name: Skip message (no simulation engine changes detected)
+        if: steps.filter.outputs.simulation != 'true'
+        run: echo "No simulation engine files changed — skipping domain correctness suites."
+
   # Phase 6: Build Artifacts
   build:
     name: Build Applications
     runs-on: ubuntu-latest
-    needs: [type-check, test-coverage]
+    needs: [type-check, test-coverage, simulation-correctness]
     strategy:
       matrix:
         app:

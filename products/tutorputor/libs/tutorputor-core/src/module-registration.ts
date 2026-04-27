@@ -217,7 +217,7 @@ export function createServiceModule<T>(config: {
       service = await config.createService(fastify);
       
       // Decorate Fastify with service
-      fastify.decorate(config.name, service);
+      fastify.decorate(config.name, service as unknown as object);
       
       // Register routes if provided
       if (config.registerRoutes) {

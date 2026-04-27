@@ -2,10 +2,12 @@ import type { FastifyPluginAsync } from "fastify";
 import { TenantId } from "@tutorputor/contracts/v1";
 import {
   getTenantId,
+  getUserId,
   requireRole,
   requireTenantAccess,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
+import { buildSensitiveOperationAuditEntry } from "../policy/resource-access-helpers.js";
 import type {
   IdentityProviderType,
   RoleMappingConfig,
@@ -150,6 +152,7 @@ export const tenantRoutes: FastifyPluginAsync<{
    */
   app.patch("/config", async (req, reply) => {
     const tenantId = getTenantId(req);
+    const actorId = getUserId(req);
     requireRole(req, ["admin", "superadmin"]);
     const updatesResult = z.record(z.string(), z.unknown()).safeParse(req.body);
     if (!updatesResult.success) {
@@ -163,6 +166,18 @@ export const tenantRoutes: FastifyPluginAsync<{
     await respondWithErrors(reply, () =>
       tenantService.updateTenantConfig(tenantId as TenantId, updates),
     );
+    const audit = buildSensitiveOperationAuditEntry({
+      actorId,
+      actorTenantId: tenantId,
+      targetResourceType: "tenant_config",
+      targetResourceId: tenantId,
+      operation: "update_tenant_config",
+      decision: "ALLOW",
+      reason: "Tenant configuration updated by admin",
+      correlationId: req.id,
+      metadata: { changedKeys: Object.keys(updates).join(",") },
+    });
+    app.log.info({ audit }, "Sensitive operation allowed");
   });
 
   // ===========================================================================
@@ -300,6 +315,7 @@ export const tenantRoutes: FastifyPluginAsync<{
    */
   app.delete("/domain-packs/:id", async (req, reply) => {
     const tenantId = getTenantId(req);
+    const actorId = getUserId(req);
     requireRole(req, ["admin"]);
     const paramsResult = idParamSchema.safeParse(req.params);
     if (!paramsResult.success) {
@@ -316,6 +332,18 @@ export const tenantRoutes: FastifyPluginAsync<{
       return reply.code(403).send({ error: "Forbidden" });
 
     await tenantService.deleteDomainPack(id);
+    const audit = buildSensitiveOperationAuditEntry({
+      actorId,
+      actorTenantId: tenantId,
+      targetResourceType: "domain_pack",
+      targetResourceId: id,
+      operation: "delete_domain_pack",
+      decision: "ALLOW",
+      reason: "Domain pack deleted by admin",
+      correlationId: req.id,
+      metadata: { packId: id },
+    });
+    app.log.info({ audit }, "Sensitive operation allowed");
     return reply.send({ success: true });
   });
 
@@ -347,6 +375,7 @@ export const tenantRoutes: FastifyPluginAsync<{
    */
   app.post("/sso-providers", async (req, reply) => {
     const tenantId = getTenantId(req);
+    const actorId = getUserId(req);
     requireRole(req, ["admin", "superadmin"]);
     const body = req.body as SSOProviderCreateRequest;
 
@@ -369,6 +398,18 @@ export const tenantRoutes: FastifyPluginAsync<{
             : null,
         },
       });
+      const audit = buildSensitiveOperationAuditEntry({
+        actorId,
+        actorTenantId: tenantId,
+        targetResourceType: "sso_provider",
+        targetResourceId: provider.id,
+        operation: "create_sso_provider",
+        decision: "ALLOW",
+        reason: "SSO provider created by admin",
+        correlationId: req.id,
+        metadata: { displayName: body.displayName, type: body.type ?? "oidc" },
+      });
+      app.log.info({ audit }, "Sensitive operation allowed");
       reply.code(201);
       return maskSecret(provider);
     });
@@ -443,6 +484,7 @@ export const tenantRoutes: FastifyPluginAsync<{
    */
   app.delete("/sso-providers/:providerId", async (req, reply) => {
     const tenantId = getTenantId(req);
+    const actorId = getUserId(req);
     requireRole(req, ["admin", "superadmin"]);
     const { providerId } = req.params as { providerId: string };
 
@@ -456,6 +498,18 @@ export const tenantRoutes: FastifyPluginAsync<{
         });
 
       await prisma.identityProvider.delete({ where: { id: providerId } });
+      const audit = buildSensitiveOperationAuditEntry({
+        actorId,
+        actorTenantId: tenantId,
+        targetResourceType: "sso_provider",
+        targetResourceId: providerId,
+        operation: "delete_sso_provider",
+        decision: "ALLOW",
+        reason: "SSO provider deleted by admin",
+        correlationId: req.id,
+        metadata: { providerId },
+      });
+      app.log.info({ audit }, "Sensitive operation allowed");
       return { success: true };
     });
   });

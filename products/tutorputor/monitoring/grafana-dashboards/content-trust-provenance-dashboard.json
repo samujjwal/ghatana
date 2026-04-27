@@ -1,0 +1,110 @@
+{
+  "dashboard": {
+    "title": "TutorPutor Content Trust and Provenance",
+    "tags": ["tutorputor", "content-trust", "provenance"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Generated Artifacts by Validation Outcome",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum by (outcome) (rate(tutorputor_content_validation_total[5m]))",
+            "legendFormat": "{{outcome}}"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "events/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Trust Score Distribution",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_content_trust_score_bucket[5m])) by (le)",
+            "legendFormat": "<= {{le}}"
+          }
+        ],
+        "yaxes": [
+          { "format": "short", "label": "count/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Manual Review Queue Depth",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "tutorputor_content_manual_review_queue_depth",
+            "legendFormat": "review queue"
+          }
+        ],
+        "yaxes": [
+          { "format": "short", "label": "items" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Provenance Coverage Ratio",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_content_provenance_edges_total[5m])) / sum(rate(tutorputor_content_claims_generated_total[5m]))",
+            "legendFormat": "provenance edges per claim"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Publish Gate Decision Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum by (decision) (rate(tutorputor_content_publish_gate_total[5m]))",
+            "legendFormat": "{{decision}}"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "events/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Content Generation Completion Ratio",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_content_generation_jobs_total{status=\"completed\"}[5m])) / sum(rate(tutorputor_content_generation_jobs_total[5m]))",
+            "legendFormat": "completion ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      }
+    ]
+  }
+}

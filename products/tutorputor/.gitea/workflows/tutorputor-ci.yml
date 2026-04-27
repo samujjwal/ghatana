@@ -134,12 +134,123 @@ jobs:
           path: products/tutorputor/services/tutorputor-platform/coverage/
 
   # ─────────────────────────────────────────────────────────────────────────
-  # 3. Build Docker images
+  # 3. Content Worker Integration Tests (queue + worker canonical CI profile)
+  # ─────────────────────────────────────────────────────────────────────────
+  content-worker-integration:
+    name: Content Worker Integration
+    runs-on: ubuntu-latest
+    needs: [test]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "9"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @tutorputor/platform...
+
+      - name: Run content worker lifecycle tests
+        run: |
+          pnpm --filter @tutorputor/platform exec vitest run \
+            src/__tests__/p0-4-e2e-worker-lifecycle.integration.test.ts \
+            --reporter=verbose
+        env:
+          NODE_ENV: test
+          REDIS_URL: redis://localhost:6379
+          CONTENT_WORKER_ENABLED: "true"
+          CONTENT_QUEUE_DISABLED: "false"
+          JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+          # Content generation gRPC is mocked in tests — no real service required
+          CONTENT_GENERATION_GRPC_HOST: localhost
+          CONTENT_GENERATION_GRPC_PORT: "50051"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 4. Simulation Domain Correctness Suites
+  # Runs whenever the simulation engine, domain harnesses, or content
+  # evaluation modules are touched. Gate keeps domain correctness green.
+  # ─────────────────────────────────────────────────────────────────────────
+  simulation-correctness:
+    name: Simulation Domain Correctness
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect simulation engine changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            simulation:
+              - 'products/tutorputor/services/tutorputor-platform/src/modules/simulation/**'
+              - 'products/tutorputor/services/tutorputor-platform/src/modules/content/evaluation/**'
+              - 'products/tutorputor/services/tutorputor-platform/src/modules/content/simulation-correctness/**'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.filter.outputs.simulation == 'true'
+        with:
+          version: "9"
+
+      - uses: actions/setup-node@v4
+        if: steps.filter.outputs.simulation == 'true'
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.filter.outputs.simulation == 'true'
+        run: pnpm install --frozen-lockfile --filter @tutorputor/platform...
+
+      - name: Run simulation correctness suites
+        if: steps.filter.outputs.simulation == 'true'
+        run: |
+          pnpm --filter @tutorputor/platform exec vitest run \
+            src/modules/simulation/correctness/__tests__/ \
+            --reporter=verbose
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+          STRIPE_SECRET_KEY: stripe_test_placeholder_secret
+
+      - name: Run content evaluation / misconception benchmark suites
+        if: steps.filter.outputs.simulation == 'true'
+        run: |
+          pnpm --filter @tutorputor/platform exec vitest run \
+            src/modules/content/evaluation/__tests__/ \
+            --reporter=verbose
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-that-is-at-least-32-chars-long
+          STRIPE_SECRET_KEY: stripe_test_placeholder_secret
+
+      - name: Skip message (no simulation engine changes detected)
+        if: steps.filter.outputs.simulation != 'true'
+        run: echo "No simulation engine files changed — skipping domain correctness suites."
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 5. Build Docker images
   # ─────────────────────────────────────────────────────────────────────────
   build-images:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint-typecheck, test]
+    needs: [lint-typecheck, test, content-worker-integration, simulation-correctness]
     if: github.event_name == 'push'
     permissions:
       contents: read
@@ -200,7 +311,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ─────────────────────────────────────────────────────────────────────────
-  # 4. Security Scan
+  # 5. Security Scan
   # ─────────────────────────────────────────────────────────────────────────
   security-scan:
     name: Security Scan (Trivy)

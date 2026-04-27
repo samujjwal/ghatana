@@ -59,6 +59,7 @@
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@tutorputor/contracts": "workspace:*",
+    "fastify": "^5.8.4",
     "ioredis": "^5.10.1",
     "pg": "^8.14.1",
     "prisma-redis-cache": "^1.0.0",

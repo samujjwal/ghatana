@@ -12,12 +12,26 @@ jest.mock("../../storage/NativeSessionStorage", () => ({
 import { fetchDashboard } from "../useDashboard";
 import { getSessionSnapshot } from "../../storage/NativeSessionStorage";
 
-const mockGetSessionSnapshot = getSessionSnapshot;
+type DashboardFetchResponse = {
+  ok: boolean;
+  json: () => Promise<unknown>;
+};
+
+type MockFetchFn = jest.Mock<
+  Promise<DashboardFetchResponse>,
+  [string, { headers?: Record<string, string> }?]
+>;
+
+const mockGetSessionSnapshot =
+  getSessionSnapshot as jest.MockedFunction<typeof getSessionSnapshot>;
+let fetchMock: MockFetchFn;
 
 describe("mobile useDashboard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = jest.fn();
+    fetchMock = jest.fn() as MockFetchFn;
+    (globalThis as unknown as { fetch: typeof fetch }).fetch =
+      fetchMock as unknown as typeof fetch;
   });
 
   it("fetches the learner dashboard with authenticated tenant headers", async () => {
@@ -26,7 +40,7 @@ describe("mobile useDashboard", () => {
       refreshToken: "refresh-token-123",
       tenantId: "tenant-42",
     });
-    global.fetch.mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
         user: {
@@ -46,7 +60,7 @@ describe("mobile useDashboard", () => {
 
     const result = await fetchDashboard();
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/v1/learning/dashboard", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/learning/dashboard", {
       headers: {
         Authorization: "Bearer access-token-123",
         "X-Tenant-ID": "tenant-42",
@@ -70,6 +84,6 @@ describe("mobile useDashboard", () => {
     await expect(fetchDashboard()).rejects.toThrow(
       "Authenticated tenant session required to fetch dashboard",
     );
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

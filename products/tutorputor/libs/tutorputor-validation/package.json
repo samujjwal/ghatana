@@ -1,0 +1,45 @@
+{
+  "name": "@tutorputor/validation",
+  "version": "0.1.0",
+  "description": "Shared Zod validation schemas for TutorPutor — used by the platform service, API gateway, and apps",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./auth": {
+      "types": "./dist/schemas/auth.d.ts",
+      "import": "./dist/schemas/auth.js"
+    },
+    "./learning": {
+      "types": "./dist/schemas/learning.d.ts",
+      "import": "./dist/schemas/learning.js"
+    },
+    "./content-studio": {
+      "types": "./dist/schemas/content-studio.d.ts",
+      "import": "./dist/schemas/content-studio.js"
+    },
+    "./common": {
+      "types": "./dist/schemas/common.d.ts",
+      "import": "./dist/schemas/common.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit",
+    "lint": "../../../../node_modules/.bin/eslint src/ --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

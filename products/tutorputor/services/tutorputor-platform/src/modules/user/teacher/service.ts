@@ -20,6 +20,7 @@ import type {
     UserId,
     UserSummary,
 } from '@tutorputor/contracts';
+import { buildTenantScopedWhere } from '../../policy/resource-access-helpers.js';
 
 type ClassroomWithRelations = {
     id: string;
@@ -154,7 +155,7 @@ export class TeacherServiceImpl implements TeacherService {
         classroomId: ClassroomId;
     }): Promise<Classroom> {
         const classroom = await this.prisma.classroom.findFirst({
-            where: { id: args.classroomId, tenantId: args.tenantId },
+            where: buildTenantScopedWhere(args.tenantId, args.classroomId),
             include: {
                 roster: true,
                 assignments: true,
@@ -177,7 +178,7 @@ export class TeacherServiceImpl implements TeacherService {
     }): Promise<Classroom> {
         // Verify classroom exists
         const classroom = await this.prisma.classroom.findFirst({
-            where: { id: args.classroomId, tenantId: args.tenantId },
+            where: buildTenantScopedWhere(args.tenantId, args.classroomId),
         });
 
         if (!classroom) {
@@ -206,7 +207,7 @@ export class TeacherServiceImpl implements TeacherService {
 
         // Return updated classroom
         const updated = await this.prisma.classroom.findFirst({
-            where: { id: args.classroomId },
+            where: buildTenantScopedWhere(args.tenantId, args.classroomId),
             include: {
                 roster: true,
                 assignments: true,
@@ -223,7 +224,7 @@ export class TeacherServiceImpl implements TeacherService {
     }): Promise<Classroom> {
         // Verify classroom exists
         const classroom = await this.prisma.classroom.findFirst({
-            where: { id: args.classroomId, tenantId: args.tenantId },
+            where: buildTenantScopedWhere(args.tenantId, args.classroomId),
         });
 
         if (!classroom) {
@@ -237,7 +238,7 @@ export class TeacherServiceImpl implements TeacherService {
 
         // Return updated classroom
         const updated = await this.prisma.classroom.findFirst({
-            where: { id: args.classroomId },
+            where: buildTenantScopedWhere(args.tenantId, args.classroomId),
             include: {
                 roster: true,
                 assignments: true,
@@ -257,7 +258,7 @@ export class TeacherServiceImpl implements TeacherService {
 
         // Verify classroom exists
         const classroom = await this.prisma.classroom.findFirst({
-            where: { id: classroomId, tenantId },
+            where: buildTenantScopedWhere(tenantId, classroomId),
         });
 
         if (!classroom) {
@@ -279,7 +280,7 @@ export class TeacherServiceImpl implements TeacherService {
 
         // Return updated classroom
         const updated = await this.prisma.classroom.findFirst({
-            where: { id: classroomId },
+            where: buildTenantScopedWhere(tenantId, classroomId),
             include: {
                 roster: true,
                 assignments: true,
@@ -296,7 +297,7 @@ export class TeacherServiceImpl implements TeacherService {
         const { tenantId, classroomId } = args;
 
         const classroom = await this.prisma.classroom.findFirst({
-            where: { id: classroomId, tenantId },
+            where: buildTenantScopedWhere(tenantId, classroomId),
             include: {
                 roster: true,
                 assignments: true,

@@ -6,39 +6,47 @@
  */
 
 jest.mock("react-native-mmkv", () => {
-  const store = new Map();
+  const store = new Map<string, string>();
 
-  class MMKV {
-    constructor() {}
-
-    getString(key) {
+  const mmkvInstance = {
+    getString(key: string): string | undefined {
       return store.get(key);
-    }
-
-    set(key, value) {
+    },
+    set(key: string, value: string): void {
       store.set(key, value);
-    }
-
-    delete(key) {
+    },
+    remove(key: string): boolean {
       store.delete(key);
-    }
-  }
+      return true;
+    },
+  };
 
-  return { MMKV };
+  return {
+    createMMKV: () => mmkvInstance,
+  };
 });
 
 import {
   clearSession,
   createSessionHeaders,
   getSessionSnapshot,
+  initSessionStorage,
   installNativeSessionStorageShim,
   setSessionValue,
 } from "../NativeSessionStorage";
 
 describe("NativeSessionStorage", () => {
+  type LocalStorageLike = {
+    setItem: (key: string, value: string) => void;
+    clear: () => void;
+  };
+
   beforeEach(() => {
+    // initSessionStorage must be called before any session helpers are used.
+    // The MMKV mock ignores the encryptionKey argument.
+    initSessionStorage("test-encryption-key");
     clearSession();
-    const globalScope = globalThis;
+    const globalScope = globalThis as typeof globalThis & { localStorage?: unknown };
     delete globalScope.localStorage;
   });
 
@@ -70,10 +78,13 @@ describe("NativeSessionStorage", () => {
   it("installs a localStorage shim backed by the native session store", () => {
     installNativeSessionStorageShim();
 
-    expect(globalThis.localStorage).toBeDefined();
+    const localStorage = (globalThis as typeof globalThis & { localStorage: LocalStorageLike })
+      .localStorage;
 
-    globalThis.localStorage.setItem("auth_token", "shim-token");
-    globalThis.localStorage.setItem("tenant_id", "tenant-shim");
+    expect(localStorage).toBeDefined();
+
+    localStorage.setItem("auth_token", "shim-token");
+    localStorage.setItem("tenant_id", "tenant-shim");
 
     expect(getSessionSnapshot()).toEqual({
       accessToken: "shim-token",
@@ -81,7 +92,7 @@ describe("NativeSessionStorage", () => {
       tenantId: "tenant-shim",
     });
 
-    globalThis.localStorage.clear();
+    localStorage.clear();
 
     expect(getSessionSnapshot()).toEqual({
       accessToken: null,

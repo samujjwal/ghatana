@@ -17,7 +17,8 @@ describe('EnhancedPredictiveAnalyticsService', () => {
   beforeEach(() => {
     mockPrisma = {
       enrollment: { findMany: vi.fn() },
-      learnerProfile: { findUnique: vi.fn() },
+      learnerProfile: { findUnique: vi.fn(), findFirst: vi.fn() },
+      learnerMastery: { findMany: vi.fn() },
       module: { findMany: vi.fn() },
       conceptMastery: { findMany: vi.fn() },
       learningEvent: { findMany: vi.fn() },
@@ -31,7 +32,9 @@ describe('EnhancedPredictiveAnalyticsService', () => {
       mockPrisma.enrollment.findMany.mockResolvedValue([
         { status: 'COMPLETED', moduleId: 'mod-1', module: { id: 'mod-1', title: 'Module 1', difficulty: 'INTRO' } },
       ]);
-      mockPrisma.learnerProfile.findUnique.mockResolvedValue({
+      mockPrisma.learnerProfile.findFirst.mockResolvedValue({
+        id: 'profile-1',
+        masteries: [{ masteryProbability: 0.7 }],
         masterySummary: { averageMastery: 0.7 },
       });
       mockPrisma.module.findMany.mockResolvedValue([
@@ -49,7 +52,7 @@ describe('EnhancedPredictiveAnalyticsService', () => {
 
     it('should handle no enrollments', async () => {
       mockPrisma.enrollment.findMany.mockResolvedValue([]);
-      mockPrisma.learnerProfile.findUnique.mockResolvedValue(null);
+      mockPrisma.learnerProfile.findFirst.mockResolvedValue(null);
       mockPrisma.module.findMany.mockResolvedValue([
         { id: 'mod-1', title: 'Module 1', difficulty: 'INTRO' },
       ]);
@@ -63,11 +66,12 @@ describe('EnhancedPredictiveAnalyticsService', () => {
 
   describe('predictMastery', () => {
     it('should predict mastery', async () => {
-      mockPrisma.learnerProfile.findUnique.mockResolvedValue({
+      mockPrisma.learnerProfile.findFirst.mockResolvedValue({
+        id: 'profile-1',
         masterySummary: { averageMastery: 0.7 },
       });
-      mockPrisma.conceptMastery.findMany.mockResolvedValue([
-        { masteryLevel: 0.6 },
+      mockPrisma.learnerMastery.findMany.mockResolvedValue([
+        { masteryProbability: 0.6 },
       ]);
 
       const prediction = await service.predictMastery('tenant-1', 'user-1', 'concept-1');
@@ -79,8 +83,8 @@ describe('EnhancedPredictiveAnalyticsService', () => {
     });
 
     it('should handle no mastery data', async () => {
-      mockPrisma.learnerProfile.findUnique.mockResolvedValue(null);
-      mockPrisma.conceptMastery.findMany.mockResolvedValue([]);
+      mockPrisma.learnerProfile.findFirst.mockResolvedValue(null);
+      mockPrisma.learnerMastery.findMany.mockResolvedValue([]);
 
       const prediction = await service.predictMastery('tenant-1', 'user-1', 'concept-1');
 

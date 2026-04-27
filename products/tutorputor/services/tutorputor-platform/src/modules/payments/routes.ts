@@ -183,9 +183,19 @@ export async function paymentRoutes(
         return reply.code(400).send(createValidationErrorResponse(parseResult.error));
       }
 
-      return reply.code(501).send({
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return reply.code(503).send({
+          error: "FeatureNotEnabled",
+          message:
+            "Billing portal is not available on this deployment. Contact your platform operator to enable Stripe integration.",
+        });
+      }
+
+      // TODO: implement Stripe portal session creation when key is present
+      return reply.code(503).send({
+        error: "FeatureNotEnabled",
         message:
-          "Billing portal sessions require Stripe configuration. Set STRIPE_SECRET_KEY to enable.",
+          "Billing portal is not available on this deployment. Contact your platform operator to enable Stripe integration.",
       });
     },
   );

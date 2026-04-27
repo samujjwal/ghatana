@@ -8,3 +8,4 @@
  */
 
 export * from './BackgroundSyncService';
+export * from './conflictResolution';

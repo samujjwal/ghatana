@@ -33,7 +33,7 @@ function authHeaders(overrides: Record<string, string> = {}): Record<string, str
   return {
     "x-tenant-id": "test-tenant",
     "x-user-id": "test-user",
-    "x-user-role": "student",
+    "x-user-role": "teacher",
     ...overrides,
   };
 }

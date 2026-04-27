@@ -13,6 +13,14 @@
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { database, MutationRecord } from '../storage/SQLiteStorage';
 import { syncStorage, CacheKeys } from '../storage/MMKVStorage';
+import {
+  createSessionHeaders,
+  getSessionRequestContext,
+} from '../storage/NativeSessionStorage';
+import {
+  decideConflictResolution,
+  type ConflictEnvelope,
+} from './conflictResolution';
 
 /**
  * Sync result for a single mutation.
@@ -319,19 +327,63 @@ class BackgroundSyncService {
     }
 
     try {
+      const session = getSessionRequestContext();
+      if (!session.tenantId) {
+        return {
+          success: false,
+          error: 'Missing tenant context for sync mutation',
+        };
+      }
+
       const token = await this.config.getAuthToken();
+      const baseHeaders = createSessionHeaders({
+        'Content-Type': 'application/json',
+      });
+      const authHeaders = token
+        ? { ...baseHeaders, Authorization: `Bearer ${token}` }
+        : baseHeaders;
       
       const response = await fetch(`${this.config.apiBaseUrl}${endpoint}`, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: authHeaders,
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         return { success: true };
+      } else if (response.status === 409) {
+        const conflict = (await response
+          .json()
+          .catch(() => ({ reason: 'conflict' }))) as ConflictEnvelope;
+        const decision = decideConflictResolution(
+          { type: endpointToMutationType(endpoint), payload },
+          conflict,
+        );
+
+        if (decision === 'accept_server') {
+          // Drop local mutation and trust authoritative server state.
+          return { success: true };
+        }
+
+        // Retry once with explicit conflict override marker.
+        const retryResponse = await fetch(`${this.config.apiBaseUrl}${endpoint}`, {
+          method,
+          headers: {
+            ...authHeaders,
+            'X-Conflict-Resolution': 'client_wins',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (retryResponse.ok) {
+          return { success: true };
+        }
+
+        const retryBody = await retryResponse.text().catch(() => 'Conflict retry failed');
+        return {
+          success: false,
+          error: `Conflict retry failed (HTTP ${retryResponse.status}): ${retryBody}`,
+        };
       } else {
         const errorBody = await response.text();
         return {
@@ -367,6 +419,25 @@ class BackgroundSyncService {
   async getPendingCount(): Promise<number> {
     return database.getMutationCount();
   }
+}
+
+function endpointToMutationType(endpoint: string): string {
+  if (endpoint.includes('/progress/complete-lesson')) {
+    return 'COMPLETE_LESSON';
+  }
+  if (endpoint.includes('/quizzes/submit')) {
+    return 'SUBMIT_QUIZ';
+  }
+  if (endpoint.includes('/progress')) {
+    return 'UPDATE_PROGRESS';
+  }
+  if (endpoint.includes('/bookmarks')) {
+    return 'ADD_BOOKMARK';
+  }
+  if (endpoint.includes('/notes')) {
+    return 'ADD_NOTE';
+  }
+  return 'UNKNOWN';
 }
 
 /**

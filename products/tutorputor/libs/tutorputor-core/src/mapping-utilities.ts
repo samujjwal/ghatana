@@ -19,20 +19,54 @@ import type {
   EnrollmentStatus,
 } from '@tutorputor/contracts';
 
+type MaybeDate = Date | string | null | undefined;
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' ? value : fallback;
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function toIso(value: MaybeDate, fallback = new Date().toISOString()): string {
+  if (!value) {
+    return fallback;
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return fallback;
+}
+
 /**
  * Maps database module to ModuleSummary contract type
  */
 export function mapModuleSummary(module: Record<string, unknown>): ModuleSummary {
   return {
-    id: module.id as ModuleId,
-    title: module.title,
-    description: module.description || '',
-    difficulty: module.difficulty || 'beginner',
-    estimatedMinutes: module.estimatedMinutes || 0,
-    tags: module.tags || [],
-    status: module.status || 'draft',
-    createdAt: module.createdAt?.toISOString() || new Date().toISOString(),
-    updatedAt: module.updatedAt?.toISOString() || new Date().toISOString(),
+    id: asString(module.id) as ModuleId,
+    slug: asString(module.slug),
+    title: asString(module.title),
+    domain: (asString(module.domain, 'MATH') as ModuleSummary['domain']),
+    difficulty: (asString(module.difficulty, 'beginner') as ModuleSummary['difficulty']),
+    estimatedTimeMinutes: asNumber(module.estimatedTimeMinutes ?? module.estimatedMinutes),
+    tags: asStringArray(module.tags),
+    status: (asString(module.status, 'draft') as ModuleSummary['status']),
+    progressPercent:
+      typeof module.progressPercent === 'number' ? module.progressPercent : undefined,
+    publishedAt:
+      typeof module.publishedAt === 'string'
+        ? module.publishedAt
+        : undefined,
   };
 }
 
@@ -41,16 +75,18 @@ export function mapModuleSummary(module: Record<string, unknown>): ModuleSummary
  */
 export function mapEnrollment(enrollment: Record<string, unknown>): Enrollment {
   return {
-    id: enrollment.id as EnrollmentId,
-    moduleId: enrollment.moduleId as ModuleId,
-    userId: enrollment.userId as UserId,
-    tenantId: enrollment.tenantId as TenantId,
-    status: mapEnrollmentStatus(enrollment.status),
-    progress: enrollment.progress || 0,
-    timeSpentSeconds: enrollment.timeSpentSeconds || 0,
-    startedAt: enrollment.startedAt?.toISOString() || new Date().toISOString(),
-    completedAt: enrollment.completedAt?.toISOString(),
-    lastAccessedAt: enrollment.lastAccessedAt?.toISOString(),
+    id: asString(enrollment.id) as EnrollmentId,
+    moduleId: asString(enrollment.moduleId) as ModuleId,
+    userId: asString(enrollment.userId) as UserId,
+    status: mapEnrollmentStatus(asString(enrollment.status, 'NOT_STARTED')),
+    progressPercent: asNumber(enrollment.progressPercent ?? enrollment.progress),
+    moduleSlug:
+      typeof enrollment.moduleSlug === 'string' ? enrollment.moduleSlug : undefined,
+    moduleTitle:
+      typeof enrollment.moduleTitle === 'string' ? enrollment.moduleTitle : undefined,
+    timeSpentSeconds: asNumber(enrollment.timeSpentSeconds),
+    startedAt: enrollment.startedAt ? toIso(enrollment.startedAt as MaybeDate) : undefined,
+    completedAt: enrollment.completedAt ? toIso(enrollment.completedAt as MaybeDate) : undefined,
   };
 }
 
@@ -62,7 +98,6 @@ export function mapEnrollmentStatus(status: string): EnrollmentStatus {
     'NOT_STARTED',
     'IN_PROGRESS',
     'COMPLETED',
-    'ABANDONED',
   ];
   
   const upperStatus = status.toUpperCase();
@@ -91,8 +126,8 @@ export function mapAssessmentAttempt(attempt: Record<string, unknown>): any {
     score: attempt.score || 0,
     maxScore: attempt.maxScore || 100,
     passed: attempt.passed || false,
-    startedAt: attempt.startedAt?.toISOString() || new Date().toISOString(),
-    completedAt: attempt.completedAt?.toISOString(),
+    startedAt: toIso(attempt.startedAt as MaybeDate),
+    completedAt: attempt.completedAt ? toIso(attempt.completedAt as MaybeDate) : undefined,
     timeSpentSeconds: attempt.timeSpentSeconds || 0,
     answers: attempt.answers || [],
   };
@@ -108,7 +143,7 @@ export function mapLearningEvent(event: Record<string, unknown>): any {
     tenantId: event.tenantId,
     moduleId: event.moduleId,
     eventType: event.eventType,
-    timestamp: event.timestamp?.toISOString() || new Date().toISOString(),
+    timestamp: toIso(event.timestamp as MaybeDate),
     metadata: event.metadata || {},
   };
 }
@@ -124,8 +159,8 @@ export function mapClassroom(classroom: Record<string, unknown>): any {
     description: classroom.description || '',
     teacherId: classroom.teacherId,
     studentCount: classroom.studentCount || 0,
-    createdAt: classroom.createdAt?.toISOString() || new Date().toISOString(),
-    updatedAt: classroom.updatedAt?.toISOString() || new Date().toISOString(),
+    createdAt: toIso(classroom.createdAt as MaybeDate),
+    updatedAt: toIso(classroom.updatedAt as MaybeDate),
   };
 }
 
@@ -141,7 +176,7 @@ export function mapNotification(notification: Record<string, unknown>): any {
     title: notification.title,
     message: notification.message,
     read: notification.read || false,
-    createdAt: notification.createdAt?.toISOString() || new Date().toISOString(),
+    createdAt: toIso(notification.createdAt as MaybeDate),
     metadata: notification.metadata || {},
   };
 }
@@ -154,8 +189,8 @@ export function mapPaginationParams(params: Record<string, unknown>): {
   take: number;
   cursor?: { id: string };
 } {
-  const limit = Math.min(params.limit || 50, 200);
-  const cursor = params.cursor;
+  const limit = Math.min(asNumber(params.limit, 50), 200);
+  const cursor = typeof params.cursor === 'string' ? params.cursor : undefined;
 
   return {
     skip: cursor ? 1 : 0,
@@ -204,7 +239,7 @@ export function mapSortParams(
  * Safely parses JSON metadata fields
  */
 export function parseMetadata<T = Record<string, any>>(
-  metadata: any,
+  metadata: unknown,
   defaultValue: T = {} as T,
 ): T {
   if (!metadata) {
@@ -298,12 +333,16 @@ export function mapErrorMessage(error: Record<string, unknown>): string {
  * Extracts tenant ID from request
  */
 export function extractTenantId(request: Record<string, unknown>): TenantId {
-  return (request.params?.tenantId || request.user?.tenantId || 'default') as TenantId;
+  const params = request.params as { tenantId?: unknown } | undefined;
+  const user = request.user as { tenantId?: unknown } | undefined;
+  return (asString(params?.tenantId) || asString(user?.tenantId) || 'default') as TenantId;
 }
 
 /**
  * Extracts user ID from request
  */
 export function extractUserId(request: Record<string, unknown>): UserId {
-  return (request.user?.id || request.params?.userId) as UserId;
+  const user = request.user as { id?: unknown } | undefined;
+  const params = request.params as { userId?: unknown } | undefined;
+  return (asString(user?.id) || asString(params?.userId)) as UserId;
 }

@@ -1,0 +1,30 @@
+appId: com.tutorputor.mobile
+---
+# Login Flow
+# Verifies that unauthenticated users land on the login screen and can sign in.
+
+- launchApp:
+    clearState: true
+
+# Login screen should render
+- assertVisible: "TutorPutor"
+- assertVisible: "Sign in to continue"
+
+# Enter credentials
+- tapOn:
+    accessibilityLabel: "Email address"
+- inputText: "learner@test.tutorputor.com"
+
+- tapOn:
+    accessibilityLabel: "Password"
+- inputText: "TestPassword123!"
+
+# Submit
+- tapOn:
+    accessibilityLabel: "Sign in"
+
+# Wait for navigation
+- waitForAnimationToEnd
+
+# Authenticated screen should appear
+- assertVisible: "Learn"

@@ -10,8 +10,12 @@
  */
 import type { FastifyInstance } from "fastify";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+import { getTenantId, getUserId, roleGuard } from "../../core/http/requestContext.js";
+import { buildSensitiveOperationAuditEntry } from "../policy/resource-access-helpers.js";
 import { APIMetricsService } from "./api-metrics.js";
 import { AlertService, type AlertSeverity } from "./alerts.js";
+
+const adminGuard = roleGuard(["admin", "superadmin"]);
 
 export function registerObservabilityRoutes(
   app: FastifyInstance,
@@ -21,6 +25,9 @@ export function registerObservabilityRoutes(
   const alertService = new AlertService(
     prisma as unknown as ConstructorParameters<typeof AlertService>[0],
   );
+
+  // All observability endpoints are admin-only.
+  app.addHook("preHandler", adminGuard);
 
   /**
    * GET /observability/metrics - Get current metrics snapshot
@@ -89,6 +96,22 @@ export function registerObservabilityRoutes(
   }>("/metrics/record", async (request, reply) => {
     try {
       metricsService.recordRequest(request.body);
+      const audit = buildSensitiveOperationAuditEntry({
+        actorId: getUserId(request),
+        actorTenantId: getTenantId(request),
+        targetResourceType: "metrics",
+        targetResourceId: request.body.endpoint,
+        operation: "record_metric",
+        decision: "ALLOW",
+        reason: "Admin recorded a request metric",
+        correlationId: request.id,
+        metadata: {
+          method: request.body.method,
+          statusCode: request.body.statusCode,
+          latencyMs: request.body.latencyMs,
+        },
+      });
+      app.log.info({ audit }, "Sensitive operation allowed");
       return reply.code(204).send();
     } catch (error) {
       return reply.code(500).send({

@@ -185,6 +185,50 @@ describe('createConsentEnforcement', () => {
             expect(reply.status).not.toHaveBeenCalled();
         });
 
+        it('blocks minor users when guardian consent is missing', async () => {
+            (prisma.userConsent.findMany as any).mockResolvedValue([
+                { category: 'ai_processing' },
+            ]);
+            const { preHandler } = createConsentEnforcement({ prisma, enableCache: false });
+            const reply = makeReply();
+
+            await preHandler(
+                makeRequest({
+                    url: '/api/v1/ai/generate',
+                    method: 'POST',
+                    user: { id: 'u1', tenantId: 't1', role: 'learner', isMinor: true },
+                }),
+                reply,
+            );
+
+            expect(reply.status).toHaveBeenCalledWith(451);
+            expect(reply.send).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    missingConsent: expect.arrayContaining(['guardian_consent']),
+                }),
+            );
+        });
+
+        it('allows minor users when both route and guardian consent are granted', async () => {
+            (prisma.userConsent.findMany as any).mockResolvedValue([
+                { category: 'ai_processing' },
+                { category: 'guardian_consent' },
+            ]);
+            const { preHandler } = createConsentEnforcement({ prisma, enableCache: false });
+            const reply = makeReply();
+
+            await preHandler(
+                makeRequest({
+                    url: '/api/v1/ai/generate',
+                    method: 'POST',
+                    user: { id: 'u1', tenantId: 't1', role: 'learner', ageGroup: 'minor' },
+                }),
+                reply,
+            );
+
+            expect(reply.status).not.toHaveBeenCalled();
+        });
+
         it('uses subject claim when JWT user id is stored as sub', async () => {
             (prisma.userConsent.findMany as any).mockResolvedValue([
                 { category: 'ai_processing' },

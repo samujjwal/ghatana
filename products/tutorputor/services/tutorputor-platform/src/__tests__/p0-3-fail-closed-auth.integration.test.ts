@@ -304,9 +304,53 @@ describe("P0-3: Fail-closed auth, tenant, and consent regression", () => {
     it("LTI JWKS is public → 200 or proper response", async () => {
       const res = await app.inject({
         method: "GET",
-        url: "/.well-known/jwks.json",
+        url: "/api/v1/integration/lti/jwks",
       });
-      expect([200, 404, 500]).toContain(res.statusCode);
+      expect(res.statusCode).not.toBe(401);
+    });
+
+    it("LTI config route is public → not 401", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/v1/integration/lti/config/platform-123",
+      });
+      expect(res.statusCode).not.toBe(401);
+    });
+
+    it("LTI launch route is public → not 401", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/integration/lti/launch",
+        payload: {},
+      });
+      expect(res.statusCode).not.toBe(401);
+    });
+
+    it("LTI deep-linking route is public → not 401", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/integration/lti/deep-linking",
+        payload: {},
+      });
+      expect(res.statusCode).not.toBe(401);
+    });
+
+    it("LTI grade-passback route is public → not 401", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/integration/lti/grade-passback",
+        payload: {},
+      });
+      expect(res.statusCode).not.toBe(401);
+    });
+
+    it("Stripe billing webhook is public → not 401", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/integration/billing/webhook",
+        payload: {},
+      });
+      expect(res.statusCode).not.toBe(401);
     });
   });
 
@@ -327,6 +371,48 @@ describe("P0-3: Fail-closed auth, tenant, and consent regression", () => {
       });
       // Should be 401 (no token), not 403 (trusted headers accepted)
       expect(res.statusCode).toBe(401);
+    });
+
+    it("trusted headers are rejected when internal mode is enabled but secret is missing", async () => {
+      process.env.TRUST_PROXY_AUTH_HEADERS = "true";
+      process.env.TRUST_PROXY_AUTH_SHARED_SECRET = "internal-shared-secret";
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/v1/ai/tutor/query",
+        headers: {
+          "x-user-id": "forged-user",
+          "x-tenant-id": "tenant-1",
+          "x-user-role": "admin",
+        },
+      });
+
+      // Missing x-trusted-proxy-secret must keep request unauthenticated.
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("trusted headers are accepted only with explicit internal mode and shared secret", async () => {
+      process.env.TRUST_PROXY_AUTH_HEADERS = "true";
+      process.env.TRUST_PROXY_AUTH_SHARED_SECRET = "internal-shared-secret";
+
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/ai/tutor/query",
+        headers: {
+          "x-user-id": "trusted-user",
+          "x-tenant-id": "tenant-1",
+          "x-user-role": "learner",
+          "x-trusted-proxy-secret": "internal-shared-secret",
+        },
+        payload: {
+          query: "test",
+        },
+      });
+
+      // Auth should not fail with 401 when trusted internal headers are valid.
+      // It can still fail later on consent with 451.
+      expect([200, 400, 404, 451, 500]).toContain(res.statusCode);
+      expect(res.statusCode).not.toBe(401);
     });
   });
 

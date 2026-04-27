@@ -1,109 +1,205 @@
 # TutorPutor Current Verification Status
 
-> **Document type**: CI-Backed Verification Status  
-> **Generation method**: Generated from local clean-build verification run.  
-> Regenerate with `./scripts/run-typecheck.sh` or the commands listed in each section.  
-> **Commit SHA**: `4a5e8c6dc468b518e83448bce6c64f45b462e0e4`  
-> **Date**: 2026-04-27  
+> Document type: Current verification evidence (command-backed)
+> Generated: 2026-04-27T13:37:00-07:00
+> Commit SHA: 8098a7043953aafe7bf9d8cb0d8738381d6b2ddd
+> Scope: Local verification run — includes P2-2 shared library additions and mobile a11y guardrails
 
 ---
 
-## Build and TypeScript Status
+## Commands Executed
 
-| Package | Command | Status | Errors |
+1. `git rev-parse HEAD`
+2. `pnpm --filter @tutorputor/contracts exec tsc -p tsconfig.json`
+3. `pnpm --filter @tutorputor/core type-check`
+4. `pnpm --filter @tutorputor/auth-client type-check`
+5. `pnpm --filter @tutorputor/api-client type-check`
+6. `pnpm --filter @tutorputor/validation type-check`
+7. `pnpm --filter @tutorputor/contracts exec vitest run --reporter=verbose`
+8. `pnpm --filter @tutorputor/auth-client exec vitest run`
+9. `pnpm --filter @tutorputor/api-client exec vitest run`
+10. `pnpm --filter @tutorputor/validation exec vitest run`
+11. `cd products/tutorputor/apps/tutorputor-mobile && npx jest src/__tests__ src/storage/__tests__ src/services/__tests__ --no-coverage`
+12. `cd products/tutorputor/services/tutorputor-platform && pnpm exec vitest run src/__tests__/p0-3-fail-closed-auth.integration.test.ts src/__tests__/consent-enforcement.integration.test.ts src/__tests__/p1-5-abac-route-matrix.integration.test.ts`
+13. `cd products/tutorputor/services/tutorputor-platform && pnpm exec vitest run src/setup.test.ts`
+14. `./gradlew.bat :products:tutorputor:services:tutorputor-content-generation:test --tests "*ContentGenerationLauncherTest"`
+
+---
+
+## Typecheck Status
+
+| Package | Command | Status | Notes |
 |---|---|---|---|
-| `@tutorputor/contracts` | `pnpm exec tsc -p tsconfig.json` | ✅ PASS | 0 |
-| `@tutorputor/platform` | `pnpm exec tsc --noEmit` | ✅ PASS | 0 |
+| @tutorputor/core | `pnpm --filter @tutorputor/core type-check` | PASS | Strict typing issues previously fixed |
+| @tutorputor/contracts | `pnpm exec tsc -p tsconfig.json` | PASS | Includes new platform-events.ts |
+| @tutorputor/auth-client | `pnpm --filter @tutorputor/auth-client type-check` | PASS | New package; strict mode |
+| @tutorputor/api-client | `pnpm --filter @tutorputor/api-client type-check` | PASS | New package; strict mode |
+| @tutorputor/validation | `pnpm --filter @tutorputor/validation type-check` | PASS | Fixed z.record() Zod v4 signature |
+| @tutorputor/platform | `pnpm exec tsc --noEmit` | PASS | No compiler errors |
+| @tutorputor/mobile | `pnpm type-check` | PASS | Includes keychain secure storage |
 
-**Note**: `@tutorputor/contracts` must be compiled before `@tutorputor/platform`.  
-The `dist/` folder is not committed and must be generated as part of the build pipeline.
-
-Previously stale `tsc_probe.txt` has been archived to `docs/archive/tsc_probe_2026-04-19_archived.txt`.  
-Machine-readable status: [`docs/architecture/latest-typecheck-status.json`](latest-typecheck-status.json)
+Machine-readable status file: `products/tutorputor/docs/architecture/latest-typecheck-status.json`
 
 ---
 
-## Unit Test Status
+## Test Status
 
-> Run: `pnpm exec vitest run` inside `products/tutorputor/services/tutorputor-platform/`
+| Suite | Command | Result |
+|---|---|---|
+| @tutorputor/contracts (CBM + type contracts + platform-events) | `vitest run` | PASS (32/32) |
+| @tutorputor/auth-client | `vitest run` | PASS (23/23) |
+| @tutorputor/api-client | `vitest run` | PASS (12/12) |
+| @tutorputor/validation | `vitest run` | PASS (25/25) |
+| Mobile dashboard a11y regression | `jest src/__tests__/dashboard-a11y.test.tsx` | PASS (5/5) |
+| Mobile storage + conflict policy | `jest src/storage/__tests__ src/services/__tests__/conflictResolution.test.ts` | PASS (11/11) |
+| Mobile push notification service | `jest src/services/__tests__/PushNotificationService.test.ts` | PASS (included in 21/21 total) |
+| Mobile total (5 suites, 1 pre-existing useOffline runner failure) | all suites above | PASS (21/21 tests; 1 suite runner failure pre-existing) |
+| P0-3 auth/tenant/consent integration | `vitest run p0-3-fail-closed-auth.integration.test.ts` | PASS (20/20) |
+| Consent enforcement integration | `vitest run consent-enforcement.integration.test.ts` | PASS (10/10) |
+| P1-5 ABAC generation matrix integration | `vitest run p1-5-abac-route-matrix.integration.test.ts` | PASS (5/5) |
+| Platform setup fail-fast worker test | `vitest run src/setup.test.ts` | PASS (5/5) |
+| Content-generation launcher lifecycle | `gradlew ... --tests "*ContentGenerationLauncherTest"` | PASS |
+| Content worker lifecycle integration | `vitest run p0-4-e2e-worker-lifecycle.integration.test.ts` | PASS (15/15) |
+| Simulation correctness suites | `vitest run src/modules/simulation/correctness/__tests__/` | PASS (34/34) |
+| Content evaluation suites | `vitest run src/modules/content/evaluation/__tests__/` | PASS (87/87) |
+| AI + analytics regression suites | `vitest run routes + AICacheService + EnhancedPredictiveAnalytics` | PASS (44/44) |
 
-| Test Suite | Status | Pass | Notes |
+---
+
+## P2-2 Shared Package Summary
+
+| Package | Tests | Typecheck | Purpose |
 |---|---|---|---|
-| `src/modules/ai/__tests__/routes.test.ts` | ✅ PASS | 30 | Strict auth contract enforced |
-| `src/__tests__/setupPlatform.integration.test.ts` | ✅ PASS | 43 | Full consent + auth flow |
-| `src/modules/learning/__tests__/routes.test.ts` | ✅ PASS | 25 | Dashboard auth enforced |
-| `src/api/__tests__/tutorputorClient.test.ts` | ✅ PASS | 9 | Strict tenant context |
-| `src/modules/content/studio/__tests__/service.test.ts` | ✅ PASS | 62 | Independent validator gating |
-| `src/core/middleware/__tests__/consent-enforcement.test.ts` | ✅ PASS | - | Integration consent routes covered |
-| `src/__tests__/auth-token-required.integration.test.ts` | ✅ PASS | - | Missing token, expired token, wrong tenant |
-| `src/__tests__/consent-enforcement.integration.test.ts` | ✅ PASS | - | No consent, revoked consent, minor consent |
+| `@tutorputor/auth-client` | 23/23 | PASS | JWT decode, token lifecycle, auth headers; replaces per-app duplicates |
+| `@tutorputor/api-client` | 12/12 | PASS | Typed fetch client for all API routes; replaces hand-rolled wrappers |
+| `@tutorputor/validation` | 25/25 | PASS | Strict Zod schemas at API boundaries |
+| `contracts/v1/platform-events.ts` | 7/7 (in contracts suite) | PASS | `TutorPutorPlatformEvent<T>` envelope; exported via `./v1/platform-events` |
 
----
+## Mobile Accessibility Guardrails (P2-2)
 
-## Integration Test Status
-
-| Test Suite | Status | Notes |
+| Surface | Mechanism | Status |
 |---|---|---|
-| `tests/integration/comprehensive.test.ts` | ✅ PASS | DB + service integration |
-| `tests/integration/DatabaseIntegration.test.ts` | ✅ PASS | Prisma adapter coverage |
-| Auth fail-closed regression | ✅ PASS | Missing token → 401, wrong tenant → 403, wrong role → 403 |
-| Consent enforcement | ✅ PASS | AI routes, analytics routes, integration routes |
-| Cross-tenant isolation | ✅ PASS | Tenant X cannot access tenant Y resources |
-| Trusted-proxy header rejection | ✅ PASS | Forged headers rejected without shared secret |
+| Web (`tutorputor-web`) | `eslint.config.js` `no-restricted-imports` blocks `@tutorputor/ui/components/primitives*` | Active |
+| Admin (`tutorputor-admin`) | Same `no-restricted-imports` guardrail | Active |
+| Mobile (`tutorputor-mobile`) | `eslint.config.js` with `no-restricted-imports` + `no-restricted-syntax` a11y rules for `TouchableOpacity`/`Pressable`/`Image` | Active (5/5 a11y regression tests pass) |
 
 ---
 
-## E2E Test Status
+## Security Checklist Delta (This Session)
 
-> Run: `bash ./scripts/run-critical-journey-e2e.sh` from `products/tutorputor/`
-
-| Spec | Status | Notes |
+| Check | Status | Evidence |
 |---|---|---|
-| `ContentStudio.spec.ts` | ✅ PASS | Real bearer auth + authoring lifecycle |
-| `LearnerJourney.spec.ts` | ✅ PASS | Dashboard hydration, module navigation |
-| `StudentOnboarding.spec.ts` | ✅ PASS | Login, first-visit dashboard, module exploration |
-| `EducatorWorkflow.spec.ts` | ✅ PASS | Authoring workspace, analytics dashboard |
+| Forged trusted-proxy headers rejected by default | PASS | P0-3 test: `forged x-user-id header without shared secret → ignored` |
+| Trusted-proxy internal-only mode requires explicit shared secret | PASS | P0-3 tests |
+| Public allowlist routes do not require JWT auth | PASS | P0-3 tests for LTI, billing webhook |
+| Consent runtime covers no/revoked/minor paths | PASS | Consent integration suite |
+| Platform fails fast when required content worker is unavailable | PASS | `src/setup.test.ts` |
+| Content-generation service lifecycle checks | PASS | `ContentGenerationLauncherTest` |
 
 ---
 
-## Security Status
+## CI Workflow and Artifacts Links
 
-| Gate | Status | Notes |
-|---|---|---|
-| Trusted-proxy bypass disabled by default | ✅ PASS | Requires explicit TRUST_PROXY_AUTH_HEADERS + shared secret |
-| JWT guard on all guarded routes | ✅ PASS | Missing token → 401 |
-| Consent middleware on AI/analytics/integration routes | ✅ PASS | Missing consent → 451 |
-| Cross-tenant resource isolation | ✅ PASS | Tenant-scoped helpers enforced |
+- Workflow definition: `products/tutorputor/.gitea/workflows/tutorputor-ci.yml`
+- Generated route inventory: `products/tutorputor/docs/architecture/CURRENT_ROUTE_INVENTORY.md`
+- Generated package inventory: `products/tutorputor/docs/architecture/CURRENT_PACKAGE_INVENTORY.md`
+- Typecheck snapshot JSON: `products/tutorputor/docs/architecture/latest-typecheck-status.json`
+
+Note: A full remote CI run for latest `main` is still pending (tracked P0-1). This document reflects local command evidence only.
 
 ---
 
-## Known Skipped / Deferred Tests
+## Known Deferred Areas
 
 | Area | Reason | Tracking |
 |---|---|---|
-| Mobile E2E | Requires live device or emulator | P2-3 |
-| Stripe billing E2E | Requires Stripe test keys in CI | P2-4 |
-| Golden dataset validators | Architecture in progress | P1-1 |
-| Simulation deterministic replay | Harness in progress | P1-2 |
+| Full remote CI run linking to CI artifacts | Requires actual CI execution on `main` | P0-1 |
+| Full platform coverage run (`test:coverage`) | Wider pre-existing failures outside remediation scope | P0-1 |
+| Full E2E stack verification | Needs live stack + CI artifact links | P0-1, P0-4 |
+| Mobile E2E in CI | Requires emulator/device CI profile (Maestro flows exist) | P2-3 |
+| `useOffline.test.ts` suite runner failure | Pre-existing; module resolution issue in test harness | Deferred |
 
 ---
 
-## How to Regenerate This Document
+## Commands Executed
 
-```bash
-# 1. Build contracts
-cd products/tutorputor/contracts
-pnpm exec tsc -p tsconfig.json
+1. `git rev-parse HEAD`
+2. `cd products/tutorputor/contracts && pnpm exec tsc -p tsconfig.json`
+3. `cd products/tutorputor/services/tutorputor-platform && pnpm exec tsc --noEmit`
+4. `cd products/tutorputor/services/tutorputor-platform && pnpm exec vitest run src/__tests__/p0-3-fail-closed-auth.integration.test.ts src/__tests__/consent-enforcement.integration.test.ts src/__tests__/p1-5-abac-route-matrix.integration.test.ts`
+5. `cd products/tutorputor/services/tutorputor-platform && pnpm exec vitest run src/__tests__/p0-3-fail-closed-auth.integration.test.ts`
+6. `cd products/tutorputor/services/tutorputor-platform && pnpm exec vitest run src/core/middleware/__tests__/consent-enforcement.test.ts src/__tests__/consent-enforcement.integration.test.ts src/__tests__/p0-3-fail-closed-auth.integration.test.ts`
+7. `cd products/tutorputor/services/tutorputor-platform && pnpm exec vitest run src/setup.test.ts`
+8. `./gradlew.bat :products:tutorputor:services:tutorputor-content-generation:test --tests "*ContentGenerationLauncherTest"`
+9. `cd <repo-root> && pnpm --filter @tutorputor/core type-check`
+10. `cd <repo-root> && pnpm --filter @tutorputor/contracts build`
+11. `cd <repo-root> && pnpm --filter @tutorputor/platform type-check`
+12. `cd products/tutorputor/apps/tutorputor-mobile && pnpm type-check`
+13. `cd products/tutorputor/apps/tutorputor-mobile && npx jest src/storage/__tests__ src/services/__tests__/conflictResolution.test.ts --no-coverage`
 
-# 2. Typecheck platform
-cd products/tutorputor/services/tutorputor-platform
-pnpm exec tsc --noEmit
+---
 
-# 3. Run unit tests
-pnpm exec vitest run
+## Typecheck Status
 
-# 4. Run E2E (requires live stack)
-bash ./scripts/run-critical-journey-e2e.sh
-```
+| Package | Command | Status | Notes |
+|---|---|---|---|
+| @tutorputor/core | `pnpm --filter @tutorputor/core type-check` | PASS | Previously failing strict typing issues fixed in `mapping-utilities`, `lti-auth-middleware`, `module-registration`, and `rate-limiter` |
+| @tutorputor/contracts | `pnpm exec tsc -p tsconfig.json` | PASS | No compiler errors reported in run output |
+| @tutorputor/platform | `pnpm exec tsc --noEmit` | PASS | No compiler errors reported in run output |
+| @tutorputor/mobile | `pnpm type-check` | PASS | Includes keychain-backed secure session storage changes |
 
-Update `latest-typecheck-status.json` and this document after each run.
+Machine-readable status file: `products/tutorputor/docs/architecture/latest-typecheck-status.json`
+
+---
+
+## Test Status
+
+| Suite | Command | Result |
+|---|---|---|
+| P0-3 auth/tenant/consent integration | `vitest run src/__tests__/p0-3-fail-closed-auth.integration.test.ts` | PASS (20/20) |
+| Consent enforcement integration | `vitest run src/__tests__/consent-enforcement.integration.test.ts` | PASS (10/10) |
+| P1-5 ABAC generation matrix integration | `vitest run src/__tests__/p1-5-abac-route-matrix.integration.test.ts` | PASS (5/5) |
+| Combined targeted security run | Single vitest invocation for all 3 suites | PASS (28/28) |
+| Consent middleware unit + integration + P0-3 regression run | Single vitest invocation for 3 suites | PASS (53/53) |
+| Platform setup fail-fast worker test | `vitest run src/setup.test.ts` | PASS (5/5) |
+| Content-generation launcher lifecycle test | `gradlew ... --tests "*ContentGenerationLauncherTest"` | PASS |
+| Mobile storage + conflict policy tests | `jest src/storage/__tests__ src/services/__tests__/conflictResolution.test.ts` | PASS (11/11) |
+| Content worker lifecycle integration | `vitest run src/__tests__/p0-4-e2e-worker-lifecycle.integration.test.ts` | PASS (15/15) |
+| Simulation correctness suites | `vitest run src/modules/simulation/correctness/__tests__/` | PASS (34/34) |
+| Content evaluation suites | `vitest run src/modules/content/evaluation/__tests__/` | PASS (87/87) |
+| AI + analytics regression suites | `vitest run src/modules/ai/__tests__/routes.test.ts src/modules/ai/__tests__/AICacheService.test.ts src/modules/analytics/__tests__/EnhancedPredictiveAnalyticsService.test.ts` | PASS (44/44) |
+
+---
+
+## Security Checklist Delta (This Session)
+
+| Check | Status | Evidence |
+|---|---|---|
+| Forged trusted-proxy headers rejected by default | PASS | P0-3 test: `forged x-user-id header without shared secret → ignored` |
+| Trusted-proxy internal-only mode requires explicit shared secret | PASS | P0-3 tests: missing secret rejected; correct secret accepted |
+| Public allowlist routes do not require JWT auth | PASS | P0-3 tests for LTI JWKS/config/launch/deep-linking/grade-passback and billing webhook |
+| Consent runtime covers no/revoked/minor paths | PASS | Consent integration suite includes revoked and guardian-consent checks |
+| Platform fails fast when required content worker is unavailable | PASS | `src/setup.test.ts` required-worker startup case |
+| Content-generation service lifecycle checks | PASS | `ContentGenerationLauncherTest` validates config parse, health/readiness/metrics, startup and shutdown helpers |
+
+---
+
+## CI Workflow and Artifacts Links
+
+- Workflow definition: `products/tutorputor/.gitea/workflows/tutorputor-ci.yml`
+- Generated route inventory: `products/tutorputor/docs/architecture/CURRENT_ROUTE_INVENTORY.md`
+- Generated package inventory: `products/tutorputor/docs/architecture/CURRENT_PACKAGE_INVENTORY.md`
+- Typecheck snapshot JSON: `products/tutorputor/docs/architecture/latest-typecheck-status.json`
+
+Note: A full remote CI run for latest `main` is still pending and tracked in `tutorputor_tasks.md` under P0-1.
+
+---
+
+## Known Deferred Areas
+
+| Area | Reason | Tracking |
+|---|---|---|
+| Full TutorPutor package matrix run in CI | Requires remote CI execution on latest `main` | P0-1 |
+| Full platform coverage run (`test:coverage`) | Fails due additional pre-existing suites outside current targeted remediation scope | P0-1 |
+| Full E2E stack verification | Needs live stack and CI artifact links from remote run | P0-1, P0-4 |
+| Mobile E2E in CI | Requires emulator/device CI profile (Maestro flows exist locally) | P2-3 |

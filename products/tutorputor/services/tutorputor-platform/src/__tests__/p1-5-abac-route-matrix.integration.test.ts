@@ -454,3 +454,218 @@ describe("P1-5 ABAC route matrix — generation routes", () => {
     expect(cancelRes.statusCode).toBe(200);
   });
 });
+
+// --- Feature Flags Route Family ------------------------------------------------
+
+describe("P1-5 ABAC route matrix � feature-flags routes", () => {
+  let app: FastifyInstance;
+  let savedStripeKey: string | undefined;
+
+  beforeEach(async () => {
+    savedStripeKey = process.env.STRIPE_SECRET_KEY;
+    process.env.STRIPE_SECRET_KEY = "stripe_test_placeholder_secret";
+
+    app = await createServer({
+      startContentWorker: false,
+      startLearnerProfileGrpcServer: false,
+      prisma: createGenerationPrismaStub(),
+      redis: createMockRedis() as never,
+    });
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app?.close();
+    if (savedStripeKey === undefined) {
+      delete process.env.STRIPE_SECRET_KEY;
+    } else {
+      process.env.STRIPE_SECRET_KEY = savedStripeKey;
+    }
+  });
+
+  function tokenFor(role: string, tenantId: string = "tenant-1"): string {
+    return app.jwt.sign({ sub: `${role}-user`, tenantId, role });
+  }
+
+  it("student cannot list feature flags", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/feature-flags",
+      headers: { authorization: `Bearer ${tokenFor("student")}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("teacher cannot list feature flags", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/feature-flags",
+      headers: { authorization: `Bearer ${tokenFor("teacher")}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("admin can list feature flags", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/feature-flags",
+      headers: { authorization: `Bearer ${tokenFor("admin")}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as { flags: unknown[] };
+    expect(Array.isArray(body.flags)).toBe(true);
+  });
+
+  it("superadmin can list feature flags", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/feature-flags",
+      headers: { authorization: `Bearer ${tokenFor("superadmin")}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("student cannot enable a feature flag (mutation blocked)", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/admin/feature-flags/some-flag/enable",
+      headers: { authorization: `Bearer ${tokenFor("student")}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("admin can enable and disable a feature flag", async () => {
+    const enableRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/admin/feature-flags/some-flag/enable",
+      headers: { authorization: `Bearer ${tokenFor("admin")}` },
+    });
+    expect(enableRes.statusCode).toBe(200);
+    const enableBody = enableRes.json() as { enabled: boolean };
+    expect(enableBody.enabled).toBe(true);
+
+    const disableRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/admin/feature-flags/some-flag/disable",
+      headers: { authorization: `Bearer ${tokenFor("admin")}` },
+    });
+    expect(disableRes.statusCode).toBe(200);
+    const disableBody = disableRes.json() as { enabled: boolean };
+    expect(disableBody.enabled).toBe(false);
+  });
+
+  it("unauthenticated request to feature flags returns 401", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/feature-flags",
+    });
+    expect(res.statusCode).toBe(401);
+  });
+});
+
+// --- Observability Route Family ------------------------------------------------
+
+describe("P1-5 ABAC route matrix � observability routes", () => {
+  let app: FastifyInstance;
+  let savedStripeKey: string | undefined;
+
+  beforeEach(async () => {
+    savedStripeKey = process.env.STRIPE_SECRET_KEY;
+    process.env.STRIPE_SECRET_KEY = "stripe_test_placeholder_secret";
+
+    app = await createServer({
+      startContentWorker: false,
+      startLearnerProfileGrpcServer: false,
+      prisma: createGenerationPrismaStub(),
+      redis: createMockRedis() as never,
+    });
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app?.close();
+    if (savedStripeKey === undefined) {
+      delete process.env.STRIPE_SECRET_KEY;
+    } else {
+      process.env.STRIPE_SECRET_KEY = savedStripeKey;
+    }
+  });
+
+  function tokenFor(role: string, tenantId: string = "tenant-1"): string {
+    return app.jwt.sign({ sub: `${role}-user`, tenantId, role });
+  }
+
+  it("student cannot access observability metrics", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/observability/metrics",
+      headers: { authorization: `Bearer ${tokenFor("student")}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("teacher cannot access observability metrics", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/observability/metrics",
+      headers: { authorization: `Bearer ${tokenFor("teacher")}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("admin can access observability metrics", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/observability/metrics",
+      headers: { authorization: `Bearer ${tokenFor("admin")}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("superadmin can access observability metrics", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/observability/metrics",
+      headers: { authorization: `Bearer ${tokenFor("superadmin")}` },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("student cannot record a metric (mutation blocked)", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/admin/observability/metrics/record",
+      headers: { authorization: `Bearer ${tokenFor("student")}` },
+      payload: {
+        endpoint: "/api/test",
+        method: "GET",
+        statusCode: 200,
+        latencyMs: 42,
+      },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("admin can record a metric", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/admin/observability/metrics/record",
+      headers: { authorization: `Bearer ${tokenFor("admin")}` },
+      payload: {
+        endpoint: "/api/test",
+        method: "GET",
+        statusCode: 200,
+        latencyMs: 42,
+      },
+    });
+    expect(res.statusCode).toBe(204);
+  });
+
+  it("unauthenticated request to observability returns 401", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/admin/observability/metrics",
+    });
+    expect(res.statusCode).toBe(401);
+  });
+});

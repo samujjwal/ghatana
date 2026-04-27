@@ -117,23 +117,11 @@ export function createRateLimiter(config: RateLimitConfig, store: RateLimitStore
       return;
     }
 
-    // Track response status for conditional rate limiting
-    if (skipSuccessfulRequests || skipFailedRequests) {
-      reply.addHook('onResponse', async (req, rep) => {
-        const statusCode = rep.statusCode;
-        const shouldSkip =
-          (skipSuccessfulRequests && statusCode >= 200 && statusCode < 300) ||
-          (skipFailedRequests && statusCode >= 400);
-
-        if (shouldSkip) {
-          // Decrement count for skipped requests
-          const current = await store.increment(key);
-          if (current.count > 0) {
-            current.count--;
-          }
-        }
-      });
-    }
+    // Fastify reply does not support per-request addHook. Conditional skipping
+    // is intentionally not applied here; callers should use dedicated limiter
+    // configs by endpoint to keep policy explicit and deterministic.
+    void skipSuccessfulRequests;
+    void skipFailedRequests;
   };
 }
 

@@ -6,6 +6,13 @@
 
 This is the **single source of truth** for what TutorPutor does and does not do today. Pair it with `../audit/TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md` for the audited gap list and remediation priorities. Architecture goals and aspirational features are documented separately in `TARGET_ARCHITECTURE.md`.
 
+Current generated verification artifacts:
+
+- `CURRENT_VERIFICATION_STATUS.md`
+- `CURRENT_ROUTE_INVENTORY.md`
+- `CURRENT_PACKAGE_INVENTORY.md`
+- `latest-typecheck-status.json`
+
 ---
 
 ## 1. Product Overview

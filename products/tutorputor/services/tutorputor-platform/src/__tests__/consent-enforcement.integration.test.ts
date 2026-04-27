@@ -180,6 +180,28 @@ describe("Consent enforcement integration tests", () => {
     });
   });
 
+  it("should block third-party integration routes without third_party_sharing consent", async () => {
+    const token = app.jwt.sign({
+      sub: "user-1",
+      tenantId: "tenant-1",
+      role: "learner",
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/integration/marketplace/listings",
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.statusCode).toBe(451);
+    expect(response.json()).toMatchObject({
+      error: "Consent Required",
+      missingConsent: expect.arrayContaining(["third_party_sharing"]),
+    });
+  });
+
   it("should allow AI endpoints with ai_processing consent", async () => {
     // Create user consent record
     await prismaStub.userConsent.create({
@@ -344,6 +366,114 @@ describe("Consent enforcement integration tests", () => {
       url: "/api/v1/recommendations/next",
       headers: {
         authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.statusCode).not.toBe(451);
+  });
+
+  it("should block when consent has been revoked", async () => {
+    await prismaStub.userConsent.create({
+      data: {
+        tenantId: "tenant-1",
+        userId: "user-revoked",
+        category: "ai_processing",
+        granted: false,
+      },
+    });
+
+    const token = app.jwt.sign({
+      sub: "user-revoked",
+      tenantId: "tenant-1",
+      role: "learner",
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/ai/tutor/query",
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      body: {
+        query: "test question",
+      },
+    });
+
+    expect(response.statusCode).toBe(451);
+    expect(response.json()).toMatchObject({
+      error: "Consent Required",
+      missingConsent: expect.arrayContaining(["ai_processing"]),
+    });
+  });
+
+  it("should block minors without guardian_consent", async () => {
+    await prismaStub.userConsent.create({
+      data: {
+        tenantId: "tenant-1",
+        userId: "minor-user",
+        category: "ai_processing",
+        granted: true,
+      },
+    });
+
+    const token = app.jwt.sign({
+      sub: "minor-user",
+      tenantId: "tenant-1",
+      role: "learner",
+      isMinor: true,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/ai/tutor/query",
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      body: {
+        query: "test question",
+      },
+    });
+
+    expect(response.statusCode).toBe(451);
+    expect(response.json()).toMatchObject({
+      error: "Consent Required",
+      missingConsent: expect.arrayContaining(["guardian_consent"]),
+    });
+  });
+
+  it("should allow minors with guardian_consent and route consent", async () => {
+    await prismaStub.userConsent.createMany({
+      data: [
+        {
+          tenantId: "tenant-1",
+          userId: "minor-user-ok",
+          category: "ai_processing",
+          granted: true,
+        },
+        {
+          tenantId: "tenant-1",
+          userId: "minor-user-ok",
+          category: "guardian_consent",
+          granted: true,
+        },
+      ],
+    });
+
+    const token = app.jwt.sign({
+      sub: "minor-user-ok",
+      tenantId: "tenant-1",
+      role: "learner",
+      ageGroup: "minor",
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/ai/tutor/query",
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      body: {
+        query: "test question",
       },
     });
 

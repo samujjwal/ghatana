@@ -65,6 +65,26 @@ const ConceptManagementPage = lazy(() =>
 const ExamplesGallery = lazy(() =>
   import("./pages/ExamplesGallery").then((m) => ({
     default: m.ExamplesGallery,
+  const ExamplesGallery = lazy(() =>
+    import("./pages/ExamplesGallery").then((m) => ({
+      default: m.ExamplesGallery,
+    })),
+  );
+  const TeacherDashboardPage = lazy(() =>
+    import("./pages/TeacherDashboardPage").then((m) => ({
+      default: m.TeacherDashboardPage,
+    })),
+  );
+  const InstitutionAdminDashboardPage = lazy(() =>
+    import("./pages/InstitutionAdminDashboardPage").then((m) => ({
+      default: m.InstitutionAdminDashboardPage,
+    })),
+  );
+  const OperatorDashboardPage = lazy(() =>
+    import("./pages/OperatorDashboardPage").then((m) => ({
+      default: m.OperatorDashboardPage,
+    })),
+  );
   })),
 );
 
@@ -207,6 +227,26 @@ export const router = createBrowserRouter([
       {
         path: "settings/marketplace",
         element: withSuspense(MarketplaceAdminPage),
+      },
+
+      // === LEGACY ROUTE REDIRECTS (for backwards compatibility) ===
+      {
+        path: "settings/marketplace",
+        element: withSuspense(MarketplaceAdminPage),
+      },
+
+      // 5. PERSONA DASHBOARDS — role-specific views
+      {
+        path: "dashboard/teacher",
+        element: withSuspense(TeacherDashboardPage),
+      },
+      {
+        path: "dashboard/institution-admin",
+        element: withSuspense(InstitutionAdminDashboardPage),
+      },
+      {
+        path: "dashboard/operator",
+        element: withSuspense(OperatorDashboardPage),
       },
 
       // === LEGACY ROUTE REDIRECTS (for backwards compatibility) ===

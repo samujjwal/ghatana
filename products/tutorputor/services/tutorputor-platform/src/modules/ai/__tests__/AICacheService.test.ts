@@ -7,88 +7,98 @@ import { AICacheService } from '../AICacheService.js';
 
 describe('AICacheService', () => {
   let service: AICacheService<string>;
+  let store: Map<string, string>;
 
   beforeEach(() => {
-    service = new AICacheService<string>(100, 60000); // 100 entries, 60s TTL
+    store = new Map<string, string>();
+    const redisMock = {
+      async get(key: string): Promise<string | null> {
+        return store.get(key) ?? null;
+      },
+      async set(key: string, value: string): Promise<'OK'> {
+        store.set(key, value);
+        return 'OK';
+      },
+      async del(...keys: string[]): Promise<number> {
+        let deleted = 0;
+        for (const key of keys) {
+          if (store.delete(key)) {
+            deleted++;
+          }
+        }
+        return deleted;
+      },
+      async keys(pattern: string): Promise<string[]> {
+        const prefix = pattern.replace('*', '');
+        return Array.from(store.keys()).filter((key) => key.startsWith(prefix));
+      },
+    };
+
+    service = new AICacheService<string>(redisMock as never, 60000);
   });
 
   describe('get and set', () => {
-    it('should cache and retrieve values', () => {
-      service.set('tutoring', { question: 'test' }, 'response1', 60000);
-      const result = service.get('tutoring', { question: 'test' });
+    it('should cache and retrieve values', async () => {
+      await service.set('tutoring', { question: 'test' }, 'response1', 60000);
+      const result = await service.get('tutoring', { question: 'test' });
       expect(result).toBe('response1');
     });
 
-    it('should return null for non-existent keys', () => {
-      const result = service.get('tutoring', { question: 'nonexistent' });
+    it('should return null for non-existent keys', async () => {
+      const result = await service.get('tutoring', { question: 'nonexistent' });
       expect(result).toBeNull();
     });
 
-    it('should return null for cache miss', () => {
-      const result = service.get('tutoring', { question: 'test' });
+    it('should return null for cache miss', async () => {
+      const result = await service.get('tutoring', { question: 'test' });
       expect(result).toBeNull();
     });
   });
 
   describe('invalidate', () => {
-    it('should remove cached entries by prefix', () => {
-      service.set('tutoring', { id: '1' }, 'response1', 60000);
-      service.set('tutoring', { id: '2' }, 'response2', 60000);
-      service.invalidate('tutoring');
+    it('should remove cached entry by params', async () => {
+      await service.set('tutoring', { id: '1' }, 'response1', 60000);
+      await service.set('tutoring', { id: '2' }, 'response2', 60000);
+      await service.invalidate('tutoring', { id: '1' });
       
-      expect(service.get('tutoring', { id: '1' })).toBeNull();
-      expect(service.get('tutoring', { id: '2' })).toBeNull();
+      expect(await service.get('tutoring', { id: '1' })).toBeNull();
+      expect(await service.get('tutoring', { id: '2' })).toBe('response2');
     });
   });
 
-  describe('clear', () => {
-    it('should remove all cached entries', () => {
-      service.set('tutoring', { id: '1' }, 'response1', 60000);
-      service.set('content', { id: '1' }, 'response2', 60000);
-      service.clear();
+  describe('clearPrefix', () => {
+    it('should remove all cached entries for a prefix', async () => {
+      await service.set('tutoring', { id: '1' }, 'response1', 60000);
+      await service.set('content', { id: '1' }, 'response2', 60000);
+      await service.clearPrefix('tutoring');
       
-      expect(service.get('tutoring', { id: '1' })).toBeNull();
-      expect(service.get('content', { id: '1' })).toBeNull();
+      expect(await service.get('tutoring', { id: '1' })).toBeNull();
+      expect(await service.get('content', { id: '1' })).toBe('response2');
     });
   });
 
   describe('getStats', () => {
-    it('should return cache statistics', () => {
-      service.set('tutoring', { id: '1' }, 'response1', 60000);
-      service.get('tutoring', { id: '1' });
-      service.get('tutoring', { id: '1' }); // Cache hit
-      service.get('tutoring', { id: '2' }); // Cache miss
+    it('should return cache statistics', async () => {
+      await service.set('tutoring', { id: '1' }, 'response1', 60000);
+      await service.get('tutoring', { id: '1' });
+      await service.get('tutoring', { id: '1' }); // Cache hit
+      await service.get('tutoring', { id: '2' }); // Cache miss
       
       const stats = service.getStats();
-      expect(stats).toHaveProperty('size');
       expect(stats).toHaveProperty('totalHits');
       expect(stats).toHaveProperty('totalMisses');
       expect(stats).toHaveProperty('hitRate');
-      expect(stats.size).toBe(1);
+      expect(stats.totalHits).toBeGreaterThan(0);
     });
 
-    it('should calculate hit rate correctly', () => {
-      service.set('tutoring', { id: '1' }, 'response1', 60000);
-      service.get('tutoring', { id: '1' });
-      service.get('tutoring', { id: '1' });
-      service.get('tutoring', { id: '2' });
+    it('should calculate hit rate correctly', async () => {
+      await service.set('tutoring', { id: '1' }, 'response1', 60000);
+      await service.get('tutoring', { id: '1' });
+      await service.get('tutoring', { id: '1' });
+      await service.get('tutoring', { id: '2' });
       
       const stats = service.getStats();
       expect(stats.hitRate).toBeCloseTo(0.666, 2);
-    });
-  });
-
-  describe('max entries', () => {
-    it('should enforce max entries limit', () => {
-      const smallCache = new AICacheService<string>(2, 60000);
-      smallCache.set('tutoring', { id: '1' }, 'response1', 60000);
-      smallCache.set('tutoring', { id: '2' }, 'response2', 60000);
-      smallCache.set('tutoring', { id: '3' }, 'response3', 60000);
-      
-      // First entry should be evicted
-      expect(smallCache.get('tutoring', { id: '1' })).toBeNull();
-      expect(smallCache.get('tutoring', { id: '2' })).toBe('response2');
-      expect(smallCache.get('tutoring', { id: '3' })).toBe('response3');
     });
   });
 });

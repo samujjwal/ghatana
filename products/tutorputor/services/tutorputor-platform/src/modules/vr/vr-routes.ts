@@ -11,6 +11,7 @@ import {
   getTenantId,
   getUserId,
   requireRole,
+  requireSelfOrRole,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
 import {
@@ -281,17 +282,29 @@ export const vrRoutes = async (app: FastifyInstance) => {
 
   /**
    * GET /sessions/:sessionId
-   * Get a single VR session.
+   * Get a single VR session. Access restricted to session owner or admin/superadmin.
    */
   app.get(
     "/sessions/:sessionId",
     async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = asTenantId(getTenantId(req));
+      const userId = asUserId(getUserId(req));
       const { sessionId } = req.params as { sessionId: string };
 
       const session = await sessionService.getSession({ tenantId, sessionId });
       if (!session)
         return reply.code(404).send({ error: "VR session not found" });
+
+      try {
+        requireSelfOrRole(req, session.userId, ["admin", "superadmin"]);
+      } catch {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "You are not allowed to access this VR session",
+        });
+      }
+
+      void userId; // userId verified via requireSelfOrRole above
       return reply.send(session);
     },
   );

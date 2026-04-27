@@ -2,10 +2,15 @@ import type { FastifyPluginAsync } from "fastify";
 import { TeacherServiceImpl } from "./service";
 import { z } from "zod";
 import {
+  getUserRole,
   getTenantId,
   getUserId,
   requireRole,
 } from "../../../core/http/requestContext.js";
+import {
+  buildTenantScopedWhere,
+  isSelfOrPrivileged,
+} from "../../policy/resource-access-helpers.js";
 import type {
   TenantId,
   UserId,
@@ -81,6 +86,52 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
 ) => {
   const teacherService = options.service ?? new TeacherServiceImpl(app.prisma);
   const teacherRoles = ["teacher", "admin", "superadmin"];
+
+  const ensureClassroomMutationAccess = async (args: {
+    tenantId: TenantId;
+    classroomId: string;
+    actorUserId: UserId;
+    actorRole: string | null;
+  }): Promise<{ ok: true } | { ok: false; status: number; body: Record<string, string> }> => {
+    if (!("prisma" in app) || !app.prisma) {
+      return { ok: true };
+    }
+
+    const classroom = await app.prisma.classroom.findFirst({
+      where: buildTenantScopedWhere(args.tenantId, args.classroomId),
+      select: { teacherId: true },
+    });
+
+    if (!classroom) {
+      return {
+        ok: false,
+        status: 404,
+        body: { error: `Classroom ${args.classroomId} not found` },
+      };
+    }
+
+    const allowed = isSelfOrPrivileged(
+      {
+        userId: args.actorUserId,
+        tenantId: args.tenantId,
+        roles: args.actorRole ? [args.actorRole] : [],
+      },
+      classroom.teacherId,
+    );
+
+    if (!allowed) {
+      return {
+        ok: false,
+        status: 403,
+        body: {
+          error: "Forbidden",
+          message: "Only the owning teacher or privileged admin role can mutate this classroom",
+        },
+      };
+    }
+
+    return { ok: true };
+  };
 
   /**
    * GET /teacher/dashboard
@@ -180,6 +231,8 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
    */
   app.post("/classrooms/:classroomId/students", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
+    const actorUserId = getUserId(request) as UserId;
+    const actorRole = getUserRole(request);
     requireRole(request, teacherRoles);
 
     const paramsParseResult = ClassroomParamsSchema.safeParse(request.params);
@@ -198,6 +251,16 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
 
     const { classroomId } = paramsParseResult.data;
     const { studentId, displayName, email } = bodyParseResult.data;
+
+    const accessCheck = await ensureClassroomMutationAccess({
+      tenantId,
+      classroomId,
+      actorUserId,
+      actorRole,
+    });
+    if (!accessCheck.ok) {
+      return reply.code(accessCheck.status).send(accessCheck.body);
+    }
 
     try {
       const classroom = await teacherService.addStudentToClassroom({
@@ -228,6 +291,8 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
     "/classrooms/:classroomId/students/:studentId",
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
+      const actorUserId = getUserId(request) as UserId;
+      const actorRole = getUserRole(request);
       requireRole(request, teacherRoles);
 
       const paramsParseResult = ClassroomStudentParamsSchema.safeParse(
@@ -240,6 +305,16 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
       }
 
       const { classroomId, studentId } = paramsParseResult.data;
+
+      const accessCheck = await ensureClassroomMutationAccess({
+        tenantId,
+        classroomId,
+        actorUserId,
+        actorRole,
+      });
+      if (!accessCheck.ok) {
+        return reply.code(accessCheck.status).send(accessCheck.body);
+      }
 
       try {
         const classroom = await teacherService.removeStudentFromClassroom({
@@ -267,6 +342,8 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
    */
   app.post("/classrooms/:classroomId/assignments", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
+    const actorUserId = getUserId(request) as UserId;
+    const actorRole = getUserRole(request);
     requireRole(request, teacherRoles);
 
     const paramsParseResult = ClassroomParamsSchema.safeParse(request.params);
@@ -285,6 +362,16 @@ export const teacherRoutes: FastifyPluginAsync<TeacherRoutesOptions> = async (
 
     const { classroomId } = paramsParseResult.data;
     const { moduleId, dueAt } = bodyParseResult.data;
+
+    const accessCheck = await ensureClassroomMutationAccess({
+      tenantId,
+      classroomId,
+      actorUserId,
+      actorRole,
+    });
+    if (!accessCheck.ok) {
+      return reply.code(accessCheck.status).send(accessCheck.body);
+    }
 
     try {
       const dueAtIso = dueAt ? new Date(dueAt).toISOString() : undefined;

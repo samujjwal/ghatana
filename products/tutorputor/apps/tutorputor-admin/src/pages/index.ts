@@ -12,3 +12,7 @@ export { DomainEditorPage } from './DomainEditorPage';
 export { ConceptManagementPage } from './ConceptManagementPage';
 export { ExamplesGallery } from './ExamplesGallery';
 export { ContentStudioPage } from './ContentStudioPage';
+export { ContentStudioPage } from './ContentStudioPage';
+export { TeacherDashboardPage } from './TeacherDashboardPage';
+export { InstitutionAdminDashboardPage } from './InstitutionAdminDashboardPage';
+export { OperatorDashboardPage } from './OperatorDashboardPage';

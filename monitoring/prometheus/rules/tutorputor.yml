@@ -232,3 +232,180 @@ groups:
           summary: "Error budget burning too fast"
           description: "Error budget burn rate is above 1% per hour (current: {{ $value | humanizePercentage }})."
           runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/error-budget-burn"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Per-journey SLO alert rules (aligned with SLO_DEFINITIONS.md)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: tutorputor_journey_slos
+    interval: 1m
+    rules:
+
+      # SLO-01: Learner Dashboard — high error rate (critical)
+      - alert: TutorPutorDashboardHighErrorRate
+        expr: |
+          rate(http_requests_total{job="tutorputor-app",route="/api/v1/learning/dashboard",status=~"5.."}[5m])
+          / rate(http_requests_total{job="tutorputor-app",route="/api/v1/learning/dashboard"}[5m]) > 0.01
+        for: 2m
+        labels:
+          product: tutorputor
+          severity: critical
+          slo: SLO-01
+        annotations:
+          summary: "TutorPutor learner dashboard error rate exceeded 1%"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/dashboard-errors"
+
+      # SLO-01: Learner Dashboard — high p95 latency (warning)
+      - alert: TutorPutorDashboardSlowP95
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{job="tutorputor-app",route="/api/v1/learning/dashboard"}[5m])
+          ) > 1.5
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          slo: SLO-01
+        annotations:
+          summary: "TutorPutor learner dashboard p95 latency exceeded 1.5s"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/dashboard-latency"
+
+      # SLO-03: AI Tutor — very slow responses (warning)
+      - alert: TutorPutorAITutorSlowP95
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{job="tutorputor-app",route="/api/v1/ai/tutor/query"}[5m])
+          ) > 10
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          slo: SLO-03
+        annotations:
+          summary: "TutorPutor AI tutor p95 latency exceeded 10s"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/ai-tutor-latency"
+
+      # SLO-03: AI Tutor — high rate limit breaches (warning)
+      - alert: TutorPutorAITutorRateLimitBreaches
+        expr: |
+          rate(http_requests_total{job="tutorputor-app",route="/api/v1/ai/tutor/query",status="429"}[1m])
+          / rate(http_requests_total{job="tutorputor-app",route="/api/v1/ai/tutor/query"}[1m]) > 0.05
+        for: 2m
+        labels:
+          product: tutorputor
+          severity: warning
+          slo: SLO-03
+        annotations:
+          summary: "TutorPutor AI tutor rate limit breaches exceeded 5%"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/ai-rate-limits"
+
+      # SLO-04: Content generation queue — large backlog (critical)
+      - alert: TutorPutorContentQueueBacklog
+        expr: tutorputor_queue_backlog_depth{queue="content-generation"} > 200
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: critical
+          slo: SLO-04
+        annotations:
+          summary: "TutorPutor content generation queue depth exceeded 200 jobs"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/content-queue"
+
+      # SLO-04: Content generation — dead-letter queue growing (warning)
+      - alert: TutorPutorContentDLQDepth
+        expr: tutorputor_queue_depth{queue="content-generation-dlq"} > 10
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          slo: SLO-04
+        annotations:
+          summary: "TutorPutor content generation dead-letter queue exceeded 10 jobs"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/content-dlq"
+
+      # SLO-04: Content generation — low job completion rate (critical)
+      - alert: TutorPutorContentGenerationLowCompletionRate
+        expr: |
+          rate(tutorputor_content_generation_jobs_total{status="completed"}[1h])
+          / rate(tutorputor_content_generation_jobs_total[1h]) < 0.95
+        for: 10m
+        labels:
+          product: tutorputor
+          severity: critical
+          slo: SLO-04
+        annotations:
+          summary: "TutorPutor content generation job completion rate below 95%"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/content-completion-rate"
+
+      # SLO-07: LTI Launch — any error spike (critical — classroom-impacting)
+      - alert: TutorPutorLTILaunchErrors
+        expr: |
+          rate(http_requests_total{job="tutorputor-app",route="/api/v1/integration/lti/launch",status=~"5.."}[5m])
+          / rate(http_requests_total{job="tutorputor-app",route="/api/v1/integration/lti/launch"}[5m]) > 0.005
+        for: 1m
+        labels:
+          product: tutorputor
+          severity: critical
+          slo: SLO-07
+        annotations:
+          summary: "TutorPutor LTI launch error rate exceeded 0.5% — classroom impact"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/lti-errors"
+
+      # SLO-08: Payment webhook — delivery failures (critical)
+      - alert: TutorPutorStripeWebhookFailures
+        expr: |
+          rate(http_requests_total{job="tutorputor-app",route="/api/v1/integration/billing/webhook",status=~"5.."}[5m])
+          / rate(http_requests_total{job="tutorputor-app",route="/api/v1/integration/billing/webhook"}[5m]) > 0.001
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: critical
+          slo: SLO-08
+        annotations:
+          summary: "TutorPutor Stripe webhook failure rate exceeded 0.1%"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/stripe-webhook"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Dependency health alert rules
+  # ─────────────────────────────────────────────────────────────────────────────
+  - name: tutorputor_dependency_health
+    interval: 30s
+    rules:
+
+      # DEP-01: Postgres — slow queries (warning)
+      - alert: TutorPutorPostgresP95SlowQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket{service="tutorputor-platform"}[5m])
+          ) > 0.3
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          dependency: postgres
+        annotations:
+          summary: "TutorPutor Postgres p95 query time exceeded 300ms"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/postgres-slow"
+
+      # DEP-02: Redis — high memory (warning)
+      - alert: TutorPutorRedisHighMemory
+        expr: redis_memory_used_bytes{instance=~"tutorputor.*"} / redis_memory_max_bytes{instance=~"tutorputor.*"} > 0.9
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: warning
+          dependency: redis
+        annotations:
+          summary: "TutorPutor Redis memory usage exceeded 90%"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/redis-memory"
+
+      # DEP-03: Content generation gRPC circuit breaker (critical)
+      - alert: TutorPutorContentGrpcCircuitOpen
+        expr: tutorputor_grpc_circuit_breaker_opens_total{service="content-generation"} > 3
+        for: 5m
+        labels:
+          product: tutorputor
+          severity: critical
+          dependency: content-generation-grpc
+        annotations:
+          summary: "TutorPutor content generation gRPC circuit breaker opened > 3 times in 5m"
+          runbook_url: "https://docs.ghatana.internal/runbooks/tutorputor/grpc-circuit-breaker"

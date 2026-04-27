@@ -19,6 +19,7 @@ import {
   getUserId,
   requireRole,
 } from "../../../core/http/requestContext.js";
+import { buildSensitiveOperationAuditEntry } from "../../policy/resource-access-helpers.js";
 import { z } from "zod";
 
 type AdminRoutesService = Pick<
@@ -250,6 +251,18 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
           ? { sendInvites: parseResult.data.sendInvites }
           : {}),
       });
+      const audit = buildSensitiveOperationAuditEntry({
+        actorId: adminId,
+        actorTenantId: tenantId,
+        targetResourceType: "user_bulk_import",
+        targetResourceId: tenantId,
+        operation: "bulk_import_users",
+        decision: "ALLOW",
+        reason: "Bulk user import by admin",
+        correlationId: request.id,
+        metadata: { userCount: parseResult.data.users.length },
+      });
+      app.log.info({ audit }, "Sensitive operation allowed");
       return reply.send(result);
     } catch (error) {
       app.log.error(error, "Failed to import users");
@@ -296,6 +309,18 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
         newRole: newRole as UserRole,
         updatedBy: adminId,
       });
+      const audit = buildSensitiveOperationAuditEntry({
+        actorId: adminId,
+        actorTenantId: tenantId,
+        targetResourceType: "user_role",
+        targetResourceId: userId,
+        operation: "update_user_role",
+        decision: "ALLOW",
+        reason: `Role changed to ${newRole} by admin`,
+        correlationId: request.id,
+        metadata: { targetUserId: userId, newRole },
+      });
+      app.log.info({ audit }, "Sensitive operation allowed");
       return reply.send(user);
     } catch (error) {
       app.log.error(error, `Failed to update role for user ${userId}`);
@@ -342,6 +367,18 @@ export const adminRoutes: FastifyPluginAsync<AdminRoutesOptions> = async (
         pathwayId,
         assignedBy: adminId,
       });
+      const audit = buildSensitiveOperationAuditEntry({
+        actorId: adminId,
+        actorTenantId: tenantId,
+        targetResourceType: "classroom_pathway",
+        targetResourceId: classroomId,
+        operation: "assign_path_to_classroom",
+        decision: "ALLOW",
+        reason: "Learning path assigned to classroom by admin",
+        correlationId: request.id,
+        metadata: { classroomId, pathwayId },
+      });
+      app.log.info({ audit }, "Sensitive operation allowed");
       return reply.send(result);
     } catch (error) {
       app.log.error(error, "Failed to assign pathway");

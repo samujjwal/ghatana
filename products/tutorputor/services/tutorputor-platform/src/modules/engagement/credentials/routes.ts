@@ -112,6 +112,17 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     };
 
     try {
+      // Verify badge belongs to this tenant before awarding
+      const badge = await prisma.badge.findFirst({
+        where: { id: badgeId, tenantId },
+      });
+      if (!badge) {
+        return reply.code(404).send({
+          error: "Badge not found",
+          message: `Badge ${badgeId} does not exist in this tenant`,
+        });
+      }
+
       const userBadge = await prisma.badgeEarned.create({
         data: {
           tenantId,

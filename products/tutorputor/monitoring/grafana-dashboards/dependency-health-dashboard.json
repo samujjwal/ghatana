@@ -1,0 +1,142 @@
+{
+  "dashboard": {
+    "title": "TutorPutor Dependency Health",
+    "tags": ["tutorputor", "dependencies", "slo"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Postgres P95 Query Latency",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(tutorputor_database_query_duration_seconds_bucket[5m])))",
+            "legendFormat": "postgres p95"
+          }
+        ],
+        "yaxes": [
+          { "format": "s", "label": "seconds" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Redis Memory Usage Ratio",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "tutorputor_redis_memory_used_bytes / tutorputor_redis_memory_max_bytes",
+            "legendFormat": "redis memory ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Content gRPC Circuit State",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "max(tutorputor_content_grpc_circuit_open)",
+            "legendFormat": "circuit open (1=open)"
+          }
+        ],
+        "yaxes": [
+          { "format": "short", "label": "state" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "LLM Provider Error Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_llm_requests_total{status=~\"error|timeout|rate_limited\"}[5m])) / sum(rate(tutorputor_llm_requests_total[5m]))",
+            "legendFormat": "llm error ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Stripe Webhook Failure Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_billing_webhook_events_total{status=\"failed\"}[5m])) / sum(rate(tutorputor_billing_webhook_events_total[5m]))",
+            "legendFormat": "stripe webhook failure ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "LTI Launch Error Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_lti_launch_total{status=\"error\"}[5m])) / sum(rate(tutorputor_lti_launch_total[5m]))",
+            "legendFormat": "lti launch error ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Email Delivery Failure Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_notifications_email_total{status=\"failed\"}[5m])) / sum(rate(tutorputor_notifications_email_total[5m]))",
+            "legendFormat": "email failure ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Push Delivery Failure Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "targets": [
+          {
+            "expr": "sum(rate(tutorputor_notifications_push_total{status=\"failed\"}[5m])) / sum(rate(tutorputor_notifications_push_total[5m]))",
+            "legendFormat": "push failure ratio"
+          }
+        ],
+        "yaxes": [
+          { "format": "percentunit", "label": "ratio" },
+          { "format": "short" }
+        ]
+      }
+    ]
+  }
+}

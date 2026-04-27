@@ -23,6 +23,7 @@ export type ConsentCategory =
   | "analytics"
   | "ai_processing"
   | "third_party_sharing"
+  | "guardian_consent"
   | "marketing";
 
 export interface ConsentRecord {
@@ -236,7 +237,15 @@ export function createConsentEnforcement(options: ConsentEnforcementOptions) {
     reply: FastifyReply,
   ): Promise<void> {
     const user = (request as FastifyRequest & {
-      user?: { id?: string; sub?: string; userId?: string; tenantId?: string; role?: string };
+      user?: {
+        id?: string;
+        sub?: string;
+        userId?: string;
+        tenantId?: string;
+        role?: string;
+        isMinor?: boolean;
+        ageGroup?: string;
+      };
     }).user;
     const userId = user?.id ?? user?.sub ?? user?.userId;
 
@@ -256,9 +265,14 @@ export function createConsentEnforcement(options: ConsentEnforcementOptions) {
       return;
     }
 
+    const isMinor = user?.isMinor === true || user?.ageGroup === "minor";
+    const requiredWithMinorProtection = isMinor
+      ? [...required, "guardian_consent" as const]
+      : required;
+
     const granted = await fetchGrantedConsent(user.tenantId, userId);
 
-    const missing = required.filter((cat) => !granted.has(cat));
+    const missing = requiredWithMinorProtection.filter((cat) => !granted.has(cat));
     if (missing.length > 0) {
       reply.status(451).send({
         error: "Consent Required",

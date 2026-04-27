@@ -46,6 +46,7 @@ import {
   roleGuard,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
+import { buildSensitiveOperationAuditEntry } from "../policy/resource-access-helpers.js";
 import { writeSseEvent } from "../../core/http/sse.js";
 
 // =============================================================================
@@ -144,6 +145,18 @@ async function learningRoutes(
         moduleId as ModuleId,
       );
       learningMetrics.recordEnrollment(tenantId, "new");
+      const enrollAudit = buildSensitiveOperationAuditEntry({
+        actorId: userId,
+        actorTenantId: tenantId,
+        targetResourceType: "enrollment",
+        targetResourceId: moduleId,
+        operation: "enroll_in_module",
+        decision: "ALLOW",
+        reason: "User enrolled in module",
+        correlationId: request.id,
+        metadata: { moduleId },
+      });
+      fastify.log.info({ audit: enrollAudit }, "Sensitive operation allowed");
       return reply.status(201).send(enrollment);
     },
   );
@@ -294,6 +307,18 @@ async function learningRoutes(
         userId,
         request.body,
       );
+      const masteryAudit = buildSensitiveOperationAuditEntry({
+        actorId: userId,
+        actorTenantId: tenantId,
+        targetResourceType: "learner_mastery",
+        targetResourceId: request.body.conceptId,
+        operation: "record_mastery_evidence",
+        decision: "ALLOW",
+        reason: "Mastery evidence recorded",
+        correlationId: request.id,
+        metadata: { conceptId: request.body.conceptId, correct: request.body.correct },
+      });
+      fastify.log.info({ audit: masteryAudit }, "Sensitive operation allowed");
       return reply.status(201).send(mastery);
     },
   );
@@ -482,6 +507,18 @@ async function learningRoutes(
         goal,
         moduleIds: moduleIds as ModuleId[],
       });
+      const pathAudit = buildSensitiveOperationAuditEntry({
+        actorId: userId,
+        actorTenantId: tenantId,
+        targetResourceType: "learning_pathway",
+        targetResourceId: title,
+        operation: "create_pathway",
+        decision: "ALLOW",
+        reason: "Learning pathway created",
+        correlationId: request.id,
+        metadata: { title, moduleCount: moduleIds.length },
+      });
+      fastify.log.info({ audit: pathAudit }, "Sensitive operation allowed");
       return reply.status(201).send(path);
     },
   );

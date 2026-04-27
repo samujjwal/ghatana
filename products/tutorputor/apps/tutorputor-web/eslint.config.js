@@ -37,6 +37,18 @@ export default [
     },
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@tutorputor/ui/components/primitives*"],
+              message:
+                "Use shared UI components from @ghatana/design-system instead of TutorPutor-local primitives.",
+            },
+          ],
+        },
+      ],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {

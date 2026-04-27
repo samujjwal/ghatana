@@ -46,7 +46,13 @@ export function ContinueLearningCard({
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Continue Learning</Text>
       
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={0.8}
+        accessibilityLabel={`Continue learning ${enrollment.moduleTitle || 'Untitled Module'} — ${Math.round(enrollment.progressPercent || enrollment.progress || 0)}% complete`}
+        accessibilityRole="button"
+      >
         <View style={styles.cardContent}>
           <Text style={styles.moduleTitle} numberOfLines={2}>
             {enrollment.moduleTitle || 'Untitled Module'}
@@ -70,7 +76,12 @@ export function ContinueLearningCard({
       </TouchableOpacity>
 
       {progress < 100 && (
-        <TouchableOpacity onPress={onSeeAll} style={styles.seeAllLink}>
+        <TouchableOpacity
+          onPress={onSeeAll}
+          style={styles.seeAllLink}
+          accessibilityLabel="See all my enrollments"
+          accessibilityRole="link"
+        >
           <Text style={styles.seeAllText}>See all my enrollments</Text>
         </TouchableOpacity>
       )}
