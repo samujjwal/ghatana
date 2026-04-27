@@ -5,7 +5,7 @@
 package com.ghatana.aep.server.ingestion;
 
 import com.ghatana.aep.consent.ConsentService;
-import com.ghatana.aep.engine.AepEngine;
+import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.observability.AepSloMetrics;
 import com.ghatana.aep.observability.RunLedgerService;
 import com.ghatana.aep.security.AepInputValidator;

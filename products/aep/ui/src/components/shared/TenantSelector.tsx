@@ -1,10 +1,12 @@
 /**
  * TenantSelector — validated tenant chooser for the sidebar.
  *
- * Shows the current tenant scope prominently. Provides a dropdown of
- * recently-used tenants plus an "Other…" option for manual entry.
- * Switches require explicit confirmation to prevent accidental
- * cross-tenant navigation.
+ * Shows the current tenant scope prominently. Provides a dropdown with
+ * an "Other…" option for manual entry. Switches require explicit confirmation
+ * to prevent accidental cross-tenant navigation.
+ *
+ * T-27: Removed localStorage tenant history. Now uses session-only state
+ * with optional server-backed authorized tenant list.
  *
  * On every tenant switch, all TanStack Query caches are invalidated so
  * each page re-fetches its data under the new tenant context.
@@ -16,28 +18,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAtom } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
-import { tenantIdAtom } from '@/stores/tenant.store';
+import { ChevronDown } from 'lucide-react';
+import { tenantIdAtom, authorizedTenantsAtom } from '@/stores/tenant.store';
 import { Button } from '@ghatana/design-system';
 
-const RECENT_TENANTS_KEY = 'aep-recent-tenants';
+// T-27: Session-only recent tenants (no localStorage)
 const MAX_RECENT = 5;
-
-function getRecentTenants(): string[] {
-  try {
-    const raw = localStorage.getItem(RECENT_TENANTS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((t: unknown) => typeof t === 'string' && t.length > 0) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRecentTenant(id: string): void {
-  const current = getRecentTenants().filter((t) => t !== id);
-  const next = [id, ...current].slice(0, MAX_RECENT);
-  localStorage.setItem(RECENT_TENANTS_KEY, JSON.stringify(next));
-}
 
 function isValidTenantId(id: string): boolean {
   // Allow alphanumeric, hyphens, underscores; min 1, max 64 chars
@@ -46,19 +32,27 @@ function isValidTenantId(id: string): boolean {
 
 export function TenantSelector() {
   const [tenantId, setTenantId] = useAtom(tenantIdAtom);
+  // T-27: Server-backed authorized tenants (fallback to empty if not loaded)
+  const [authorizedTenants] = useAtom(authorizedTenantsAtom);
   const [isOpen, setIsOpen] = useState(false);
   const [customValue, setCustomValue] = useState('');
   const [confirmTenant, setConfirmTenant] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sessionRecent, setSessionRecent] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
-  // Seed recent tenants with current tenant on first mount
+  // T-27: Session-only recent tenants (ephemeral, not persisted to localStorage)
   useEffect(() => {
-    saveRecentTenant(tenantId);
-  }, []);
+    setSessionRecent((prev) => {
+      const filtered = prev.filter((t) => t !== tenantId);
+      return [tenantId, ...filtered].slice(0, MAX_RECENT);
+    });
+  }, [tenantId]);
 
-  const recent = getRecentTenants();
-  const options = Array.from(new Set([tenantId, ...recent])).filter(Boolean);
+  // T-27: Use authorized tenants from server if available, otherwise session-only
+  const serverOptions = authorizedTenants.length > 0 ? authorizedTenants : [];
+  const recentOptions = sessionRecent.filter((t) => t !== tenantId);
+  const options = Array.from(new Set([tenantId, ...serverOptions, ...recentOptions])).filter(Boolean);
 
   function doSwitch(nextId: string) {
     if (nextId === tenantId) {
@@ -66,7 +60,11 @@ export function TenantSelector() {
       return;
     }
     setTenantId(nextId);
-    saveRecentTenant(nextId);
+    // T-27: Update session-only recent list (no localStorage)
+    setSessionRecent((prev) => {
+      const filtered = prev.filter((t) => t !== nextId);
+      return [nextId, ...filtered].slice(0, MAX_RECENT);
+    });
     queryClient.invalidateQueries();
     setIsOpen(false);
     setCustomValue('');
@@ -110,15 +108,8 @@ export function TenantSelector() {
         <span className="truncate font-mono text-gray-800 dark:text-gray-200 font-medium">
           {tenantId}
         </span>
-        <svg
-          className="ml-auto h-3 w-3 text-gray-400 flex-shrink-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        {/* T-29: Use design-system icon instead of manual SVG */}
+        <ChevronDown className="ml-auto h-3 w-3 text-gray-400 flex-shrink-0" />
       </button>
 
       {/* Dropdown */}

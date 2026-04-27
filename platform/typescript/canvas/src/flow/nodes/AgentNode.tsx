@@ -11,7 +11,7 @@
  */
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { AgentNodeData } from '../types';
+import type { AgentNetworkNode } from '../types';
 
 type AgentStatus = 'active' | 'idle' | 'error' | 'training';
 
@@ -38,7 +38,7 @@ const STATUS_STYLES: Record<AgentStatus, { border: string; dot: string; badge: s
   },
 };
 
-const AgentNode = memo(({ data, selected }: NodeProps<AgentNodeData>) => {
+const AgentNode = memo(({ data, selected }: NodeProps<AgentNetworkNode>) => {
   const { label, agentType, status = 'idle', capabilities = [], memoryCount } = data;
   const styles = STATUS_STYLES[status as AgentStatus] ?? STATUS_STYLES.idle;
 

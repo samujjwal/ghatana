@@ -17,7 +17,7 @@ export interface InputAdornmentLike {
     children?: React.ReactNode;
 }
 
-export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+interface InputTextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
     label?: string;
     /** Error state; accepts boolean for MUI-like usage, or a string message. */
     error?: boolean | string;
@@ -93,7 +93,7 @@ export function TextField({
     id: providedId,
     'aria-describedby': ariaDescribedBy,
     ...props
-}: TextFieldProps) {
+}: InputTextFieldProps) {
     // Generate unique IDs for accessibility
     const generatedId = useId();
     const inputId = providedId || generatedId;

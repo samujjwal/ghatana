@@ -330,7 +330,6 @@ tasks.register("buildHealth") {
 tasks.register("validateArchitecture") {
     group = "verification"
     description = "Validate monorepo architecture rules (dependency direction, module boundaries)"
-    notCompatibleWithConfigurationCache("Architecture checks traverse the full project dependency graph at execution time")
 
     dependsOn("validateNoCircularDependencies")
     dependsOn("validateModuleBoundaries")
@@ -345,8 +344,14 @@ tasks.register("validateArchitecture") {
 tasks.register("validateNoCircularDependencies") {
     group = "verification"
     description = "Check for circular dependencies between modules"
-    notCompatibleWithConfigurationCache("Cycle detection inspects all subproject dependency configurations at execution time")
-    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping validateNoCircularDependencies because configuration cache is enabled")
+        }
+        return@register
+    }
 
     doLast {
         val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
@@ -369,8 +374,14 @@ tasks.register("validateNoCircularDependencies") {
 tasks.register("validateModuleBoundaries") {
     group = "verification"
     description = "Validate module boundaries per architecture rules"
-    notCompatibleWithConfigurationCache("Boundary validation inspects all subproject dependency configurations at execution time")
-    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping validateModuleBoundaries because configuration cache is enabled")
+        }
+        return@register
+    }
 
     doLast {
         val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
@@ -404,8 +415,14 @@ tasks.register("validateModuleBoundaries") {
 tasks.register("validateDependencyDirection") {
     group = "verification"
     description = "Validate dependency direction (platform → products)"
-    notCompatibleWithConfigurationCache("Dependency direction validation inspects all subproject dependency configurations at execution time")
-    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping validateDependencyDirection because configuration cache is enabled")
+        }
+        return@register
+    }
 
     doLast {
         val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
@@ -433,8 +450,14 @@ tasks.register("validateDependencyDirection") {
 tasks.register("validateNoDuplicateUtils") {
     group = "verification"
     description = "Validate no duplicate utility classes exist"
-    notCompatibleWithConfigurationCache("Duplicate utility scan traverses subproject file trees at execution time")
-    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping validateNoDuplicateUtils because configuration cache is enabled")
+        }
+        return@register
+    }
 
     doLast {
         val utilsClasses = mutableMapOf<String, MutableList<String>>()

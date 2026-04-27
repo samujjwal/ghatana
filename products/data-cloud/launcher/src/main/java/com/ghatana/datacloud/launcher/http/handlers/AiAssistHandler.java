@@ -785,7 +785,7 @@ public class AiAssistHandler {
 
         ApiResponse envelope = ApiResponse.success(suggestions, tenantId, requestId)
             .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
-                        List.of("llm", "entity-context"), fallback);
+                        List.of("llm", "entity-context"), fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -800,7 +800,7 @@ public class AiAssistHandler {
 
         ApiResponse envelope = ApiResponse.success(queries, tenantId, requestId)
             .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
-                        List.of("llm", "analytics-context"), fallback);
+                        List.of("llm", "analytics-context"), fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -821,7 +821,7 @@ public class AiAssistHandler {
 
         ApiResponse envelope = ApiResponse.success(automation, tenantId, requestId)
             .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
-                        List.of("llm", "analytics-automation"), fallback);
+                        List.of("llm", "analytics-automation"), fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -836,7 +836,7 @@ public class AiAssistHandler {
 
         ApiResponse envelope = ApiResponse.success(hints, tenantId, requestId)
             .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
-                        List.of("llm", "pipeline-analysis"), fallback);
+                        List.of("llm", "pipeline-analysis"), fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -859,7 +859,7 @@ public class AiAssistHandler {
             .withAiMeta(confidence,
                 result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
                 List.of("llm", "pipeline-draft"),
-                fallback);
+                fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -878,7 +878,7 @@ public class AiAssistHandler {
 
         ApiResponse envelope = ApiResponse.success(refinement, tenantId, requestId)
             .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
-                        List.of("llm", "pipeline-refinement"), fallback);
+                        List.of("llm", "pipeline-refinement"), fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -894,7 +894,7 @@ public class AiAssistHandler {
 
         ApiResponse envelope = ApiResponse.success(explanation, tenantId, requestId)
             .withAiMeta(confidence, result.getModelUsed() != null ? result.getModelUsed() : DEFAULT_MODEL,
-                        List.of("llm", "brain-context"), fallback);
+                        List.of("llm", "anomaly-context"), fallback, buildAiProvenance(result));
         return http.envelopeResponse(envelope, objectMapper);
     }
 
@@ -1072,6 +1072,23 @@ public class AiAssistHandler {
         if ("stop".equalsIgnoreCase(finish) || "end_turn".equalsIgnoreCase(finish)) return 0.85;
         if ("length".equalsIgnoreCase(finish)) return 0.50;
         return 0.40;
+    }
+
+    /**
+     * Builds model-provenance metadata from a CompletionResult for auditability
+     * and transparency of AI-generated suggestions.
+     */
+    private static Map<String, Object> buildAiProvenance(CompletionResult result) {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("provider", "llm");
+        p.put("modelVersion", result != null ? result.getModelUsed() : "unknown");
+        p.put("latencyMs", result != null ? result.getLatencyMs() : 0);
+        p.put("inputTokens", result != null ? result.getPromptTokens() : 0);
+        p.put("outputTokens", result != null ? result.getCompletionTokens() : 0);
+        p.put("totalTokens", result != null ? result.getTokensUsed() : 0);
+        p.put("finishReason", result != null ? result.getFinishReason() : "unknown");
+        p.put("timestamp", Instant.now().toString());
+        return Map.copyOf(p);
     }
 
     /** Strips characters that could cause prompt injection. */
@@ -1282,6 +1299,220 @@ public class AiAssistHandler {
             normalized.put(String.valueOf(entry.getKey()), entry.getValue());
         }
         return Map.copyOf(normalized);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Cross-surface AI operations (DC-AUD-008)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * {@code POST /api/v1/ai/suggestions}
+     *
+     * <p>Cross-surface AI operation suggestions. Routes to the most appropriate
+     * surface-specific handler when possible; falls back to heuristic response
+     * when the AI service is unavailable.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleAiSuggestions(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = resolveRequestId(request);
+        long startMs = System.currentTimeMillis();
+
+        return request.loadBody(MAX_PROMPT_TOKENS * 4)
+            .then(body -> {
+                Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
+                String surface = String.valueOf(input.getOrDefault("surface", "query"));
+                int limit = ((Number) input.getOrDefault("limit", 5)).intValue();
+
+                // Route to best available surface handler
+                if ("query".equals(surface) || "analytics".equals(surface)) {
+                    String intent = (String) input.getOrDefault("intent", "");
+                    if (completionService == null) {
+                        HttpResponse resp = heuristicAnalyticsSuggestResponse(intent, tenantId, requestId);
+                        recommendationMetrics.recordRecommendation(
+                            AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
+                            HEURISTIC_CONFIDENCE, true, System.currentTimeMillis() - startMs);
+                        return Promise.of(resp);
+                    }
+                    String prompt = buildAnalyticsSuggestPrompt(intent, input, tenantId);
+                    return callAi(prompt)
+                        .map(result -> {
+                            HttpResponse resp = buildAnalyticsSuggestHttpResponse(result, tenantId, requestId);
+                            double conf = estimateConfidence(result);
+                            recommendationMetrics.recordRecommendation(
+                                AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
+                                conf, conf < FALLBACK_CONFIDENCE_THRESHOLD, System.currentTimeMillis() - startMs);
+                            return resp;
+                        })
+                        .then(Promise::of,
+                              e -> {
+                                  log.warn("[DC-E3] ai suggestions cross-surface call failed tenant={}: {}", tenantId, e.getMessage());
+                                  recommendationMetrics.recordError(
+                                      AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId, e);
+                                  return Promise.of(heuristicAnalyticsSuggestResponse(intent, tenantId, requestId));
+                              });
+                }
+
+                // Other surfaces: return heuristic fallback aligned with UI contract
+                Map<String, Object> suggestion = new LinkedHashMap<>();
+                suggestion.put("id", UUID.randomUUID().toString());
+                suggestion.put("surface", surface);
+                suggestion.put("title", "AI suggestions unavailable for surface: " + surface);
+                suggestion.put("description", "Cross-surface AI operations for '" + surface + "' are not yet implemented.");
+                suggestion.put("confidence", HEURISTIC_CONFIDENCE);
+                suggestion.put("confidenceBand", "low");
+                suggestion.put("canAutoApply", false);
+                suggestion.put("impact", Map.of("severity", "low", "affectedEntities", List.of(), "description", ""));
+                suggestion.put("contextIds", input.getOrDefault("contextIds", List.of()));
+                suggestion.put("generatedAt", Instant.now().toString());
+                suggestion.put("source", "heuristic-fallback");
+                List<Map<String, Object>> suggestions = List.of(Map.copyOf(suggestion));
+                Map<String, Object> payload = Map.of(
+                    "tenantId", tenantId,
+                    "surface", surface,
+                    "suggestions", suggestions,
+                    "count", suggestions.size(),
+                    "generatedAt", Instant.now().toString(),
+                    "modelVersion", "heuristic-v1"
+                );
+                recommendationMetrics.recordRecommendation(
+                    AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
+                    HEURISTIC_CONFIDENCE, true, System.currentTimeMillis() - startMs);
+                return Promise.of(http.jsonResponse(payload));
+            });
+    }
+
+    /**
+     * {@code POST /api/v1/ai/suggestions/:id/apply}
+     *
+     * <p>Apply an AI suggestion. Not yet implemented — returns 501 so the UI
+     * boundary-error handling surfaces the missing capability.
+     */
+    public Promise<HttpResponse> handleApplyAiSuggestion(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        return Promise.of(http.errorResponse(501,
+            "AI suggestion apply is not yet implemented. Use surface-specific action endpoints (e.g., pipeline execution, alert acknowledge) instead."));
+    }
+
+    /**
+     * {@code GET /api/v1/ai/correlations}
+     *
+     * <p>Returns cross-surface AI correlations. Currently returns an empty list
+     * with a boundary flag since the unified operation event model is not yet available.
+     */
+    public Promise<HttpResponse> handleAiCorrelations(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        Map<String, Object> payload = Map.of(
+            "tenantId", tenantId,
+            "correlations", List.of(),
+            "count", 0,
+            "generatedAt", Instant.now().toString()
+        );
+        return Promise.of(http.jsonResponse(payload));
+    }
+
+    /**
+     * {@code GET /api/v1/ai/advisories/workflows/:workflowId}
+     *
+     * <p>Returns workflow advisory. Delegates to pipeline optimisation hint
+     * when the workflowId maps to a known pipeline; otherwise returns heuristic.
+     */
+    public Promise<HttpResponse> handleAiWorkflowAdvisory(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String workflowId = request.getPathParameter("workflowId");
+        long startMs = System.currentTimeMillis();
+        String requestId = resolveRequestId(request);
+
+        if (completionService == null) {
+            HttpResponse resp = heuristicPipelineHintResponse(workflowId, tenantId, requestId);
+            recommendationMetrics.recordRecommendation(
+                AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId,
+                HEURISTIC_CONFIDENCE, true, System.currentTimeMillis() - startMs);
+            return Promise.of(resp);
+        }
+        String prompt = buildPipelineOptimisePrompt(workflowId, "{}", tenantId);
+        return callAi(prompt)
+            .map(result -> {
+                HttpResponse resp = buildPipelineHintHttpResponse(result, workflowId, tenantId, requestId);
+                double conf = estimateConfidence(result);
+                recommendationMetrics.recordRecommendation(
+                    AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId,
+                    conf, conf < FALLBACK_CONFIDENCE_THRESHOLD, System.currentTimeMillis() - startMs);
+                return resp;
+            })
+            .then(Promise::of,
+                  e -> {
+                      log.warn("[DC-E3] workflow advisory AI call failed workflowId={} tenant={}: {}", workflowId, tenantId, e.getMessage());
+                      recommendationMetrics.recordError(
+                          AiRecommendationMetrics.TYPE_PIPELINE_HINT, tenantId, e);
+                      return Promise.of(heuristicPipelineHintResponse(workflowId, tenantId, requestId));
+                  });
+    }
+
+    /**
+     * {@code GET /api/v1/ai/advisories/quality/:collectionId}
+     *
+     * <p>Returns heuristic data-quality advisory for a collection.
+     */
+    public Promise<HttpResponse> handleAiQualityAdvisory(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String collectionId = request.getPathParameter("collectionId");
+        long startMs = System.currentTimeMillis();
+
+        List<Map<String, Object>> advisories = List.of(Map.of(
+            "id", UUID.randomUUID().toString(),
+            "type", "completeness",
+            "title", "Quality assessment placeholder",
+            "description", "Real-time quality scoring is not yet implemented for collection: " + collectionId,
+            "affectedCount", 0,
+            "confidence", HEURISTIC_CONFIDENCE,
+            "suggestedAction", "Enable data profiling and quality rules in the governance panel."
+        ));
+
+        Map<String, Object> payload = Map.of(
+            "collectionId", collectionId,
+            "tenantId", tenantId,
+            "overallScore", 0.5,
+            "scoreBand", "medium",
+            "advisories", advisories,
+            "generatedAt", Instant.now().toString(),
+            "modelVersion", "heuristic-v1"
+        );
+
+        recommendationMetrics.recordRecommendation(
+            AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
+            HEURISTIC_CONFIDENCE, true, System.currentTimeMillis() - startMs);
+        return Promise.of(http.jsonResponse(payload));
+    }
+
+    /**
+     * {@code GET /api/v1/ai/advisories/fabric/:collectionId}
+     *
+     * <p>Returns fabric tier placement advisory. Not yet implemented — returns
+     * 501 so the UI boundary-error handling surfaces the missing capability.
+     */
+    public Promise<HttpResponse> handleAiFabricAdvisory(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        return Promise.of(http.errorResponse(501,
+            "AI fabric advisory is not yet implemented. Use the tier migration endpoints for manual tier management."));
     }
 
     private static String resolveRequestId(HttpRequest request) {

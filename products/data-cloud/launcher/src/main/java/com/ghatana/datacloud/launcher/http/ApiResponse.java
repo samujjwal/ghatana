@@ -157,7 +157,22 @@ public final class ApiResponse {
      * @return a new ApiResponse with the {@code ai} block populated
      */
     public ApiResponse withAiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback) {
-        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback), this.meta);
+        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback, null), this.meta);
+    }
+
+    /**
+     * Attaches AI/ML confidence metadata with full model provenance to this response.
+     *
+     * @param confidence score in [0.0, 1.0]
+     * @param model      model name/version that produced the result
+     * @param reasons    human-readable reason codes
+     * @param fallback   true if a fallback path was used instead of the primary model
+     * @param provenance provider, requestId, latencyMs, tokens, timestamp for auditability
+     * @return a new ApiResponse with the {@code ai} block populated
+     */
+    public ApiResponse withAiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback,
+                                   Map<String, Object> provenance) {
+        return new ApiResponse(this.data, this.error, new AiMeta(confidence, model, reasons, fallback, provenance), this.meta);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -268,16 +283,23 @@ public final class ApiResponse {
         @JsonProperty("fallback")
         private final boolean fallback;
 
-        private AiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback) {
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonProperty("provenance")
+        private final Map<String, Object> provenance;
+
+        private AiMeta(double confidence, String model, java.util.List<String> reasons, boolean fallback,
+                         Map<String, Object> provenance) {
             this.confidence = confidence;
             this.model      = model;
             this.reasons    = (reasons != null) ? java.util.List.copyOf(reasons) : java.util.List.of();
             this.fallback   = fallback;
+            this.provenance = (provenance != null && !provenance.isEmpty()) ? new LinkedHashMap<>(provenance) : null;
         }
 
         public double getConfidence()             { return confidence; }
         public String getModel()                  { return model; }
         public java.util.List<String> getReasons() { return reasons; }
         public boolean isFallback()               { return fallback; }
+        public Map<String, Object> getProvenance() { return provenance; }
     }
 }

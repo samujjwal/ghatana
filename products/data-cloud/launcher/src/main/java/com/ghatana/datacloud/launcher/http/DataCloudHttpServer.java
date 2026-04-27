@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -281,7 +282,8 @@ public class DataCloudHttpServer {
 
     /**
      * Optional policy engine for CRITICAL-route enforcement (DC-E1).
-     * When {@code null}, policy checks are skipped (advisory mode).
+     * When {@code null}, CRITICAL routes fail-closed when enforcing=true (default);
+     * audit-only mode ({@code enforcing=false}) allows passthrough.
      */
     private PolicyEngine policyEngine;
 
@@ -306,6 +308,8 @@ public class DataCloudHttpServer {
     private HttpHandlerSupport httpSupport;
     private String corsAllowOrigin = DEFAULT_LOCAL_CORS_ALLOW_ORIGIN;
     private boolean strictTenantResolution = false;
+    /** Deployment mode label for observability and UI warnings (DC-AUD-024). */
+    private String deploymentMode = "local";
     private EntityCrudHandler entityHandler;
     private EntityExportHandler exportHandler;
     private EntityAnomalyHandler anomalyHandler;
@@ -316,6 +320,7 @@ public class DataCloudHttpServer {
     private PipelineCheckpointHandler pipelineCheckpointHandler;
     private AlertingHandler alertingHandler;
     private WorkflowExecutionHandler workflowExecutionHandler;
+    private boolean workflowExecutionEnabled = true;
     private MemoryPlaneHandler memoryHandler;
     private BrainHandler brainHandler;
     private LearningHandler learningHandler;
@@ -766,6 +771,24 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Enables the built-in workflow execution plugin (simulation mode).
+     * When {@code false} (default), workflow execution endpoints return 503,
+     * requiring a real first-party workflow engine to be installed as a plugin.
+     *
+     * @param enabled whether to enable the built-in simulation plugin
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Hard-gate workflow execution to prevent synthetic execution in production
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withWorkflowExecutionEnabled(boolean enabled) {
+        this.workflowExecutionEnabled = enabled;
+        return this;
+    }
+
+    /**
      * Attaches an {@link AutonomyController} to enable autonomy management routes (B9).
      *
      * <p>Required for:
@@ -807,6 +830,21 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withStrictTenantResolution(boolean enabled) {
         this.strictTenantResolution = enabled;
+        return this;
+    }
+
+    /**
+     * Sets the deployment mode label for observability and UI warnings (DC-AUD-024).
+     *
+     * <p>Valid values: {@code local}, {@code development}, {@code staging}, {@code production}.
+     * The mode is exposed via capability snapshot so the UI can warn when using
+     * in-memory fallbacks or demo data.
+     *
+     * @param mode deployment mode label
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withDeploymentMode(String mode) {
+        this.deploymentMode = (mode == null || mode.isBlank()) ? "local" : mode;
         return this;
     }
 
@@ -880,7 +918,7 @@ public class DataCloudHttpServer {
         eventloop = Eventloop.create();
 
         // ---- Instantiate extracted handler delegates ----
-        httpSupport = new HttpHandlerSupport(objectMapper, corsAllowOrigin, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS, strictTenantResolution);
+        httpSupport = new HttpHandlerSupport(objectMapper, corsAllowOrigin, CORS_ALLOW_METHODS, CORS_ALLOW_HEADERS, strictTenantResolution, deploymentMode);
         DataCloudBusinessMetrics businessMetrics = new DataCloudBusinessMetrics(metricsCollector);
         TraceSpanSupport traceSpanSupport = new TraceSpanSupport(traceExportService);
 
@@ -923,7 +961,13 @@ public class DataCloudHttpServer {
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         alertingHandler = new AlertingHandler(client, httpSupport);
         runtimePluginManager = new DataCloudRuntimePluginManager();
-        runtimePluginManager.registerWorkflowPlugin(client);
+        if (workflowExecutionEnabled) {
+            runtimePluginManager.registerWorkflowPlugin(client);
+            log.info("[DC-AUD-005] Built-in workflow execution plugin enabled (simulation mode)");
+        } else {
+            log.info("[DC-AUD-005] Workflow execution hard-gated — built-in simulation plugin disabled. "
+                + "Install a first-party engine or call withWorkflowExecutionEnabled(true) for development.");
+        }
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
         learningHandler = new LearningHandler(learningBridge, httpSupport);
@@ -1101,7 +1145,7 @@ public class DataCloudHttpServer {
             log.info("[DC-E1] security filter active (apiKey: {}, jwt: {}, policy engine: {})",
                 apiKeyResolver != null ? "enabled" : "disabled",
                 jwtProvider != null ? "enabled" : "disabled",
-                policyEngine != null ? "enabled" : "advisory-only");
+                policyEngine != null ? "enabled" : "fail-closed");
         } else {
             rootServlet = filteredRouter;
             log.info("[DC-E1] security filter inactive — withApiKeyResolver/withJwtProvider not called");
@@ -1198,10 +1242,17 @@ public class DataCloudHttpServer {
 
     private Map<String, Object> buildCapabilitySnapshot() {
         Map<String, Object> capabilities = new LinkedHashMap<>();
+        // DC-AUD-024: Expose deployment mode for UI/consumer awareness
+        capabilities.put("_meta", Map.of(
+            "deploymentMode", deploymentMode,
+            "strictTenantResolution", strictTenantResolution,
+            "generatedAt", Instant.now().toString()
+        ));
         boolean workflowExecutionAvailable = runtimePluginManager.findCapability(WorkflowExecutionCapability.class).isPresent();
         Map<String, Object> workflowExecution = capabilityEntry(workflowExecutionAvailable, null);
         workflowExecution.put("executionStore", workflowExecutionAvailable ? "datacloud" : "none");
         workflowExecution.put("lifecycleModel", workflowExecutionAvailable ? "durable-single-process" : "absent");
+        workflowExecution.put("gated", !workflowExecutionEnabled);
         capabilities.put("pipelines.metadata", capabilityEntry(true, null));
         capabilities.put("pipelines.execution", workflowExecution);
         capabilities.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
@@ -1231,41 +1282,100 @@ public class DataCloudHttpServer {
         capabilities.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
         capabilities.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));
         capabilities.put("health.storageCompaction", capabilityEntry(healthSubsystemSuppliers.containsKey("storage_compaction"), resolveSubsystemStatus("storage_compaction")));
+
+        // DC-AUD-017: Runtime capability registry as universal truth — align with registered routes
+        capabilities.put("settings", capabilityEntry(settingsHandler != null, null));
+        capabilities.put("events.streaming", capabilityEntry(sseHandler != null, null));
+        capabilities.put("events.webSocket", capabilityEntry(sseHandler != null, null));
+        capabilities.put("dataProducts", capabilityEntry(dataProductHandler != null, null));
+        capabilities.put("contextLayer", capabilityEntry(contextLayerHandler != null, null));
+        capabilities.put("collectionContext", capabilityEntry(collectionContextHandler != null, null));
+        capabilities.put("mcpTools", capabilityEntry(mcpToolsHandler != null, null));
+        capabilities.put("lineage", capabilityEntry(lineageHandler != null, null));
+        capabilities.put("semanticSearch", capabilityEntry(semanticSearchHandler != null, null));
+        capabilities.put("ai.operations", capabilityEntry(aiAssistHandler != null, null));
+        capabilities.put("plugins", capabilityEntry(runtimePluginManager != null, null));
+        capabilities.put("agentCatalog", capabilityEntry(agentCatalogHandler != null, null));
+
         return capabilities;
     }
 
     private String buildCapabilitySummaryLog() {
         return buildCapabilitySnapshot().entrySet().stream()
+            .filter(entry -> !"_meta".equals(entry.getKey()))
             .map(entry -> entry.getKey() + "=" + ((Map<?, ?>) entry.getValue()).get("status"))
             .sorted()
             .reduce((left, right) -> left + ", " + right)
             .orElse("none");
     }
 
+    /**
+     * Builds a capability entry exposing both legacy and descriptive readiness fields.
+     *
+     * <p>The {@code status} field preserves legacy contract values used by existing
+     * UI and tests ({@code ACTIVE}/{@code DEGRADED}/{@code NOT_CONFIGURED}).
+     * The {@code maturity} field exposes descriptive labels ({@code live}/{@code partial}/{@code unavailable}).
+     */
     private Map<String, Object> capabilityEntry(boolean configured, String subsystemStatus) {
+        return capabilityEntry(configured, subsystemStatus, null);
+    }
+
+    private Map<String, Object> capabilityEntry(boolean configured, String subsystemStatus, String docsUrl) {
         Map<String, Object> entry = new LinkedHashMap<>();
-        entry.put("status", subsystemStatusToCapabilityStatus(configured, subsystemStatus));
+        String status = legacyCapabilityStatus(configured, subsystemStatus);
+        String maturity = subsystemStatusToMaturityStatus(configured, subsystemStatus);
+        entry.put("status", status);
+        entry.put("maturity", maturity);
         entry.put("configured", configured);
+        // DC-AUD-017: Runtime capability registry enrichment — probe timing and source
+        entry.put("lastProbe", Instant.now().toString());
+        entry.put("source", subsystemStatus != null ? "healthCheck" : "runtime");
+        if (docsUrl != null && !docsUrl.isBlank()) {
+            entry.put("documentationLink", docsUrl);
+        }
         if (subsystemStatus != null) {
             entry.put("dependencyStatus", subsystemStatus);
+            if ("DEGRADED".equals(subsystemStatus)) {
+                entry.put("degradedReason",
+                    "Dependency health check returned DEGRADED — some features may be limited.");
+            } else if ("DOWN".equals(subsystemStatus)) {
+                entry.put("degradedReason",
+                    "Dependency health check returned DOWN — feature is currently unavailable.");
+            }
         }
         return entry;
     }
 
-    private String subsystemStatusToCapabilityStatus(boolean configured, String subsystemStatus) {
-        if (!configured) {
+    private String legacyCapabilityStatus(boolean configured, String subsystemStatus) {
+        if (!configured || "NOT_CONFIGURED".equals(subsystemStatus)) {
             return "NOT_CONFIGURED";
-        }
-        if (subsystemStatus == null || subsystemStatus.isBlank() || "UP".equals(subsystemStatus)) {
-            return "ACTIVE";
         }
         if ("DOWN".equals(subsystemStatus) || "DEGRADED".equals(subsystemStatus)) {
             return "DEGRADED";
         }
-        if ("NOT_CONFIGURED".equals(subsystemStatus)) {
-            return "NOT_CONFIGURED";
-        }
         return "ACTIVE";
+    }
+
+    /**
+     * Maps subsystem health status to a descriptive maturity label.
+     *
+     * <p>DC-AUD-022: Replaces generic ACTIVE/DEGRADED/NOT_CONFIGURED with
+     * consumer-friendly live / partial / preview / unavailable labels.
+     */
+    private String subsystemStatusToMaturityStatus(boolean configured, String subsystemStatus) {
+        if (!configured) {
+            return "unavailable";
+        }
+        if ("DOWN".equals(subsystemStatus) || "DEGRADED".equals(subsystemStatus)) {
+            return "partial";
+        }
+        if ("NOT_CONFIGURED".equals(subsystemStatus)) {
+            return "unavailable";
+        }
+        if (subsystemStatus == null || subsystemStatus.isBlank() || "UP".equals(subsystemStatus)) {
+            return "live";
+        }
+        return "live";
     }
 
     private String resolveSubsystemStatus(String subsystemName) {

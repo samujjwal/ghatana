@@ -99,6 +99,7 @@ public class DataCloudRouterBuilder {
             EntityAnomalyHandler anomalyHandler,
             EntityValidationHandler validationHandler) {
         builder
+            .with(HttpMethod.GET, "/api/v1/collections", entityHandler::handleListCollections)
             .with(HttpMethod.POST, "/api/v1/entities/:collection", entityHandler::handleSaveEntity)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", sseHandler::handleEntityCdcStream)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/search", entityHandler::handleFullTextSearch)
@@ -144,6 +145,7 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
             .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListExecutions)
             .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetWorkflowExecution)
+            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleExecutionLogs)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution);
         return this;
     }
@@ -168,6 +170,7 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/alerts", alertingHandler::handleListAlerts)
             .with(HttpMethod.POST, "/api/v1/alerts/:alertId/acknowledge", alertingHandler::handleAcknowledgeAlert)
             .with(HttpMethod.POST, "/api/v1/alerts/:alertId/resolve", alertingHandler::handleResolveAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:alertId/escalate", alertingHandler::handleEscalateAlert)
             .with(HttpMethod.GET, "/api/v1/alerts/groups", alertingHandler::handleListAlertGroups)
             .with(HttpMethod.POST, "/api/v1/alerts/groups/:groupId/resolve", alertingHandler::handleResolveGroup)
             .with(HttpMethod.GET, "/api/v1/alerts/suggestions", alertingHandler::handleListResolutionSuggestions)
@@ -236,6 +239,7 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/analytics/query", analyticsHandler::handleAnalyticsQuery)
             .with(HttpMethod.GET, "/api/v1/analytics/query/:queryId", analyticsHandler::handleAnalyticsGetResult)
             .with(HttpMethod.GET, "/api/v1/analytics/query/:queryId/plan", analyticsHandler::handleAnalyticsGetPlan)
+            .with(HttpMethod.POST, "/api/v1/analytics/query/:queryId/cancel", analyticsHandler::handleAnalyticsCancelQuery)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregate", analyticsHandler::handleAnalyticsAggregate)
             .with(HttpMethod.POST, "/api/v1/analytics/explain", analyticsHandler::handleAnalyticsExplain);
         return this;
@@ -305,7 +309,14 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/pipelines/draft", aiAssistHandler::handlePipelineDraft)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
             .with(HttpMethod.POST, "/api/v1/brain/explain", aiAssistHandler::handleBrainExplain)
-            .with(HttpMethod.GET, "/api/v1/ai/quality-summary", aiAssistHandler::handleAiQualitySummary);
+            .with(HttpMethod.GET, "/api/v1/ai/quality-summary", aiAssistHandler::handleAiQualitySummary)
+            // DC-AUD-008: Cross-surface AI operation routes expected by the UI client
+            .with(HttpMethod.POST, "/api/v1/ai/suggestions", aiAssistHandler::handleAiSuggestions)
+            .with(HttpMethod.POST, "/api/v1/ai/suggestions/:id/apply", aiAssistHandler::handleApplyAiSuggestion)
+            .with(HttpMethod.GET, "/api/v1/ai/correlations", aiAssistHandler::handleAiCorrelations)
+            .with(HttpMethod.GET, "/api/v1/ai/advisories/workflows/:workflowId", aiAssistHandler::handleAiWorkflowAdvisory)
+            .with(HttpMethod.GET, "/api/v1/ai/advisories/quality/:collectionId", aiAssistHandler::handleAiQualityAdvisory)
+            .with(HttpMethod.GET, "/api/v1/ai/advisories/fabric/:collectionId", aiAssistHandler::handleAiFabricAdvisory);
         return this;
     }
 
@@ -475,7 +486,16 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/settings", settingsHandler::handleGetGeneralSettings)
             .with(HttpMethod.POST, "/api/v1/settings", settingsHandler::handleUpdateGeneralSettings)
             .with(HttpMethod.GET, "/api/v1/settings/security", settingsHandler::handleGetSecuritySettings)
-            .with(HttpMethod.POST, "/api/v1/settings/security", settingsHandler::handleUpdateSecuritySettings);
+            .with(HttpMethod.POST, "/api/v1/settings/security", settingsHandler::handleUpdateSecuritySettings)
+            .with(HttpMethod.GET, "/api/v1/settings/keys", settingsHandler::handleListApiKeys)
+            .with(HttpMethod.POST, "/api/v1/settings/keys", settingsHandler::handleCreateApiKey)
+            .with(HttpMethod.DELETE, "/api/v1/settings/keys/:id/revoke", settingsHandler::handleRevokeApiKey)
+            .with(HttpMethod.GET, "/api/v1/settings/profile", settingsHandler::handleGetProfile)
+            .with(HttpMethod.PATCH, "/api/v1/settings/profile", settingsHandler::handleUpdateProfile)
+            .with(HttpMethod.GET, "/api/v1/settings/preferences", settingsHandler::handleGetPreferences)
+            .with(HttpMethod.PATCH, "/api/v1/settings/preferences", settingsHandler::handleUpdatePreferences)
+            .with(HttpMethod.GET, "/api/v1/settings/notifications", settingsHandler::handleGetNotificationPreferences)
+            .with(HttpMethod.PATCH, "/api/v1/settings/notifications", settingsHandler::handleUpdateNotificationPreferences);
         return this;
     }
 

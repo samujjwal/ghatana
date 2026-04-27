@@ -102,7 +102,7 @@ public final class DataCloudSecurityFilter {
         this.jwtTenantClaim         = b.jwtTenantClaim != null && !b.jwtTenantClaim.isBlank()
                 ? b.jwtTenantClaim
                 : DEFAULT_TENANT_CLAIM;
-        this.policyEngine           = b.policyEngine;        // nullable — policy checks skipped when null
+        this.policyEngine           = b.policyEngine;        // nullable — CRITICAL routes fail-closed when null and enforcing=true
         this.auditService           = b.auditService;        // nullable — audit skipped when null
         this.enforcing              = b.enforcing;
         this.policyExcludedTenants  = b.policyExcludedTenants != null
@@ -446,6 +446,12 @@ public final class DataCloudSecurityFilter {
         return requestId;
     }
 
+    /**
+     * Default tenant identifier used when strict tenant resolution is disabled
+     * and no explicit tenant is provided in the request.
+     */
+    public static final String DEFAULT_FALLBACK_TENANT = "default";
+
     private static String extractTenantId(
             io.activej.http.HttpRequest request,
             Principal authenticatedPrincipal) {
@@ -458,7 +464,13 @@ public final class DataCloudSecurityFilter {
             return tenantHeader;
         }
 
-        return TenantContext.getCurrentTenantId();
+        String contextTenant = TenantContext.getCurrentTenantId();
+        if (contextTenant != null) {
+            return contextTenant;
+        }
+
+        // DC-AUD-014: Non-strict mode falls back to default tenant
+        return DEFAULT_FALLBACK_TENANT;
     }
 
     private static String resolvePrincipalName(Principal authenticatedPrincipal) {

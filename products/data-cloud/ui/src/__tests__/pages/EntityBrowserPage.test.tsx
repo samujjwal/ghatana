@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSelection } from '../../hooks/useSelection';
-import type { UseSelectionReturn } from '../../hooks/useSelection';
+import type { UseSelectionReturn, SelectionItem } from '../../hooks/useSelection';
 import { logActivity } from '../../lib/api/user-activity';
 
 // Mock the hooks and services
@@ -36,7 +36,7 @@ const mockedLogActivity = vi.mocked(logActivity);
 
 function makeSelectionState(
   overrides: Record<string, unknown> = {}
-): UseSelectionReturn<unknown> {
+): UseSelectionReturn<SelectionItem> {
   return {
     selectedIds: new Set<string>(),
     selectedItems: [],
@@ -50,7 +50,7 @@ function makeSelectionState(
     selectIds: vi.fn(),
     selectedCount: 0,
     ...overrides,
-  } as UseSelectionReturn<unknown>;
+  } as UseSelectionReturn<SelectionItem>;
 }
 
 describe('EntityBrowserPage bulk operations', () => {

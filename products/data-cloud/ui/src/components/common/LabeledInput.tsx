@@ -51,7 +51,6 @@ export const LabeledInput = React.forwardRef<HTMLInputElement, LabeledInputProps
         className={wrapperClassName}
         inputRef={ref as React.Ref<HTMLInputElement>}
         inputProps={{ id, ...inputProps }}
-        InputLabelProps={labelSrOnly ? { className: 'sr-only' } : undefined}
       />
     );
   }
@@ -89,9 +88,8 @@ export const LabeledSelect = React.forwardRef<HTMLSelectElement, LabeledSelectPr
         helperText={helperText}
         error={error}
         className={wrapperClassName}
-        inputRef={ref as React.Ref<HTMLSelectElement>}
-        SelectProps={{ native: true, id, ...selectProps }}
-        InputLabelProps={labelSrOnly ? { className: 'sr-only' } : undefined}
+        inputRef={ref as React.Ref<HTMLInputElement>}
+        SelectProps={{ id, ...selectProps }}
       >
         {children}
       </TextField>

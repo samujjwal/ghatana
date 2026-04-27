@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -140,15 +141,18 @@ class DataCloudHttpServerCheckpointTest {
         }
 
         @Test
-        @DisplayName("missing tenant returns 400")
-        void listCheckpoints_missingTenant_returns400() throws Exception { // GH-90000
+        @DisplayName("missing tenant falls back to default")
+        void listCheckpoints_missingTenant_fallsBackToDefault() throws Exception { // GH-90000
+            when(mockClient.query(eq("default"), eq("dc_checkpoints"), any(DataCloudClient.Query.class)))
+                .thenReturn(Promise.of(List.of())); // GH-90000
+
             startServer(); // GH-90000
 
             HttpResponse<String> resp = getWithoutTenant("/api/v1/checkpoints");
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000 - DC-AUD-014: default fallback
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+            assertThat(body.get("tenantId")).isEqualTo("default");
         }
     }
 
@@ -210,15 +214,27 @@ class DataCloudHttpServerCheckpointTest {
         }
 
         @Test
-        @DisplayName("missing tenant returns 400")
-        void saveCheckpoint_missingTenant_returns400() throws Exception { // GH-90000
+        @DisplayName("missing tenant falls back to default")
+        void saveCheckpoint_missingTenant_fallsBackToDefault() throws Exception { // GH-90000
+            Map<String, Object> cpData = Map.of( // GH-90000
+                "id", "cp-new",
+                "pipelineId", "pipe-xyz",
+                "step", 5,
+                "state", "RUNNING"
+            );
+            DataCloudClient.Entity saved = DataCloudClient.Entity.of(
+                "cp-new", "dc_checkpoints", cpData
+            ); // GH-90000
+            when(mockClient.save(eq("default"), eq("dc_checkpoints"), any()))
+                .thenReturn(Promise.of(saved)); // GH-90000
+
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = postRawWithoutTenant("/api/v1/checkpoints", "{}" ); // GH-90000
+            HttpResponse<String> resp = postRawWithoutTenant("/api/v1/checkpoints", "{\"id\":\"cp-test\"}" ); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000 - DC-AUD-014: default fallback
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+            assertThat(body.get("tenantId")).isEqualTo("default");
         }
     }
 

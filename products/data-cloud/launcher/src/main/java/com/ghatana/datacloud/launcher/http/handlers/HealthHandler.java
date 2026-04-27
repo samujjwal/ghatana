@@ -262,7 +262,14 @@ public class HealthHandler {
             return false;
         }
         String status = String.valueOf(values.get("status"));
-        return "DOWN".equals(status) || "NOT_CONFIGURED".equals(status);
+        if ("DOWN".equals(status)) {
+            return true;
+        }
+        if (!"NOT_CONFIGURED".equals(status)) {
+            return false;
+        }
+        Object note = values.get("note");
+        return note == null || !"dependency-not-configured".equals(String.valueOf(note));
     }
 
     public Promise<HttpResponse> handleLive(HttpRequest request) {

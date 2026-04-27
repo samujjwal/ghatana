@@ -15,6 +15,7 @@ import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -341,32 +342,44 @@ public class DataLifecycleHandler {
                 Promise<Optional<Map<String, Object>>> policyPromise = loadRetentionPolicy(tenantContext, collection);
 
                 if (dryRun) {
-                    return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
-                        .map(queryResult -> {
-                            List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
-                            long issuedAtMs = Instant.now().toEpochMilli();
-                            String token = buildPurgeToken(tenantId, collection, issuedAtMs);
-                            log.info("[DC-E5] purge DRY RUN collection={} tenant={} candidates={}",
-                                collection, tenantId, candidates.size());
+                    return policyPromise.then(policy -> {
+                        if (hasActiveLegalHolds(policy.orElse(null))) {
+                            emitAudit(tenantId, requestId, "RETENTION_PURGE_BLOCKED",
+                                collection, Map.of("reason", "LEGAL_HOLD_ACTIVE", "dryRun", true));
+                            return Promise.of(http.errorEnvelopeResponse(
+                                ApiResponse.error("LEGAL_HOLD_ACTIVE",
+                                    "Collection is under active legal hold; purge dry-run blocked",
+                                    tenantId, requestId),
+                                objectMapper,
+                                423));
+                        }
+                        return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                            .map(queryResult -> {
+                                List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
+                                long issuedAtMs = Instant.now().toEpochMilli();
+                                String token = buildPurgeToken(tenantId, collection, issuedAtMs);
+                                log.info("[DC-E5] purge DRY RUN collection={} tenant={} candidates={}",
+                                    collection, tenantId, candidates.size());
 
-                            Map<String, Object> result = new LinkedHashMap<>();
-                            result.put("collection", collection);
-                            result.put("dryRun", true);
-                            result.put("status", "DRY_RUN_COMPLETE");
-                            result.put("confirmationToken", token);
-                            result.put("tokenExpiresInSec", PURGE_TOKEN_VALIDITY_MS / 1000);
-                            result.put("estimatedRows", candidates.size());
-                            result.put("sampleEntityIds", candidates.stream()
-                                .map(entity -> entity.id().value())
-                                .limit(10)
-                                .toList());
-                            result.put("requestId", requestId);
+                                Map<String, Object> result = new LinkedHashMap<>();
+                                result.put("collection", collection);
+                                result.put("dryRun", true);
+                                result.put("status", "DRY_RUN_COMPLETE");
+                                result.put("confirmationToken", token);
+                                result.put("tokenExpiresInSec", PURGE_TOKEN_VALIDITY_MS / 1000);
+                                result.put("estimatedRows", candidates.size());
+                                result.put("sampleEntityIds", candidates.stream()
+                                    .map(entity -> entity.id().value())
+                                    .limit(10)
+                                    .toList());
+                                result.put("requestId", requestId);
 
-                            emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
-                                collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
-                            return http.envelopeResponse(
-                                ApiResponse.success(result, tenantId, requestId), objectMapper);
-                        }));
+                                emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
+                                    collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
+                                return http.envelopeResponse(
+                                    ApiResponse.success(result, tenantId, requestId), objectMapper);
+                            });
+                    });
                 }
 
                 // Execute path: token is mandatory and must pass HMAC verification
@@ -396,8 +409,19 @@ public class DataLifecycleHandler {
                         403));
                 }
 
-                return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
-                    .then(queryResult -> {
+                return policyPromise.then(policy -> {
+                    if (hasActiveLegalHolds(policy.orElse(null))) {
+                        emitAudit(tenantId, requestId, "RETENTION_PURGE_BLOCKED",
+                            collection, Map.of("reason", "LEGAL_HOLD_ACTIVE"));
+                        return Promise.of(http.errorEnvelopeResponse(
+                            ApiResponse.error("LEGAL_HOLD_ACTIVE",
+                                "Collection is under active legal hold; purge is blocked",
+                                tenantId, requestId),
+                            objectMapper,
+                            423));
+                    }
+                    return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                        .then(queryResult -> {
                         List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
                         List<EntityStore.EntityId> entityIds = candidates.stream()
                             .map(EntityStore.Entity::id)
@@ -469,8 +493,9 @@ public class DataLifecycleHandler {
                                 return http.envelopeResponse(
                                     ApiResponse.success(result, tenantId, requestId), objectMapper);
                             });
-                    }));
-                }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+                    });
+                });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -527,8 +552,20 @@ public class DataLifecycleHandler {
 
                 EntityStore entityStore = requireEntityStore();
                 EntityStore.EntityId storeEntityId = EntityStore.EntityId.of(entityId);
-                return entityStore.findById(tenantContext, storeEntityId)
-                    .then(entityOpt -> {
+                return loadRetentionPolicy(tenantContext, collection)
+                    .then(policyOpt -> {
+                        if (hasActiveLegalHolds(policyOpt.orElse(null))) {
+                            emitAudit(tenantId, requestId, "PII_REDACT_BLOCKED",
+                                collection, Map.of("entityId", entityId, "reason", "LEGAL_HOLD_ACTIVE"));
+                            return Promise.of(http.errorEnvelopeResponse(
+                                ApiResponse.error("LEGAL_HOLD_ACTIVE",
+                                    "Collection is under active legal hold; redaction is blocked",
+                                    tenantId, requestId),
+                                objectMapper,
+                                423));
+                        }
+                        return entityStore.findById(tenantContext, storeEntityId)
+                            .then(entityOpt -> {
                         if (entityOpt.isEmpty()) {
                             return Promise.of(http.errorEnvelopeResponse(
                                 ApiResponse.error("ENTITY_NOT_FOUND",
@@ -610,7 +647,8 @@ public class DataLifecycleHandler {
                                     ApiResponse.success(result, tenantId, requestId), objectMapper);
                             });
                     });
-                }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+                });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -634,33 +672,59 @@ public class DataLifecycleHandler {
                 Map.of("request.id", requestId));
 
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
-        return loadRetentionPolicies(tenantContext)
-            .map(policies -> {
-                Set<String> tenantFields = policies.stream()
-                    .flatMap(policy -> readPolicyPiiFields(policy).stream())
-                    .filter(field -> !GLOBAL_PII_FIELDS.contains(field))
-                    .collect(Collectors.toCollection(java.util.TreeSet::new));
+        Promise<List<Map<String, Object>>> policiesPromise = loadRetentionPolicies(tenantContext);
 
-                Set<String> effectiveFields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
-                effectiveFields.addAll(tenantFields);
+        // Schema scan: when a collection is specified, query a sample entity to inspect field names
+        Promise<List<String>> schemaScanPromise;
+        if (collection != null && !collection.isBlank()) {
+            EntityStore entityStore = client.entityStore();
+            if (entityStore != null) {
+                schemaScanPromise = entityStore.query(tenantContext,
+                        EntityStore.QuerySpec.builder().collection(collection).limit(1).build())
+                    .map(result -> {
+                        if (result.entities().isEmpty()) {
+                            return derivePiiFields(collection);
+                        }
+                        Set<String> detected = new java.util.TreeSet<>(derivePiiFields(collection));
+                        for (EntityStore.Entity entity : result.entities()) {
+                            detected.addAll(scanFieldsForPiiPatterns(entity.data()));
+                        }
+                        return List.copyOf(detected);
+                    })
+                    .then(Promise::of, e -> {
+                        log.warn("[DC-E5] schema scan failed for collection={} tenant={}: {}", collection, tenantId, e.getMessage());
+                        return Promise.of(derivePiiFields(collection));
+                    });
+            } else {
+                schemaScanPromise = Promise.of(derivePiiFields(collection));
+            }
+        } else {
+            schemaScanPromise = Promise.of(List.of());
+        }
 
-                List<String> autoDetectedFields = collection == null || collection.isBlank()
-                    ? List.of()
-                    : derivePiiFields(collection);
-                effectiveFields.addAll(autoDetectedFields);
+        return policiesPromise.then(policies -> schemaScanPromise.map(autoDetectedFields -> {
+            Set<String> tenantFields = policies.stream()
+                .flatMap(policy -> readPolicyPiiFields(policy).stream())
+                .filter(field -> !GLOBAL_PII_FIELDS.contains(field))
+                .collect(Collectors.toCollection(java.util.TreeSet::new));
 
-                Map<String, Object> data = new LinkedHashMap<>();
-                data.put("globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList());
-                data.put("tenantFields", List.copyOf(tenantFields));
-                data.put("autoDetectedFields", autoDetectedFields);
-                if (collection != null && !collection.isBlank()) {
-                    data.put("collection", collection);
-                }
-                data.put("effectiveCount", effectiveFields.size());
-                return http.envelopeResponse(
-                    ApiResponse.success(data, tenantId, requestId), objectMapper);
-            })
-            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+            Set<String> effectiveFields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
+            effectiveFields.addAll(tenantFields);
+            effectiveFields.addAll(autoDetectedFields);
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList());
+            data.put("tenantFields", List.copyOf(tenantFields));
+            data.put("autoDetectedFields", autoDetectedFields);
+            data.put("scanMode", collection != null && !collection.isBlank() ? "schema-scan" : "name-convention");
+            if (collection != null && !collection.isBlank()) {
+                data.put("collection", collection);
+            }
+            data.put("effectiveCount", effectiveFields.size());
+            return http.envelopeResponse(
+                ApiResponse.success(data, tenantId, requestId), objectMapper);
+        }))
+        .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -781,15 +845,51 @@ public class DataLifecycleHandler {
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
+    /** PII-related collection name patterns (case-insensitive). */
+    private static final List<String> PII_COLLECTION_PATTERNS = List.of(
+        "user", "person", "customer", "contact", "profile", "account",
+        "patient", "employee", "member", "subscriber", "lead", "applicant",
+        "individual", "client", "citizen", "resident"
+    );
+
+    /** Field name patterns that suggest PII regardless of collection name. */
+    private static final List<String> PII_FIELD_NAME_PATTERNS = List.of(
+        "email", "phone", "ssn", "social", "passport", "dob", "birth",
+        "name", "address", "ip_address", "credit_card", "card_number",
+        "bank_account", "iban", "tax_id", "national_id", "driver_license",
+        "zip", "postal", "gender", "ethnicity", "race", "religion",
+        "health", "medical", "biometric", "fingerprint", "face"
+    );
+
     /**
-     * Derives likely PII fields for a collection by name convention.
-     * Production would read from the tenant PII registry.
+     * Derives likely PII fields for a collection by name convention and optional
+     * schema field scan. Production should read from the tenant PII registry.
      */
     private static List<String> derivePiiFields(String collection) {
-        if (collection.contains("user") || collection.contains("person") || collection.contains("customer")) {
+        String lower = collection.toLowerCase();
+        boolean likelyPiiCollection = PII_COLLECTION_PATTERNS.stream().anyMatch(lower::contains);
+        if (likelyPiiCollection) {
             return GLOBAL_PII_FIELDS.stream().sorted().toList();
         }
         return List.of();
+    }
+
+    /**
+     * Scans entity field names for PII indicators.
+     *
+     * @param data entity data map
+     * @return list of field names that match known PII patterns
+     */
+    private static List<String> scanFieldsForPiiPatterns(Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            return List.of();
+        }
+        return data.keySet().stream()
+            .filter(field -> PII_FIELD_NAME_PATTERNS.stream()
+                .anyMatch(pattern -> field.toLowerCase().contains(pattern)))
+            .sorted()
+            .distinct()
+            .toList();
     }
 
     private Map<String, Object> buildBaseComplianceSummary(String tenantId, List<Map<String, Object>> policies, List<String> collections) {
@@ -828,7 +928,10 @@ public class DataLifecycleHandler {
         summary.put("collectionsClassified", collectionsClassified);
         summary.put("collectionsUnclassified", collectionsUnclassified);
         summary.put("piiFieldsRegistered", tenantSpecificPiiFields.size());
-        summary.put("legalHoldsActive", 0);
+        long legalHoldsActive = policies.stream()
+            .filter(policy -> hasActiveLegalHolds(policy))
+            .count();
+        summary.put("legalHoldsActive", legalHoldsActive);
         summary.put("retentionExpirationsIn30Days", expiringIn30Days);
         summary.put("lastAuditAt", Instant.EPOCH.toString());
         summary.put("auditEventsIn30Days", 0L);
@@ -963,6 +1066,31 @@ public class DataLifecycleHandler {
             .map(result -> result.entities().stream()
                 .map(entity -> new LinkedHashMap<>(entity.data()))
                 .collect(Collectors.toList()));
+    }
+
+    /**
+     * Checks whether a retention policy has active legal holds.
+     *
+     * <p>A legal hold blocks purge and redact operations for the collection
+     * until the hold is explicitly released.
+     */
+    @SuppressWarnings("unchecked")
+    private static boolean hasActiveLegalHolds(Map<String, Object> policy) {
+        if (policy == null) {
+            return false;
+        }
+        Object holds = policy.get("legalHolds");
+        if (holds instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> hold && Boolean.TRUE.equals(hold.get("active"))) {
+                    return true;
+                }
+                if (item instanceof String s && !s.isBlank()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private Map<String, Object> defaultRetentionPolicy(String collection) {

@@ -34,6 +34,7 @@ public final class ErrorResponse {
     private final long timestamp;
     private final List<ErrorDetail> details;
     private final String path;
+    private final String traceId;
 
     private ErrorResponse(
             int status,
@@ -41,13 +42,15 @@ public final class ErrorResponse {
             String message,
             long timestamp,
             List<ErrorDetail> details,
-            String path) {
+            String path,
+            String traceId) {
         this.status = status;
         this.error = Objects.requireNonNull(error, "error cannot be null");
         this.message = Objects.requireNonNull(message, "message cannot be null");
         this.timestamp = timestamp;
         this.details = new ArrayList<>(details != null ? details : List.of());
         this.path = path != null ? path : "";
+        this.traceId = traceId != null ? traceId : "";
     }
 
     public int getStatus() {
@@ -72,6 +75,10 @@ public final class ErrorResponse {
 
     public String getPath() {
         return path;
+    }
+
+    public String getTraceId() {
+        return traceId;
     }
 
     public static Builder builder() {
@@ -120,6 +127,7 @@ public final class ErrorResponse {
         private long timestamp = System.currentTimeMillis();
         private List<ErrorDetail> details = new ArrayList<>();
         private String path = "";
+        private String traceId = "";
 
         public Builder status(int status) {
             this.status = status;
@@ -151,8 +159,13 @@ public final class ErrorResponse {
             return this;
         }
 
+        public Builder traceId(String traceId) {
+            this.traceId = traceId;
+            return this;
+        }
+
         public ErrorResponse build() {
-            return new ErrorResponse(status, error, message, timestamp, details, path);
+            return new ErrorResponse(status, error, message, timestamp, details, path, traceId);
         }
     }
 
@@ -162,6 +175,7 @@ public final class ErrorResponse {
                 "status=" + status +
                 ", error='" + error + '\'' +
                 ", detailCount=" + details.size() +
+                ", traceId='" + traceId + '\'' +
                 '}';
     }
 }

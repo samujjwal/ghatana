@@ -1,6 +1,8 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
 import com.ghatana.datacloud.entity.validation.ValidationResult;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
@@ -143,12 +145,8 @@ public class EntityCrudHandler {
                     Map.of("collection", collection),
                     () -> client.save(resolvedTenantId, collection, data))
                     .then(entity -> {
-                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved", Map.of(
-                            "collection", entity.collection(),
-                            "id", entity.id(),
-                            "version", entity.version(),
-                            "operation", "upsert"
-                        ));
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved",
+                            buildCdcEnvelope(entity, "upsert"));
                         return traceSupport.trace(
                             request,
                             resolvedTenantId,
@@ -440,7 +438,8 @@ public class EntityCrudHandler {
                 if (opt.isEmpty()) {
                     return Promise.of(http.errorResponse(404, "Entity not found: " + id));
                 }
-                return traceSupport.trace(
+                DataCloudClient.Entity existingEntity = opt.get();
+            return traceSupport.trace(
                     request,
                     resolvedTenantId,
                     "datacloud.entity.store.delete",
@@ -448,11 +447,8 @@ public class EntityCrudHandler {
                     Map.of("collection", collection, "entity.id", id),
                     () -> client.delete(resolvedTenantId, collection, id))
                     .then(v -> {
-                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted", Map.of(
-                            "collection", collection,
-                            "id", id,
-                            "operation", "delete"
-                        ));
+                        DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted",
+                            buildDeleteCdcEnvelope(existingEntity, collection, id));
                         return traceSupport.trace(
                             request,
                             resolvedTenantId,
@@ -545,11 +541,15 @@ public class EntityCrudHandler {
                     List<String> ids = savedEntities.stream()
                         .map(DataCloudClient.Entity::id)
                         .toList();
+                    List<Map<String, Object>> entitySnapshots = savedEntities.stream()
+                        .map(e -> buildCdcEnvelope(e, "upsert"))
+                        .toList();
                     DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-saved", Map.of(
                         "collection", collection,
                         "count", savedEntities.size(),
                         "ids", ids,
-                        "operation", "batch-upsert"
+                        "operation", "batch-upsert",
+                        "entities", entitySnapshots
                     ));
                     return client.appendEvent(resolvedTenant, cdcEvent)
                         .map(ignored -> {
@@ -607,29 +607,54 @@ public class EntityCrudHandler {
             Optional<String> batchErr = ApiInputValidator.validateDeleteBatch(ids);
             if (batchErr.isPresent()) return Promise.of(http.errorResponse(400, batchErr.get()));
 
-            List<Promise<Void>> deletePromises = ids.stream()
-                .map(id -> client.delete(resolvedTenant, collection, id))
+            List<Promise<Map<String, Object>>> trackedDeletes = ids.stream()
+                .map(id -> client.delete(resolvedTenant, collection, id)
+                    .map(ignored -> {
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("id", id);
+                        result.put("success", true);
+                        return result;
+                    })
+                    .then(Promise::of, e -> {
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("id", id);
+                        result.put("success", false);
+                        result.put("error", e.getMessage());
+                        return Promise.of(result);
+                    }))
                 .toList();
 
-            return Promises.all(deletePromises)
-                .then(v -> {
+            return Promises.toList(trackedDeletes)
+                .then(results -> {
+                    List<String> deletedIds = results.stream()
+                        .filter(r -> Boolean.TRUE.equals(r.get("success")))
+                        .map(r -> (String) r.get("id"))
+                        .toList();
+                    List<Map<String, Object>> errors = results.stream()
+                        .filter(r -> !Boolean.TRUE.equals(r.get("success")))
+                        .map(r -> Map.of("id", r.get("id"), "error", r.get("error")))
+                        .toList();
+
                     DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-deleted", Map.of(
                         "collection", collection,
-                        "count", ids.size(),
-                        "ids", ids,
-                        "operation", "batch-delete"
+                        "count", deletedIds.size(),
+                        "ids", deletedIds,
+                        "operation", "batch-delete",
+                        "totalRequested", ids.size(),
+                        "errors", errors
                     ));
                     return client.appendEvent(resolvedTenant, cdcEvent)
                         .map(ignored -> {
                             wsBroadcaster.accept("collection.batch-deleted", Map.of(
                                 "collection", collection,
-                                "count",      ids.size(),
+                                "count",      deletedIds.size(),
                                 "tenantId",   resolvedTenant
                             ));
                             return http.jsonResponse(Map.of(
-                                "deleted", ids.size(),
+                                "deleted", deletedIds.size(),
                                 "collection", collection,
-                                "ids", ids,
+                                "ids", deletedIds,
+                                "errors", errors,
                                 "timestamp", Instant.now().toString()
                             ));
                         });
@@ -643,6 +668,46 @@ public class EntityCrudHandler {
             return Promise.of(http.errorResponse(400, "Invalid batch request body: " + e.getMessage()));
         }
         });
+    }
+
+    // ==================== CDC Helpers (DC-AUD-010 / DC-AUD-023) ====================
+
+    /**
+     * Builds a full CDC event envelope for entity mutations.
+     *
+     * <p>The envelope contains enough metadata and data to replay history
+     * from genesis via {@code handleGetEntityAsOf} and satisfy audit requirements.
+     */
+    private static Map<String, Object> buildCdcEnvelope(DataCloudClient.Entity entity, String operation) {
+        Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("collection", entity.collection());
+        envelope.put("id", entity.id());
+        envelope.put("version", entity.version());
+        envelope.put("operation", operation);
+        envelope.put("eventType", "entity.mutated");
+        envelope.put("timestamp", Instant.now().toString());
+        // Full snapshot required for point-in-time replay
+        envelope.put("data", entity.data());
+        envelope.put("createdAt", entity.createdAt() != null ? entity.createdAt().toString() : null);
+        envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
+        return envelope;
+    }
+
+    private static Map<String, Object> buildDeleteCdcEnvelope(DataCloudClient.Entity entity, String collection, String id) {
+        Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("collection", collection);
+        envelope.put("id", id);
+        envelope.put("operation", "delete");
+        envelope.put("eventType", "entity.deleted");
+        envelope.put("timestamp", Instant.now().toString());
+        envelope.put("tombstone", true);
+        if (entity != null) {
+            envelope.put("data", entity.data());
+            envelope.put("version", entity.version());
+            envelope.put("createdAt", entity.createdAt() != null ? entity.createdAt().toString() : null);
+            envelope.put("updatedAt", entity.updatedAt() != null ? entity.updatedAt().toString() : null);
+        }
+        return envelope;
     }
 
     // ==================== Full-Text Search ====================
@@ -772,71 +837,176 @@ public class EntityCrudHandler {
             return Promise.of(http.errorResponse(400, "Invalid 'asOf' value — expected ISO-8601 instant, e.g. 2026-01-15T12:00:00Z"));
         }
 
-        // First fetch the current entity to confirm it exists
-        return client.findById(tenantId, collection, id).then(optEntity -> {
-            if (optEntity.isEmpty()) {
-                return Promise.of(http.errorResponse(404, "Entity not found: " + id));
-            }
-            DataCloudClient.Entity current = optEntity.get();
+        // Genesis-forward reconstruction: replay all CDC events for this entity from the
+        // earliest event up to asOf, starting with an empty map. This correctly handles
+        // entities that were created, mutated, deleted, or recreated before asOf.
+        DataCloudClient.EventQuery timeQuery = new DataCloudClient.EventQuery(
+                List.of(),        // all types — let collection + entity-id filtering happen in stream
+                null,             // no lower bound
+                asOf,             // upper bound inclusive
+                1_000             // cap at 1 000 events per request
+        );
 
-            // Fetch all events up to asOf and reconstruct entity state at that point in time.
-            // The EventQuery endTime is inclusive of asOf — we replay all CDC mutations up to
-            // and including that instant.
-            DataCloudClient.EventQuery timeQuery = new DataCloudClient.EventQuery(
-                    List.of(),        // all types — let collection + entity-id filtering happen in stream
-                    null,             // no lower bound
-                    asOf,             // upper bound inclusive
-                    1_000             // cap at 1 000 events per request
-            );
-
-            return client.queryEvents(tenantId, timeQuery).map(events -> {
-                // Filter only events that reference this entity and collection
-                List<DataCloudClient.Event> entityEvents = events.stream()
-                        .filter(ev -> id.equals(ev.payload().get("entityId"))
-                                && collection.equals(ev.payload().get("collection")))
-                        .toList();
-
-                // Reconstruct data: start from current state, fold in each event's "data" patch
-                // in ascending timestamp order so earliest mutations come first.
-                Map<String, Object> reconstructed = new LinkedHashMap<>(current.data());
-                List<DataCloudClient.Event> sorted = entityEvents.stream()
-                        .sorted((a, b) -> {
-                            Instant ta = a.timestamp() != null ? a.timestamp() : Instant.EPOCH;
-                            Instant tb = b.timestamp() != null ? b.timestamp() : Instant.EPOCH;
-                            return ta.compareTo(tb);
-                        })
-                        .toList();
-
-                long version = current.version();
-                int appliedEvents = 0;
-                for (DataCloudClient.Event ev : sorted) {
-                    Object dataPatch = ev.payload().get("data");
-                    if (dataPatch instanceof Map<?, ?> patch) {
-                        for (Map.Entry<?, ?> entry : patch.entrySet()) {
-                            reconstructed.put(String.valueOf(entry.getKey()), entry.getValue());
+        return client.queryEvents(tenantId, timeQuery).map(events -> {
+            // Filter only events that reference this entity and collection
+            List<DataCloudClient.Event> entityEvents = events.stream()
+                    .filter(ev -> {
+                        Map<String, Object> p = ev.payload();
+                        if (!collection.equals(p.get("collection"))) return false;
+                        // Individual save / delete
+                        if (id.equals(p.get("id"))) return true;
+                        // Batch-saved: check entities list for matching id
+                        if ("entity.batch-saved".equals(ev.type())) {
+                            Object ents = p.get("entities");
+                            if (ents instanceof List<?> list) {
+                                for (Object e : list) {
+                                    if (e instanceof Map<?, ?> m && id.equals(m.get("id"))) return true;
+                                }
+                            }
                         }
+                        // Batch-deleted: check ids list
+                        if ("entity.batch-deleted".equals(ev.type())) {
+                            Object ids = p.get("ids");
+                            return ids instanceof List<?> list && list.contains(id);
+                        }
+                        return false;
+                    })
+                    .toList();
+
+            // Sort ascending by timestamp so earliest events come first (genesis-forward)
+            List<DataCloudClient.Event> sorted = entityEvents.stream()
+                    .sorted((a, b) -> {
+                        Instant ta = a.timestamp() != null ? a.timestamp() : Instant.EPOCH;
+                        Instant tb = b.timestamp() != null ? b.timestamp() : Instant.EPOCH;
+                        return ta.compareTo(tb);
+                    })
+                    .toList();
+
+            Map<String, Object> reconstructed = new LinkedHashMap<>();
+            boolean isDeleted = false;
+            boolean everExisted = false;
+            long version = 0;
+            Instant lastMutationAt = null;
+            int appliedEvents = 0;
+
+            for (DataCloudClient.Event ev : sorted) {
+                Map<String, Object> p = ev.payload();
+                String eventType = ev.type();
+
+                if ("entity.saved".equals(eventType) && id.equals(p.get("id"))) {
+                    Object dataObj = p.get("data");
+                    if (dataObj instanceof Map<?, ?> dataMap) {
+                        reconstructed.clear();
+                        for (Map.Entry<?, ?> e : dataMap.entrySet()) {
+                            reconstructed.put(String.valueOf(e.getKey()), e.getValue());
+                        }
+                        isDeleted = false;
+                        everExisted = true;
+                    }
+                    Object ver = p.get("version");
+                    if (ver instanceof Number n) version = n.longValue();
+                    lastMutationAt = ev.timestamp();
+                    appliedEvents++;
+                } else if ("entity.deleted".equals(eventType) && id.equals(p.get("id"))) {
+                    reconstructed.clear();
+                    isDeleted = true;
+                    everExisted = true;
+                    lastMutationAt = ev.timestamp();
+                    appliedEvents++;
+                } else if ("entity.batch-saved".equals(eventType)) {
+                    Object ents = p.get("entities");
+                    if (ents instanceof List<?> list) {
+                        for (Object e : list) {
+                            if (e instanceof Map<?, ?> m && id.equals(m.get("id"))) {
+                                Object dataObj = m.get("data");
+                                if (dataObj instanceof Map<?, ?> dataMap) {
+                                    reconstructed.clear();
+                                    for (Map.Entry<?, ?> entry : dataMap.entrySet()) {
+                                        reconstructed.put(String.valueOf(entry.getKey()), entry.getValue());
+                                    }
+                                    isDeleted = false;
+                                    everExisted = true;
+                                }
+                                Object ver = m.get("version");
+                                if (ver instanceof Number n) version = n.longValue();
+                                lastMutationAt = ev.timestamp();
+                                appliedEvents++;
+                                break;
+                            }
+                        }
+                    }
+                } else if ("entity.batch-deleted".equals(eventType)) {
+                    Object ids = p.get("ids");
+                    if (ids instanceof List<?> list && list.contains(id)) {
+                        reconstructed.clear();
+                        isDeleted = true;
+                        everExisted = true;
+                        lastMutationAt = ev.timestamp();
                         appliedEvents++;
                     }
-                    Object evVersion = ev.payload().get("version");
-                    if (evVersion instanceof Number n) {
-                        version = n.longValue();
-                    }
                 }
+            }
 
-                Map<String, Object> body = new LinkedHashMap<>();
-                body.put("id", id);
-                body.put("collection", collection);
-                body.put("data", reconstructed);
-                body.put("version", version);
-                body.put("asOf", asOf.toString());
-                body.put("appliedEvents", appliedEvents);
-                body.put("currentVersionAt", current.updatedAt() != null ? current.updatedAt().toString() : null);
-                return http.jsonResponse(body);
-            }).mapException(e -> {
-                log.error("[asOf] tenant={} collection={} id={} asOf={}: {}",
-                        tenantId, collection, id, asOf, e.getMessage(), e);
-                return new HttpException("Point-in-time query failed: " + e.getMessage(), e);
-            });
+            if (!everExisted) {
+                return http.errorResponse(404, "Entity not found at " + asOf + ": " + id);
+            }
+
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("id", id);
+            body.put("collection", collection);
+            body.put("data", reconstructed);
+            body.put("version", version);
+            body.put("asOf", asOf.toString());
+            body.put("appliedEvents", appliedEvents);
+            body.put("reconstructionMethod", "genesis-forward");
+            body.put("lastMutationAt", lastMutationAt != null ? lastMutationAt.toString() : null);
+            if (isDeleted) {
+                body.put("deletedAt", lastMutationAt != null ? lastMutationAt.toString() : null);
+                body.put("tombstone", true);
+            }
+            return http.jsonResponse(body);
+        }).mapException(e -> {
+            log.error("[asOf] tenant={} collection={} id={} asOf={}: {}",
+                    tenantId, collection, id, asOf, e.getMessage(), e);
+            return new HttpException("Point-in-time query failed: " + e.getMessage(), e);
         });
+    }
+
+    /**
+     * Lists all collections registered for the tenant.
+     *
+     * <p>Implements the first-class collection registry endpoint (dc-s4) that
+     * exposes what entity collections exist for a tenant so the Data Explorer
+     * can drive navigation without assuming hard-coded names.</p>
+     */
+    public Promise<HttpResponse> handleListCollections(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        // Prefer the backing EntityStore if it supports listCollections
+        try {
+            EntityStore store = client.entityStore();
+            return store.listCollections(TenantContext.of(tenantId))
+                .map(collections -> {
+                    List<Map<String, Object>> entries = collections.stream()
+                        .map(name -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("name", name);
+                            m.put("systemCollection", name.startsWith("dc_"));
+                            return m;
+                        })
+                        .toList();
+                    return http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "collections", entries,
+                        "total", entries.size()
+                    ));
+                });
+        } catch (Exception e) {
+            log.error("[listCollections] tenant={} failed: {}", tenantId, e.getMessage(), e);
+            return Promise.of(http.errorResponse(500, "Collection registry query failed: " + e.getMessage()));
+        }
     }
 }

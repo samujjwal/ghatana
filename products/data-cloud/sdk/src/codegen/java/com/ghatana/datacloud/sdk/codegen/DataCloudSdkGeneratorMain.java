@@ -214,6 +214,18 @@ public final class DataCloudSdkGeneratorMain {
             "delete", summary.deleteEntityPath(),
             "health", summary.healthPath()
         ));
+        if (summary.capabilitiesPath() != null) {
+            metadata.put("capabilitiesEndpoint", summary.capabilitiesPath());
+        }
+        if (summary.settingsPath() != null) {
+            metadata.put("settingsEndpoint", summary.settingsPath());
+        }
+        if (summary.listAlertsPath() != null) {
+            metadata.put("alertsEndpoint", summary.listAlertsPath());
+        }
+        if (summary.aiSuggestionsPath() != null) {
+            metadata.put("aiSuggestionsEndpoint", summary.aiSuggestionsPath());
+        }
         return JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(metadata) + System.lineSeparator();
     }
 
@@ -301,6 +313,30 @@ public final class DataCloudJavaSdk implements AutoCloseable {
         return send("DELETE", entityItemPath(collection, entityId), null);
     }
 
+    public Map<String, Object> capabilities() {
+        return send("GET", %s, null);
+    }
+
+    public Map<String, Object> getSettings() {
+        return send("GET", %s, null);
+    }
+
+    public Map<String, Object> listAlerts() {
+        return send("GET", %s, null);
+    }
+
+    public Map<String, Object> acknowledgeAlert(String alertId) {
+        return send("POST", "/api/v1/alerts/" + sanitize(alertId) + "/acknowledge", null);
+    }
+
+    public Map<String, Object> resolveAlert(String alertId) {
+        return send("POST", "/api/v1/alerts/" + sanitize(alertId) + "/resolve", null);
+    }
+
+    public Map<String, Object> aiSuggestions() {
+        return send("GET", %s, null);
+    }
+
     private Map<String, Object> send(String method, String path, Map<String, Object> body) {
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -363,7 +399,11 @@ public final class DataCloudJavaSdk implements AutoCloseable {
             javaString(summary.version()),
             documentedPaths,
             javaString(summary.healthPath()),
-            javaString(summary.queryEntitiesPath().replace("{collection}", ""))
+            javaString(summary.capabilitiesPath() != null ? summary.capabilitiesPath() : "/api/v1/capabilities"),
+            javaString(summary.settingsPath() != null ? summary.settingsPath() : "/api/v1/settings"),
+            javaString(summary.listAlertsPath() != null ? summary.listAlertsPath() : "/api/v1/alerts"),
+            javaString(summary.aiSuggestionsPath() != null ? summary.aiSuggestionsPath() : "/api/v1/ai/suggestions"),
+            javaString(summary.createEntityPath().replace("{collection}", ""))
         );
     }
 
@@ -416,6 +456,30 @@ export class DataCloudTypeScriptSdk {
     return this.request("DELETE", `${this.entityCollectionPath(collection)}/${entityId}`);
   }
 
+  public async capabilities(): Promise<JsonObject> {
+    return this.request("GET", %s);
+  }
+
+  public async getSettings(): Promise<JsonObject> {
+    return this.request("GET", %s);
+  }
+
+  public async listAlerts(): Promise<JsonObject> {
+    return this.request("GET", %s);
+  }
+
+  public async acknowledgeAlert(alertId: string): Promise<JsonObject> {
+    return this.request("POST", `/api/v1/alerts/${alertId.trim()}/acknowledge`);
+  }
+
+  public async resolveAlert(alertId: string): Promise<JsonObject> {
+    return this.request("POST", `/api/v1/alerts/${alertId.trim()}/resolve`);
+  }
+
+  public async aiSuggestions(): Promise<JsonObject> {
+    return this.request("GET", %s);
+  }
+
   private entityCollectionPath(collection: string): string {
     return %s + collection.trim();
   }
@@ -443,7 +507,11 @@ export class DataCloudTypeScriptSdk {
             typescriptString(summary.version()),
             documentedPaths,
             typescriptString(summary.healthPath()),
-            typescriptString(summary.queryEntitiesPath().replace("{collection}", ""))
+            typescriptString(summary.capabilitiesPath() != null ? summary.capabilitiesPath() : "/api/v1/capabilities"),
+            typescriptString(summary.settingsPath() != null ? summary.settingsPath() : "/api/v1/settings"),
+            typescriptString(summary.listAlertsPath() != null ? summary.listAlertsPath() : "/api/v1/alerts"),
+            typescriptString(summary.aiSuggestionsPath() != null ? summary.aiSuggestionsPath() : "/api/v1/ai/suggestions"),
+            typescriptString(summary.createEntityPath().replace("{collection}", ""))
         );
     }
 
@@ -522,6 +590,24 @@ class DataCloudPythonSdk:
     def delete_entity(self, collection: str, entity_id: str) -> Dict[str, Any]:
         return self._request("DELETE", f"{self._entity_collection_path(collection)}/{entity_id}")
 
+    def capabilities(self) -> Dict[str, Any]:
+        return self._request("GET", %s)
+
+    def get_settings(self) -> Dict[str, Any]:
+        return self._request("GET", %s)
+
+    def list_alerts(self) -> Dict[str, Any]:
+        return self._request("GET", %s)
+
+    def acknowledge_alert(self, alert_id: str) -> Dict[str, Any]:
+        return self._request("POST", f"/api/v1/alerts/{alert_id.strip()}/acknowledge")
+
+    def resolve_alert(self, alert_id: str) -> Dict[str, Any]:
+        return self._request("POST", f"/api/v1/alerts/{alert_id.strip()}/resolve")
+
+    def ai_suggestions(self) -> Dict[str, Any]:
+        return self._request("GET", %s)
+
     def _entity_collection_path(self, collection: str) -> str:
         return %s + collection.strip()
 
@@ -542,7 +628,11 @@ class DataCloudPythonSdk:
             pythonString(summary.version()),
             documentedPaths,
             pythonString(summary.healthPath()),
-            pythonString(summary.queryEntitiesPath().replace("{collection}", ""))
+            pythonString(summary.capabilitiesPath() != null ? summary.capabilitiesPath() : "/api/v1/capabilities"),
+            pythonString(summary.settingsPath() != null ? summary.settingsPath() : "/api/v1/settings"),
+            pythonString(summary.listAlertsPath() != null ? summary.listAlertsPath() : "/api/v1/alerts"),
+            pythonString(summary.aiSuggestionsPath() != null ? summary.aiSuggestionsPath() : "/api/v1/ai/suggestions"),
+            pythonString(summary.createEntityPath().replace("{collection}", ""))
         );
     }
 
@@ -570,7 +660,13 @@ class DataCloudPythonSdk:
         String createEntityPath,
         String queryEntitiesPath,
         String getEntityPath,
-        String deleteEntityPath
+        String deleteEntityPath,
+        String capabilitiesPath,
+        String settingsPath,
+        String listAlertsPath,
+        String acknowledgeAlertPath,
+        String resolveAlertPath,
+        String aiSuggestionsPath
     ) {
         private static OpenApiSummary from(JsonNode root) {
             String title = text(root.at("/info/title"), "Data Cloud API");
@@ -597,7 +693,13 @@ class DataCloudPythonSdk:
                 entityCollectionPath,
                 entityCollectionPath,
                 entityItemPath,
-                entityItemPath
+                entityItemPath,
+                findPathOrNull(paths, "/api/v1/capabilities"),
+                findPathOrNull(paths, "/api/v1/settings"),
+                findPathOrNull(paths, "/api/v1/alerts"),
+                findPathOrNull(paths, "/api/v1/alerts/{alertId}/acknowledge"),
+                findPathOrNull(paths, "/api/v1/alerts/{alertId}/resolve"),
+                findPathOrNull(paths, "/api/v1/ai/suggestions")
             );
         }
 
@@ -606,6 +708,10 @@ class DataCloudPythonSdk:
                 throw new IllegalStateException("Expected OpenAPI path not found: " + expectedPath);
             }
             return expectedPath;
+        }
+
+        private static String findPathOrNull(List<String> paths, String expectedPath) {
+            return paths.contains(expectedPath) ? expectedPath : null;
         }
 
         private static String text(JsonNode node, String defaultValue) {

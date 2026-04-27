@@ -149,7 +149,7 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
 
                         assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST); // GH-90000
                         Map<String, Object> body = parseJsonResponse(resp); // GH-90000
-                        assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+                        assertThat(body.get("error")).isEqualTo("BAD_REQUEST");
                 }
     }
 
@@ -262,15 +262,18 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
         }
 
                 @Test
-                @DisplayName("returns 400 when tenant is missing")
-                void listPipelines_missingTenant_returns400() throws Exception { // GH-90000
+                @DisplayName("falls back to default tenant when missing")
+                void listPipelines_missingTenant_fallsBackToDefault() throws Exception { // GH-90000 - DC-AUD-014
+                        when(mockClient.query(eq("default"), eq("dc_pipelines"), any(DataCloudClient.Query.class)))
+                            .thenReturn(Promise.of(List.of())); // GH-90000
+
                         startServer(); // GH-90000
 
                         HttpResponse<String> resp = getWithoutTenant("/api/v1/pipelines");
 
-                        assertStatusCode(resp, TestConstants.HTTP_BAD_REQUEST); // GH-90000
+                        assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000 - DC-AUD-014
                         Map<String, Object> body = parseJsonResponse(resp); // GH-90000
-                        assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
+                        assertThat(body.get("tenantId")).isEqualTo("default");
                 }
     }
 

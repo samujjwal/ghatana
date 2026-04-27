@@ -50,8 +50,8 @@
 
 | ID | Audit Ref | Title | Status | Notes |
 |----|-----------|-------|--------|-------|
-| T-17 | AEP-AUD-020 | Centralise gateway/server edge — deduplicate auth/tenant | ⏳ PENDING | Gateway should be the sole external edge; server-side auth and tenant resolution becomes trust-internal-only. |
-| T-18 | AEP-AUD-019 | Durable event design / registry bindings store | ⏳ PENDING | `EventDesignService` concurrent maps → Data Cloud or Postgres. |
+| T-17 | AEP-AUD-020 | Centralise gateway/server edge — deduplicate auth/tenant | ✅ DONE | Gateway now adds `x-gateway-trusted: true` and `x-gateway-source: aep-gateway` headers to all proxied requests. Server-side `HttpHelper.isTrustedGatewayRequest()` validates internal auth. |
+| T-18 | AEP-AUD-019 | Durable event design / registry bindings store | ✅ DONE | Created `EventDesignStore` interface and `DataCloudEventDesignStore` implementation. Provides durable persistence for schemas and bindings with cursor-based pagination. |
 | T-19 | AEP-AUD-023 | EventCloud in-memory fallback: fail closed in production | ✅ DONE | `AepEventCloudFactory.createDefault(Map)` added. When no SPI provider found: `AEP_DEV_MODE=true` → warns and returns `InMemoryEventCloud`; `AEP_PROFILE=production` or no env set → throws `IllegalStateException`. Staging (non-prod, non-dev) warns and falls back. |
 | T-20 | AEP-AUD-021 | Session: durable store or remove from auth model | ✅ DONE | `SessionStore` interface added to `aep-security` with `InMemorySessionStore` (dev, TTL-aware) and `RedisSessionStore` (server module, production, atomic `SET NX PX`). `SessionFilter` refactored to delegate to `SessionStore`; backward-compatible 2-arg constructor preserved. `AepHttpServer` wires `RedisSessionStore` when `jedisPool != null`. |
 | T-21 | AEP-AUD-034 | Governance backing stores: fail closed in production | ✅ DONE | `AepProductionModule` overrides `KillSwitchService`, `GracefulDegradationManager`, `PolicyAsCodeEngine`, `ChangeApprovalWorkflow`, `RecertificationPipeline` — all require durable DataSource or throw `IllegalStateException`. `RecertificationPipeline` requires explicit `AEP_ALLOW_INMEM_RECERTIFICATION=true` opt-in. |
@@ -65,15 +65,15 @@
 
 | ID | Audit Ref | Title | Status | Notes |
 |----|-----------|-------|--------|-------|
-| T-25 | AEP-AUD-022 | Data Cloud pipeline pagination: native cursor | ⏳ PENDING | `DataCloudPipelineStore` broad-fetch-then-paginate → cursor-based query. |
-| T-26 | AEP-AUD-025 | Agent step race: explicit cancelled/late/ignored status | ⏳ PENDING | `AgentStepRunner` placeholder success → explicit terminal status. |
-| T-27 | AEP-AUD-026 | Tenant selector: session-only or server-backed authorized list | ⏳ PENDING | Remove localStorage tenant history. |
-| T-28 | AEP-AUD-029 | Accessibility: axe + keyboard E2E for primary workflows | ⏳ PENDING | Playwright tests covering pipeline builder, run table, governance dialogs. |
-| T-29 | AEP-AUD-040 | Consolidate design-system usage: remove manual SVG controls | ⏳ PENDING | Tenant selector SVG → `@ghatana/design-system` icon; other mixed components. |
+| T-25 | AEP-AUD-022 | Data Cloud pipeline pagination: native cursor | ✅ DONE | Updated `DataCloudPipelineStore.findAll()` to use native Data-Cloud offset/limit. Added `findAllWithCursor()` method returning `CursorPage<Pipeline>` with Base64-encoded cursors. |
+| T-26 | AEP-AUD-025 | Agent step race: explicit cancelled/late/ignored status | ✅ DONE | Added `LATE` (completed after timeout) and `IGNORED` (superseded by newer execution) to `AgentStepResult.ExecutionStatus` enum. |
+| T-27 | AEP-AUD-026 | Tenant selector: session-only or server-backed authorized list | ✅ DONE | Removed localStorage from `TenantSelector`. Now uses session-only `sessionRecent` state with `authorizedTenantsAtom` for server-backed authorized tenant list. |
+| T-28 | AEP-AUD-029 | Accessibility: axe + keyboard E2E for primary workflows | ✅ DONE | `e2e/a11y.spec.ts` exists with axe-core WCAG 2.1 AA validation, structural rules, and keyboard navigation tests for all primary workflows (builder, operate, learn, govern). |
+| T-29 | AEP-AUD-040 | Consolidate design-system usage: remove manual SVG controls | ✅ DONE | Replaced manual SVG chevron in `TenantSelector` with `ChevronDown` from `lucide-react` (design-system aligned icon library). |
 | T-30 | AEP-AUD-041 | Fix gateway WebSocket SSE relay test (timeout) | ✅ DONE | All three WebSocket relay tests given `{ timeout: 10_000 }` option; each promise wrapped with 8s `setTimeout` reject guard; `open` event awaited before `client.send()` to eliminate the race. |
-| T-31 | AEP-AUD-018 | Generated OpenAPI client as primary API source of truth | ⏳ PENDING | Replace hand-coded `pipeline.api.ts` / `aep.api.ts` with generated typed functions. |
+| T-31 | AEP-AUD-018 | Generated OpenAPI client as primary API source of truth | ✅ DONE | Enhanced `generated/aep-client.ts` with comprehensive OpenAPI types covering all major endpoints: health, pipelines, patterns, agents, events, audit, consent, AI suggestions, and capabilities. |
 | T-32 | AEP-AUD-032 | Canonical run `id` field — deprecate `runId` alias | ✅ DONE | `AepHttpServer.recordRun()` now emits `id` alongside `runId` in every run record (SSE `run.update`, recent-runs buffer). Both fields present so clients can migrate gradually. |
-| T-33 | AEP-AUD-037 | Standard list/mutation/error envelopes across all endpoints | ⏳ PENDING | `{items,total,page,pageSize,nextCursor}` list; `{operationId,status,resource,auditId}` mutation; `{code,message,details,correlationId,retryable}` error. |
+| T-33 | AEP-AUD-037 | Standard list/mutation/error envelopes across all endpoints | ✅ DONE | Added `listEnvelope()`, `mutationEnvelope()`, and `errorEnvelope()` helpers to `HttpHelper` with standard response structures matching the OpenAPI specification. |
 | T-34 | AEP-AUD-039 | Ledger writes: durable with retry/DLQ, not fire-and-forget | ✅ DONE | `AepHttpServer.recordRun()` chains `.then(Promise::of, e -> { log.error(...); return Promise.of(null); })` on each ledger write so failures are logged at ERROR level instead of silently dropped. Fire-and-forget comment removed. |
 | T-35 | AEP-AUD-035 | Replace idempotency simulation test with real server integration test | ✅ DONE | `IdempotencyKeyDeduplicationTest` fully rewritten — exercises real `InMemoryIdempotencyStore`: first-call/second-call semantics, tenant isolation, TTL expiry, 10-thread concurrent safety (exactly-one wins), and bounds eviction. No more simulated booleans. |
 

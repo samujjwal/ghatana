@@ -68,7 +68,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     static final GenericContainer<?> RABBITMQ = new GenericContainer<>(
         DockerImageName.parse("rabbitmq:3.13-management-alpine"))
             .withExposedPorts(5672)
-            .waitingFor(Wait.forListeningPort())
+            .waitingFor(Wait.forLogMessage(".*Server startup complete.*", 1))
             .withStartupTimeout(Duration.ofMinutes(2));
 
     @Container
