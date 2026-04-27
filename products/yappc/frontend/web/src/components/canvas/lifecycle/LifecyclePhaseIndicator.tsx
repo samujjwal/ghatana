@@ -150,7 +150,7 @@ export const CompactPhaseIndicator: React.FC<{
 
     return (
         <Box
-            className="flex items-center gap-2 px-3 py-1 bg-[rgba(255,_255,_255,_0.9)] rounded" style={{ border: `2px solid ${phaseColor, backgroundColor: 'phaseColor' }}
+            className="flex items-center gap-2 px-3 py-1 bg-[rgba(255,_255,_255,_0.9)] rounded" style={{ border: `2px solid ${phaseColor}`, backgroundColor: phaseColor }}
         >
             <Box
                 className="rounded-full w-[8px] h-[8px]" />

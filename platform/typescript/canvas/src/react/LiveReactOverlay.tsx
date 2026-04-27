@@ -181,9 +181,9 @@ export const LiveReactOverlay = React.memo(function LiveReactOverlay({
               <Component
                 {...element.componentProps}
                 __canvasElementId={element.id}
-                __onPropChange={(key: string, value: PropValue) => {
+                __onPropChange={((key: string, value: PropValue) => {
                   onPropChange?.(element.id, key, value);
-                }}
+                }) as unknown as PropValue}
               />
             </Suspense>
           </ComponentErrorBoundary>

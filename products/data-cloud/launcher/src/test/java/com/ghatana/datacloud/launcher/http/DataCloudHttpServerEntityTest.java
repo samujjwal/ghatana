@@ -28,6 +28,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
+
 /**
  * Integration tests for Data Cloud HTTP entity CRUD endpoints.
  *
@@ -500,6 +502,138 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             assertThat(resp.headers().firstValue("Access-Control-Allow-Origin")).isPresent();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/v1/entities/:collection/:id/history  — genesis-forward reconstruction
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("GET /api/v1/entities/:collection/:id/history – genesis-forward reconstruction")
+    class GenesisForwardTests {
+
+        private DataCloudClient.Event createCdcEvent(String type, Instant timestamp,
+                                                       String collection, String entityId,
+                                                       Map<String, Object> data) {
+            Map<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("collection", collection);
+            payload.put("id", entityId);
+            payload.put("version", 1);
+            payload.put("operation", type.replace("entity.", ""));
+            payload.put("eventType", type);
+            payload.put("timestamp", timestamp.toString());
+            payload.put("data", data != null ? new java.util.LinkedHashMap<>(data) : Map.of());
+            payload.put("createdAt", timestamp.toString());
+            payload.put("updatedAt", timestamp.toString());
+            return new DataCloudClient.Event(type, payload, Map.of(), timestamp);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Test
+        @DisplayName("reconstructs entity state from multiple saved events")
+        void genesisForward_multipleUpdates_returnsLatestState() throws Exception {
+            Instant t0 = Instant.parse("2026-01-01T00:00:00Z");
+            Instant t1 = Instant.parse("2026-01-02T00:00:00Z");
+            Instant t2 = Instant.parse("2026-01-03T00:00:00Z");
+
+            List<DataCloudClient.Event> events = List.of(
+                createCdcEvent("entity.saved", t0, "products", "ent-1",
+                    Map.of("name", "Widget v1", "price", 9.99)),
+                createCdcEvent("entity.saved", t1, "products", "ent-1",
+                    Map.of("name", "Widget v2", "price", 10.99)),
+                createCdcEvent("entity.saved", t2, "products", "ent-1",
+                    Map.of("name", "Widget v3", "price", 11.99))
+            );
+
+            when(mockClient.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))
+                .thenReturn(Promise.of(events));
+
+            startServer();
+
+            HttpResponse<String> resp = get(
+                "/api/v1/entities/products/ent-1/history?asOf=2026-01-02T12:00:00Z");
+            assertStatusCode(resp, TestConstants.HTTP_OK);
+            Map<String, Object> body = parseJsonResponse(resp);
+            Map<String, Object> data = (Map<String, Object>) body.get("data");
+            assertThat(data.get("name")).isEqualTo("Widget v2");
+            assertThat(data.get("price")).isEqualTo(10.99);
+            assertThat(body.get("reconstructionMethod")).isEqualTo("genesis-forward");
+            assertThat(body.get("lastMutationAt")).isEqualTo(t1.toString());
+        }
+
+        @Test
+        @DisplayName("returns tombstone state for deleted entity at asOf")
+        void genesisForward_deletedEntity_returnsTombstone() throws Exception {
+            Instant t0 = Instant.parse("2026-01-01T00:00:00Z");
+            Instant t1 = Instant.parse("2026-01-02T00:00:00Z");
+
+            List<DataCloudClient.Event> events = List.of(
+                createCdcEvent("entity.saved", t0, "products", "ent-1",
+                    Map.of("name", "Widget", "price", 9.99)),
+                createCdcEvent("entity.deleted", t1, "products", "ent-1", null)
+            );
+
+            when(mockClient.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))
+                .thenReturn(Promise.of(events));
+
+            startServer();
+
+            HttpResponse<String> resp = get(
+                "/api/v1/entities/products/ent-1/history?asOf=2026-01-03T00:00:00Z");
+            assertStatusCode(resp, TestConstants.HTTP_OK);
+            Map<String, Object> body = parseJsonResponse(resp);
+            assertThat(body.get("tombstone")).isEqualTo(true);
+            assertThat(body.get("deletedAt")).isEqualTo(t1.toString());
+            assertThat(body.get("reconstructionMethod")).isEqualTo("genesis-forward");
+        }
+
+        @Test
+        @DisplayName("returns 404 when no events exist for entity at asOf")
+        void genesisForward_noEvents_returns404() throws Exception {
+            when(mockClient.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))
+                .thenReturn(Promise.of(List.of()));
+
+            startServer();
+
+            HttpResponse<String> resp = get(
+                "/api/v1/entities/products/ent-1/history?asOf=2026-01-01T00:00:00Z");
+            assertThat(resp.statusCode()).isEqualTo(404);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Test
+        @DisplayName("applies batch-saved events correctly")
+        void genesisForward_batchSaved_appliesAllEntities() throws Exception {
+            Instant t0 = Instant.parse("2026-01-01T00:00:00Z");
+
+            Map<String, Object> batchPayload = new java.util.LinkedHashMap<>();
+            batchPayload.put("collection", "products");
+            batchPayload.put("operation", "batch-saved");
+            batchPayload.put("eventType", "entity.batch-saved");
+            batchPayload.put("timestamp", t0.toString());
+            List<Map<String, Object>> entities = List.of(
+                Map.of("collection", "products", "id", "ent-1",
+                    "data", Map.of("name", "BatchWidget", "price", 5.99),
+                    "createdAt", t0.toString(), "updatedAt", t0.toString())
+            );
+            batchPayload.put("entities", entities);
+
+            List<DataCloudClient.Event> events = List.of(
+                new DataCloudClient.Event("entity.batch-saved", batchPayload, Map.of(), t0)
+            );
+
+            when(mockClient.queryEvents(anyString(), any(DataCloudClient.EventQuery.class)))
+                .thenReturn(Promise.of(events));
+
+            startServer();
+
+            HttpResponse<String> resp = get(
+                "/api/v1/entities/products/ent-1/history?asOf=2026-01-02T00:00:00Z");
+            assertStatusCode(resp, TestConstants.HTTP_OK);
+            Map<String, Object> body = parseJsonResponse(resp);
+            Map<String, Object> data = (Map<String, Object>) body.get("data");
+            assertThat(data.get("name")).isEqualTo("BatchWidget");
         }
     }
 

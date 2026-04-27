@@ -15,6 +15,7 @@ import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,18 +99,14 @@ public class DataLifecycleHandler {
     );
 
     /** Validity window for HMAC purge confirmation tokens (5 minutes). */
-    private static final long PURGE_TOKEN_VALIDITY_MS = 5L * 60 * 1000;
 
     /** HMAC-SHA256 algorithm identifier. */
-    private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final String GOVERNANCE_POLICY_COLLECTION = "_governance_retention_policies";
     private static final String GOVERNANCE_PURGE_TOMBSTONE_COLLECTION = "_governance_purge_tombstones";
     private static final String POLICY_STATUS_CLASSIFIED = "CLASSIFIED";
     private static final String POLICY_STATUS_DEFAULT = "DEFAULT";
     private static final String MISSING_TENANT_ERROR = "MISSING_TENANT";
     private static final String PURGE_TOKEN_SECRET_REQUIRED = "PURGE_TOKEN_SECRET_REQUIRED";
-    private static final String PURGE_TOKEN_SECRET_ENV = "DATACLOUD_PURGE_TOKEN_SECRET";
-    private static final String DATACLOUD_PROFILE_ENV = "DATACLOUD_PROFILE";
 
     private static final String REDACTED_VALUE = "[REDACTED]";
     private static final int PURGE_QUERY_LIMIT = EntityStore.QuerySpec.MAX_LIMIT;
@@ -117,8 +114,6 @@ public class DataLifecycleHandler {
     /**
      * Ephemeral per-process fallback secret used only in local/embedded-style profiles.
      */
-    private static final byte[] EPHEMERAL_PURGE_TOKEN_SECRET =
-        UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8);
 
     private final DataCloudClient client;
     private final ObjectMapper objectMapper;
@@ -341,32 +336,44 @@ public class DataLifecycleHandler {
                 Promise<Optional<Map<String, Object>>> policyPromise = loadRetentionPolicy(tenantContext, collection);
 
                 if (dryRun) {
-                    return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
-                        .map(queryResult -> {
-                            List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
-                            long issuedAtMs = Instant.now().toEpochMilli();
-                            String token = buildPurgeToken(tenantId, collection, issuedAtMs);
-                            log.info("[DC-E5] purge DRY RUN collection={} tenant={} candidates={}",
-                                collection, tenantId, candidates.size());
+                    return policyPromise.then(policy -> {
+                        if (hasActiveLegalHolds(policy.orElse(null))) {
+                            emitAudit(tenantId, requestId, "RETENTION_PURGE_BLOCKED",
+                                collection, Map.of("reason", "LEGAL_HOLD_ACTIVE", "dryRun", true));
+                            return Promise.of(http.errorEnvelopeResponse(
+                                ApiResponse.error("LEGAL_HOLD_ACTIVE",
+                                    "Collection is under active legal hold; purge dry-run blocked",
+                                    tenantId, requestId),
+                                objectMapper,
+                                423));
+                        }
+                        return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                            .map(queryResult -> {
+                                List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
+                                long issuedAtMs = Instant.now().toEpochMilli();
+                                String token = buildPurgeToken(tenantId, collection, issuedAtMs);
+                                log.info("[DC-E5] purge DRY RUN collection={} tenant={} candidates={}",
+                                    collection, tenantId, candidates.size());
 
-                            Map<String, Object> result = new LinkedHashMap<>();
-                            result.put("collection", collection);
-                            result.put("dryRun", true);
-                            result.put("status", "DRY_RUN_COMPLETE");
-                            result.put("confirmationToken", token);
-                            result.put("tokenExpiresInSec", PURGE_TOKEN_VALIDITY_MS / 1000);
-                            result.put("estimatedRows", candidates.size());
-                            result.put("sampleEntityIds", candidates.stream()
-                                .map(entity -> entity.id().value())
-                                .limit(10)
-                                .toList());
-                            result.put("requestId", requestId);
+                                Map<String, Object> result = new LinkedHashMap<>();
+                                result.put("collection", collection);
+                                result.put("dryRun", true);
+                                result.put("status", "DRY_RUN_COMPLETE");
+                                result.put("confirmationToken", token);
+                                result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
+                                result.put("estimatedRows", candidates.size());
+                                result.put("sampleEntityIds", candidates.stream()
+                                    .map(entity -> entity.id().value())
+                                    .limit(10)
+                                    .toList());
+                                result.put("requestId", requestId);
 
-                            emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
-                                collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
-                            return http.envelopeResponse(
-                                ApiResponse.success(result, tenantId, requestId), objectMapper);
-                        }));
+                                emitAudit(tenantId, requestId, "RETENTION_PURGE_DRY_RUN",
+                                    collection, Map.of("dryRun", true, "estimatedRows", candidates.size()));
+                                return http.envelopeResponse(
+                                    ApiResponse.success(result, tenantId, requestId), objectMapper);
+                            });
+                    });
                 }
 
                 // Execute path: token is mandatory and must pass HMAC verification
@@ -396,8 +403,19 @@ public class DataLifecycleHandler {
                         403));
                 }
 
-                return policyPromise.then(policy -> entityStore.query(tenantContext, buildCollectionQuery(collection))
-                    .then(queryResult -> {
+                return policyPromise.then(policy -> {
+                    if (hasActiveLegalHolds(policy.orElse(null))) {
+                        emitAudit(tenantId, requestId, "RETENTION_PURGE_BLOCKED",
+                            collection, Map.of("reason", "LEGAL_HOLD_ACTIVE"));
+                        return Promise.of(http.errorEnvelopeResponse(
+                            ApiResponse.error("LEGAL_HOLD_ACTIVE",
+                                "Collection is under active legal hold; purge is blocked",
+                                tenantId, requestId),
+                            objectMapper,
+                            423));
+                    }
+                    return entityStore.query(tenantContext, buildCollectionQuery(collection))
+                        .then(queryResult -> {
                         List<EntityStore.Entity> candidates = findPurgeCandidates(policy.orElse(null), queryResult.entities());
                         List<EntityStore.EntityId> entityIds = candidates.stream()
                             .map(EntityStore.Entity::id)
@@ -469,8 +487,9 @@ public class DataLifecycleHandler {
                                 return http.envelopeResponse(
                                     ApiResponse.success(result, tenantId, requestId), objectMapper);
                             });
-                    }));
-                }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+                    });
+                });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -506,9 +525,11 @@ public class DataLifecycleHandler {
         return request.loadBody(1024 * 8)
             .then(body -> {
                 Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
-                String collection = sanitise((String) input.getOrDefault("collection", ""));
-                String entityId   = sanitise((String) input.getOrDefault("entityId", ""));
-                String reason     = sanitise((String) input.getOrDefault("reason", "unspecified"));
+                String collection        = sanitise((String) input.getOrDefault("collection", ""));
+                String entityId          = sanitise((String) input.getOrDefault("entityId", ""));
+                String reason            = sanitise((String) input.getOrDefault("reason", "unspecified"));
+                String confirmationToken = (String) input.getOrDefault("confirmationToken", "");
+                boolean dryRun           = Boolean.TRUE.equals(input.get("dryRun"));
 
                 @SuppressWarnings("unchecked")
                 List<String> requestedFields = (List<String>) input.getOrDefault("fields", List.of());
@@ -527,8 +548,20 @@ public class DataLifecycleHandler {
 
                 EntityStore entityStore = requireEntityStore();
                 EntityStore.EntityId storeEntityId = EntityStore.EntityId.of(entityId);
-                return entityStore.findById(tenantContext, storeEntityId)
-                    .then(entityOpt -> {
+                return loadRetentionPolicy(tenantContext, collection)
+                    .then(policyOpt -> {
+                        if (hasActiveLegalHolds(policyOpt.orElse(null))) {
+                            emitAudit(tenantId, requestId, "PII_REDACT_BLOCKED",
+                                collection, Map.of("entityId", entityId, "reason", "LEGAL_HOLD_ACTIVE"));
+                            return Promise.of(http.errorEnvelopeResponse(
+                                ApiResponse.error("LEGAL_HOLD_ACTIVE",
+                                    "Collection is under active legal hold; redaction is blocked",
+                                    tenantId, requestId),
+                                objectMapper,
+                                423));
+                        }
+                        return entityStore.findById(tenantContext, storeEntityId)
+                            .then(entityOpt -> {
                         if (entityOpt.isEmpty()) {
                             return Promise.of(http.errorEnvelopeResponse(
                                 ApiResponse.error("ENTITY_NOT_FOUND",
@@ -548,9 +581,30 @@ public class DataLifecycleHandler {
                             if (currentValue == null || REDACTED_VALUE.equals(currentValue)) {
                                 continue;
                             }
-                            previousValueHashes.put(field, sha256Hex(String.valueOf(currentValue)));
+                            previousValueHashes.put(field, DestructiveActionToken.sha256Hex(String.valueOf(currentValue)));
                             redactedData.put(field, REDACTED_VALUE);
                             changedFields.add(field);
+                        }
+
+                        // P0.4: Dry-run path returns preview and confirmation token
+                        if (dryRun) {
+                            long issuedAtMs = Instant.now().toEpochMilli();
+                            String token = buildRedactToken(tenantId, collection, entityId, issuedAtMs);
+                            log.info("[DC-E5] redact DRY RUN collection={} tenant={} entityId={} fields={}",
+                                collection, tenantId, entityId, changedFields.size());
+                            Map<String, Object> result = new LinkedHashMap<>();
+                            result.put("collection", collection);
+                            result.put("entityId", entityId);
+                            result.put("dryRun", true);
+                            result.put("status", "DRY_RUN_COMPLETE");
+                            result.put("confirmationToken", token);
+                            result.put("tokenExpiresInSec", DestructiveActionToken.TOKEN_VALIDITY_MS / 1000);
+                            result.put("estimatedFields", changedFields.size());
+                            result.put("fields", changedFields);
+                            result.put("previousValueHashes", previousValueHashes);
+                            result.put("reason", reason);
+                            return Promise.of(http.envelopeResponse(
+                                ApiResponse.success(result, tenantId, requestId), objectMapper));
                         }
 
                         if (changedFields.isEmpty()) {
@@ -567,6 +621,34 @@ public class DataLifecycleHandler {
                                 Map.of("entityId", entityId, "fieldCount", 0, "reason", reason, "status", "NO_OP"));
                             return Promise.of(http.envelopeResponse(
                                 ApiResponse.success(result, tenantId, requestId), objectMapper));
+                        }
+
+                        // Execute path: token is mandatory and must pass HMAC verification
+                        if (confirmationToken.isBlank()) {
+                            return Promise.of(http.errorEnvelopeResponse(
+                                ApiResponse.error("MISSING_CONFIRMATION",
+                                    "confirmationToken is required to authorise redaction. " +
+                                    "Perform a dry-run first to obtain a valid token.",
+                                    tenantId, requestId),
+                                objectMapper,
+                                400));
+                        }
+
+                        TokenValidationResult tokenResult = validateRedactToken(confirmationToken, tenantId, collection, entityId);
+                        if (!tokenResult.valid()) {
+                            log.warn("[DC-E5] redact REJECTED invalid token: {} collection={} entityId={} tenant={}",
+                                     tokenResult.reason(), collection, entityId, tenantId);
+                            emitAudit(tenantId, requestId, "PII_REDACT_REJECTED",
+                                collection, Map.of(
+                                    "entityId", entityId,
+                                    "reason", tokenResult.reason(),
+                                    "confirmationTokenHash", sha256Hex(confirmationToken)));
+                            return Promise.of(http.errorEnvelopeResponse(
+                                ApiResponse.error("INVALID_CONFIRMATION_TOKEN",
+                                    "Confirmation token is invalid or expired: " + tokenResult.reason(),
+                                    tenantId, requestId),
+                                objectMapper,
+                                403));
                         }
 
                         EntityStore.Entity updatedEntity = new EntityStore.Entity(
@@ -610,7 +692,8 @@ public class DataLifecycleHandler {
                                     ApiResponse.success(result, tenantId, requestId), objectMapper);
                             });
                     });
-                }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+                });
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -634,33 +717,59 @@ public class DataLifecycleHandler {
                 Map.of("request.id", requestId));
 
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
-        return loadRetentionPolicies(tenantContext)
-            .map(policies -> {
-                Set<String> tenantFields = policies.stream()
-                    .flatMap(policy -> readPolicyPiiFields(policy).stream())
-                    .filter(field -> !GLOBAL_PII_FIELDS.contains(field))
-                    .collect(Collectors.toCollection(java.util.TreeSet::new));
+        Promise<List<Map<String, Object>>> policiesPromise = loadRetentionPolicies(tenantContext);
 
-                Set<String> effectiveFields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
-                effectiveFields.addAll(tenantFields);
+        // Schema scan: when a collection is specified, query a sample entity to inspect field names
+        Promise<List<String>> schemaScanPromise;
+        if (collection != null && !collection.isBlank()) {
+            EntityStore entityStore = client.entityStore();
+            if (entityStore != null) {
+                schemaScanPromise = entityStore.query(tenantContext,
+                        EntityStore.QuerySpec.builder().collection(collection).limit(1).build())
+                    .map(result -> {
+                        if (result.entities().isEmpty()) {
+                            return derivePiiFields(collection);
+                        }
+                        Set<String> detected = new java.util.TreeSet<>(derivePiiFields(collection));
+                        for (EntityStore.Entity entity : result.entities()) {
+                            detected.addAll(scanFieldsForPiiPatterns(entity.data()));
+                        }
+                        return List.copyOf(detected);
+                    })
+                    .then(Promise::of, e -> {
+                        log.warn("[DC-E5] schema scan failed for collection={} tenant={}: {}", collection, tenantId, e.getMessage());
+                        return Promise.of(derivePiiFields(collection));
+                    });
+            } else {
+                schemaScanPromise = Promise.of(derivePiiFields(collection));
+            }
+        } else {
+            schemaScanPromise = Promise.of(List.of());
+        }
 
-                List<String> autoDetectedFields = collection == null || collection.isBlank()
-                    ? List.of()
-                    : derivePiiFields(collection);
-                effectiveFields.addAll(autoDetectedFields);
+        return policiesPromise.then(policies -> schemaScanPromise.map(autoDetectedFields -> {
+            Set<String> tenantFields = policies.stream()
+                .flatMap(policy -> readPolicyPiiFields(policy).stream())
+                .filter(field -> !GLOBAL_PII_FIELDS.contains(field))
+                .collect(Collectors.toCollection(java.util.TreeSet::new));
 
-                Map<String, Object> data = new LinkedHashMap<>();
-                data.put("globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList());
-                data.put("tenantFields", List.copyOf(tenantFields));
-                data.put("autoDetectedFields", autoDetectedFields);
-                if (collection != null && !collection.isBlank()) {
-                    data.put("collection", collection);
-                }
-                data.put("effectiveCount", effectiveFields.size());
-                return http.envelopeResponse(
-                    ApiResponse.success(data, tenantId, requestId), objectMapper);
-            })
-            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+            Set<String> effectiveFields = new java.util.TreeSet<>(GLOBAL_PII_FIELDS);
+            effectiveFields.addAll(tenantFields);
+            effectiveFields.addAll(autoDetectedFields);
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("globalFields", GLOBAL_PII_FIELDS.stream().sorted().toList());
+            data.put("tenantFields", List.copyOf(tenantFields));
+            data.put("autoDetectedFields", autoDetectedFields);
+            data.put("scanMode", collection != null && !collection.isBlank() ? "schema-scan" : "name-convention");
+            if (collection != null && !collection.isBlank()) {
+                data.put("collection", collection);
+            }
+            data.put("effectiveCount", effectiveFields.size());
+            return http.envelopeResponse(
+                ApiResponse.success(data, tenantId, requestId), objectMapper);
+        }))
+        .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
     /**
@@ -777,19 +886,199 @@ public class DataLifecycleHandler {
             .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 
+    /**
+     * {@code GET /api/v1/governance/inventory}
+     *
+     * <p>Returns a detailed governance inventory for the tenant:
+     * collections with schemas, retention policies, legal holds,
+     * PII fields, audit event counts, and redaction verification status.
+     */
+    public Promise<HttpResponse> handleGovernanceInventory(HttpRequest request) {
+        String requestId = resolveRequestId(request);
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse(requestId));
+        }
+        TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
+                request,
+                tenantId,
+                "datacloud.http.governance.inventory",
+                traceSupport.requestSpanId(request),
+                Map.of("request.id", requestId));
+
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
+        return loadRetentionPolicies(tenantContext)
+            .then(policies -> {
+                EntityStore store = client.entityStore();
+                if (store != null) {
+                    return store.listCollections(tenantContext)
+                        .map(collections -> buildGovernanceInventory(
+                            tenantId, tenantContext, policies, collections, store));
+                }
+                return Promise.of(buildGovernanceInventory(
+                    tenantId, tenantContext, policies, List.of(), null));
+            })
+            .then(inventory -> {
+                if (auditService instanceof AuditSummaryProvider auditSummaryProvider) {
+                    return auditSummaryProvider.summarize(tenantId,
+                            Instant.now().minusSeconds(30L * 24 * 60 * 60), 500)
+                        .map(auditSummary -> enrichInventoryWithAudit(inventory, auditSummary));
+                }
+                return Promise.of(inventory);
+            })
+            .map(inventory -> http.envelopeResponse(
+                ApiResponse.success(inventory, tenantId, requestId), objectMapper))
+            .whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> buildGovernanceInventory(
+            String tenantId,
+            TenantContext tenantContext,
+            List<Map<String, Object>> policies,
+            List<String> collections,
+            EntityStore store) {
+
+        Map<String, Map<String, Object>> policyByCollection = new LinkedHashMap<>();
+        for (Map<String, Object> policy : policies) {
+            String collection = String.valueOf(policy.getOrDefault("collection", policy.get("id")));
+            if (collection != null && !collection.isBlank()) {
+                policyByCollection.put(collection, policy);
+            }
+        }
+
+        List<String> allCollections = new ArrayList<>(collections);
+        for (String c : policyByCollection.keySet()) {
+            if (!allCollections.contains(c)) {
+                allCollections.add(c);
+            }
+        }
+
+        List<Map<String, Object>> collectionEntries = new ArrayList<>();
+        for (String collection : allCollections) {
+            Map<String, Object> policy = policyByCollection.getOrDefault(collection,
+                defaultRetentionPolicy(collection));
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("name", collection);
+            entry.put("systemCollection", collection.startsWith("_") || collection.startsWith("dc_"));
+            entry.put("classified", policyByCollection.containsKey(collection));
+            entry.put("tier", policy.getOrDefault("tier", "standard"));
+            entry.put("retentionDays", policy.getOrDefault("retentionDays", 365));
+            entry.put("legalHolds", policy.getOrDefault("legalHolds", List.of()));
+            entry.put("piiFields", readPolicyPiiFields(policy));
+            entry.put("lastClassifiedAt", policy.getOrDefault("lastClassifiedAt", Instant.EPOCH.toString()));
+            entry.put("redactionVerified", false);
+            entry.put("redactionPendingFields", readPolicyPiiFields(policy));
+
+            // Schema scan deferred: per-collection entity sampling is async-
+            // expensive and should be done via parallel Promise.all in production.
+            // For now we flag whether data exists so the UI can trigger lazy schema
+            // discovery on demand.
+            entry.put("schemaFields", List.of());
+            entry.put("schemaPiiDetected", List.of());
+            entry.put("hasData", store != null);
+            collectionEntries.add(entry);
+        }
+
+        List<Map<String, Object>> holdsList = new ArrayList<>();
+        for (Map<String, Object> policy : policies) {
+            Object holds = policy.get("legalHolds");
+            if (holds instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item instanceof Map<?, ?> hold) {
+                        Map<String, Object> h = new LinkedHashMap<>();
+                        hold.forEach((k, v) -> h.put(String.valueOf(k), v));
+                        h.put("collection", policy.getOrDefault("collection", policy.get("id")));
+                        holdsList.add(h);
+                    }
+                }
+            }
+        }
+
+        Map<String, Object> inventory = new LinkedHashMap<>();
+        inventory.put("tenantId", tenantId);
+        inventory.put("collections", collectionEntries);
+        inventory.put("collectionsTotal", collectionEntries.size());
+        inventory.put("collectionsClassified", policyByCollection.size());
+        inventory.put("collectionsUnclassified", Math.max(0, collectionEntries.size() - policyByCollection.size()));
+        inventory.put("activeLegalHolds", holdsList.stream()
+            .filter(h -> Boolean.TRUE.equals(h.get("active")))
+            .count());
+        inventory.put("legalHolds", holdsList);
+        inventory.put("totalPiiFields", collectionEntries.stream()
+            .flatMap(e -> ((List<String>) e.getOrDefault("piiFields", List.of())).stream())
+            .distinct()
+            .count());
+        inventory.put("generatedAt", Instant.now().toString());
+        return inventory;
+    }
+
+    private Map<String, Object> enrichInventoryWithAudit(
+            Map<String, Object> inventory,
+            AuditSummaryProvider.AuditSummary auditSummary) {
+        Map<String, Long> eventCounts = auditSummary.eventCounts();
+        long redactions = eventCounts.getOrDefault("PII_REDACT", 0L);
+        long purges = eventCounts.getOrDefault("RETENTION_PURGE", 0L)
+            + eventCounts.getOrDefault("RETENTION_PURGE_DRY_RUN", 0L)
+            + eventCounts.getOrDefault("RETENTION_PURGE_REJECTED", 0L);
+
+        inventory.put("auditEventsIn30Days",
+            eventCounts.values().stream().mapToLong(Long::longValue).sum());
+        inventory.put("redactionsIn30Days", redactions);
+        inventory.put("purgesIn30Days", purges);
+        inventory.put("recentAuditEvents", auditSummary.recentEvents());
+        return inventory;
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
+    /** PII-related collection name patterns (case-insensitive). */
+    private static final List<String> PII_COLLECTION_PATTERNS = List.of(
+        "user", "person", "customer", "contact", "profile", "account",
+        "patient", "employee", "member", "subscriber", "lead", "applicant",
+        "individual", "client", "citizen", "resident"
+    );
+
+    /** Field name patterns that suggest PII regardless of collection name. */
+    private static final List<String> PII_FIELD_NAME_PATTERNS = List.of(
+        "email", "phone", "ssn", "social", "passport", "dob", "birth",
+        "name", "address", "ip_address", "credit_card", "card_number",
+        "bank_account", "iban", "tax_id", "national_id", "driver_license",
+        "zip", "postal", "gender", "ethnicity", "race", "religion",
+        "health", "medical", "biometric", "fingerprint", "face"
+    );
+
     /**
-     * Derives likely PII fields for a collection by name convention.
-     * Production would read from the tenant PII registry.
+     * Derives likely PII fields for a collection by name convention and optional
+     * schema field scan. Production should read from the tenant PII registry.
      */
     private static List<String> derivePiiFields(String collection) {
-        if (collection.contains("user") || collection.contains("person") || collection.contains("customer")) {
+        String lower = collection.toLowerCase();
+        boolean likelyPiiCollection = PII_COLLECTION_PATTERNS.stream().anyMatch(lower::contains);
+        if (likelyPiiCollection) {
             return GLOBAL_PII_FIELDS.stream().sorted().toList();
         }
         return List.of();
+    }
+
+    /**
+     * Scans entity field names for PII indicators.
+     *
+     * @param data entity data map
+     * @return list of field names that match known PII patterns
+     */
+    private static List<String> scanFieldsForPiiPatterns(Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            return List.of();
+        }
+        return data.keySet().stream()
+            .filter(field -> PII_FIELD_NAME_PATTERNS.stream()
+                .anyMatch(pattern -> field.toLowerCase().contains(pattern)))
+            .sorted()
+            .distinct()
+            .toList();
     }
 
     private Map<String, Object> buildBaseComplianceSummary(String tenantId, List<Map<String, Object>> policies, List<String> collections) {
@@ -828,7 +1117,10 @@ public class DataLifecycleHandler {
         summary.put("collectionsClassified", collectionsClassified);
         summary.put("collectionsUnclassified", collectionsUnclassified);
         summary.put("piiFieldsRegistered", tenantSpecificPiiFields.size());
-        summary.put("legalHoldsActive", 0);
+        long legalHoldsActive = policies.stream()
+            .filter(policy -> hasActiveLegalHolds(policy))
+            .count();
+        summary.put("legalHoldsActive", legalHoldsActive);
         summary.put("retentionExpirationsIn30Days", expiringIn30Days);
         summary.put("lastAuditAt", Instant.EPOCH.toString());
         summary.put("auditEventsIn30Days", 0L);
@@ -965,6 +1257,31 @@ public class DataLifecycleHandler {
                 .collect(Collectors.toList()));
     }
 
+    /**
+     * Checks whether a retention policy has active legal holds.
+     *
+     * <p>A legal hold blocks purge and redact operations for the collection
+     * until the hold is explicitly released.
+     */
+    @SuppressWarnings("unchecked")
+    private static boolean hasActiveLegalHolds(Map<String, Object> policy) {
+        if (policy == null) {
+            return false;
+        }
+        Object holds = policy.get("legalHolds");
+        if (holds instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> hold && Boolean.TRUE.equals(hold.get("active"))) {
+                    return true;
+                }
+                if (item instanceof String s && !s.isBlank()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private Map<String, Object> defaultRetentionPolicy(String collection) {
         return Map.of(
             "collection", collection,
@@ -1081,15 +1398,27 @@ public class DataLifecycleHandler {
         return null;
     }
 
+    /**
+     * Returns the event log store, throwing if it is not configured.
+     *
+     * <p>P0.4: Event logging is mandatory for governance traceability.
+     */
+    private EventLogStore requireEventLogStore() {
+        EventLogStore store = client.eventLogStore();
+        if (store == null) {
+            throw new IllegalStateException(
+                "P0.4: EventLogStore is required for governance operations. " +
+                "Ensure event logging is configured.");
+        }
+        return store;
+    }
+
     private void emitGovernanceEvent(TenantContext tenantContext,
                                      String requestId,
                                      String eventType,
                                      String collection,
                                      Map<String, Object> payload) {
-        EventLogStore eventLogStore = client.eventLogStore();
-        if (eventLogStore == null) {
-            return;
-        }
+        EventLogStore eventLogStore = requireEventLogStore();
 
         Map<String, Object> eventPayload = new LinkedHashMap<>(payload);
         eventPayload.put("collection", collection);
@@ -1120,9 +1449,25 @@ public class DataLifecycleHandler {
         }
     }
 
+    /**
+     * Returns the audit service, throwing if it is not configured.
+     *
+     * <p>P0.5: Audit is a mandatory dependency for governance operations.
+     * Callers must ensure an AuditService is wired before invoking
+     * destructive or compliance-sensitive handlers.
+     */
+    private AuditService requireAuditService() {
+        if (auditService == null) {
+            throw new IllegalStateException(
+                "P0.5: AuditService is required for governance operations. " +
+                "Call withAuditService() before use.");
+        }
+        return auditService;
+    }
+
     private void emitAudit(String tenantId, String requestId, String eventType,
                            String resourceId, Map<String, Object> details) {
-        if (auditService == null) return;
+        AuditService service = requireAuditService();
         AuditEvent.Builder builder = AuditEvent.builder()
             .tenantId(tenantId)
             .eventType(eventType)
@@ -1131,7 +1476,7 @@ public class DataLifecycleHandler {
             .success(true)
             .detail("requestId", requestId);
         details.forEach(builder::detail);
-        auditService.record(builder.build())
+        service.record(builder.build())
             .whenException(e -> log.warn("[DC-E5] audit emit failed: {}", e.getMessage()));
     }
 
@@ -1172,10 +1517,7 @@ public class DataLifecycleHandler {
     }
 
     static String buildPurgeToken(String tenantId, String collection, long issuedAtMs, Map<String, String> env) {
-        String payload = tenantId + ":" + collection + ":" + issuedAtMs;
-        String hmac = hmacSha256Hex(resolvePurgeTokenSecret(env), payload);
-        String raw = issuedAtMs + "." + hmac;
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+        return DestructiveActionToken.buildToken("purge", tenantId, collection, issuedAtMs, env);
     }
 
     /**
@@ -1186,93 +1528,52 @@ public class DataLifecycleHandler {
     }
 
     static TokenValidationResult validatePurgeToken(String token, String tenantId, String collection, Map<String, String> env) {
-        try {
-            byte[] decoded = Base64.getUrlDecoder().decode(token);
-            String raw = new String(decoded, StandardCharsets.UTF_8);
-            int dotIdx = raw.indexOf('.');
-            if (dotIdx < 1) {
-                return TokenValidationResult.failure("malformed token");
-            }
-            long issuedAtMs = Long.parseLong(raw.substring(0, dotIdx));
-            String providedHmac = raw.substring(dotIdx + 1);
+        var result = DestructiveActionToken.validateToken(token, "purge", tenantId, collection, null, env);
+        return result.isValid()
+            ? TokenValidationResult.success()
+            : TokenValidationResult.failure(result.reason());
+    }
 
-            long ageMs = Instant.now().toEpochMilli() - issuedAtMs;
-            if (ageMs > PURGE_TOKEN_VALIDITY_MS) {
-                return TokenValidationResult.failure("token expired (age=" + (ageMs / 1000) + "s, max=300s)");
-            }
-            if (ageMs < 0) {
-                return TokenValidationResult.failure("token issued in the future");
-            }
+    // ─────────────────────────────────────────────────────────────────────────
+    // HMAC redact token helpers (P0.4)
+    // ─────────────────────────────────────────────────────────────────────────
 
-            String expectedHmac = hmacSha256Hex(resolvePurgeTokenSecret(env),
-                    tenantId + ":" + collection + ":" + issuedAtMs);
-            if (!constantTimeEquals(expectedHmac, providedHmac)) {
-                return TokenValidationResult.failure("token signature mismatch");
-            }
-            return TokenValidationResult.success();
-        } catch (IllegalArgumentException e) {
-            return TokenValidationResult.failure("token decode error: " + e.getMessage());
-        }
+    /**
+     * Builds a time-limited HMAC-SHA256 redact confirmation token scoped to a specific entity.
+     *
+     * <p>Format: {@code Base64Url( epochMs + "." + HMAC-SHA256(secret, "redact:"+tenantId+":"+collection+":"+entityId+":"+epochMs) )}
+     */
+    static String buildRedactToken(String tenantId, String collection, String entityId, long issuedAtMs) {
+        return DestructiveActionToken.buildToken("redact", tenantId, collection, entityId, issuedAtMs, runtimeEnvironment());
+    }
+
+    static TokenValidationResult validateRedactToken(String token, String tenantId, String collection, String entityId) {
+        var result = DestructiveActionToken.validateToken(token, "redact", tenantId, collection, entityId, runtimeEnvironment());
+        return result.isValid()
+            ? TokenValidationResult.success()
+            : TokenValidationResult.failure(result.reason());
     }
 
     static TokenSecretRequirement validatePurgeTokenSecretConfiguration(Map<String, String> env) {
-        if (resolveConfiguredPurgeTokenSecret(env).isPresent()) {
-            return TokenSecretRequirement.available(resolveProfileName(env));
-        }
-        if (allowsEphemeralPurgeTokenSecret(env)) {
-            return TokenSecretRequirement.available(resolveProfileName(env));
-        }
-        return TokenSecretRequirement.unavailable(
-            resolveProfileName(env),
-            PURGE_TOKEN_SECRET_ENV + " must be configured for purge operations outside local or sovereign profiles"
-        );
-    }
-
-    private static byte[] resolvePurgeTokenSecret(Map<String, String> env) {
-        return resolveConfiguredPurgeTokenSecret(env)
-            .orElse(EPHEMERAL_PURGE_TOKEN_SECRET);
-    }
-
-    private static Optional<byte[]> resolveConfiguredPurgeTokenSecret(Map<String, String> env) {
-        String configured = env.get(PURGE_TOKEN_SECRET_ENV);
-        if (configured == null || configured.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.of(configured.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static boolean allowsEphemeralPurgeTokenSecret(Map<String, String> env) {
-        return DataCloudLauncherSettings.isEmbeddedProfile(
-            DataCloudLauncherSettings.resolveProfile(new String[0], env));
+        var result = DestructiveActionToken.validateTokenSecretConfiguration(env);
+        return result.available()
+            ? TokenSecretRequirement.available(result.profile())
+            : TokenSecretRequirement.unavailable(result.profile(), result.message());
     }
 
     private static String resolveProfileName(Map<String, String> env) {
-        String rawProfile = env.get(DATACLOUD_PROFILE_ENV);
+        String rawProfile = env.get(DestructiveActionToken.PROFILE_ENV);
         return (rawProfile == null || rawProfile.isBlank()) ? "local" : rawProfile;
     }
 
     private static Map<String, String> runtimeEnvironment() {
-        Map<String, String> env = new HashMap<>(System.getenv());
-        putSystemPropertyOverride(env, DATACLOUD_PROFILE_ENV);
-        putSystemPropertyOverride(env, PURGE_TOKEN_SECRET_ENV);
-        return Map.copyOf(env);
+        return DestructiveActionToken.runtimeEnvironment();
     }
 
     private static void putSystemPropertyOverride(Map<String, String> env, String key) {
         String value = System.getProperty(key);
         if (value != null) {
             env.put(key, value);
-        }
-    }
-
-    private static String hmacSha256Hex(byte[] secret, String data) {
-        try {
-            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            mac.init(new SecretKeySpec(secret, HMAC_ALGORITHM));
-            byte[] result = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(result);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new IllegalStateException("HMAC-SHA256 unavailable", e);
         }
     }
 

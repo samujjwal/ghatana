@@ -151,8 +151,8 @@ function FlowCanvasInner({
         onEdgeClick={onEdgeClick as never}
         onPaneClick={onPaneClick}
         onInit={onInit as never}
-        nodeTypes={mergedNodeTypes}
-        edgeTypes={mergedEdgeTypes}
+        nodeTypes={mergedNodeTypes as NodeTypes}
+        edgeTypes={mergedEdgeTypes as EdgeTypes}
         nodesDraggable={nodesDraggable}
         panOnDrag={panOnDrag}
         zoomOnScroll={zoomOnScroll}

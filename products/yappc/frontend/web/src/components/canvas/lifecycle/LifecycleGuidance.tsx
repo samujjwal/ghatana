@@ -30,6 +30,7 @@ import {
     LifecyclePhase,
     getOperationsForPhase,
     canTransitionToPhase,
+    getPhaseColor,
 } from '@/types/lifecycle';
 
 export interface LifecycleGuidanceProps {
@@ -230,7 +231,7 @@ export const LifecycleGuidance: React.FC<LifecycleGuidanceProps> = ({
 
             {/* Phase Header with Icon and Description */}
             <Card
-                style={{ background: `linear-gradient(135deg }}
+                style={{ background: `linear-gradient(135deg, ${getPhaseColor(currentPhase)}, #1e3a5f)` }}
             >
                 <CardContent>
                     <Stack direction="row" spacing={2} alignItems="flex-start">
@@ -325,7 +326,7 @@ export const LifecycleGuidance: React.FC<LifecycleGuidanceProps> = ({
             )}
 
             {/* Next Steps */}
-            <Card className="mt-4" style={{ backgroundColor: 'rgba(76' }} >
+            <Card className="mt-4" style={{ backgroundColor: 'rgba(76, 175, 80, 0.1)' }} >
                 <CardContent>
                     <Stack spacing={2}>
                         <Typography variant="subtitle2" fontWeight="bold">
@@ -380,7 +381,7 @@ export const LifecycleGuidance: React.FC<LifecycleGuidanceProps> = ({
                                         onPhaseTransition(phase);
                                     }
                                 }}
-                                style={{ cursor: canTransitionToPhase(currentPhase }}
+                                style={{ cursor: canTransitionToPhase(currentPhase, phase) ? 'pointer' : 'default' }}
                             />
                         ))}
                     </Stack>

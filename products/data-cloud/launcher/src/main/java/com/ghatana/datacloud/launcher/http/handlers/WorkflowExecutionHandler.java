@@ -80,14 +80,30 @@ public final class WorkflowExecutionHandler {
             return Promise.of(http.errorResponse(503, "Workflow execution plugin is not available"));
         }
         String pipelineId = request.getPathParameter("pipelineId");
+        int limit  = HttpHandlerSupport.parseIntParam(request.getQueryParameter("limit"), 50);
+        int offset = HttpHandlerSupport.parseIntParam(request.getQueryParameter("offset"), 0);
+        String statusFilter = request.getQueryParameter("status");
         return capability.listExecutions(tenantId, pipelineId)
-            .map(executions -> http.jsonResponse(Map.of(
-                "items", executions.stream().map(this::toWorkflowExecution).toList(),
-                "total", executions.size(),
-                "page", 1,
-                "pageSize", executions.size(),
-                "hasMore", false
-            )));
+            .map(executions -> {
+                List<WorkflowExecutionCapability.ExecutionSnapshot> filtered = (statusFilter != null && !statusFilter.isBlank())
+                    ? executions.stream()
+                        .filter(e -> statusFilter.equalsIgnoreCase(e.status()))
+                        .toList()
+                    : executions;
+                int total = filtered.size();
+                int from = Math.min(offset, total);
+                int to   = Math.min(offset + limit, total);
+                List<Map<String, Object>> items = filtered.subList(from, to).stream()
+                    .map(this::toWorkflowExecution)
+                    .toList();
+                return http.jsonResponse(Map.of(
+                    "items", items,
+                    "total", total,
+                    "offset", offset,
+                    "limit", limit,
+                    "hasMore", to < total
+                ));
+            });
     }
 
     public Promise<HttpResponse> handleGetExecution(HttpRequest request) {
@@ -162,7 +178,10 @@ public final class WorkflowExecutionHandler {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", snapshot.id());
         response.put("workflowId", snapshot.workflowId());
-        response.put("status", snapshot.status().toLowerCase());
+        response.put("status", normalizeLifecycleStatus(snapshot.status()));
+        response.put("progress", snapshot.progress());
+        response.put("isTerminal", snapshot.isTerminal());
+        response.put("retries", 0);
         response.put("startedAt", snapshot.startedAt());
         if (snapshot.completedAt() != null) {
             response.put("completedAt", snapshot.completedAt());
@@ -176,6 +195,17 @@ public final class WorkflowExecutionHandler {
         if (snapshot.error() != null) {
             response.put("error", snapshot.error());
         }
+        // Audit trail (derived from execution metadata)
+        Map<String, Object> audit = new LinkedHashMap<>();
+        audit.put("createdAt", snapshot.startedAt());
+        audit.put("updatedAt", snapshot.completedAt() != null ? snapshot.completedAt() : Instant.now().toString());
+        response.put("audit", audit);
+        // Notifications placeholder (enriched by execution engine when available)
+        Map<String, Object> notifications = new LinkedHashMap<>();
+        notifications.put("onStart", false);
+        notifications.put("onCompletion", snapshot.isTerminal());
+        notifications.put("onFailure", snapshot.error() != null);
+        response.put("notifications", notifications);
         return response;
     }
 
@@ -184,30 +214,59 @@ public final class WorkflowExecutionHandler {
         response.put("id", snapshot.id());
         response.put("pipelineId", snapshot.workflowId());
         response.put("pipelineName", snapshot.workflowName());
-        response.put("status", snapshot.status().toLowerCase());
+        response.put("status", normalizeLifecycleStatus(snapshot.status()));
+        response.put("progress", snapshot.progress());
+        response.put("isTerminal", snapshot.isTerminal());
+        response.put("retries", 0);
         response.put("startTime", snapshot.startedAt());
         if (snapshot.completedAt() != null) {
             response.put("endTime", snapshot.completedAt());
         }
         List<WorkflowExecutionCapability.NodeSnapshot> nodeStatuses = snapshot.nodeStatuses();
-        response.put("completedNodes", nodeStatuses.stream().filter(node -> "COMPLETED".equals(node.state())).count());
+        long completed = nodeStatuses.stream().filter(node -> "COMPLETED".equals(node.state())).count();
+        response.put("completedNodes", completed);
         response.put("totalNodes", nodeStatuses.size());
         response.put("nodes", nodeStatuses.stream().map(node -> {
             Integer nodeDuration = java.util.Objects.requireNonNullElse(node.duration(), Integer.valueOf(0));
-            return Map.of(
-            "id", node.nodeId(),
-            "name", node.nodeName(),
-            "status", node.state().toLowerCase(),
-            "startTime", node.startedAt(),
-            "endTime", node.completedAt(),
-            "duration", nodeDuration,
-            "error", node.error() == null ? "" : node.error()
-            );
+            Map<String, Object> nodeMap = new LinkedHashMap<>();
+            nodeMap.put("id", node.nodeId());
+            nodeMap.put("name", node.nodeName());
+            nodeMap.put("status", normalizeLifecycleStatus(node.state()));
+            nodeMap.put("startTime", node.startedAt());
+            nodeMap.put("endTime", node.completedAt());
+            nodeMap.put("duration", nodeDuration);
+            nodeMap.put("error", node.error() == null ? "" : node.error());
+            return nodeMap;
         }).toList());
         if (snapshot.error() != null) {
             response.put("error", snapshot.error());
         }
+        // Audit trail
+        Map<String, Object> audit = new LinkedHashMap<>();
+        audit.put("createdAt", snapshot.startedAt());
+        audit.put("updatedAt", snapshot.completedAt() != null ? snapshot.completedAt() : Instant.now().toString());
+        response.put("audit", audit);
+        // Notifications
+        Map<String, Object> notifications = new LinkedHashMap<>();
+        notifications.put("onStart", false);
+        notifications.put("onCompletion", snapshot.isTerminal());
+        notifications.put("onFailure", snapshot.error() != null);
+        response.put("notifications", notifications);
         return response;
+    }
+
+    private static String normalizeLifecycleStatus(String raw) {
+        if (raw == null) return "unknown";
+        return switch (raw.toUpperCase()) {
+            case "PENDING" -> "pending";
+            case "RUNNING", "IN_PROGRESS" -> "running";
+            case "COMPLETED" -> "completed";
+            case "SUCCEEDED", "SUCCESS" -> "succeeded";
+            case "FAILED", "FAILURE" -> "failed";
+            case "CANCELLED", "CANCELED" -> "cancelled";
+            case "RETRYING" -> "retrying";
+            default -> raw.toLowerCase();
+        };
     }
 
     private Map<String, Object> toLogEntry(WorkflowExecutionCapability.ExecutionLogEntry logEntry) {

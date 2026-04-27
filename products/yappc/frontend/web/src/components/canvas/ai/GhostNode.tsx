@@ -61,7 +61,7 @@ export const GhostNode: React.FC<GhostNodeProps> = ({
         <Box
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="absolute w-[180px] min-h-[80px] bg-[rgba(255,_255,_255,_0.7)] backdrop-blur-[8px]" style={{ left: node.position.x, top: node.position.y, border: `2px dashed ${color, co: 'blur(8px)' */
+            className="absolute w-[180px] min-h-[80px] bg-[rgba(255,_255,_255,_0.7)] backdrop-blur-[8px]" style={{ left: node.position.x, top: node.position.y, border: `2px dashed ${color}` }}
             role="button"
             aria-label={`AI Suggestion: ${node.data.label || node.type}`}
             tabIndex={0}

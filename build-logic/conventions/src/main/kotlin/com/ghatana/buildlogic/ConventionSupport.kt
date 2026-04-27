@@ -92,12 +92,13 @@ internal object ConventionSupport {
                 showStackTraces = true
                 showStandardStreams = false
             }
+            // Full monorepo builds were dropping binary/XML test outputs under parallel load.
+            // Keep each Test task to a single fork and a modest heap to reduce JVM pressure.
+            maxParallelForks = 1
+            maxHeapSize = "768m"
+
             if (aggressiveJvmTuning) {
                 jvmArgs("-Dapi.version=1.44", "-XX:+UseZGC", "-XX:+ZGenerational")
-                maxHeapSize = "1536m"
-                maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2)
-                    .coerceAtLeast(1)
-                    .coerceAtMost(4)
             }
         }
     }

@@ -10,10 +10,16 @@
  * @doc.pattern Component
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BaseCanvasContent } from '../BaseCanvasContent';
 import { Box, Button, Typography } from '@ghatana/design-system';
 import { useCanvasPersistence } from '../../../utils/canvasPersistence';
+import {
+    CodeDiffViewer,
+    CodeEditor,
+    VisualBlockEditor,
+    type VisualCodeBlock,
+} from '@ghatana/code-editor';
 
 interface CodeEditorState {
     code: string;
@@ -21,12 +27,33 @@ interface CodeEditorState {
     fileName: string;
 }
 
+type EditorViewMode = 'editor' | 'diff' | 'visual';
+
+const INITIAL_VISUAL_BLOCKS: VisualCodeBlock[] = [
+    {
+        id: 'visual-imports',
+        type: 'import',
+        label: 'Import React utilities',
+        code: "import { useMemo } from 'react';",
+    },
+    {
+        id: 'visual-function',
+        type: 'function',
+        label: 'Generate component output',
+        code: 'export function renderFeatureFlag() {\n  return true;\n}',
+    },
+];
+
 export const CodeEditorCanvas = () => {
     const [editorState, setEditorState] = useState<CodeEditorState>({
         code: '',
         language: 'typescript',
         fileName: 'untitled.ts',
     });
+    const [viewMode, setViewMode] = useState<EditorViewMode>('editor');
+    const [visualBlocks, setVisualBlocks] = useState<VisualCodeBlock[]>(
+        INITIAL_VISUAL_BLOCKS
+    );
     const [isLoading] = useState(false);
 
     const { save, load } = useCanvasPersistence<CodeEditorState>(
@@ -59,6 +86,18 @@ export const CodeEditorCanvas = () => {
 
     const hasContent = Boolean(editorState.code);
 
+    const generatedPreviewCode = useMemo(() => {
+        const lines: string[] = ['// Generated from visual blocks', ''];
+        visualBlocks.forEach((block) => {
+            if (block.code && block.code.trim().length > 0) {
+                lines.push(block.code);
+                return;
+            }
+            lines.push(`// ${block.type}: ${block.label}`);
+        });
+        return lines.join('\n');
+    }, [visualBlocks]);
+
     return (
         <BaseCanvasContent
             hasContent={hasContent}
@@ -84,53 +123,83 @@ export const CodeEditorCanvas = () => {
                     <Box className="flex gap-2">
                         <Button
                             size="small"
+                            variant={viewMode === 'editor' ? 'contained' : 'outlined'}
+                            onClick={() => setViewMode('editor')}
+                            className="text-white"
+                            style={{ borderColor: 'white' }}
+                            data-testid="code-editor-mode-editor"
+                        >
+                            Editor
+                        </Button>
+                        <Button
+                            size="small"
+                            variant={viewMode === 'diff' ? 'contained' : 'outlined'}
+                            onClick={() => setViewMode('diff')}
+                            className="text-white"
+                            style={{ borderColor: 'white' }}
+                            data-testid="code-editor-mode-diff"
+                        >
+                            Diff
+                        </Button>
+                        <Button
+                            size="small"
+                            variant={viewMode === 'visual' ? 'contained' : 'outlined'}
+                            onClick={() => setViewMode('visual')}
+                            className="text-white"
+                            style={{ borderColor: 'white' }}
+                            data-testid="code-editor-mode-visual"
+                        >
+                            Visual
+                        </Button>
+                        <Button
+                            size="small"
                             variant="outlined"
                             onClick={() => handleCodeChange('')}
-                            className="text-white" style={{ borderColor: 'white', borderBottom: '1px solid rgba(0 }} >
+                            className="text-white"
+                            style={{ borderColor: 'white' }}
+                            data-testid="code-editor-clear"
+                        >
                             Clear
                         </Button>
                     </Box>
                 </Box>
 
-                {/* Code Editor - Professional textarea with syntax-aware features */}
-                <Box className="flex-1 bg-[#1E1E1E] text-[#D4D4D4]">
-                    <textarea
-                        value={editorState.code}
-                        onChange={(e) => handleCodeChange(e.target.value)}
-                        placeholder="// Start typing your code here..."
-                        spellCheck={false}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            fontFamily: '"Fira Code", "Cascadia Code", "JetBrains Mono", Consolas, monospace',
-                            fontSize: '14px',
-                            lineHeight: '1.6',
-                            backgroundColor: '#1E1E1E',
-                            color: '#D4D4D4',
-                            border: 'none',
-                            padding: '16px',
-                            resize: 'none',
-                            outline: 'none',
-                            tabSize: 2,
-                            whiteSpace: 'pre',
-                            overflowWrap: 'normal',
-                            overflowX: 'auto',
-                        }}
-                        onKeyDown={(e) => {
-                            // Tab key inserts 2 spaces
-                            if (e.key === 'Tab') {
-                                e.preventDefault();
-                                const start = e.currentTarget.selectionStart;
-                                const end = e.currentTarget.selectionEnd;
-                                const newValue = editorState.code.substring(0, start) + '  ' + editorState.code.substring(end);
-                                handleCodeChange(newValue);
-                                // Set cursor position after inserted spaces
-                                setTimeout(() => {
-                                    e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 2;
-                                }, 0);
-                            }
-                        }}
-                    />
+                <Box className="flex-1 bg-[#1E1E1E] text-[#D4D4D4]" data-testid="code-editor-canvas-content">
+                    {viewMode === 'editor' ? (
+                        <CodeEditor
+                            value={editorState.code}
+                            onChange={handleCodeChange}
+                            config={{
+                                language: 'typescript',
+                                theme: 'vs-dark',
+                                options: {
+                                    minimap: { enabled: false },
+                                    wordWrap: 'on',
+                                    automaticLayout: true,
+                                },
+                            }}
+                            height="100%"
+                        />
+                    ) : null}
+
+                    {viewMode === 'diff' ? (
+                        <CodeDiffViewer
+                            original={generatedPreviewCode}
+                            modified={editorState.code}
+                            language="typescript"
+                            height="100%"
+                        />
+                    ) : null}
+
+                    {viewMode === 'visual' ? (
+                        <VisualBlockEditor
+                            blocks={visualBlocks}
+                            onBlocksChange={setVisualBlocks}
+                            targetLanguage="typescript"
+                            height="100%"
+                            showCodePreview
+                        />
+                    ) : null}
                 </Box>
 
                 {/* Status Bar */}

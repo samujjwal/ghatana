@@ -15,3 +15,9 @@ export * from './breadcrumbAtom';
 
 // Toolbar state management (mode, level, zoom)
 export * from './toolbarAtom';
+
+// Requirement lifecycle state management
+export * from './requirementAtom';
+
+// Onboarding and feature discovery state
+export * from './onboardingAtom';

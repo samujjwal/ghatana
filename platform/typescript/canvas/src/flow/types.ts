@@ -108,4 +108,5 @@ export type FlowNode =
   | OperatorNode
   | Node;
 
+export type DataFlowEdge = Edge<DataFlowEdgeData>;
 export type FlowEdge = Edge<DataFlowEdgeData>;

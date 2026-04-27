@@ -102,6 +102,8 @@ public final class QuerySpec {
     private final Instant timeWindowStart;
     private final Instant timeWindowEnd;
     private final Map<String, String> metadata;
+    private final ConsistencyLevel consistencyLevel;
+    private final String freshnessHint;
 
     /**
      * Private constructor - use Builder.
@@ -114,7 +116,9 @@ public final class QuerySpec {
             List<String> projections,
             Instant timeWindowStart,
             Instant timeWindowEnd,
-            Map<String, String> metadata
+            Map<String, String> metadata,
+            ConsistencyLevel consistencyLevel,
+            String freshnessHint
     ) {
         this.filter = filter;
         this.sortFields = Collections.unmodifiableList(sortFields != null ? sortFields : List.of());
@@ -124,6 +128,8 @@ public final class QuerySpec {
         this.timeWindowStart = timeWindowStart;
         this.timeWindowEnd = timeWindowEnd;
         this.metadata = Collections.unmodifiableMap(metadata != null ? metadata : Map.of());
+        this.consistencyLevel = consistencyLevel != null ? consistencyLevel : ConsistencyLevel.STRONG;
+        this.freshnessHint = freshnessHint;
     }
 
     /**
@@ -201,6 +207,14 @@ public final class QuerySpec {
      */
     public boolean hasProjections() {
         return !projections.isEmpty();
+    }
+
+    public ConsistencyLevel getConsistencyLevel() {
+        return consistencyLevel;
+    }
+
+    public Optional<String> getFreshnessHint() {
+        return Optional.ofNullable(freshnessHint);
     }
 
     /**
@@ -306,6 +320,8 @@ public final class QuerySpec {
         private Instant timeWindowStart;
         private Instant timeWindowEnd;
         private Map<String, String> metadata;
+        private ConsistencyLevel consistencyLevel = ConsistencyLevel.STRONG;
+        private String freshnessHint;
 
         public Builder filter(String filter) {
             if (filter != null && !filter.isBlank()) {
@@ -402,6 +418,16 @@ public final class QuerySpec {
             return this;
         }
 
+        public Builder consistencyLevel(ConsistencyLevel consistencyLevel) {
+            this.consistencyLevel = consistencyLevel;
+            return this;
+        }
+
+        public Builder freshnessHint(String freshnessHint) {
+            this.freshnessHint = freshnessHint;
+            return this;
+        }
+
         /**
          * Build immutable QuerySpec.
          */
@@ -414,9 +440,18 @@ public final class QuerySpec {
                     projections,
                     timeWindowStart,
                     timeWindowEnd,
-                    metadata
+                    metadata,
+                    consistencyLevel,
+                    freshnessHint
             );
         }
+    }
+
+    /**
+     * Consistency level for query execution.
+     */
+    public enum ConsistencyLevel {
+        STRONG, EVENTUAL, BOUNDED_STALENESS
     }
 
     /**

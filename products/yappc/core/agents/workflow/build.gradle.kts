@@ -45,6 +45,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.0.1")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

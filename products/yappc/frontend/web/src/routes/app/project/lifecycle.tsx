@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { useParams } from 'react-router';
+import { useAuth } from '../../../hooks/useAuth';
 import type { LifecycleReviewStatusContract } from '@/contracts/workspace-project';
 import { LifecycleExplorer } from '../../../components/lifecycle';
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
@@ -25,7 +26,108 @@ import {
     useNextBestTask,
     useReadinessAnomalies,
 } from '../../../hooks/useLifecycleData';
+import { useRequirementOrchestration } from '../../../hooks/useRequirementOrchestration';
+import { useAgentRunStream } from '../../../hooks/useAgentRunStream';
 import { FOW_STAGE_LABELS, getFOWStageForPhase } from '../../../types/fow-stages';
+
+type RequirementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+type RequirementStatus =
+    | 'DRAFT'
+    | 'SUBMITTED'
+    | 'IN_REVIEW'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'IMPLEMENTED';
+
+interface RequirementVersion {
+    id: string;
+    version: number;
+    summary: string;
+    createdBy: string;
+    createdAt: string;
+}
+
+interface RequirementRecord {
+    id: string;
+    title: string;
+    description: string;
+    priority: RequirementPriority;
+    status: RequirementStatus;
+    tags?: string[];
+    createdAt: string;
+    updatedAt: string;
+    versions: RequirementVersion[];
+}
+
+type ApprovalDecisionStatus =
+    | 'PENDING'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'CHANGES_REQUESTED'
+    | 'EXPIRED';
+
+interface ApprovalRecord {
+    id: string;
+    projectId: string;
+    requirementId?: string;
+    requestedAction: string;
+    status: ApprovalDecisionStatus;
+    requesterId: string;
+    reviewerId?: string;
+    createdAt: string;
+    reviewedAt?: string;
+    decisionReason?: string;
+}
+
+type AgentRunStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
+
+interface AgentRunRecord {
+    id: string;
+    agentName: string;
+    status: AgentRunStatus;
+    stage: string;
+    retryCount: number;
+    createdAt: string;
+    startedAt?: string;
+    completedAt?: string;
+    errorMessage?: string;
+}
+
+type AuditTimelineLevel = 'INFO' | 'WARN' | 'ERROR';
+
+interface AuditTimelineEntry {
+    id: string;
+    title: string;
+    description?: string;
+    actor: string;
+    level: AuditTimelineLevel;
+    createdAt: string;
+}
+
+const RequirementLifecycleBoardClient = React.lazy(async () => {
+    const module = await import('../../../components/requirements');
+    return { default: module.RequirementLifecycleBoard };
+});
+
+const ApprovalInboxClient = React.lazy(async () => {
+    const module = await import('../../../components/approvals/ApprovalInbox');
+    return { default: module.ApprovalInbox };
+});
+
+const ApprovalDetailClient = React.lazy(async () => {
+    const module = await import('../../../components/approvals/ApprovalDetail');
+    return { default: module.ApprovalDetail };
+});
+
+const AgentRunViewerClient = React.lazy(async () => {
+    const module = await import('../../../components/agents/AgentRunViewer');
+    return { default: module.AgentRunViewer };
+});
+
+const AuditTimelineClient = React.lazy(async () => {
+    const module = await import('../../../components/audit/AuditTimeline');
+    return { default: module.AuditTimeline };
+});
 
 const getAnomalySeverityBadgeClass = function (severity = '') {
     switch (String(severity).toUpperCase()) {
@@ -95,6 +197,133 @@ const buildPhaseSummary = function (
     };
 };
 
+function buildSeededRequirements(params: {
+    recommendations: Array<{
+        id: string;
+        title: string;
+        description: string;
+        priority: string;
+    }>;
+    projectId: string;
+}): RequirementRecord[] {
+    const { recommendations, projectId } = params;
+    if (recommendations.length === 0) {
+        return [
+            {
+                id: `${projectId}-req-bootstrap`,
+                title: 'Establish lifecycle baseline requirement',
+                description:
+                    'Capture foundational lifecycle constraints and acceptance criteria before guided promotion.',
+                priority: 'MEDIUM',
+                status: 'DRAFT',
+                tags: ['lifecycle', 'baseline'],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                versions: [
+                    {
+                        id: `${projectId}-req-bootstrap-v1`,
+                        version: 1,
+                        summary: 'Initial draft captured from lifecycle route',
+                        createdBy: 'system:lifecycle-route',
+                        createdAt: new Date().toISOString(),
+                    },
+                ],
+            },
+        ];
+    }
+
+    return recommendations.slice(0, 3).map((recommendation, index) => {
+        const status: RequirementRecord['status'] =
+            index === 0 ? 'IN_REVIEW' : index === 1 ? 'SUBMITTED' : 'DRAFT';
+        const priority: RequirementRecord['priority'] =
+            recommendation.priority === 'HIGH' ? 'HIGH' : 'MEDIUM';
+        const now = new Date(Date.now() - index * 15 * 60 * 1000).toISOString();
+
+        return {
+            id: `${projectId}-req-${recommendation.id}`,
+            title: recommendation.title,
+            description: recommendation.description,
+            priority,
+            status,
+            tags: ['ai-assisted', 'lifecycle'],
+            createdAt: now,
+            updatedAt: now,
+            versions: [
+                {
+                    id: `${recommendation.id}-v1`,
+                    version: 1,
+                    summary: 'Draft generated from lifecycle recommendation',
+                    createdBy: 'agent:lifecycle-recommender',
+                    createdAt: now,
+                },
+            ],
+        };
+    });
+}
+
+function buildSeededApprovals(params: {
+    projectId: string;
+    requirements: RequirementRecord[];
+}): ApprovalRecord[] {
+    const { projectId, requirements } = params;
+    if (requirements.length === 0) {
+        return [];
+    }
+
+    const firstRequirement = requirements[0];
+    const createdAt = new Date().toISOString();
+
+    return [
+        {
+            id: `${projectId}-approval-1`,
+            projectId,
+            requirementId: firstRequirement.id,
+            requestedAction: `Approve lifecycle requirement: ${firstRequirement.title}`,
+            status: 'PENDING',
+            requesterId: 'agent:policy-guardian',
+            createdAt,
+        },
+        {
+            id: `${projectId}-approval-2`,
+            projectId,
+            requirementId: requirements[1]?.id,
+            requestedAction: 'Review readiness risk tolerance adjustment',
+            status: 'APPROVED',
+            requesterId: 'agent:readiness-analyzer',
+            reviewerId: 'reviewer:ops-lead',
+            createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+            reviewedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+            decisionReason: 'Risk profile aligns with release gate policy.',
+        },
+    ];
+}
+
+function buildSeededRuns(projectId: string): AgentRunRecord[] {
+    const now = Date.now();
+    return [
+        {
+            id: `${projectId}-run-1`,
+            agentName: 'LifecyclePlannerAgent',
+            status: 'RUNNING',
+            stage: 'GENERATE',
+            retryCount: 0,
+            createdAt: new Date(now - 8 * 60 * 1000).toISOString(),
+            startedAt: new Date(now - 7 * 60 * 1000).toISOString(),
+        },
+        {
+            id: `${projectId}-run-2`,
+            agentName: 'ComplianceGuardAgent',
+            status: 'FAILED',
+            stage: 'VALIDATE',
+            retryCount: 1,
+            createdAt: new Date(now - 22 * 60 * 1000).toISOString(),
+            startedAt: new Date(now - 20 * 60 * 1000).toISOString(),
+            completedAt: new Date(now - 19 * 60 * 1000).toISOString(),
+            errorMessage: 'Policy threshold exceeded for production promotion.',
+        },
+    ];
+}
+
 function buildReviewStatus(params: {
     canAutoAdvance?: boolean;
     criticalAnomalyCount: number;
@@ -121,10 +350,17 @@ export default function Component() {
     const createElement = React.createElement;
     const { projectId } = useParams();
     const resolvedProjectId = projectId ?? '__missing-project__';
+    const { hasPermission } = useAuth();
+    const isAuthorizedApprover = hasPermission('approvals:decide');
     const { currentPhase } = usePhaseGates(resolvedProjectId);
     const currentStage = getFOWStageForPhase(currentPhase);
     const [automationFeedback, setAutomationFeedback] = React.useState('');
     const [decisionDetailVisible, setDecisionDetailVisible] = React.useState(false);
+    const [clientPanelsReady, setClientPanelsReady] = React.useState(false);
+
+    React.useEffect(() => {
+        setClientPanelsReady(true);
+    }, []);
 
     const { data: recommendations = [] } = useAIRecommendations(resolvedProjectId, {
         phase: currentPhase,
@@ -137,6 +373,7 @@ export default function Component() {
     const executeTask = useExecuteTask();
     const { data: automationPlan } = useLifecycleAutomationPlan(resolvedProjectId, currentPhase);
     const applyAutomationPlan = useApplyLifecycleAutomationPlan();
+    const { submitApproved: submitOrchestration } = useRequirementOrchestration();
 
     if (!projectId) {
         return createElement(
@@ -173,6 +410,186 @@ export default function Component() {
         topRecommendationTitle: topRecommendations[0]?.title,
         topInsightTitle: topInsights[0]?.title,
     });
+
+    const requirementRecords = React.useMemo(
+        () =>
+            buildSeededRequirements({
+                recommendations: topRecommendations,
+                projectId: resolvedProjectId,
+            }),
+        [topRecommendations, resolvedProjectId]
+    );
+
+    const seededApprovals = React.useMemo(
+        () =>
+            buildSeededApprovals({
+                projectId: resolvedProjectId,
+                requirements: requirementRecords,
+            }),
+        [resolvedProjectId, requirementRecords]
+    );
+
+    const [approvalRecords, setApprovalRecords] = React.useState<ApprovalRecord[]>(
+        seededApprovals
+    );
+
+    React.useEffect(() => {
+        setApprovalRecords(seededApprovals);
+    }, [seededApprovals]);
+
+    const [selectedApprovalId, setSelectedApprovalId] = React.useState<string | undefined>(
+        seededApprovals[0]?.id
+    );
+
+    React.useEffect(() => {
+        if (
+            selectedApprovalId &&
+            approvalRecords.some((approval) => approval.id === selectedApprovalId)
+        ) {
+            return;
+        }
+        setSelectedApprovalId(approvalRecords[0]?.id);
+    }, [approvalRecords, selectedApprovalId]);
+
+    const selectedApproval = React.useMemo(
+        () => approvalRecords.find((approval) => approval.id === selectedApprovalId),
+        [approvalRecords, selectedApprovalId]
+    );
+
+    const { runs: agentRuns, setRuns: setAgentRuns } = useAgentRunStream(
+        resolvedProjectId,
+        { seededRuns: buildSeededRuns(resolvedProjectId) }
+    );
+
+    const auditEntries = React.useMemo<AuditTimelineEntry[]>(() => {
+        const insightEntries: AuditTimelineEntry[] = topInsights.map((insight, index) => ({
+            id: `audit-insight-${insight.id}`,
+            title: insight.title,
+            description: insight.description ?? 'Lifecycle insight generated by AI pipeline',
+            actor: insight.source ?? 'agent:lifecycle-insights',
+            level: index === 0 ? 'INFO' : 'WARN',
+            createdAt: new Date(insight.timestamp).toISOString(),
+        }));
+
+        const anomalyEntries: AuditTimelineEntry[] = activeReadinessAnomalies.map((anomaly) => ({
+            id: `audit-anomaly-${anomaly.id}`,
+            title: `Readiness anomaly: ${formatMetricLabel(anomaly.metric)}`,
+            description: anomaly.message,
+            actor: 'agent:readiness-monitor',
+            level: String(anomaly.severity).toUpperCase() === 'CRITICAL' ? 'ERROR' : 'WARN',
+            createdAt: new Date().toISOString(),
+        }));
+
+        const combined = [...anomalyEntries, ...insightEntries];
+        if (combined.length > 0) {
+            return combined;
+        }
+
+        return [
+            {
+                id: 'audit-bootstrap-entry',
+                title: 'Lifecycle route initialized',
+                description:
+                    'The route is ready to capture requirement approvals and agent run telemetry.',
+                actor: 'system:lifecycle-route',
+                level: 'INFO',
+                createdAt: new Date().toISOString(),
+            },
+        ];
+    }, [topInsights, activeReadinessAnomalies]);
+
+    const policyDecisions = React.useMemo(() => {
+        if (activeReadinessAnomalies.length === 0) {
+            return [
+                {
+                    id: 'policy-default-review',
+                    status: 'REQUIRES_REVIEW' as const,
+                    reason: 'No readiness anomalies detected. Keep human review enabled by default.',
+                    evaluatedAt: new Date().toISOString(),
+                },
+            ];
+        }
+
+        return activeReadinessAnomalies.slice(0, 3).map((anomaly) => {
+            const severity = String(anomaly.severity).toUpperCase();
+            return {
+                id: `policy-${anomaly.id}`,
+                status:
+                    severity === 'CRITICAL'
+                        ? ('BLOCKED' as const)
+                        : ('REQUIRES_REVIEW' as const),
+                reason: anomaly.message,
+                evaluatedAt: new Date().toISOString(),
+            };
+        });
+    }, [activeReadinessAnomalies]);
+
+    const handleApprovalTransition = React.useCallback(
+        (approvalId: string, nextStatus: ApprovalRecord['status']) => {
+            const reviewedAt = new Date().toISOString();
+            let approvedRecord: ApprovalRecord | undefined;
+
+            setApprovalRecords((currentRecords) =>
+                currentRecords.map((approval) => {
+                    if (approval.id !== approvalId) {
+                        return approval;
+                    }
+
+                    const reason =
+                        nextStatus === 'APPROVED'
+                            ? 'Approved from lifecycle review panel.'
+                            : nextStatus === 'REJECTED'
+                              ? 'Rejected from lifecycle review panel.'
+                              : 'Requested changes from lifecycle review panel.';
+
+                    const updated = {
+                        ...approval,
+                        status: nextStatus,
+                        reviewerId: 'reviewer:lifecycle-owner',
+                        reviewedAt,
+                        decisionReason: reason,
+                    };
+
+                    if (nextStatus === 'APPROVED') {
+                        approvedRecord = updated;
+                    }
+
+                    return updated;
+                })
+            );
+
+            // When a requirement is approved, notify the AEP orchestration agent so
+            // it can trigger downstream refinement, versioning, and audit workflows.
+            if (nextStatus === 'APPROVED' && approvedRecord?.requirementId) {
+                submitOrchestration({
+                    projectId: resolvedProjectId,
+                    requirementId: approvedRecord.requirementId,
+                    approvalId,
+                });
+            }
+        },
+        [resolvedProjectId, submitOrchestration]
+    );
+
+    const handleRetryRun = React.useCallback((runId: string) => {
+        setAgentRuns((currentRuns) =>
+            currentRuns.map((run) => {
+                if (run.id !== runId) {
+                    return run;
+                }
+
+                return {
+                    ...run,
+                    status: 'QUEUED',
+                    stage: 'RETRY_QUEUED',
+                    retryCount: run.retryCount + 1,
+                    startedAt: undefined,
+                    completedAt: undefined,
+                    errorMessage: undefined,
+                };
+            })
+        );
+    }, []);
 
     const handleAutomationClick = () => {
         if (!nextTask) {
@@ -801,6 +1218,125 @@ export default function Component() {
                         'section',
                         {
                             className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
+                            'data-testid': 'lifecycle-requirements-card',
+                        },
+                        createElement(
+                            'div',
+                            { className: 'mb-4 flex items-center gap-3' },
+                            createElement(
+                                'div',
+                                {
+                                    className:
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300',
+                                },
+                                'RQ'
+                            ),
+                            createElement(
+                                'div',
+                                null,
+                                createElement(
+                                    'h3',
+                                    { className: 'text-lg font-semibold text-text-primary' },
+                                    'Requirement lifecycle'
+                                ),
+                                createElement(
+                                    'p',
+                                    { className: 'text-sm text-text-secondary' },
+                                    'Track requirement versions and readiness before approvals.'
+                                )
+                            )
+                        ),
+                        clientPanelsReady
+                            ? createElement(
+                                  React.Suspense,
+                                  { fallback: createElement('p', { className: 'text-sm text-text-secondary' }, 'Loading requirement lifecycle…') },
+                                  createElement(RequirementLifecycleBoardClient, {
+                                      requirements: requirementRecords,
+                                  })
+                              )
+                            : createElement('p', { className: 'text-sm text-text-secondary' }, 'Initializing requirement lifecycle…')
+                    ),
+                    createElement(
+                        'section',
+                        {
+                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
+                            'data-testid': 'lifecycle-approval-card',
+                        },
+                        createElement(
+                            'div',
+                            { className: 'mb-4 flex items-center gap-3' },
+                            createElement(
+                                'div',
+                                {
+                                    className:
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
+                                },
+                                'AP'
+                            ),
+                            createElement(
+                                'div',
+                                null,
+                                createElement(
+                                    'h3',
+                                    { className: 'text-lg font-semibold text-text-primary' },
+                                    'Approval and governance'
+                                ),
+                                createElement(
+                                    'p',
+                                    { className: 'text-sm text-text-secondary' },
+                                    'Decide requirement changes with explicit policy context and audit evidence.'
+                                )
+                            )
+                        ),
+                        createElement(
+                            'div',
+                            { className: 'grid gap-4 xl:grid-cols-2' },
+                            clientPanelsReady
+                                ? createElement(
+                                      React.Suspense,
+                                      { fallback: createElement('p', { className: 'text-sm text-text-secondary' }, 'Loading approval inbox…') },
+                                      createElement(ApprovalInboxClient, {
+                                          approvals: approvalRecords,
+                                          selectedApprovalId,
+                                          onSelectApproval: setSelectedApprovalId,
+                                          onApprove: (approvalId: string) =>
+                                              handleApprovalTransition(approvalId, 'APPROVED'),
+                                          onReject: (approvalId: string) =>
+                                              handleApprovalTransition(approvalId, 'REJECTED'),
+                                          onRequestChanges: (approvalId: string) =>
+                                              handleApprovalTransition(approvalId, 'CHANGES_REQUESTED'),
+                                      })
+                                  )
+                                : createElement('p', { className: 'text-sm text-text-secondary' }, 'Initializing approval inbox…'),
+                            clientPanelsReady && selectedApproval
+                                ? createElement(
+                                      React.Suspense,
+                                      { fallback: createElement('p', { className: 'text-sm text-text-secondary' }, 'Loading approval detail…') },
+                                      createElement(ApprovalDetailClient, {
+                                          approval: selectedApproval,
+                                          aiSummary:
+                                              'Lifecycle policy guard evaluated project signals and recommends explicit reviewer confirmation.',
+                                          confidence: 0.86,
+                                          originalContent: 'Current requirement version is eligible for staged review.',
+                                          proposedContent:
+                                              'Proposed change aligns with readiness guidance and can be promoted after approval.',
+                                          policyDecisions,
+                                          isAuthorizedApprover,
+                                          onApprove: (approvalId: string) =>
+                                              handleApprovalTransition(approvalId, 'APPROVED'),
+                                          onReject: (approvalId: string) =>
+                                              handleApprovalTransition(approvalId, 'REJECTED'),
+                                          onRequestChanges: (approvalId: string) =>
+                                              handleApprovalTransition(approvalId, 'CHANGES_REQUESTED'),
+                                      })
+                                  )
+                                : null
+                        )
+                    ),
+                    createElement(
+                        'section',
+                        {
+                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
                             'data-testid': 'lifecycle-evidence-card',
                         },
                         createElement(
@@ -830,6 +1366,91 @@ export default function Component() {
                             )
                         ),
                         evidenceContent
+                    ),
+                    createElement(
+                        'section',
+                        {
+                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
+                            'data-testid': 'lifecycle-agent-run-visibility-card',
+                        },
+                        createElement(
+                            'div',
+                            { className: 'mb-4 flex items-center gap-3' },
+                            createElement(
+                                'div',
+                                {
+                                    className:
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                                },
+                                'AR'
+                            ),
+                            createElement(
+                                'div',
+                                null,
+                                createElement(
+                                    'h3',
+                                    { className: 'text-lg font-semibold text-text-primary' },
+                                    'Agent execution visibility'
+                                ),
+                                createElement(
+                                    'p',
+                                    { className: 'text-sm text-text-secondary' },
+                                    'Inspect stage-level execution progress and retry failed runs.'
+                                )
+                            )
+                        ),
+                        clientPanelsReady
+                            ? createElement(
+                                  React.Suspense,
+                                  { fallback: createElement('p', { className: 'text-sm text-text-secondary' }, 'Loading run visibility…') },
+                                  createElement(AgentRunViewerClient, {
+                                      runs: agentRuns,
+                                      onRetryRun: handleRetryRun,
+                                  })
+                              )
+                            : createElement('p', { className: 'text-sm text-text-secondary' }, 'Initializing run visibility…')
+                    ),
+                    createElement(
+                        'section',
+                        {
+                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
+                            'data-testid': 'lifecycle-audit-timeline-card',
+                        },
+                        createElement(
+                            'div',
+                            { className: 'mb-4 flex items-center gap-3' },
+                            createElement(
+                                'div',
+                                {
+                                    className:
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-sm font-semibold text-orange-600 dark:bg-orange-900/30 dark:text-orange-300',
+                                },
+                                'AT'
+                            ),
+                            createElement(
+                                'div',
+                                null,
+                                createElement(
+                                    'h3',
+                                    { className: 'text-lg font-semibold text-text-primary' },
+                                    'Audit timeline'
+                                ),
+                                createElement(
+                                    'p',
+                                    { className: 'text-sm text-text-secondary' },
+                                    'Timeline of readiness events, policy decisions, and lifecycle evidence.'
+                                )
+                            )
+                        ),
+                        clientPanelsReady
+                            ? createElement(
+                                  React.Suspense,
+                                  { fallback: createElement('p', { className: 'text-sm text-text-secondary' }, 'Loading audit timeline…') },
+                                  createElement(AuditTimelineClient, {
+                                      entries: auditEntries,
+                                  })
+                              )
+                            : createElement('p', { className: 'text-sm text-text-secondary' }, 'Initializing audit timeline…')
                     )
                 )
             )

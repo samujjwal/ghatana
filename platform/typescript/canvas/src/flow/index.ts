@@ -13,17 +13,28 @@
 
 export { FlowCanvas, type FlowCanvasProps } from './FlowCanvas.js';
 
-export { default as HotTierNode } from './nodes/HotTierNode.js';
-export { default as WarmTierNode } from './nodes/WarmTierNode.js';
-export { default as ColdTierNode } from './nodes/ColdTierNode.js';
-export { default as ArchiveTierNode } from './nodes/ArchiveTierNode.js';
-export { default as AgentNode } from './nodes/AgentNode.js';
-export { default as PipelineStageNode } from './nodes/PipelineStageNode.js';
-export { default as OperatorNode } from './nodes/OperatorNode.js';
+import _HotTierNode from './nodes/HotTierNode.js';
+import _WarmTierNode from './nodes/WarmTierNode.js';
+import _ColdTierNode from './nodes/ColdTierNode.js';
+import _ArchiveTierNode from './nodes/ArchiveTierNode.js';
+import _AgentNode from './nodes/AgentNode.js';
+import _PipelineStageNode from './nodes/PipelineStageNode.js';
+import _OperatorNode from './nodes/OperatorNode.js';
 
-export { default as DataFlowEdge } from './edges/DataFlowEdge.js';
+export const HotTierNode = _HotTierNode;
+export const WarmTierNode = _WarmTierNode;
+export const ColdTierNode = _ColdTierNode;
+export const ArchiveTierNode = _ArchiveTierNode;
+export const AgentNode = _AgentNode;
+export const PipelineStageNode = _PipelineStageNode;
+export const OperatorNode = _OperatorNode;
 
-export { default as FlowControls, type FlowControlsProps } from './controls/FlowControls.js';
+import _DataFlowEdge from './edges/DataFlowEdge.js';
+export const DataFlowEdge = _DataFlowEdge;
+
+import _FlowControls from './controls/FlowControls.js';
+export const FlowControls = _FlowControls;
+export type { FlowControlsProps } from './controls/FlowControls.js';
 
 export type {
   NodeStatus,

@@ -44,128 +44,134 @@ public class HttpDataCloudClient extends ManagedDataCloudClient {
         return Promise.complete();
     }
 
+    private UnsupportedOperationException unsupported() {
+        requireRunning();
+        return new UnsupportedOperationException(
+            "HTTP client transport is not yet implemented. Use EmbeddedDataCloudClient for in-process usage, or implement HttpDataCloudClient with java.net.http.HttpClient calls wrapped in Promise.ofBlocking(...)");
+    }
+
     // ============ Entity Operations ============
 
     @Override
     public Promise<EntityInterface> createEntity(String tenantId, String collectionName, Map<String, Object> data) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<Optional<EntityInterface>> getEntity(String tenantId, String collectionName, UUID entityId) {
-        return available(Optional.empty());
+        throw unsupported();
     }
 
     @Override
     public Promise<EntityInterface> updateEntity(String tenantId, String collectionName, UUID entityId, Map<String, Object> data) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<Void> deleteEntity(String tenantId, String collectionName, UUID entityId) {
-        return availableVoid();
+        throw unsupported();
     }
 
     @Override
     public Promise<List<EntityInterface>> queryEntities(String tenantId, String collectionName, QuerySpecInterface query) {
-        return available(Collections.emptyList());
+        throw unsupported();
     }
 
     @Override
     public Promise<Long> countEntities(String tenantId, String collectionName, String filterExpression) {
-        return available(0L);
+        throw unsupported();
     }
 
     @Override
     public Promise<List<EntityInterface>> bulkCreateEntities(String tenantId, String collectionName, List<EntityInterface> entities) {
-        return available(Collections.emptyList());
+        throw unsupported();
     }
 
     @Override
     public Promise<Long> bulkDeleteEntities(String tenantId, String collectionName, List<UUID> entityIds) {
-        return available((long) entityIds.size());
+        throw unsupported();
     }
 
     // ============ Event Operations ============
 
     @Override
     public Promise<Long> appendEvent(String tenantId, String streamName, DataRecord event) {
-        return available(0L);
+        throw unsupported();
     }
 
     @Override
     public Promise<List<DataRecord>> readEvents(String tenantId, String streamName, long fromOffset, int limit) {
-        return available(Collections.emptyList());
+        throw unsupported();
     }
 
     public Promise<DataRecord> getEventByOffset(String tenantId, String streamName, long offset) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<List<DataRecord>> readEventsByTimeRange(String tenantId, String streamName, String startTime, String endTime) {
-        return available(Collections.emptyList());
+        throw unsupported();
     }
 
     @Override
     public Promise<Long> getLatestOffset(String tenantId, String streamName) {
-        return available(0L);
+        throw unsupported();
     }
 
     @Override
     public Promise<Long> countEvents(String tenantId, String streamName) {
-        return available(0L);
+        throw unsupported();
     }
 
     // ============ Search Operations ============
 
     @Override
     public Promise<SearchResults> search(String tenantId, SearchQuery query) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<SearchResults> fullTextSearch(String tenantId, String collectionName, String queryText, int limit) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<Map<String, Long>> getFacets(String tenantId, String collectionName, String fieldName) {
-        return available(new HashMap<>());
+        throw unsupported();
     }
 
     // ============ Analytics Operations ============
 
     @Override
     public Promise<QualityMetrics> getQualityMetrics(String tenantId, String collectionName) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<CostAnalysis> getCostAnalysis(String tenantId, int daysBack) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<LineageGraph> getLineage(String tenantId, String collectionName) {
-        return available(null);
+        throw unsupported();
     }
 
     // ============ AI Operations ============
 
     @Override
     public Promise<AIProcessingResult> processWithAI(String tenantId, DataRecord record) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<AIModelInfo> getAIModelInfo(String tenantId, String modelName) {
-        return available(null);
+        throw unsupported();
     }
 
     @Override
     public Promise<Map<String, Double>> getFeatures(String tenantId, String entityId, List<String> featureNames) {
-        return available(new HashMap<>());
+        throw unsupported();
     }
 
     // ============ Health & Status ============

@@ -11,13 +11,13 @@
  */
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { TierNodeData } from '../types';
+import type { HotTierNode } from '../types';
 
 /**
  * HOT-tier node: real-time in-memory ingestion.
  * Pulsing animation indicates live data flow.
  */
-const HotTierNode = memo(({ data, selected }: NodeProps<TierNodeData>) => {
+const HotTierNode = memo(({ data, selected }: NodeProps<HotTierNode>) => {
   const { label, metrics, status = 'healthy' } = data;
 
   const isActive = status === 'healthy' || status === 'processing';

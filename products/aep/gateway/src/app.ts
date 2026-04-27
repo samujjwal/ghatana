@@ -129,6 +129,7 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
   });
 
   // ── HTTP reverse-proxy → AEP Java backend ───────────────────────────────────
+  // T-17: Gateway is the sole external edge; backend auth becomes trust-internal-only
   fastify.all('/api/*', { preHandler: [authenticate] }, async (request, reply) => {
     const targetUrl = `${config.backendUrl}${request.url}`;
     const correlationId = resolveCorrelationId(request);
@@ -146,6 +147,9 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     if (effectiveTenantId) {
       proxyHeaders['x-tenant-id'] = effectiveTenantId;
     }
+    // T-17: Mark request as coming from trusted gateway (internal auth)
+    proxyHeaders['x-gateway-trusted'] = 'true';
+    proxyHeaders['x-gateway-source'] = 'aep-gateway';
     proxyHeaders[CORRELATION_ID_HEADER] = correlationId;
 
     const method = request.method;

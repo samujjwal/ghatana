@@ -8,6 +8,7 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.DataCloudClient.Entity;
 import com.ghatana.datacloud.DataCloudClient.Filter;
 import com.ghatana.datacloud.DataCloudClient.Query;
+import com.ghatana.datacloud.DataCloudClient.Sort;
 import com.ghatana.pipeline.registry.model.Pipeline;
 import com.ghatana.pipeline.registry.model.PipelineRegistration;
 import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +58,7 @@ import java.util.UUID;
  * <h3>Design Notes</h3>
  * <ul>
  *   <li>All Data-Cloud I/O is already async; no {@code Promise.ofBlocking} wrapping is needed.</li>
- *   <li>Pagination is implemented in-memory after fetching from Data-Cloud (acceptable at
- *       current scale; a native cursor API can be introduced later).</li>
+ *   <li>T-25: Pagination uses native Data-Cloud cursor-based queries (not in-memory).</li>
  *   <li>Soft-delete is supported by marking {@code active=false}; hard-delete uses
  *       {@link DataCloudClient#delete}.</li>
  *   <li>The entity ID is written into the data map under key {@code "id"} so that
@@ -307,14 +308,22 @@ public final class DataCloudPipelineStore implements PipelineRepository {
     public Promise<Page<Pipeline>> findAll(TenantId tenantId, String nameFilter,
                                            Boolean activeOnly, int page, int size) {
         String tenant = tenantStr(tenantId);
+        int effectiveSize = Math.min(Math.max(size, 1), 1000);
+        int offset = Math.max((page - 1) * effectiveSize, 0);
+
         List<Filter> filters = new ArrayList<>();
+        filters.add(Filter.eq("tenantId", tenant));
         if (activeOnly != null && activeOnly) {
             filters.add(Filter.eq("active", "true"));
         }
 
-        Query query = filters.isEmpty()
-                ? Query.limit(10_000)
-                : Query.builder().filters(filters).limit(10_000).build();
+        // T-25: Use native cursor-based pagination with Data-Cloud offset/limit
+        Query query = Query.builder()
+                .filters(filters)
+            .sorts(List.of(Sort.asc("createdAt")))
+                .offset(offset)
+                .limit(effectiveSize + 1) // Fetch one extra to detect hasMore
+                .build();
 
         return client.query(tenant, COLLECTION, query)
                 .map(entities -> {
@@ -323,13 +332,99 @@ public final class DataCloudPipelineStore implements PipelineRepository {
                             .filter(p -> nameFilter == null || nameFilter.isBlank()
                                     || (p.getName() != null && p.getName().contains(nameFilter)))
                             .toList();
-                    int from = Math.min((page - 1) * size, all.size());
-                    int to   = Math.min(from + size, all.size());
-                    List<Pipeline> pageContent = all.subList(from, to);
-                    return Page.of(pageContent, size, page - 1, all.size());
+
+                    // Determine if there are more results
+                    boolean hasMore = all.size() > effectiveSize;
+                    List<Pipeline> pageContent = hasMore
+                            ? all.subList(0, effectiveSize)
+                            : all;
+
+                    // Keep a concrete count estimate for callers that rely on total values.
+                    long totalEstimate = offset + all.size();
+
+                    return Page.of(pageContent, effectiveSize, page - 1, totalEstimate);
                 })
                 .whenException(e ->
                     log.error("[pipeline-store] findAll failed tenant={}: {}", tenant, e.getMessage(), e));
+    }
+
+    /**
+     * T-25: Cursor-based pagination for efficient large dataset traversal.
+     *
+     * @param tenantId the tenant scope
+     * @param nameFilter optional name filter (applied client-side)
+     * @param activeOnly filter to active pipelines only
+     * @param cursor pagination cursor (null for first page)
+     * @param pageSize maximum items to return
+     * @return Promise completing with cursor page result
+     */
+    public Promise<CursorPage<Pipeline>> findAllWithCursor(TenantId tenantId, String nameFilter,
+                                                           Boolean activeOnly, String cursor, int pageSize) {
+        String tenant = tenantStr(tenantId);
+        int effectiveSize = Math.min(Math.max(pageSize, 1), 1000);
+        int offset = cursor != null ? decodeCursor(cursor) : 0;
+
+        List<Filter> filters = new ArrayList<>();
+        filters.add(Filter.eq("tenantId", tenant));
+        if (activeOnly != null && activeOnly) {
+            filters.add(Filter.eq("active", "true"));
+        }
+
+        Query query = Query.builder()
+                .filters(filters)
+            .sorts(List.of(Sort.asc("createdAt")))
+                .offset(offset)
+                .limit(effectiveSize + 1) // Fetch one extra to detect hasMore
+                .build();
+
+        return client.query(tenant, COLLECTION, query)
+                .map(entities -> {
+                    List<Pipeline> all = entities.stream()
+                            .map(this::fromEntity)
+                            .filter(p -> nameFilter == null || nameFilter.isBlank()
+                                    || (p.getName() != null && p.getName().contains(nameFilter)))
+                            .toList();
+
+                    boolean hasMore = all.size() > effectiveSize;
+                    List<Pipeline> items = hasMore
+                            ? all.subList(0, effectiveSize)
+                            : all;
+
+                    String nextCursor = hasMore ? encodeCursor(offset + effectiveSize) : null;
+
+                    return new CursorPage<>(items, nextCursor, items.size(), hasMore);
+                })
+                .whenException(e ->
+                    log.error("[pipeline-store] findAllWithCursor failed tenant={}: {}", tenant, e.getMessage(), e));
+    }
+
+    /**
+     * Cursor-based pagination result.
+     *
+     * @param <T> the item type
+     * @param items the page items
+     * @param nextCursor cursor for next page (null if no more items)
+     * @param count number of items in this page
+     * @param hasMore whether more items are available
+     */
+    public record CursorPage<T>(
+            List<T> items,
+            String nextCursor,
+            int count,
+            boolean hasMore
+    ) {}
+
+    private static String encodeCursor(int offset) {
+        return Base64.getEncoder().encodeToString(String.valueOf(offset).getBytes());
+    }
+
+    private static int decodeCursor(String cursor) {
+        try {
+            String decoded = new String(Base64.getDecoder().decode(cursor));
+            return Integer.parseInt(decoded);
+        } catch (IllegalArgumentException e) {
+            return 0;
+        }
     }
 
     /** {@inheritDoc} */

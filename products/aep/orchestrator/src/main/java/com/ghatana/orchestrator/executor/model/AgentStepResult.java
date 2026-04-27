@@ -24,13 +24,22 @@ public class AgentStepResult {
 
     /**
      * Execution status enum.
+     *
+     * <p>T-26: Extended with explicit race-condition statuses:
+     * <ul>
+     *   <li>CANCELLED - Step was explicitly cancelled before completion</li>
+     *   <li>LATE - Step completed after timeout/deadline (orphaned result)</li>
+     *   <li>IGNORED - Step result ignored due to race (newer execution superseded)</li>
+     * </ul>
      */
     public enum ExecutionStatus {
         SUCCESS,
         TIMEOUT,
         RETRY,
         FAILED,
-        CANCELLED
+        CANCELLED,
+        LATE,
+        IGNORED
     }
 
     private final String stepId;

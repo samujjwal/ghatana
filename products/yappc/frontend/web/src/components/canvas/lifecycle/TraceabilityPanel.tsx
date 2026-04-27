@@ -11,7 +11,7 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { GitBranch as AccountTree, Activity as Timeline, Table as TableChart, Link, Unlink as LinkOff, Sparkles as AutoAwesome, RefreshCw as Refresh } from 'lucide-react';
-import type { LifecyclePhase } from '@/shared/types/lifecycle';
+import { LifecyclePhase } from '@/types/lifecycle';
 import { LifecycleArtifactKind, getArtifactsForPhase, LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
 
 export interface ArtifactNode {

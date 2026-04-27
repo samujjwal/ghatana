@@ -43,3 +43,13 @@ export function setTenantId(tenantId: string): void {
     // storage quota exceeded — state still changes in-memory
   }
 }
+
+// =========================================================================
+// T-27: Server-backed authorized tenant list
+// =========================================================================
+
+/** List of authorized tenants for the current user (populated from server). */
+export const authorizedTenantsAtom = atom<string[]>([]);
+
+/** Atom to track if authorized tenants have been loaded from server. */
+export const authorizedTenantsLoadedAtom = atom<boolean>(false);

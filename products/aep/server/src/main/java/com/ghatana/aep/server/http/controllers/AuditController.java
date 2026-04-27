@@ -6,6 +6,8 @@ package com.ghatana.aep.server.http.controllers;
 
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -188,8 +190,14 @@ public final class AuditController implements AepController {
     private Promise<String> persistEvent(String tenantId, Map<String, Object> enriched) {
         if (dataCloudClient != null && dataCloudClient.entityStore() != null) {
             String id = asString(enriched.get("id"));
+            TenantContext tenantContext = TenantContext.of(tenantId);
+            EntityStore.Entity entity = EntityStore.Entity.builder()
+                    .id(id)
+                    .collection("audit-events")
+                    .data(enriched)
+                    .build();
             return dataCloudClient.entityStore()
-                .save(tenantId, "audit-events", id, enriched)
+                .save(tenantContext, entity)
                 .map(ignored -> "data-cloud")
                 .then(Promise::of, err -> {
                     log.warn("[audit] DataCloud write failed, falling back to memory: {}", err.getMessage());

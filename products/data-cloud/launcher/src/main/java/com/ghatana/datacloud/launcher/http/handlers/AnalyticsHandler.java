@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,6 +67,7 @@ public class AnalyticsHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        String traceId = http.resolveCorrelationId(request);
         long start = System.currentTimeMillis();
         return request.loadBody().then(buf -> {
             try {
@@ -80,16 +82,17 @@ public class AnalyticsHandler {
                     : Map.of();
                 return analyticsEngine.submitQuery(tenantId, queryText, params)
                     .map(result -> {
-                        HttpResponse response = http.jsonResponse(Map.of(
-                            "queryId",         result.getQueryId(),
-                            "queryType",       result.getQueryType(),
-                            "rowCount",        result.getRowCount(),
-                            "columnCount",     result.getColumnCount(),
-                            "rows",            result.getRows(),
-                            "executionTimeMs", result.getExecutionTimeMs(),
-                            "optimized",       result.isOptimized(),
-                            "timestamp",       Instant.now().toString()
-                        ));
+                        Map<String, Object> responseBody = new LinkedHashMap<>();
+                        responseBody.put("queryId",         result.getQueryId());
+                        responseBody.put("queryType",       result.getQueryType());
+                        responseBody.put("rowCount",        result.getRowCount());
+                        responseBody.put("columnCount",     result.getColumnCount());
+                        responseBody.put("rows",            result.getRows());
+                        responseBody.put("executionTimeMs", result.getExecutionTimeMs());
+                        responseBody.put("optimized",       result.isOptimized());
+                        responseBody.put("timestamp",       Instant.now().toString());
+                        enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs());
+                        HttpResponse response = http.jsonResponse(responseBody);
                         httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
                         httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);
                         return response;
@@ -114,21 +117,23 @@ public class AnalyticsHandler {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String queryId = request.getPathParameter("queryId");
+        String traceId = http.resolveCorrelationId(request);
         return analyticsEngine.getResult(queryId)
             .map(result -> {
                 if (result == null) {
                     return http.errorResponse(404, "No result found for queryId: " + queryId);
                 }
-                return http.jsonResponse(Map.of(
-                    "queryId",         result.getQueryId(),
-                    "queryType",       result.getQueryType(),
-                    "rowCount",        result.getRowCount(),
-                    "columnCount",     result.getColumnCount(),
-                    "rows",            result.getRows(),
-                    "executionTimeMs", result.getExecutionTimeMs(),
-                    "optimized",       result.isOptimized(),
-                    "timestamp",       Instant.now().toString()
-                ));
+                Map<String, Object> responseBody = new LinkedHashMap<>();
+                responseBody.put("queryId",         result.getQueryId());
+                responseBody.put("queryType",       result.getQueryType());
+                responseBody.put("rowCount",        result.getRowCount());
+                responseBody.put("columnCount",     result.getColumnCount());
+                responseBody.put("rows",            result.getRows());
+                responseBody.put("executionTimeMs", result.getExecutionTimeMs());
+                responseBody.put("optimized",       result.isOptimized());
+                responseBody.put("timestamp",       Instant.now().toString());
+                enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs());
+                return http.jsonResponse(responseBody);
             })
             .then(
                 response -> Promise.of(response),
@@ -144,6 +149,7 @@ public class AnalyticsHandler {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String queryId = request.getPathParameter("queryId");
+        String traceId = http.resolveCorrelationId(request);
         return analyticsEngine.getPlan(queryId)
             .map(plan -> {
                 if (plan == null) {
@@ -151,12 +157,11 @@ public class AnalyticsHandler {
                 }
                 Map<String, Object> response = new LinkedHashMap<>();
                 response.put("queryId", queryId);
-                // Flatten the QueryPlan POJO into top-level response fields.
-                // convertValue serialises enum constants to their name() string.
                 @SuppressWarnings("unchecked")
                 Map<String, Object> planFields = http.objectMapper().convertValue(plan, Map.class);
                 response.putAll(planFields);
                 response.put("timestamp", Instant.now().toString());
+                enrichWithBrokerContract(response, traceId, 0);
                 return http.jsonResponse(response);
             })
             .then(
@@ -177,6 +182,7 @@ public class AnalyticsHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        String traceId = http.resolveCorrelationId(request);
         long start = System.currentTimeMillis();
         return request.loadBody()
             .then(
@@ -199,15 +205,16 @@ public class AnalyticsHandler {
                             : Map.of();
                         return analyticsEngine.submitQuery(tenantId, queryText, params)
                             .map(result -> {
-                                HttpResponse response = http.jsonResponse(Map.of(
-                                    "queryId",         result.getQueryId(),
-                                    "queryType",       result.getQueryType(),
-                                    "rowCount",        result.getRowCount(),
-                                    "rows",            result.getRows(),
-                                    "executionTimeMs", result.getExecutionTimeMs(),
-                                    "optimized",       result.isOptimized(),
-                                    "timestamp",       Instant.now().toString()
-                                ));
+                                Map<String, Object> responseBody = new LinkedHashMap<>();
+                                responseBody.put("queryId",         result.getQueryId());
+                                responseBody.put("queryType",       result.getQueryType());
+                                responseBody.put("rowCount",        result.getRowCount());
+                                responseBody.put("rows",            result.getRows());
+                                responseBody.put("executionTimeMs", result.getExecutionTimeMs());
+                                responseBody.put("optimized",       result.isOptimized());
+                                responseBody.put("timestamp",       Instant.now().toString());
+                                enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs());
+                                HttpResponse response = http.jsonResponse(responseBody);
                                 httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsAggregate", tenantId, response.getCode());
                                 httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsAggregate", System.currentTimeMillis() - start);
                                 return response;
@@ -369,6 +376,46 @@ public class AnalyticsHandler {
             response.put("rows", result.getRows());
         }
         return Promise.of(http.jsonResponse(response));
+    }
+
+    /**
+     * {@code POST /api/v1/analytics/queries/:queryId/cancel}
+     *
+     * <p>Cancellation stub.  The underlying analytics engine does not yet
+     * support in-flight cancellation, so this returns 501.
+     */
+    public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
+        String queryId = request.getPathParameter("queryId");
+        log.info("[DC-9] cancel query requested queryId={}", queryId);
+        return Promise.of(http.errorResponse(501,
+            "Query cancellation is not yet supported by the analytics engine."));
+    }
+
+    /**
+     * Enriches a query response with the standard query-broker contract fields:
+     * traceId, sourceCapabilities, freshness, partialWarnings, costEstimate,
+     * cancellation, and explainPlan availability.
+     */
+    private void enrichWithBrokerContract(Map<String, Object> response,
+                                          String traceId,
+                                          long executionTimeMs) {
+        response.put("traceId", traceId);
+        response.put("sourceCapabilities", List.of("sql", "aggregate", "federated"));
+        response.put("freshness", Instant.now().toString());
+        response.put("partialWarnings", List.of());
+        Map<String, Object> cost = new LinkedHashMap<>();
+        cost.put("unit", "milliseconds");
+        cost.put("value", executionTimeMs);
+        cost.put("model", "wall-clock");
+        response.put("costEstimate", cost);
+        Map<String, Object> cancel = new LinkedHashMap<>();
+        cancel.put("supported", false);
+        cancel.put("endpoint", null);
+        response.put("cancellation", cancel);
+        Map<String, Object> explain = new LinkedHashMap<>();
+        explain.put("available", true);
+        explain.put("endpoint", "/api/v1/analytics/explain");
+        response.put("explainPlan", explain);
     }
 
     private ReportExecutionCapability reportExecutor() {

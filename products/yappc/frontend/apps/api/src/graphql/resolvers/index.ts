@@ -13,6 +13,8 @@
 import prisma from '../../db';
 import { YappcCoreResolver } from './YappcCoreResolver';
 import { versioningResolvers } from './versioning.resolver';
+import { requirementsApprovalsResolvers } from './requirements-approvals.resolver';
+import { exportResolvers } from './export.resolver';
 
 // Helper to convert Prisma dates to ISO strings
 const toISOString = (date: Date | null | undefined) =>
@@ -42,6 +44,8 @@ export function createSimpleResolvers() {
     Query: {
       ...YappcCoreResolver.Query,
       ...versioningResolvers.Query,
+      ...requirementsApprovalsResolvers.Query,
+      ...exportResolvers.Query,
 
       // Current user - resolved from auth context
       me: async (
@@ -288,6 +292,8 @@ export function createSimpleResolvers() {
     Mutation: {
       ...YappcCoreResolver.Mutation,
       ...versioningResolvers.Mutation,
+      ...requirementsApprovalsResolvers.Mutation,
+      ...exportResolvers.Mutation,
 
       // Create workspace
       createWorkspace: async (
@@ -631,6 +637,11 @@ export function createSimpleResolvers() {
     },
 
     Domain: YappcCoreResolver.Domain,
+    Requirement: requirementsApprovalsResolvers.Requirement,
+    RequirementVersion: requirementsApprovalsResolvers.RequirementVersion,
+    ApprovalRequest: requirementsApprovalsResolvers.ApprovalRequest,
+    AgentRun: requirementsApprovalsResolvers.AgentRun,
+    ExportArtifact: exportResolvers.ExportArtifact,
   };
 }
 

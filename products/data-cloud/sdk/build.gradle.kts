@@ -4,6 +4,8 @@
  * Generates lightweight Java, TypeScript, and Python SDKs from the canonical
  * Data-Cloud OpenAPI specification using an in-repo code generator.
  */
+import java.io.File
+
 plugins {
     base
     id("java-module")
@@ -76,6 +78,27 @@ tasks.named<JavaCompile>("compileJava") {
     dependsOn(generateDataCloudSdks)
 }
 
+fun isCommandAvailable(command: String): Boolean {
+    val path = System.getenv("PATH") ?: return false
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    val suffixes = if (isWindows) listOf(".cmd", ".exe", ".bat", "") else listOf("")
+    return runCatching {
+        path.split(File.pathSeparator)
+            .asSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .any { dir ->
+                suffixes.any { suffix ->
+                    val candidate = File(dir, command + suffix)
+                    candidate.isFile && candidate.canExecute()
+                }
+            }
+    }.getOrDefault(false)
+}
+
+val hasPnpmCommand = isCommandAvailable("pnpm")
+val hasNpxCommand = isCommandAvailable("npx")
+
 val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
     description = "Type-checks the generated TypeScript SDK."
     group = "verification"
@@ -83,48 +106,22 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
     dependsOn(generateDataCloudSdks)
     workingDir = rootDir
 
-    val hasPnpm = try {
-        val process = ProcessBuilder("pnpm", "--version").start()
-        process.waitFor() == 0
-    } catch (_: Exception) {
-        false
+    val command = when {
+        hasPnpmCommand -> listOf("pnpm", "exec", "tsc")
+        hasNpxCommand -> listOf("npx", "tsc")
+        else -> null
     }
 
-    val hasNpx = try {
-        val process = ProcessBuilder("npx", "--version").start()
-        process.waitFor() == 0
-    } catch (_: Exception) {
-        false
-    }
-
-    onlyIf {
-        when {
-            hasPnpm -> true
-            hasNpx -> true
-            else -> {
-                logger.lifecycle("Skipping TypeScript SDK verification: neither pnpm nor npx is available")
-                false
-            }
-        }
-    }
-
-    if (hasPnpm) {
-        commandLine(
-            "pnpm",
-            "exec",
-            "tsc",
-            "--noEmit",
-            "--project",
-            generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
-        )
+    if (command == null) {
+        enabled = false
+        logger.lifecycle("Skipping TypeScript SDK verification: neither pnpm nor npx is available")
     } else {
-        commandLine(
-            "npx",
-            "tsc",
+        val fullCommand = command + listOf(
             "--noEmit",
             "--project",
             generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
         )
+        commandLine(*fullCommand.toTypedArray())
     }
 }
 

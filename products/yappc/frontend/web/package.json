@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "react-router dev",
     "build": "react-router build",
+    "analyze": "react-router build && open ./dist/stats.html",
     "check:bundle-budget": "node ../scripts/check-web-bundle-budget.cjs",
     "preview": "vite preview",
     "report:bundle-budget": "node ../scripts/check-web-bundle-budget.cjs --report",

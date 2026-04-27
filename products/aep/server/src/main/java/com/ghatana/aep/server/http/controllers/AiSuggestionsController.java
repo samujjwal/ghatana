@@ -156,7 +156,7 @@ public final class AiSuggestionsController {
                     }
                     return suggestions;
                 })
-                .map(HttpHelper::jsonResponse)
+                .map(suggestions -> HttpHelper.jsonResponse(suggestions))
                 .then(Promise::of, e -> {
                     log.error("[ai-suggestions] suggestion generation failed for tenant={}: {}",
                             tenantId, e.getMessage(), e);
@@ -177,7 +177,7 @@ public final class AiSuggestionsController {
         // 1. Anomaly-backed suggestions (highest priority)
         for (DataCloudAnalyticsStore.AnomalyRecord anomaly : anomalies) {
             if (suggestions.size() >= limit) break;
-            suggestions.add(anomalyToSuggestion(anomaly));
+            suggestions.add(anomalyToSuggestion(tenantId, anomaly));
         }
 
         // 2. SLO-backed hints (when metrics available)
@@ -205,7 +205,7 @@ public final class AiSuggestionsController {
         );
     }
 
-    private Map<String, Object> anomalyToSuggestion(DataCloudAnalyticsStore.AnomalyRecord anomaly) {
+    private Map<String, Object> anomalyToSuggestion(String tenantId, DataCloudAnalyticsStore.AnomalyRecord anomaly) {
         String severity = mapAnomalySeverityToSuggestion(anomaly.severity());
         String type = "anomaly".equals(severity) ? "anomaly" : "warning";
         double confidence = Math.min(1.0, anomaly.score());
@@ -217,7 +217,7 @@ public final class AiSuggestionsController {
                 .message(buildAnomalyMessage(anomaly))
                 .confidence(confidence)
                 .rationale(anomaly.description() != null ? anomaly.description() : "Anomaly detected: " + anomaly.anomalyType())
-                .tenantId(anomaly.tenantId() != null ? anomaly.tenantId() : "")
+                .tenantId(tenantId)
                 .surface("operate");
         if (anomaly.entityId() != null) {
             builder.evidence(List.of(Map.of("signalType", "anomaly", "entityId", anomaly.entityId())));

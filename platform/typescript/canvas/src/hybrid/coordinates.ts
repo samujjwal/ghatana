@@ -39,6 +39,10 @@ export function worldToScreen(point: Point, viewport: ViewportState): Point {
   };
 }
 
+// Compatibility aliases for modules that expect canvas coordinate naming
+export const screenToCanvas = screenToWorld;
+export const canvasToScreen = worldToScreen;
+
 /**
  * Normalize coordinates between any two coordinate systems
  *

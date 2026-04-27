@@ -177,6 +177,7 @@ public class AgentEventEmitter {
             case RETRY -> ExecutionStatus.RETRY;
             case FAILED -> ExecutionStatus.FAILED;
             case CANCELLED -> ExecutionStatus.CANCELLED;
+            case LATE, IGNORED -> ExecutionStatus.UNKNOWN;
         };
     }
 

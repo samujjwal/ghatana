@@ -58,6 +58,7 @@ public class TenantQuotaManager {
     private static final int DEFAULT_MAX_EVENTS_PER_SECOND = 100;
     private static final int DEFAULT_MAX_COLLECTIONS = 100;
     private static final int DEFAULT_MAX_ENTITIES_PER_COLLECTION = 1000000;
+    private static final int DEFAULT_MAX_AI_TOKENS_PER_MINUTE = 100000;
 
     private final DataSource dataSource;
     private final MeterRegistry meterRegistry;
@@ -69,6 +70,7 @@ public class TenantQuotaManager {
     private final Map<String, AtomicInteger> currentConnections = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> requestsLastMinute = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> eventsLastSecond = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> aiTokensLastMinute = new ConcurrentHashMap<>();
     private final Map<String, TenantUsageStats> tenantUsage = new ConcurrentHashMap<>();
 
     // Metrics
@@ -255,6 +257,9 @@ public class TenantQuotaManager {
             case "ENTITY":
                 return Promise.of(checkEntityQuota(tenantId, resourceAmount, config));
 
+            case "AI_TOKEN":
+                return Promise.of(checkAiTokenQuota(tenantId, resourceAmount, config));
+
             default:
                 return Promise.of(new QuotaCheckResult(true, null, 0, 0));
         }
@@ -388,6 +393,24 @@ public class TenantQuotaManager {
         return new QuotaCheckResult(true, null, additionalEntities, config.getMaxEntitiesPerCollection());
     }
 
+    private QuotaCheckResult checkAiTokenQuota(String tenantId, long additionalTokens, TenantQuotaConfig config) {
+        AtomicLong current = aiTokensLastMinute.computeIfAbsent(tenantId, k -> new AtomicLong(0));
+        long currentCount = current.addAndGet(additionalTokens);
+
+        if (currentCount > config.getMaxAiTokensPerMinute()) {
+            current.addAndGet(-additionalTokens);
+            return new QuotaCheckResult(
+                false,
+                "AI token quota exceeded. Tokens this minute: " + (currentCount - additionalTokens) +
+                ", Limit: " + config.getMaxAiTokensPerMinute() + "/min",
+                currentCount - additionalTokens,
+                config.getMaxAiTokensPerMinute()
+            );
+        }
+
+        return new QuotaCheckResult(true, null, currentCount, config.getMaxAiTokensPerMinute());
+    }
+
     // ====================================================================================
     // Usage Tracking
     // ====================================================================================
@@ -416,6 +439,7 @@ public class TenantQuotaManager {
             stats.setStorageMB(getTenantStorageUsageMB(tenantId));
             stats.setActiveConnections(currentConnections.getOrDefault(tenantId, new AtomicInteger(0)).get());
             stats.setRequestsLastMinute(requestsLastMinute.getOrDefault(tenantId, new AtomicLong(0)).get());
+            stats.setAiTokensLastMinute(aiTokensLastMinute.getOrDefault(tenantId, new AtomicLong(0)).get());
             stats.setCollectionCount(getTenantCollectionCount(tenantId));
             return stats;
         });
@@ -550,16 +574,27 @@ public class TenantQuotaManager {
         private final int maxEventsPerSecond;
         private final int maxCollections;
         private final int maxEntitiesPerCollection;
+        private final int maxAiTokensPerMinute;
 
         public TenantQuotaConfig(long maxStorageMB, int maxConcurrentConnections,
                                 int maxRequestsPerMinute, int maxEventsPerSecond,
                                 int maxCollections, int maxEntitiesPerCollection) {
+            this(maxStorageMB, maxConcurrentConnections, maxRequestsPerMinute,
+                 maxEventsPerSecond, maxCollections, maxEntitiesPerCollection,
+                 DEFAULT_MAX_AI_TOKENS_PER_MINUTE);
+        }
+
+        public TenantQuotaConfig(long maxStorageMB, int maxConcurrentConnections,
+                                int maxRequestsPerMinute, int maxEventsPerSecond,
+                                int maxCollections, int maxEntitiesPerCollection,
+                                int maxAiTokensPerMinute) {
             this.maxStorageMB = maxStorageMB;
             this.maxConcurrentConnections = maxConcurrentConnections;
             this.maxRequestsPerMinute = maxRequestsPerMinute;
             this.maxEventsPerSecond = maxEventsPerSecond;
             this.maxCollections = maxCollections;
             this.maxEntitiesPerCollection = maxEntitiesPerCollection;
+            this.maxAiTokensPerMinute = maxAiTokensPerMinute;
         }
 
         public long getMaxStorageMB() { return maxStorageMB; }
@@ -568,6 +603,7 @@ public class TenantQuotaManager {
         public int getMaxEventsPerSecond() { return maxEventsPerSecond; }
         public int getMaxCollections() { return maxCollections; }
         public int getMaxEntitiesPerCollection() { return maxEntitiesPerCollection; }
+        public int getMaxAiTokensPerMinute() { return maxAiTokensPerMinute; }
     }
 
     public static class QuotaCheckResult {
@@ -598,6 +634,7 @@ public class TenantQuotaManager {
         private int activeConnections;
         private long requestsLastMinute;
         private int collectionCount;
+        private long aiTokensLastMinute;
         private Instant lastUpdated = Instant.now();
 
         public long getStorageMB() { return storageMB; }
@@ -611,6 +648,9 @@ public class TenantQuotaManager {
 
         public int getCollectionCount() { return collectionCount; }
         public void setCollectionCount(int collectionCount) { this.collectionCount = collectionCount; }
+
+        public long getAiTokensLastMinute() { return aiTokensLastMinute; }
+        public void setAiTokensLastMinute(long aiTokensLastMinute) { this.aiTokensLastMinute = aiTokensLastMinute; }
 
         public Instant getLastUpdated() { return lastUpdated; }
         public void setLastUpdated(Instant lastUpdated) { this.lastUpdated = lastUpdated; }

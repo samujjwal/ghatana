@@ -236,7 +236,11 @@ public interface EntityStore {
         List<Filter> filters,
         List<Sort> sorts,
         int offset,
-        int limit
+        int limit,
+        String search,
+        List<String> projections,
+        ConsistencyLevel consistencyLevel,
+        String freshnessHint
     ) {
         /** Default page size when no limit is specified. */
         public static final int DEFAULT_LIMIT = 100;
@@ -260,6 +264,8 @@ public interface EntityStore {
                 throw new IllegalArgumentException(
                     "limit " + limit + " exceeds maximum allowed value " + MAX_LIMIT);
             }
+            projections = projections != null ? List.copyOf(projections) : List.of();
+            consistencyLevel = consistencyLevel != null ? consistencyLevel : ConsistencyLevel.STRONG;
         }
 
         public static Builder builder() {
@@ -272,6 +278,10 @@ public interface EntityStore {
             private List<Sort> sorts = List.of();
             private int offset = 0;
             private int limit = DEFAULT_LIMIT;
+            private String search;
+            private List<String> projections = List.of();
+            private ConsistencyLevel consistencyLevel = ConsistencyLevel.STRONG;
+            private String freshnessHint;
 
             public Builder collection(String collection) {
                 this.collection = collection;
@@ -308,10 +318,34 @@ public interface EntityStore {
                 return this;
             }
 
+            public Builder search(String search) {
+                this.search = search;
+                return this;
+            }
+
+            public Builder projections(List<String> projections) {
+                this.projections = projections;
+                return this;
+            }
+
+            public Builder consistencyLevel(ConsistencyLevel consistencyLevel) {
+                this.consistencyLevel = consistencyLevel;
+                return this;
+            }
+
+            public Builder freshnessHint(String freshnessHint) {
+                this.freshnessHint = freshnessHint;
+                return this;
+            }
+
             public QuerySpec build() {
-                return new QuerySpec(collection, filters, sorts, offset, limit);
+                return new QuerySpec(collection, filters, sorts, offset, limit, search, projections, consistencyLevel, freshnessHint);
             }
         }
+    }
+
+    enum ConsistencyLevel {
+        STRONG, EVENTUAL, BOUNDED_STALENESS
     }
 
     /**

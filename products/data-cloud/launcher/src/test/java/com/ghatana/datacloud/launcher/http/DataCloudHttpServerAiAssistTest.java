@@ -85,7 +85,6 @@ class DataCloudHttpServerAiAssistTest {
         @DisplayName("returns 200 with suggestion when LLM is wired")
         void withLlm_returns200WithSuggestion() throws Exception { // GH-90000
             CompletionResult result = mock(CompletionResult.class); // GH-90000
-            when(result.getText()).thenReturn("You could add an 'updatedAt' timestamp field.");
             when(result.getFinishReason()).thenReturn("stop");
             when(result.getModelUsed()).thenReturn("gpt-4o");
             // Use real Promise.of() so the ActiveJ Eventloop can process it correctly // GH-90000

@@ -8,4 +8,5 @@
  */
 
 export { AuditTrail } from './AuditTrail';
+export { AuditTimeline } from './AuditTimeline';
 export { ComplianceReport } from './ComplianceReport';

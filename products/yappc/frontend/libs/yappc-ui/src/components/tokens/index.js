@@ -1,10 +1,8 @@
 /**
- * Design tokens index — delegates to @ghatana/tokens (platform canonical source).
- * YAPPC-specific tokens are added on top.
+ * Design tokens index — YAPPC-specific tokens extending @ghatana/tokens.
  * Consumers should import from @yappc/ui (or @yappc/ui/components) to access these.
+ * For platform-level tokens not overridden here, import directly from @ghatana/tokens.
  */
-// Re-export canonical platform tokens
-export * from '@ghatana/tokens';
 // Re-export YAPPC token modules consumed by the local theme implementation.
 export * from './colors';
 export * from './typography';
@@ -14,10 +12,16 @@ export * from './breakpoints';
 export * from './transitions';
 // YAPPC-specific local overrides (zIndex, shape, and YAPPC MUI-derived tokens)
 export * from './zIndex';
-export * from './shape';
+// Named exports from shape to avoid conflicting star export for 'borderRadius'
+// (which is also exported by @ghatana/tokens above). The YAPPC shape values
+// take precedence; borderRadius is re-exported explicitly below via the alias block.
+export { borderWidth, componentRadius, shapeVariants } from './shape';
 // Backward-compatible named aliases (previously from @ghatana/yappc-tokens)
 import { borderRadius } from './shape';
-import { spacing, fontSize, fontWeight } from '@ghatana/tokens';
+import { spacing } from './spacing';
+import { fontSize, fontWeight } from '@ghatana/tokens';
+// Re-export YAPPC-specific borderRadius (overrides @ghatana/tokens platform value)
+export { borderRadius };
 // Spacing aliases
 export const spacingXs = spacing[1]; // 4px
 export const spacingSm = spacing[2]; // 8px

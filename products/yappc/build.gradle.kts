@@ -33,7 +33,14 @@ afterEvaluate {
 tasks.register("checkYappcStructuralGovernance") {
     group = "verification"
     description = "Validates YAPPC-specific architectural governance"
-    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping checkYappcStructuralGovernance because configuration cache is enabled")
+        }
+        return@register
+    }
     
     // Always re-run this check since it validates critical governance rules
     outputs.upToDateWhen { false }
@@ -87,6 +94,14 @@ tasks.named("check") {
 tasks.register("checkNoGetResultInTests") {
     group = "verification"
     description = "Ensures ActiveJ async tests use EventloopTestBase (basic check)"
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping checkNoGetResultInTests because configuration cache is enabled")
+        }
+        return@register
+    }
 
     // Always re-run this check
     outputs.upToDateWhen { false }

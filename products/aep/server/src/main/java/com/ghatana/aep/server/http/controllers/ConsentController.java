@@ -48,6 +48,22 @@ public final class ConsentController implements AepController {
         this.store = store;
     }
 
+    @Override
+    public String getBasePath() {
+        return "/api/v1/consent";
+    }
+
+    @Override
+    public Promise<HttpResponse> handle(HttpRequest request, String path) {
+        if ("record".equals(path)) {
+            return handleRecordConsent(request);
+        }
+        if (path == null || path.isBlank()) {
+            return handleListConsent(request);
+        }
+        return handleGetConsent(request, path);
+    }
+
     /**
      * POST /api/v1/consent/record
      * Body: { "userId": "...", "status": "granted|denied|withdrawn", "purposes": [...] }

@@ -9,6 +9,7 @@ import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 
@@ -109,5 +110,95 @@ public final class HttpHelper {
             tenantId = v != null ? String.valueOf(v) : null;
         }
         return (tenantId == null || tenantId.isBlank()) ? "default" : tenantId;
+    }
+
+    // =========================================================================
+    // T-17: Trusted Gateway Detection
+    // =========================================================================
+
+    /**
+     * Checks if the request is coming from the trusted gateway (internal auth).
+     * Gateway adds x-gateway-trusted: true header to all proxied requests.
+     */
+    public static boolean isTrustedGatewayRequest(HttpRequest request) {
+        String trustedHeader = request.getHeader(HttpHeaders.of("x-gateway-trusted"));
+        String sourceHeader = request.getHeader(HttpHeaders.of("x-gateway-source"));
+        return "true".equalsIgnoreCase(trustedHeader) && "aep-gateway".equals(sourceHeader);
+    }
+
+    // =========================================================================
+    // T-33: Standard Response Envelopes
+    // =========================================================================
+
+    /**
+     * Standard list response envelope.
+     *
+     * @param items the list items
+     * @param total total count (may be estimated as -1 if unknown)
+     * @param page current page number (0-indexed)
+     * @param pageSize items per page
+     * @param nextCursor cursor for next page (null if no more items)
+     */
+    public static HttpResponse listEnvelope(
+            Object items, long total, int page, int pageSize, String nextCursor) {
+        Map<String, Object> envelope = new java.util.HashMap<>();
+        envelope.put("items", items);
+        envelope.put("total", total);
+        envelope.put("page", page);
+        envelope.put("pageSize", pageSize);
+        if (nextCursor != null) {
+            envelope.put("nextCursor", nextCursor);
+        }
+        return RequestTraceSupport.applyTo(ResponseBuilder.ok())
+            .json(envelope)
+            .build();
+    }
+
+    /**
+     * Standard mutation response envelope.
+     *
+     * @param operationId unique operation identifier
+     * @param status mutation status (SUCCESS, PENDING, FAILED)
+     * @param resource resource type that was mutated
+     * @param auditId audit trail entry ID
+     */
+    public static HttpResponse mutationEnvelope(
+            String operationId, String status, String resource, String auditId) {
+        Map<String, Object> envelope = new java.util.HashMap<>();
+        envelope.put("operationId", operationId);
+        envelope.put("status", status);
+        envelope.put("resource", resource);
+        if (auditId != null) {
+            envelope.put("auditId", auditId);
+        }
+        return RequestTraceSupport.applyTo(ResponseBuilder.ok())
+            .json(envelope)
+            .build();
+    }
+
+    /**
+     * Standard error response envelope with full structured details.
+     *
+     * @param code HTTP status code
+     * @param message human-readable error message
+     * @param errorCode application-specific error code
+     * @param details additional error details
+     * @param correlationId request correlation ID
+     * @param retryable whether the operation can be retried
+     */
+    public static HttpResponse errorEnvelope(
+            int code, String message, String errorCode,
+            Map<String, Object> details, String correlationId, boolean retryable) {
+        Map<String, Object> envelope = new java.util.HashMap<>();
+        envelope.put("code", errorCode != null ? errorCode : String.valueOf(code));
+        envelope.put("message", message);
+        envelope.put("correlationId", correlationId != null ? correlationId : java.util.UUID.randomUUID().toString());
+        envelope.put("retryable", retryable);
+        if (details != null && !details.isEmpty()) {
+            envelope.put("details", details);
+        }
+        return RequestTraceSupport.applyTo(ResponseBuilder.status(code))
+            .json(envelope)
+            .build();
     }
 }

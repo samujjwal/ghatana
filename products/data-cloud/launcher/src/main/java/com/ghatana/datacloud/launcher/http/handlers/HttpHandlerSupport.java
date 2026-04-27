@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.infrastructure.governance.http.dto.ErrorResponse;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
@@ -22,7 +23,6 @@ import java.util.regex.Pattern;
  *
  * <p>Provides JSON response builders, tenant resolution, parameter parsing,
  * and access to the CORS policy constants defined by the server.
- *
  * @doc.type class
  * @doc.purpose Shared HTTP response and request utilities for handler classes
  * @doc.layer product
@@ -37,12 +37,14 @@ public class HttpHandlerSupport {
     private final String corsAllowMethods;
     private final String corsAllowHeaders;
     private final boolean strictTenantResolution;
+    private final String deploymentMode;
+    private static final java.util.Set<String> SAFE_FALLBACK_MODES = java.util.Set.of("local", "test", "development");
 
     public HttpHandlerSupport(ObjectMapper objectMapper,
                               String corsAllowOrigin,
                               String corsAllowMethods,
                               String corsAllowHeaders) {
-        this(objectMapper, corsAllowOrigin, corsAllowMethods, corsAllowHeaders, false);
+        this(objectMapper, corsAllowOrigin, corsAllowMethods, corsAllowHeaders, false, "local");
     }
 
     public HttpHandlerSupport(ObjectMapper objectMapper,
@@ -50,11 +52,21 @@ public class HttpHandlerSupport {
                               String corsAllowMethods,
                               String corsAllowHeaders,
                               boolean strictTenantResolution) {
+        this(objectMapper, corsAllowOrigin, corsAllowMethods, corsAllowHeaders, strictTenantResolution, "local");
+    }
+
+    public HttpHandlerSupport(ObjectMapper objectMapper,
+                              String corsAllowOrigin,
+                              String corsAllowMethods,
+                              String corsAllowHeaders,
+                              boolean strictTenantResolution,
+                              String deploymentMode) {
         this.objectMapper           = objectMapper;
         this.corsAllowOrigin        = corsAllowOrigin;
         this.corsAllowMethods       = corsAllowMethods;
         this.corsAllowHeaders       = corsAllowHeaders;
         this.strictTenantResolution = strictTenantResolution;
+        this.deploymentMode         = (deploymentMode == null || deploymentMode.isBlank()) ? "local" : deploymentMode;
     }
 
     /**
@@ -98,65 +110,6 @@ public class HttpHandlerSupport {
         } catch (Exception e) {
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(500))
                 .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
-                .build();
-        }
-    }
-
-    /**
-     * Builds an error response with the given HTTP status code and message.
-     * Uses data-cloud ErrorResponse for consistent error semantics.
-     */
-    public HttpResponse errorResponse(int code, String message) {
-        try {
-            String errorCode;
-            switch (code) {
-                case 400:
-                    errorCode = "BAD_REQUEST";
-                    break;
-                case 401:
-                    errorCode = "UNAUTHORIZED";
-                    break;
-                case 403:
-                    errorCode = "FORBIDDEN";
-                    break;
-                case 404:
-                    errorCode = "NOT_FOUND";
-                    break;
-                case 409:
-                    errorCode = "CONFLICT";
-                    break;
-                case 429:
-                    errorCode = "RATE_LIMIT_EXCEEDED";
-                    break;
-                case 500:
-                    errorCode = "INTERNAL_SERVER_ERROR";
-                    break;
-                case 503:
-                    errorCode = "SERVICE_UNAVAILABLE";
-                    break;
-                case 504:
-                    errorCode = "GATEWAY_TIMEOUT";
-                    break;
-                default:
-                    errorCode = "ERROR";
-            }
-            ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(code)
-                .error(errorCode)
-                .message(message)
-                .timestamp(System.currentTimeMillis())
-                .build();
-            String json = objectMapper.writeValueAsString(errorResponse);
-            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
-                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
-                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
-                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
-                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
-                .withBody(json.getBytes(StandardCharsets.UTF_8))
-                .build();
-        } catch (Exception e) {
-            return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
-                .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
     }
@@ -257,6 +210,31 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * Returns true if the current deployment mode allows the default-tenant fallback.
+     */
+    public boolean isFallbackTenantAllowed() {
+        return SAFE_FALLBACK_MODES.contains(deploymentMode);
+    }
+
+    /**
+     * Returns the deployment mode label configured for this HTTP surface.
+     */
+    public String getDeploymentMode() {
+        return deploymentMode;
+    }
+
+    /**
+     * Adds a {@code X-Fallback-Tenant-Warning} header to an existing response builder
+     * when the tenant was resolved via the default fallback.
+     */
+    public HttpResponse.Builder applyFallbackBannerIfNeeded(HttpResponse.Builder builder, String tenantId) {
+        if ("default".equals(tenantId) && isFallbackTenantAllowed()) {
+            return builder.withHeader(HttpHeaders.of("X-Fallback-Tenant-Warning"), HttpHeaderValue.of("true"));
+        }
+        return builder;
+    }
+
+    /**
      * Returns a blocking executor for async operations.
      *
      * @return Executor for blocking operations
@@ -266,11 +244,22 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * Builds an error response with the given HTTP status code and message.
+     * Uses data-cloud ErrorResponse for consistent error semantics.
+     */
+    public HttpResponse errorResponse(int code, String message) {
+        return errorResponse(code, message, null);
+    }
+
+    /**
      * Builds an error response with the given HTTP status code, message, and
      * an {@code X-Request-Id} header set to {@code correlationId}.
      * Uses data-cloud ErrorResponse for consistent error semantics.
      */
     public HttpResponse errorResponse(int code, String message, String correlationId) {
+        String traceId = correlationId != null && !correlationId.isBlank()
+            ? correlationId
+            : UUID.randomUUID().toString();
         try {
             String errorCode;
             switch (code) {
@@ -309,6 +298,7 @@ public class HttpHandlerSupport {
                 .error(errorCode)
                 .message(message)
                 .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
                 .build();
             String json = objectMapper.writeValueAsString(errorResponse);
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
@@ -316,13 +306,13 @@ public class HttpHandlerSupport {
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
-                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
-                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(correlationId))
-                .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(("{\"error\":\"" + message + "\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
     }
@@ -388,7 +378,14 @@ public class HttpHandlerSupport {
             return sanitizeTenantId(principal.getTenantId());
         }
         String candidate = findRawTenantCandidate(request);
-        return candidate == null ? null : sanitizeTenantId(candidate);
+        if (candidate != null) {
+            return sanitizeTenantId(candidate);
+        }
+        // DC-AUD-014: Non-strict mode falls back to default tenant ONLY in safe modes.
+        // Production / staging must never silently fall back.
+        if (strictTenantResolution) return null;
+        if (SAFE_FALLBACK_MODES.contains(deploymentMode)) return "default";
+        return null;
     }
 
     private static String findRawTenantCandidate(HttpRequest request) {

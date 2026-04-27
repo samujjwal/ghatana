@@ -121,14 +121,10 @@ const tanstackReactQueryPath = resolveStandaloneDependency(
 if (tanstackReactQueryPath) {
   standaloneDependencyAliases['@tanstack/react-query'] = tanstackReactQueryPath;
 }
-const muiMaterialPath = resolveStandaloneDependency('@mui/material');
-if (muiMaterialPath) {
-  standaloneDependencyAliases['@mui/material'] = muiMaterialPath;
-}
-const muiIconsMaterialPath = resolveStandaloneDependency('@mui/icons-material');
-if (muiIconsMaterialPath) {
-  standaloneDependencyAliases['@mui/icons-material'] = muiIconsMaterialPath;
-}
+// @mui/material and @mui/icons-material are intentionally NOT aliased.
+// Aliasing to a directory path bypasses package.json#exports and causes Vite's SSR
+// ESModulesEvaluator to load CJS index.js (which uses require()) instead of index.mjs (ESM).
+// Both packages are hoisted to node_modules and resolve correctly via exports conditions.
 const reactKonvaPath = resolveStandaloneDependency('react-konva');
 if (reactKonvaPath) {
   standaloneDependencyAliases['react-konva'] = reactKonvaPath;
@@ -222,8 +218,11 @@ export default defineConfig({
       '@yappc/core': path.resolve(__dirname, '../libs/yappc-core/src'),
       '@yappc/core/api': path.resolve(__dirname, '../libs/yappc-core/src/api'),
       '@yappc/devsecops': path.resolve(__dirname, '../libs/yappc-devsecops/src'),
+      '@yappc/auth/rbac': path.resolve(
+        __dirname,
+        '../libs/yappc-auth/dist/auth/rbac/index.js'
+      ),
       '@yappc/auth': path.resolve(__dirname, '../libs/yappc-auth/dist'),
-      '@yappc/auth/rbac': path.resolve(__dirname, '../libs/yappc-auth/dist/auth/rbac'),
       '@yappc/chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
       '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
       '@yappc/initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
@@ -320,7 +319,10 @@ export default defineConfig({
     }),
   ],
   ssr: {
-    noExternal: ['@emotion/react', '@emotion/styled', '@mui/material', '@mui/material/styles'],
+    // @emotion packages must be bundled for SSR (they have CJS-only internals used by MUI).
+    // @mui/material and @mui/icons-material are NOT listed here; they are kept external
+    // so Node.js resolves them via their ESM exports (index.mjs).
+    noExternal: ['@emotion/react', '@emotion/styled'],
   },
   build: {
     target: 'es2020',

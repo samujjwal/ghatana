@@ -16,7 +16,7 @@ import {
   Paper,
   Divider,
 } from '@ghatana/design-system';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import type { PageConfig } from '@yappc/config-schema';
 
@@ -47,9 +47,9 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
   const [mode, setMode] = useState<EditorMode>('json');
 
   const handleModeChange = useCallback(
-    (_event: React.MouseEvent<HTMLElement>, newMode: EditorMode | null) => {
-      if (newMode) {
-        setMode(newMode);
+    (newMode: string | string[]) => {
+      if (newMode && typeof newMode === 'string') {
+        setMode(newMode as EditorMode);
       }
     },
     []

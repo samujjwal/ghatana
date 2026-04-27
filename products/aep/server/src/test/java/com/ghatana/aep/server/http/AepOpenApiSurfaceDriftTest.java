@@ -73,11 +73,6 @@ class AepOpenApiSurfaceDriftTest {
         "/api/v1/sessions/current",
         "/api/v1/sessions",
         "/api/v1/ai/suggestions",
-        "/api/v1/ai/suggestions/stages",
-        "/api/v1/auth/sse-token",
-        "/api/v1/audit/log",
-        "/api/v1/audit/query",
-        "/api/v1/catalog/marketplace/agents/{agentId}/install",
         "/api/v1/nlp/parse"
     );
 

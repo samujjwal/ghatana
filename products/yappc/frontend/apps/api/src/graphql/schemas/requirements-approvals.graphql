@@ -1,0 +1,170 @@
+# ============================================================================
+# REQUIREMENTS, APPROVALS, AND AGENT-RUN VISIBILITY
+# ============================================================================
+
+"""
+Requirement type classification.
+"""
+enum RequirementType {
+  FUNCTIONAL
+  NON_FUNCTIONAL
+  BUSINESS
+  TECHNICAL
+}
+
+"""
+Requirement priority.
+"""
+enum RequirementPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+"""
+Requirement lifecycle status.
+"""
+enum RequirementStatus {
+  DRAFT
+  PENDING_APPROVAL
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+"""
+Approval state for governance actions.
+"""
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  EXPIRED
+}
+
+"""
+Status of a tracked agent execution run.
+"""
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+"""
+Immutable snapshot of a requirement revision.
+"""
+type RequirementVersion {
+  id: ID!
+  requirementId: ID!
+  version: Int!
+  content: JSON!
+  acceptanceCriteria: JSON!
+  changeSummary: String
+  changedById: ID
+  createdAt: DateTime!
+}
+
+"""
+Human requirement entity with AI metadata and version history.
+"""
+type Requirement {
+  id: ID!
+  projectId: ID!
+  createdById: ID!
+  title: String!
+  description: String!
+  type: RequirementType!
+  priority: RequirementPriority!
+  status: RequirementStatus!
+  acceptanceCriteria: JSON!
+  normalizedContent: JSON
+  aiConfidence: Float
+  aiRationale: String
+  currentVersion: Int!
+  versions: [RequirementVersion!]!
+  approvalRequests: [ApprovalRequest!]!
+  agentRuns: [AgentRun!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""
+Governance decision request for policy-sensitive actions.
+"""
+type ApprovalRequest {
+  id: ID!
+  projectId: ID!
+  requirementId: ID
+  requesterId: ID!
+  reviewerId: ID
+  status: ApprovalStatus!
+  requestedAction: String!
+  decisionReason: String
+  policyMetadata: JSON
+  createdAt: DateTime!
+  reviewedAt: DateTime
+  updatedAt: DateTime!
+}
+
+"""
+User-visible timeline event for agent execution.
+"""
+type AgentRun {
+  id: ID!
+  projectId: ID!
+  requirementId: ID
+  triggeredById: ID!
+  agentName: String!
+  status: AgentRunStatus!
+  stage: String!
+  input: JSON
+  output: JSON
+  errorMessage: String
+  retryCount: Int!
+  startedAt: DateTime
+  completedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  requirements(projectId: ID!, status: RequirementStatus): [Requirement!]!
+  requirement(id: ID!): Requirement
+  approvalRequests(projectId: ID!, status: ApprovalStatus): [ApprovalRequest!]!
+  agentRuns(projectId: ID!, requirementId: ID, status: AgentRunStatus): [AgentRun!]!
+}
+
+extend type Mutation {
+  submitRequirement(
+    projectId: ID!
+    title: String!
+    description: String!
+    type: RequirementType = FUNCTIONAL
+    priority: RequirementPriority = MEDIUM
+    requiresApproval: Boolean = true
+  ): Requirement!
+
+  approveRequirement(approvalRequestId: ID!, reason: String): ApprovalRequest!
+  rejectRequirement(approvalRequestId: ID!, reason: String!): ApprovalRequest!
+  requestRequirementChanges(approvalRequestId: ID!, reason: String!): ApprovalRequest!
+
+  startAgentRun(
+    projectId: ID!
+    requirementId: ID
+    agentName: String!
+    input: JSON
+  ): AgentRun!
+
+  updateAgentRun(
+    runId: ID!
+    status: AgentRunStatus!
+    stage: String
+    output: JSON
+    errorMessage: String
+  ): AgentRun!
+}

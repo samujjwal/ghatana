@@ -70,12 +70,12 @@ paths:
       operationId: getHealth
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Service is healthy
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                $ref: "#/components/schemas/HealthResponse"
               example:
                 status: UP
                 timestamp: "2026-02-03T12:00:00Z"
@@ -88,12 +88,12 @@ paths:
       operationId: getReady
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Service is ready to accept traffic
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StatusResponse'
+                $ref: "#/components/schemas/StatusResponse"
               example:
                 status: READY
                 timestamp: "2026-02-03T12:00:00Z"
@@ -105,12 +105,12 @@ paths:
       operationId: getLive
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Service is alive
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StatusResponse'
+                $ref: "#/components/schemas/StatusResponse"
               example:
                 status: LIVE
                 timestamp: "2026-02-03T12:00:00Z"
@@ -122,12 +122,12 @@ paths:
       operationId: getInfo
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Service metadata
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InfoResponse'
+                $ref: "#/components/schemas/InfoResponse"
               example:
                 service: AEP
                 version: 1.0.0-SNAPSHOT
@@ -141,12 +141,12 @@ paths:
       operationId: getMetrics
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: JVM and service metrics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetricsResponse'
+                $ref: "#/components/schemas/MetricsResponse"
 
   /health/deep:
     get:
@@ -154,12 +154,12 @@ paths:
       operationId: getDeepHealth
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Detailed dependency health summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeepHealthResponse'
+                $ref: "#/components/schemas/DeepHealthResponse"
 
   /metrics/slo:
     get:
@@ -167,7 +167,7 @@ paths:
       operationId: getSloMetrics
       tags: [Health]
       responses:
-        '200':
+        "200":
           description: Service-level objective counters and gauges
           content:
             application/json:
@@ -186,13 +186,13 @@ paths:
       operationId: processEvent
       tags: [Events]
       parameters:
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventRequest'
+              $ref: "#/components/schemas/EventRequest"
             example:
               tenantId: acme-corp
               type: user.login
@@ -201,19 +201,19 @@ paths:
                 ip: "10.0.0.1"
                 browser: Chrome
       responses:
-        '200':
+        "200":
           description: Event processed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EventResult'
+                $ref: "#/components/schemas/EventResult"
               example:
                 eventId: evt-abc-123
                 success: true
                 detections: 2
                 timestamp: "2026-02-03T12:00:00Z"
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/events/batch:
     post:
@@ -224,7 +224,7 @@ paths:
       operationId: processEventBatch
       tags: [Events]
       parameters:
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
@@ -238,9 +238,9 @@ paths:
                 events:
                   type: array
                   items:
-                    $ref: '#/components/schemas/EventRequest'
+                    $ref: "#/components/schemas/EventRequest"
       responses:
-        '200':
+        "200":
           description: Batch processed
           content:
             application/json:
@@ -280,7 +280,7 @@ paths:
       operationId: listPatterns
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
         - name: status
           in: query
           description: Filter by pattern status
@@ -288,7 +288,7 @@ paths:
             type: string
             enum: [ACTIVE, INACTIVE, DRAFT]
       responses:
-        '200':
+        "200":
           description: List of patterns
           content:
             application/json:
@@ -298,7 +298,7 @@ paths:
                   patterns:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Pattern'
+                      $ref: "#/components/schemas/Pattern"
                   count:
                     type: integer
                   timestamp:
@@ -313,14 +313,14 @@ paths:
       operationId: registerPattern
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/TenantIdHeader'
-        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: "#/components/parameters/UserIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatternCreateRequest'
+              $ref: "#/components/schemas/PatternCreateRequest"
             example:
               tenantId: acme-corp
               name: Brute Force Login
@@ -331,7 +331,7 @@ paths:
                 threshold: 5
                 windowSeconds: 60
       responses:
-        '201':
+        "201":
           description: Pattern registered
           headers:
             Location:
@@ -344,12 +344,12 @@ paths:
                 type: object
                 properties:
                   pattern:
-                    $ref: '#/components/schemas/Pattern'
+                    $ref: "#/components/schemas/Pattern"
                   timestamp:
                     type: string
                     format: date-time
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/patterns/{patternId}:
     get:
@@ -357,10 +357,10 @@ paths:
       operationId: getPattern
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/PatternId'
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/PatternId"
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Pattern found
           content:
             application/json:
@@ -368,43 +368,43 @@ paths:
                 type: object
                 properties:
                   pattern:
-                    $ref: '#/components/schemas/Pattern'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                    $ref: "#/components/schemas/Pattern"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     put:
       summary: Update a pattern
       operationId: updatePattern
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/PatternId'
-        - $ref: '#/components/parameters/TenantIdHeader'
-        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: "#/components/parameters/PatternId"
+        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: "#/components/parameters/UserIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatternUpdateRequest'
+              $ref: "#/components/schemas/PatternUpdateRequest"
       responses:
-        '200':
+        "200":
           description: Pattern updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pattern'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Pattern"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     delete:
       summary: Delete a pattern
       operationId: deletePattern
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/PatternId'
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/PatternId"
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Pattern deleted
           content:
             application/json:
@@ -418,10 +418,10 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        '204':
+        "204":
           description: Pattern deleted (no content)
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/patterns/{patternId}/activate:
     post:
@@ -429,10 +429,10 @@ paths:
       operationId: activatePattern
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/PatternId'
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/PatternId"
+        - $ref: "#/components/parameters/TenantIdHeader"
       responses:
-        '200':
+        "200":
           description: Pattern activated
           content:
             application/json:
@@ -443,8 +443,8 @@ paths:
                     type: string
                   patternId:
                     type: string
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/patterns/{patternId}/deactivate:
     post:
@@ -452,10 +452,10 @@ paths:
       operationId: deactivatePattern
       tags: [Patterns]
       parameters:
-        - $ref: '#/components/parameters/PatternId'
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/PatternId"
+        - $ref: "#/components/parameters/TenantIdHeader"
       responses:
-        '200':
+        "200":
           description: Pattern deactivated
           content:
             application/json:
@@ -466,8 +466,8 @@ paths:
                     type: string
                   patternId:
                     type: string
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # ========== Analytics ==========
   /api/v1/analytics/anomalies:
@@ -479,13 +479,13 @@ paths:
       operationId: detectAnomalies
       tags: [Analytics]
       parameters:
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AnomalyDetectionRequest'
+              $ref: "#/components/schemas/AnomalyDetectionRequest"
             example:
               tenantId: acme-corp
               events:
@@ -494,14 +494,14 @@ paths:
                 - type: login.failed
                   payload: { userId: user-123, ip: "10.0.0.2" }
       responses:
-        '200':
+        "200":
           description: Anomaly detection results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AnomalyDetectionResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/AnomalyDetectionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/analytics/forecast:
     post:
@@ -512,13 +512,13 @@ paths:
       operationId: forecast
       tags: [Analytics]
       parameters:
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ForecastRequest'
+              $ref: "#/components/schemas/ForecastRequest"
             example:
               tenantId: acme-corp
               metric: cpu.utilization
@@ -530,14 +530,14 @@ paths:
                 - timestamp: "2026-02-03T11:10:00Z"
                   value: 48.1
       responses:
-        '200':
+        "200":
           description: Forecast results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ForecastResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/ForecastResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/analytics/kpis:
     post:
@@ -552,7 +552,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: KPI saved
           content:
             application/json:
@@ -564,7 +564,7 @@ paths:
       operationId: queryKpis
       tags: [Analytics]
       responses:
-        '200':
+        "200":
           description: KPI results
           content:
             application/json:
@@ -585,7 +585,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Analytics query result
           content:
             application/json:
@@ -606,7 +606,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Report created
           content:
             application/json:
@@ -627,7 +627,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Deployment created
           content:
             application/json:
@@ -654,7 +654,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Deployment updated
           content:
             application/json:
@@ -672,7 +672,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Deployment deleted
           content:
             application/json:
@@ -681,19 +681,38 @@ paths:
                 additionalProperties: true
 
   /api/v1/agents:
+    post:
+      summary: Register a new agent
+      operationId: registerAgent
+      tags: [Agents]
+      parameters:
+        - $ref: "#/components/parameters/TenantIdHeader"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentRegistrationRequest"
+      responses:
+        "200":
+          description: Agent registration result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRegistrationResponse"
     get:
       summary: List registered agents
       operationId: listAgents
       tags: [Agents]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Agent list or truthful unconfigured response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AgentListResponse'
+                $ref: "#/components/schemas/AgentListResponse"
 
   /api/v1/agents/{agentId}:
     get:
@@ -706,16 +725,16 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Agent details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AgentDetail'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/AgentDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/agents/{agentId}/execute:
     post:
@@ -733,16 +752,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: "#/components/schemas/AgentExecuteRequest"
       responses:
-        '200':
+        "200":
           description: Agent execution result
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: true
+                $ref: "#/components/schemas/AgentExecuteResponse"
 
   /api/v1/agents/{agentId}/memory:
     get:
@@ -755,9 +772,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Agent memory view
           content:
             application/json:
@@ -771,9 +788,9 @@ paths:
       operationId: listHitlPending
       tags: [HITL]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Pending review queue or truthful unconfigured response
           content:
             application/json:
@@ -800,7 +817,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Review item approved
           content:
             application/json:
@@ -827,7 +844,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Review item rejected
           content:
             application/json:
@@ -854,7 +871,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Review item escalated
           content:
             application/json:
@@ -868,9 +885,9 @@ paths:
       operationId: listLearningEpisodes
       tags: [Learning]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Learning episodes or truthful unconfigured response
           content:
             application/json:
@@ -884,9 +901,9 @@ paths:
       operationId: listLearningPolicies
       tags: [Learning]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Policy list or truthful unconfigured response
           content:
             application/json:
@@ -913,7 +930,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Policy approved
           content:
             application/json:
@@ -940,7 +957,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Policy rejected
           content:
             application/json:
@@ -961,14 +978,14 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Reflection completed synchronously
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-        '202':
+        "202":
           description: Reflection accepted asynchronously
 
   /api/v1/compliance/gdpr/access:
@@ -984,7 +1001,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Access request result
           content:
             application/json:
@@ -1005,7 +1022,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Erasure result
           content:
             application/json:
@@ -1026,7 +1043,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Portability result
           content:
             application/json:
@@ -1047,7 +1064,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Opt-out result
           content:
             application/json:
@@ -1061,7 +1078,7 @@ paths:
       operationId: getSoc2Report
       tags: [Compliance]
       responses:
-        '200':
+        "200":
           description: SOC 2 report payload
           content:
             application/json:
@@ -1076,7 +1093,7 @@ paths:
       operationId: listSchemaFormats
       tags: [Capabilities]
       responses:
-        '200':
+        "200":
           description: Available schema formats
           content:
             application/json:
@@ -1101,7 +1118,7 @@ paths:
       operationId: listEncodings
       tags: [Capabilities]
       responses:
-        '200':
+        "200":
           description: Available wire encodings
           content:
             application/json:
@@ -1119,7 +1136,7 @@ paths:
       operationId: listConnectors
       tags: [Capabilities]
       responses:
-        '200':
+        "200":
           description: Available connectors
           content:
             application/json:
@@ -1145,7 +1162,7 @@ paths:
       operationId: listTransforms
       tags: [Capabilities]
       responses:
-        '200':
+        "200":
           description: Available transform functions
           content:
             application/json:
@@ -1174,23 +1191,23 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
-        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: "#/components/parameters/UserIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SchemaCreateRequest'
+              $ref: "#/components/schemas/SchemaCreateRequest"
       responses:
-        '201':
+        "201":
           description: Schema created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SchemaDefinition'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/SchemaDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/event-types/{eventTypeId}/schemas/{schemaId}:
     put:
@@ -1208,23 +1225,23 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
-        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: "#/components/parameters/UserIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SchemaUpdateRequest'
+              $ref: "#/components/schemas/SchemaUpdateRequest"
       responses:
-        '200':
+        "200":
           description: Schema updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SchemaDefinition'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/SchemaDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     delete:
       summary: Delete an event schema
@@ -1241,9 +1258,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       responses:
-        '204':
+        "204":
           description: Schema deleted
 
   # ========== Event Design — Bindings ==========
@@ -1263,22 +1280,22 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BindingCreateRequest'
+              $ref: "#/components/schemas/BindingCreateRequest"
       responses:
-        '201':
+        "201":
           description: Binding created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorBinding'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/ConnectorBinding"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/v1/bindings:
     get:
@@ -1300,7 +1317,7 @@ paths:
             type: string
             enum: [INGRESS, EGRESS]
       responses:
-        '200':
+        "200":
           description: Matching bindings
           content:
             application/json:
@@ -1310,7 +1327,7 @@ paths:
                   bindings:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ConnectorBinding'
+                      $ref: "#/components/schemas/ConnectorBinding"
 
   /api/v1/bindings/{bindingId}:
     get:
@@ -1324,14 +1341,14 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Binding found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorBinding'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ConnectorBinding"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     put:
       summary: Update a binding
@@ -1343,22 +1360,22 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BindingUpdateRequest'
+              $ref: "#/components/schemas/BindingUpdateRequest"
       responses:
-        '200':
+        "200":
           description: Binding updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorBinding'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ConnectorBinding"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     delete:
       summary: Delete a binding
@@ -1370,9 +1387,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       responses:
-        '204':
+        "204":
           description: Binding deleted
 
   /api/v1/bindings/{bindingId}/simulate:
@@ -1390,22 +1407,22 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: "#/components/parameters/TenantIdHeader"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BindingSimulationRequest'
+              $ref: "#/components/schemas/BindingSimulationRequest"
       responses:
-        '200':
+        "200":
           description: Simulation result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BindingSimulationResult'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/BindingSimulationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   # ========== Run Operations ==========
   /api/v1/runs:
@@ -1414,14 +1431,14 @@ paths:
       operationId: listRuns
       tags: [Runs]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Recent runs for the tenant
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunListResponse'
+                $ref: "#/components/schemas/RunListResponse"
 
   /api/v1/runs/{runId}:
     get:
@@ -1434,16 +1451,16 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Run detail with evidence arrays for lineage, decisions, and policies
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RunDetail'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/RunDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/runs/{runId}/cancel:
     post:
@@ -1456,9 +1473,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '202':
+        "202":
           description: Cancellation accepted
           content:
             application/json:
@@ -1480,14 +1497,14 @@ paths:
       operationId: getComplianceSummary
       tags: [Governance]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Compliance summary for the tenant
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GovernanceComplianceSummary'
+                $ref: "#/components/schemas/GovernanceComplianceSummary"
 
   /governance/audit/summary:
     get:
@@ -1495,14 +1512,14 @@ paths:
       operationId: getAuditSummary
       tags: [Governance]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Audit summary backed by the run ledger when configured
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GovernanceAuditSummary'
+                $ref: "#/components/schemas/GovernanceAuditSummary"
 
   /governance/kill-switch:
     get:
@@ -1510,9 +1527,9 @@ paths:
       operationId: getKillSwitchStatus
       tags: [Governance]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Kill-switch state for the tenant
           content:
             application/json:
@@ -1533,7 +1550,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Kill-switch activated
           content:
             application/json:
@@ -1554,7 +1571,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Kill-switch deactivated
           content:
             application/json:
@@ -1568,9 +1585,9 @@ paths:
       operationId: getDegradationMode
       tags: [Governance]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
       responses:
-        '200':
+        "200":
           description: Current degradation mode
           content:
             application/json:
@@ -1589,7 +1606,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Degradation mode updated
           content:
             application/json:
@@ -1610,7 +1627,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Policy evaluation result
           content:
             application/json:
@@ -1624,14 +1641,14 @@ paths:
       operationId: getEgressSummary
       tags: [Governance]
       parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
+        - $ref: "#/components/parameters/TenantIdQuery"
         - name: agentId
           in: query
           required: true
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Egress usage summary
           content:
             application/json:
@@ -1652,7 +1669,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Injection scan result
           content:
             application/json:
@@ -1666,7 +1683,7 @@ paths:
       operationId: createSession
       tags: [Sessions]
       responses:
-        '200':
+        "200":
           description: Session issued
           content:
             application/json:
@@ -1681,19 +1698,19 @@ paths:
       operationId: getCurrentSession
       tags: [Sessions]
       responses:
-        '200':
+        "200":
           description: Current session details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: "#/components/schemas/Session"
 
     delete:
       summary: Invalidate the current session
       operationId: invalidateSession
       tags: [Sessions]
       responses:
-        '200':
+        "200":
           description: Session invalidated
           content:
             application/json:
@@ -1720,7 +1737,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Matching sessions
           content:
             application/json:
@@ -1730,7 +1747,7 @@ paths:
                   sessions:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Session'
+                      $ref: "#/components/schemas/Session"
 
   /api/v1/sessions/cleanup:
     post:
@@ -1738,7 +1755,7 @@ paths:
       operationId: cleanupSessions
       tags: [Sessions]
       responses:
-        '200':
+        "200":
           description: Cleanup complete
           content:
             application/json:
@@ -1762,15 +1779,15 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Change submitted for approval
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /lifecycle/changes/{changeId}:
     get:
@@ -1784,15 +1801,15 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Change approval status
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /lifecycle/changes/{changeId}/approve:
     post:
@@ -1813,7 +1830,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Change approved
           content:
             application/json:
@@ -1840,7 +1857,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Change rejected
           content:
             application/json:
@@ -1861,7 +1878,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           description: Recertification initiated
           content:
             application/json:
@@ -1881,7 +1898,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Recertification status
           content:
             application/json:
@@ -1914,7 +1931,7 @@ paths:
             format: date-time
           description: End date for cost aggregation
       responses:
-        '200':
+        "200":
           description: Cost summary
           content:
             application/json:
@@ -1938,8 +1955,8 @@ paths:
                   endDate:
                     type: string
                     format: date-time
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   # ========== AI Suggestions ==========
   /api/v1/ai/suggestions:
@@ -1960,7 +1977,7 @@ paths:
             default: 10
           description: Maximum number of suggestions to return
       responses:
-        '200':
+        "200":
           description: Scored suggestion list
           content:
             application/json:
@@ -1979,8 +1996,8 @@ paths:
                   generatedAt:
                     type: string
                     format: date-time
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   # ========== NLQ ==========
   /api/v1/nlp/parse:
@@ -2002,7 +2019,7 @@ paths:
                 tenantId:
                   type: string
       responses:
-        '200':
+        "200":
           description: Parsed intent and entities
           content:
             application/json:
@@ -2026,227 +2043,8 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  # ========== AI Stage Suggestions ==========
-  /api/v1/ai/suggestions/stages:
-    post:
-      summary: Suggest pipeline stages using AI based on event context
-      operationId: suggestPipelineStages
-      tags: [AI]
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [eventType]
-              properties:
-                eventType:
-                  type: string
-                description:
-                  type: string
-                tenantId:
-                  type: string
-      responses:
-        '200':
-          description: Suggested pipeline stages
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  stages:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties: true
-                  tenantId:
-                    type: string
-                  generatedAt:
-                    type: string
-                    format: date-time
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '429':
-          description: Rate limit exceeded
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  # ========== SSE Authentication ==========
-  /api/v1/auth/sse-token:
-    post:
-      summary: Mint a short-lived SSE authentication token
-      operationId: mintSseToken
-      tags: [Auth]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Short-lived SSE token (60 seconds)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  expiresAt:
-                    type: string
-                    format: date-time
-        '401':
-          description: Unauthorized
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  # ========== Audit Log ==========
-  /api/v1/audit/log:
-    post:
-      summary: Write an audit log entry
-      operationId: logAuditEvent
-      tags: [Audit]
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [eventType, actor]
-              properties:
-                eventType:
-                  type: string
-                actor:
-                  type: string
-                resource:
-                  type: string
-                outcome:
-                  type: string
-                  enum: [success, failure, denied]
-                detail:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '201':
-          description: Audit entry recorded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  auditId:
-                    type: string
-                  tenantId:
-                    type: string
-                  recordedAt:
-                    type: string
-                    format: date-time
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          description: Unauthorized
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /api/v1/audit/query:
-    get:
-      summary: Query audit log entries for a tenant
-      operationId: queryAuditLog
-      tags: [Audit]
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantIdQuery'
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 50
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            default: 0
-      responses:
-        '200':
-          description: Paginated audit log entries
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties: true
-                  total:
-                    type: integer
-                  tenantId:
-                    type: string
-        '401':
-          description: Unauthorized
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  # ========== Marketplace Install ==========
-  /api/v1/catalog/marketplace/agents/{agentId}/install:
-    post:
-      summary: Install a marketplace agent for a tenant
-      operationId: installMarketplaceAgent
-      tags: [Marketplace]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          description: Marketplace agent identifier
-          schema:
-            type: string
-        - $ref: '#/components/parameters/TenantIdQuery'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                config:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '201':
-          description: Agent installed successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  installId:
-                    type: string
-                  agentId:
-                    type: string
-                  tenantId:
-                    type: string
-                  installedAt:
-                    type: string
-                    format: date-time
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          description: Agent not found
-        '401':
-          description: Unauthorized
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
 # ========================================================================
 # Components
@@ -2296,14 +2094,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
 
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     # ---------- Health ----------
@@ -2322,7 +2120,7 @@ components:
           type: string
           format: date-time
         durability:
-          $ref: '#/components/schemas/RuntimeDurabilitySummary'
+          $ref: "#/components/schemas/RuntimeDurabilitySummary"
         components:
           type: object
           additionalProperties:
@@ -2367,7 +2165,7 @@ components:
         agents:
           type: array
           items:
-            $ref: '#/components/schemas/AgentSummary'
+            $ref: "#/components/schemas/AgentSummary"
         count:
           type: integer
         configured:
@@ -2440,7 +2238,7 @@ components:
 
     AgentDetail:
       allOf:
-        - $ref: '#/components/schemas/AgentSummary'
+        - $ref: "#/components/schemas/AgentSummary"
         - type: object
           properties:
             config:
@@ -2449,6 +2247,64 @@ components:
             timestamp:
               type: string
               format: date-time
+
+    AgentRegistrationRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    AgentRegistrationResponse:
+      type: object
+      required: [id, tenantId, status, timestamp]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    AgentExecuteRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        tenantId:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+
+    AgentExecuteResponse:
+      type: object
+      required: [agentId, tenantId, eventId, success, timestamp]
+      properties:
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        eventId:
+          type: string
+        success:
+          type: boolean
+        detections:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
 
     HealthResponse:
       type: object
@@ -2626,7 +2482,7 @@ components:
         events:
           type: array
           items:
-            $ref: '#/components/schemas/EventRequest'
+            $ref: "#/components/schemas/EventRequest"
 
     AnomalyDetectionResult:
       type: object
@@ -2669,7 +2525,7 @@ components:
         points:
           type: array
           items:
-            $ref: '#/components/schemas/DataPoint'
+            $ref: "#/components/schemas/DataPoint"
 
     DataPoint:
       type: object
@@ -2690,7 +2546,7 @@ components:
         predictions:
           type: array
           items:
-            $ref: '#/components/schemas/DataPoint'
+            $ref: "#/components/schemas/DataPoint"
         confidence:
           type: number
           format: double
@@ -2767,9 +2623,9 @@ components:
         headerMappings:
           type: array
           items:
-            $ref: '#/components/schemas/HeaderMapping'
+            $ref: "#/components/schemas/HeaderMapping"
         payloadMapping:
-          $ref: '#/components/schemas/PayloadMapping'
+          $ref: "#/components/schemas/PayloadMapping"
 
     BindingUpdateRequest:
       type: object
@@ -2782,9 +2638,9 @@ components:
         headerMappings:
           type: array
           items:
-            $ref: '#/components/schemas/HeaderMapping'
+            $ref: "#/components/schemas/HeaderMapping"
         payloadMapping:
-          $ref: '#/components/schemas/PayloadMapping'
+          $ref: "#/components/schemas/PayloadMapping"
         enabled:
           type: boolean
 
@@ -2832,9 +2688,9 @@ components:
         headerMappings:
           type: array
           items:
-            $ref: '#/components/schemas/HeaderMapping'
+            $ref: "#/components/schemas/HeaderMapping"
         payloadMapping:
-          $ref: '#/components/schemas/PayloadMapping'
+          $ref: "#/components/schemas/PayloadMapping"
         createdAt:
           type: string
           format: date-time
@@ -2929,7 +2785,7 @@ components:
         runs:
           type: array
           items:
-            $ref: '#/components/schemas/RunSummary'
+            $ref: "#/components/schemas/RunSummary"
         timestamp:
           type: string
           format: date-time
@@ -2977,21 +2833,21 @@ components:
 
     RunDetail:
       allOf:
-        - $ref: '#/components/schemas/RunSummary'
+        - $ref: "#/components/schemas/RunSummary"
         - type: object
           properties:
             lineage:
               type: array
               items:
-                $ref: '#/components/schemas/RunLineageEntry'
+                $ref: "#/components/schemas/RunLineageEntry"
             decisions:
               type: array
               items:
-                $ref: '#/components/schemas/RunDecisionEntry'
+                $ref: "#/components/schemas/RunDecisionEntry"
             policies:
               type: array
               items:
-                $ref: '#/components/schemas/RunPolicyEntry'
+                $ref: "#/components/schemas/RunPolicyEntry"
 
     # ---------- Governance ----------
     GovernanceSoc2Control:
@@ -3036,7 +2892,7 @@ components:
             controls:
               type: array
               items:
-                $ref: '#/components/schemas/GovernanceSoc2Control'
+                $ref: "#/components/schemas/GovernanceSoc2Control"
         timestamp:
           type: string
           format: date-time
@@ -3068,7 +2924,7 @@ components:
         entries:
           type: array
           items:
-            $ref: '#/components/schemas/GovernanceAuditEntry'
+            $ref: "#/components/schemas/GovernanceAuditEntry"
         timestamp:
           type: string
           format: date-time

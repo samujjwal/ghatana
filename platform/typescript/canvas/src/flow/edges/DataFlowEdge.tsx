@@ -16,7 +16,7 @@ import {
   getBezierPath,
   type EdgeProps,
 } from '@xyflow/react';
-import type { DataFlowEdgeData } from '../types';
+import type { DataFlowEdge } from '../types';
 
 const DataFlowEdge = memo(
   ({
@@ -30,7 +30,7 @@ const DataFlowEdge = memo(
     data,
     selected,
     markerEnd,
-  }: EdgeProps<DataFlowEdgeData>) => {
+  }: EdgeProps<DataFlowEdge>) => {
     const [edgePath, labelX, labelY] = getBezierPath({
       sourceX,
       sourceY,

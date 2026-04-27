@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -270,6 +271,63 @@ public final class ApiInputValidator {
             return Optional.of("entity payload must not exceed " + MAX_MAP_KEYS + " top-level keys");
         }
         return checkMapDepth(data, 1);
+    }
+
+    /**
+     * Validates a collection metadata payload for the registry write endpoint.
+     *
+     * <p>Allowed fields: lifecycleStatus, qualityScore, qualityMetrics,
+     * retentionPolicy, lineage, operationalStatus, label, description, active,
+     * validationSchema, storageProfile, physicalMapping, schemaVersion.
+     * Rejects unknown fields and validates enum-like values.</p>
+     *
+     * @param data metadata payload
+     * @return empty Optional when valid; error message when invalid
+     */
+    public static Optional<String> validateCollectionMetadata(Map<String, Object> data) {
+        if (data == null) {
+            return Optional.of("metadata payload must not be null");
+        }
+        Set<String> allowed = Set.of(
+            "lifecycleStatus", "qualityScore", "qualityMetrics", "retentionPolicy",
+            "lineage", "operationalStatus", "label", "description", "active",
+            "validationSchema", "storageProfile", "physicalMapping", "schemaVersion"
+        );
+        for (String key : data.keySet()) {
+            if (!allowed.contains(key)) {
+                return Optional.of("Unknown metadata field: " + sanitizeForMessage(key));
+            }
+        }
+        if (data.containsKey("lifecycleStatus")) {
+            String val = String.valueOf(data.get("lifecycleStatus"));
+            if (!Set.of("DRAFT", "PUBLISHED", "DEPRECATED", "ARCHIVED").contains(val)) {
+                return Optional.of("Invalid lifecycleStatus: " + sanitizeForMessage(val));
+            }
+        }
+        if (data.containsKey("operationalStatus")) {
+            String val = String.valueOf(data.get("operationalStatus"));
+            if (!Set.of("healthy", "degraded", "unavailable", "maintenance").contains(val)) {
+                return Optional.of("Invalid operationalStatus: " + sanitizeForMessage(val));
+            }
+        }
+        if (data.containsKey("qualityScore")) {
+            Object val = data.get("qualityScore");
+            if (val instanceof Number n) {
+                double d = n.doubleValue();
+                if (d < 0.0 || d > 1.0) {
+                    return Optional.of("qualityScore must be between 0.0 and 1.0");
+                }
+            } else {
+                return Optional.of("qualityScore must be a number between 0.0 and 1.0");
+            }
+        }
+        if (data.containsKey("active")) {
+            Object val = data.get("active");
+            if (!(val instanceof Boolean)) {
+                return Optional.of("active must be a boolean");
+            }
+        }
+        return Optional.empty();
     }
 
     /**

@@ -251,7 +251,6 @@ class AiFallbackDeterminismTest {
         @SuppressWarnings("unchecked")
         void zeroConfidence_treatedAsFallback() throws Exception { // GH-90000
             CompletionResult lowResult = mock(CompletionResult.class); // GH-90000
-            when(lowResult.getText()).thenReturn("minimal suggestion");
             when(lowResult.getFinishReason()).thenReturn("stop");
             when(lowResult.getModelUsed()).thenReturn("gpt-4o-mini");
             when(mockCompletion.complete(any())).thenReturn(Promise.of(lowResult)); // GH-90000

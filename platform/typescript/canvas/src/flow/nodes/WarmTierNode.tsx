@@ -11,9 +11,9 @@
  */
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { TierNodeData } from '../types';
+import type { WarmTierNode } from '../types';
 
-const WarmTierNode = memo(({ data, selected }: NodeProps<TierNodeData>) => {
+const WarmTierNode = memo(({ data, selected }: NodeProps<WarmTierNode>) => {
   const { label, metrics, status = 'healthy' } = data;
 
   return (

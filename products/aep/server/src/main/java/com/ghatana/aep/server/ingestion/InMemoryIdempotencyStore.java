@@ -31,8 +31,10 @@ import java.util.Map;
 public final class InMemoryIdempotencyStore implements IdempotencyStore {
 
     private static final int MAX_ENTRIES = 100_000;
+    private static final Duration PURGE_INTERVAL = Duration.ofSeconds(1);
 
     private final Map<String, Instant> store = new LinkedHashMap<>(256, 0.75f, false);
+    private Instant nextPurgeAt = Instant.EPOCH;
 
     @Override
     public Promise<Boolean> isDuplicate(String tenantId, String idempotencyKey, Duration ttl) {
@@ -40,7 +42,10 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
         Instant now = Instant.now();
 
         synchronized (store) {
-            purgeExpired(now);
+            if (!now.isBefore(nextPurgeAt)) {
+                purgeExpired(now);
+                nextPurgeAt = now.plus(PURGE_INTERVAL);
+            }
 
             if (store.containsKey(compositeKey)) {
                 Instant expiry = store.get(compositeKey);
@@ -63,6 +68,13 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
     }
 
     private void purgeExpired(Instant now) {
-        store.entrySet().removeIf(e -> e.getValue() != null && !e.getValue().isAfter(now));
+        Iterator<Map.Entry<String, Instant>> iterator = store.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Instant> entry = iterator.next();
+            Instant expiry = entry.getValue();
+            if (expiry != null && !expiry.isAfter(now)) {
+                iterator.remove();
+            }
+        }
     }
 }

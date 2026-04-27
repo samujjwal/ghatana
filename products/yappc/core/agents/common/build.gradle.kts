@@ -18,6 +18,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.lombok)
     testAnnotationProcessor(libs.lombok)
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.0.1")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
