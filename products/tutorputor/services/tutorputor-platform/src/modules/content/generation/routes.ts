@@ -30,6 +30,7 @@ import {
 type GenerationRequestConfig = Record<string, unknown>;
 import { GenerationQueueDispatcher } from "./queue-dispatcher.js";
 import { IntentInferenceService } from "./intent-service.js";
+import { buildSensitiveOperationAuditEntry } from "../../policy/resource-access-helpers.js";
 
 type RedisPubSubClient = Redis & {
   removeAllListeners(event?: string): void;
@@ -101,6 +102,43 @@ function toJobExecutionResults(
   }));
 }
 
+function getCorrelationId(request: { headers: Record<string, unknown> }): string | undefined {
+  const header = request.headers["x-correlation-id"];
+  return typeof header === "string" && header.length > 0 ? header : undefined;
+}
+
+function getRequestRole(request: { user?: unknown }): string {
+  if (!request.user || typeof request.user !== "object") {
+    return "unknown";
+  }
+
+  const role = (request.user as { role?: unknown }).role;
+  return typeof role === "string" ? role : "unknown";
+}
+
+function logSensitiveOperation(
+  app: FastifyInstance,
+  args: {
+    actorId: string;
+    actorTenantId: string;
+    targetResourceType: string;
+    targetResourceId: string;
+    operation: string;
+    decision: "ALLOW" | "DENY";
+    reason: string;
+    correlationId: string | undefined;
+    metadata: Record<string, string | number | boolean>;
+  },
+): void {
+  const audit = buildSensitiveOperationAuditEntry(args);
+  if (audit.decision === "ALLOW") {
+    app.log.info({ audit }, "Sensitive operation allowed");
+    return;
+  }
+
+  app.log.warn({ audit }, "Sensitive operation denied");
+}
+
 // =============================================================================
 // Register
 // =============================================================================
@@ -164,6 +202,22 @@ export function registerGenerationRoutes(
         ...(requestConfig ? { requestConfig } : {}),
       });
 
+      logSensitiveOperation(app, {
+        actorId: requestedBy,
+        actorTenantId: tenantId,
+        targetResourceType: "generation_request",
+        targetResourceId: result.id,
+        operation: "create",
+        decision: "ALLOW",
+        reason: "Generation request created",
+        correlationId: getCorrelationId(request),
+        metadata: {
+          role: getRequestRole(request),
+          domain,
+          hasTargetGrades: Boolean(targetGrades && targetGrades.length > 0),
+        },
+      });
+
       return reply.status(201).send(result);
     },
   );
@@ -218,10 +272,37 @@ export function registerGenerationRoutes(
 
       const result = await service.getRequest(tenantId, requestId);
       if (!result) {
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "read",
+          decision: "DENY",
+          reason: "Generation request not found for tenant scope",
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+          },
+        });
         return reply
           .status(404)
           .send({ error: "Generation request not found" });
       }
+
+      logSensitiveOperation(app, {
+        actorId: getUserId(request),
+        actorTenantId: tenantId,
+        targetResourceType: "generation_request",
+        targetResourceId: requestId,
+        operation: "read",
+        decision: "ALLOW",
+        reason: "Generation request retrieved",
+        correlationId: getCorrelationId(request),
+        metadata: {
+          role: getRequestRole(request),
+        },
+      });
 
       return reply.send(result);
     },
@@ -396,9 +477,36 @@ export function registerGenerationRoutes(
 
       try {
         const result = await service.planRequest(tenantId, requestId);
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "plan",
+          decision: "ALLOW",
+          reason: "Generation request planned",
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+            totalJobs: result.totalJobs,
+          },
+        });
         return reply.send(result);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Planning failed";
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "plan",
+          decision: "DENY",
+          reason: message,
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+          },
+        });
         return reply.status(400).send({ error: message });
       }
     },
@@ -425,10 +533,36 @@ export function registerGenerationRoutes(
 
       try {
         const result = await service.cancelRequest(tenantId, requestId);
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "cancel",
+          decision: "ALLOW",
+          reason: "Generation request cancelled",
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+          },
+        });
         return reply.send(result);
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Cancellation failed";
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "cancel",
+          decision: "DENY",
+          reason: message,
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+          },
+        });
         return reply.status(400).send({ error: message });
       }
     },
@@ -460,6 +594,20 @@ export function registerGenerationRoutes(
           requestId,
         );
         const updated = await service.getRequest(tenantId, requestId);
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "execute",
+          decision: "ALLOW",
+          reason: "Generation request execution started",
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+            queuedJobs: dispatch.queuedJobs.length,
+          },
+        });
         return reply.send({
           request: updated,
           dispatch,
@@ -467,6 +615,19 @@ export function registerGenerationRoutes(
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Execution start failed";
+        logSensitiveOperation(app, {
+          actorId: getUserId(request),
+          actorTenantId: tenantId,
+          targetResourceType: "generation_request",
+          targetResourceId: requestId,
+          operation: "execute",
+          decision: "DENY",
+          reason: message,
+          correlationId: getCorrelationId(request),
+          metadata: {
+            role: getRequestRole(request),
+          },
+        });
         return reply.status(400).send({ error: message });
       }
     },

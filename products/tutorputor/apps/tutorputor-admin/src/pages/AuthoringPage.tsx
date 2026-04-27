@@ -80,6 +80,10 @@ import type {
   SimulationManifest,
   SimulationDomain,
 } from "@tutorputor/contracts/v1/simulation";
+import {
+  AUTHORING_WORKFLOW_STEPS,
+  getAuthoringWorkflowCurrentStep,
+} from "./authoring-workflow";
 
 // Types
 interface ContentItem {
@@ -736,6 +740,11 @@ function AuthoringPageContent() {
     );
   };
 
+  const currentWorkflowStep = getAuthoringWorkflowCurrentStep({
+    hasSelectedContent: selectedContent != null,
+    contentStatus: selectedContent?.status,
+  });
+
   return (
     <>
       <div id="authoring-live-region" aria-live="polite" className="sr-only" />
@@ -981,6 +990,40 @@ function AuthoringPageContent() {
               </button>
             </div>
           </header>
+
+          <section className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/60">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                Author Journey
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Step {currentWorkflowStep + 1} of {AUTHORING_WORKFLOW_STEPS.length}
+              </span>
+            </div>
+            <ol className="grid grid-cols-1 gap-2 md:grid-cols-7">
+              {AUTHORING_WORKFLOW_STEPS.map((step, index) => {
+                const isCompleted = index < currentWorkflowStep;
+                const isCurrent = index === currentWorkflowStep;
+
+                return (
+                  <li
+                    key={step.id}
+                    className={`rounded-md border px-2 py-2 text-xs ${isCurrent
+                      ? "border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200"
+                      : isCompleted
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200"
+                        : "border-gray-200 bg-white text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                      }`}
+                  >
+                    <div className="font-semibold">{step.label}</div>
+                    <div className="mt-1 line-clamp-2 text-[11px] opacity-90">
+                      {step.description}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
 
           {/* Canvas Content Area */}
           <div className="flex-1 flex overflow-hidden">

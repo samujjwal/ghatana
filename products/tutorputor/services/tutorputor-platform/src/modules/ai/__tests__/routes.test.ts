@@ -44,6 +44,26 @@ describe("AI Routes", () => {
   beforeAll(async () => {
     app = Fastify({ logger: false });
     await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
+
+    // Inject auth context so getTenantId/getUserId resolve without a real JWT stack.
+    // The role is read from the x-user-role header (if present) so individual
+    // tests can override it; admin is used as the safe default.
+    app.addHook("preHandler", async (request) => {
+      const userIdHeader = request.headers["x-user-id"];
+      const tenantIdHeader = request.headers["x-tenant-id"];
+      if (typeof userIdHeader !== "string" || typeof tenantIdHeader !== "string") {
+        return;
+      }
+
+      const roleHeader = request.headers["x-user-role"];
+      const role = typeof roleHeader === "string" ? roleHeader : "admin";
+      (
+        request as typeof request & {
+          user?: { id: string; sub: string; tenantId: string; role: string };
+        }
+      ).user = { id: userIdHeader, sub: userIdHeader, tenantId: tenantIdHeader, role };
+    });
+
     await app.ready();
   });
 
@@ -120,6 +140,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
+        headers: authHeaders(),
         payload: { question: "" },
       });
 
@@ -132,6 +153,7 @@ describe("AI Routes", () => {
       const response = await app.inject({
         method: "POST",
         url: "/tutor/query",
+        headers: authHeaders(),
         payload: {},
       });
 
@@ -373,6 +395,23 @@ describe("AI Routes", () => {
           // No generateQuestionsFromContent
         } as any,
       });
+
+      appWithoutMethod.addHook("preHandler", async (request) => {
+        const userIdHeader = request.headers["x-user-id"];
+        const tenantIdHeader = request.headers["x-tenant-id"];
+        if (typeof userIdHeader !== "string" || typeof tenantIdHeader !== "string") {
+          return;
+        }
+
+        const roleHeader = request.headers["x-user-role"];
+        const role = typeof roleHeader === "string" ? roleHeader : "admin";
+        (
+          request as typeof request & {
+            user?: { id: string; sub: string; tenantId: string; role: string };
+          }
+        ).user = { id: userIdHeader, sub: userIdHeader, tenantId: tenantIdHeader, role };
+      });
+
       await appWithoutMethod.ready();
 
       const response = await appWithoutMethod.inject({
@@ -608,6 +647,23 @@ describe("AI Routes - Tenant Rate Limit", () => {
       });
 
       await registerAIRoutes(app, { aiProxyService: mockAIProxyService });
+
+      app.addHook("preHandler", async (request) => {
+        const userIdHeader = request.headers["x-user-id"];
+        const tenantIdHeader = request.headers["x-tenant-id"];
+        if (typeof userIdHeader !== "string" || typeof tenantIdHeader !== "string") {
+          return;
+        }
+
+        const roleHeader = request.headers["x-user-role"];
+        const role = typeof roleHeader === "string" ? roleHeader : "admin";
+        (
+          request as typeof request & {
+            user?: { id: string; sub: string; tenantId: string; role: string };
+          }
+        ).user = { id: userIdHeader, sub: userIdHeader, tenantId: tenantIdHeader, role };
+      });
+
       await app.ready();
 
       const first = await app.inject({

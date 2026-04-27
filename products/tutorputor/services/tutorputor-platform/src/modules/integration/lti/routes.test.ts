@@ -80,6 +80,20 @@ describe("LTI integration routes", () => {
     app = Fastify({ logger: false });
     app.decorate("prisma", prisma);
     await app.register(ltiRoutes);
+
+    // Inject auth context so getTenantId/getUserId resolve without a real JWT stack.
+    // The role is read from the x-user-role header (if present) so individual
+    // tests can override it; admin is used as the safe default.
+    app.addHook("preHandler", async (request) => {
+      const roleHeader = request.headers["x-user-role"];
+      const role = typeof roleHeader === "string" ? roleHeader : "admin";
+      (
+        request as typeof request & {
+          user?: { id: string; sub: string; tenantId: string; role: string };
+        }
+      ).user = { id: "user-1", sub: "user-1", tenantId: "tenant-1", role };
+    });
+
     await app.ready();
   });
 
@@ -129,7 +143,7 @@ describe("LTI integration routes", () => {
 
     expect(response.statusCode).toBe(401);
     expect(response.json()).toMatchObject({
-      error: "Invalid LTI launch",
+      error: "UNAUTHORIZED",
     });
   });
 

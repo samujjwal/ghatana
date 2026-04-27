@@ -24,6 +24,18 @@ describe("registerGenerationRoutes", () => {
     createRequestSpy.mockResolvedValue({ id: "req-1" } as never);
 
     app = Fastify();
+    app.addHook("preHandler", async (request) => {
+      const mutableRequest = request as typeof request & {
+        user?: { id: string; tenantId: string; role: string };
+      };
+
+      mutableRequest.user = {
+        id: "user-1",
+        tenantId: "tenant-1",
+        role: "admin",
+      };
+    });
+
     registerGenerationRoutes(app, { prisma: {} as never });
     await app.ready();
   });

@@ -30,6 +30,21 @@ describe("adminRoutes", () => {
 
     app = Fastify();
     await app.register(adminRoutes, { service: service as never });
+
+    // Inject auth context so getTenantId/getUserId resolve without a real JWT stack.
+    // The role is read from the x-user-role header (if present) so individual
+    // tests can override it; admin is used as the safe default.
+    app.addHook("preHandler", async (request) => {
+      const userIdHeader = request.headers["x-user-id"];
+      const userId = typeof userIdHeader === "string" ? userIdHeader : "user-1";
+      const roleHeader = request.headers["x-user-role"];
+      const role = typeof roleHeader === "string" ? roleHeader : "admin";
+      (
+        request as typeof request & {
+          user?: { id: string; sub: string; tenantId: string; role: string };
+        }
+      ).user = { id: userId, sub: userId, tenantId: "tenant-1", role };
+    });
     await app.ready();
   });
 

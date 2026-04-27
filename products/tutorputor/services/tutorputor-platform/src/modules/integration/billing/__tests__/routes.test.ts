@@ -27,6 +27,19 @@ describe("billingRoutes", () => {
       subscription: { updateMany: vi.fn() },
     });
     await app.register(billingRoutes, { service: service as never });
+
+    // Inject auth context so getTenantId/getUserId resolve without a real JWT stack.
+    // The role is read from the x-user-role header (if present) so individual
+    // tests can override it; admin is used as the safe default.
+    app.addHook("preHandler", async (request) => {
+      const roleHeader = request.headers["x-user-role"];
+      const role = typeof roleHeader === "string" ? roleHeader : "admin";
+      (
+        request as typeof request & {
+          user?: { id: string; sub: string; tenantId: string; role: string };
+        }
+      ).user = { id: "user-1", sub: "user-1", tenantId: "tenant-1", role };
+    });
     await app.ready();
   });
 

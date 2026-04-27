@@ -30,6 +30,10 @@ import {
   getGenerationExecutionChannel,
   type GenerationExecutionStreamMessage,
 } from "./execution-stream.js";
+import {
+  assertSameTenant,
+  buildTenantScopedWhere,
+} from "../../policy/resource-access-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -145,7 +149,7 @@ export class GenerationExecutionService {
     requestId: string,
   ): Promise<GenerationExecutionSnapshot | null> {
     const request = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId, tenantId },
+      where: buildTenantScopedWhere(tenantId, requestId),
       include: { jobs: true },
     });
 
@@ -176,13 +180,15 @@ export class GenerationExecutionService {
     requestId: string,
   ): Promise<GenerationRequestWithJobs> {
     const request = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId, tenantId },
+      where: buildTenantScopedWhere(tenantId, requestId),
       include: { jobs: true },
     });
 
     if (!request) {
       throw new Error(`Generation request ${requestId} not found`);
     }
+
+    assertSameTenant(tenantId, request.tenantId, "start generation execution");
 
     if (request.status !== "PLANNED") {
       throw new Error(
@@ -200,7 +206,7 @@ export class GenerationExecutionService {
 
     // Re-fetch with updated statuses
     const updated = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId, tenantId },
+      where: buildTenantScopedWhere(tenantId, requestId),
       include: { jobs: true },
     });
 

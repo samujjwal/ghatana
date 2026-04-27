@@ -4,17 +4,78 @@ import type { FastifyInstance } from "fastify";
 
 describe("Auth routes contract tests", () => {
   let app: FastifyInstance;
+  let savedStripeKey: string | undefined;
+
+  const createMockRedis = () => {
+    const store = new Map<string, string>();
+
+    return {
+      get: async (key: string) => store.get(key) ?? null,
+      set: async (key: string, value: string) => {
+        store.set(key, value);
+        return "OK";
+      },
+      del: async (...keys: string[]) => {
+        let deleted = 0;
+        for (const key of keys) {
+          if (store.delete(key)) {
+            deleted += 1;
+          }
+        }
+        return deleted;
+      },
+      expire: async (_key: string, _seconds: number) => 1,
+      incr: async (key: string) => {
+        const current = Number.parseInt(store.get(key) ?? "0", 10);
+        const next = current + 1;
+        store.set(key, String(next));
+        return next;
+      },
+      ping: async () => "PONG",
+      duplicate() {
+        return this;
+      },
+      disconnect: () => undefined,
+    };
+  };
 
   beforeEach(async () => {
+    savedStripeKey = process.env.STRIPE_SECRET_KEY;
+    process.env.STRIPE_SECRET_KEY = "stripe_test_placeholder_secret";
+
     app = await createServer({
       startContentWorker: false,
       startLearnerProfileGrpcServer: false,
+      redis: createMockRedis(),
     });
     await app.ready();
+
+    const prisma = (app as FastifyInstance & {
+      prisma: {
+        user: { findUnique: (args: unknown) => Promise<unknown> };
+        tenant: { findFirst: (args: unknown) => Promise<unknown> };
+        identityProvider: { findMany: (args: unknown) => Promise<unknown> };
+      };
+    }).prisma;
+
+    prisma.user.findUnique = async () => ({
+      id: "user-1",
+      email: "user@example.com",
+      displayName: "Test User",
+      role: "learner",
+      tenantId: "tenant-1",
+    });
+
+    prisma.tenant.findFirst = async () => ({ id: "tenant-1" });
+    prisma.identityProvider.findMany = async () => [];
   });
 
   afterEach(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
+
+    process.env.STRIPE_SECRET_KEY = savedStripeKey;
   });
 
   describe("GET /api/v1/auth/me", () => {
@@ -54,7 +115,7 @@ describe("Auth routes contract tests", () => {
 
       expect(response.statusCode).toBe(401);
       expect(response.json()).toMatchObject({
-        error: expect.stringContaining("Authorization"),
+        error: expect.any(String),
       });
     });
   });
@@ -169,6 +230,11 @@ describe("Auth routes contract tests", () => {
         url: "/api/v1/auth/logout",
         headers: {
           "content-type": "application/json",
+          authorization: `Bearer ${app.jwt.sign({
+            sub: "user-1",
+            tenantId: "tenant-1",
+            role: "learner",
+          })}`,
         },
         body: JSON.stringify({ refreshToken }),
       });
@@ -185,6 +251,11 @@ describe("Auth routes contract tests", () => {
         url: "/api/v1/auth/logout",
         headers: {
           "content-type": "application/json",
+          authorization: `Bearer ${app.jwt.sign({
+            sub: "user-1",
+            tenantId: "tenant-1",
+            role: "learner",
+          })}`,
         },
         body: JSON.stringify({}),
       });

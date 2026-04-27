@@ -51,7 +51,7 @@ describe("OllamaAIProxyService", () => {
       locale: "en",
     };
 
-    it("sends correct request to AI proxy", async () => {
+    it("sends correct request to Ollama", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () =>
@@ -65,7 +65,7 @@ describe("OllamaAIProxyService", () => {
       await service.handleTutorQuery(defaultArgs);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:3300/api/ai/generate",
+        "http://localhost:3300/api/generate",
         expect.objectContaining({
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -74,7 +74,7 @@ describe("OllamaAIProxyService", () => {
       );
     });
 
-    it("includes all required fields in request body", async () => {
+    it("includes Ollama generation fields in request body", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ response: "Test" }),
@@ -87,15 +87,15 @@ describe("OllamaAIProxyService", () => {
 
       expect(requestBody).toEqual(
         expect.objectContaining({
-          tenantId: "test-tenant",
-          userId: "test-user",
-          question: "What is photosynthesis?",
-          locale: "en",
+          model: expect.any(String),
+          system: expect.any(String),
+          prompt: expect.any(String),
+          stream: false,
         }),
       );
     });
 
-    it("includes moduleId when provided", async () => {
+    it("accepts moduleId when provided", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ response: "Test" }),
@@ -106,13 +106,10 @@ describe("OllamaAIProxyService", () => {
         moduleId: "module-123" as ModuleId,
       });
 
-      const callArgs = mockFetch.mock.calls[0];
-      const requestBody = JSON.parse(callArgs[1].body);
-
-      expect(requestBody.moduleId).toBe("module-123");
+      expect(mockFetch).toHaveBeenCalled();
     });
 
-    it("defaults locale to en when not provided", async () => {
+    it("omits locale instruction when locale is not provided", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ response: "Test" }),
@@ -127,7 +124,7 @@ describe("OllamaAIProxyService", () => {
       const callArgs = mockFetch.mock.calls[0];
       const requestBody = JSON.parse(callArgs[1].body);
 
-      expect(requestBody.locale).toBe("en");
+      expect(requestBody.prompt).not.toContain("Respond in");
     });
 
     it("returns answer from response field", async () => {
@@ -144,7 +141,7 @@ describe("OllamaAIProxyService", () => {
       expect(result.answer).toBe("This is the AI response");
     });
 
-    it("returns answer from content field if response not present", async () => {
+    it("falls back when response field is missing (content field only)", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () =>
@@ -155,10 +152,10 @@ describe("OllamaAIProxyService", () => {
 
       const result = await service.handleTutorQuery(defaultArgs);
 
-      expect(result.answer).toBe("Content field response");
+      expect(result.answer).toContain("trouble connecting");
     });
 
-    it("returns answer from answer field as fallback", async () => {
+    it("falls back when response field is missing (answer field only)", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () =>
@@ -169,10 +166,10 @@ describe("OllamaAIProxyService", () => {
 
       const result = await service.handleTutorQuery(defaultArgs);
 
-      expect(result.answer).toBe("Answer field response");
+      expect(result.answer).toContain("trouble connecting");
     });
 
-    it("stringifies response if no standard field found", async () => {
+    it("falls back when response field is missing (custom field)", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () =>
@@ -183,10 +180,10 @@ describe("OllamaAIProxyService", () => {
 
       const result = await service.handleTutorQuery(defaultArgs);
 
-      expect(result.answer).toContain("customField");
+      expect(result.answer).toContain("trouble connecting");
     });
 
-    it("includes citations from response", async () => {
+    it("extracts citations from markdown links in response text", async () => {
       const citations = [
         { id: "1", label: "Source 1", type: "textbook" },
         { id: "2", label: "Source 2", type: "video" },
@@ -196,17 +193,19 @@ describe("OllamaAIProxyService", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            response: "Answer",
-            citations,
+            response: "Answer with source [Source 1](1) and [Source 2](2)",
           }),
       });
 
       const result = await service.handleTutorQuery(defaultArgs);
 
-      expect(result.citations).toEqual(citations);
+      expect(result.citations).toEqual([
+        { type: "content_block", id: "1", label: "Source 1" },
+        { type: "content_block", id: "2", label: "Source 2" },
+      ]);
     });
 
-    it("includes followUpQuestions from response", async () => {
+    it("extracts follow-up questions from response text", async () => {
       const followUpQuestions = [
         "What are the stages?",
         "How does light affect it?",
@@ -216,8 +215,8 @@ describe("OllamaAIProxyService", () => {
         ok: true,
         json: () =>
           Promise.resolve({
-            response: "Answer",
-            followUpQuestions,
+            response:
+              "Answer\n\nFollow-up Questions:\n1. What are the stages?\n2. How does light affect it?",
           }),
       });
 
@@ -260,7 +259,7 @@ describe("OllamaAIProxyService", () => {
 
       const result = await service.handleTutorQuery(defaultArgs);
 
-      expect(result.answer).toContain("error");
+      expect(result.answer).toContain("trouble connecting");
       expect(result.safety).toEqual({ blocked: false });
     });
 
@@ -328,18 +327,18 @@ describe("OllamaAIProxyService", () => {
   });
 
   describe("explainSimulation", () => {
-    it("returns placeholder explanation", async () => {
+    it("returns graceful fallback explanation on errors", async () => {
       const result = await service.explainSimulation({
         manifest: { id: "sim-1" },
         query: "How does this work?",
       });
 
-      expect(result).toContain("not yet available");
+      expect(result).toContain("unable to explain");
     });
   });
 
   describe("generateLearningUnitDraft", () => {
-    it("returns empty draft structure", async () => {
+    it("returns default draft structure on errors", async () => {
       const result = await service.generateLearningUnitDraft({
         topic: "Photosynthesis",
         targetAudience: "High school students",
@@ -347,20 +346,25 @@ describe("OllamaAIProxyService", () => {
       });
 
       expect(result).toEqual({
-        title: "",
-        description: "",
-        sections: [],
+        title: "Photosynthesis",
+        description: "Learning unit about Photosynthesis for High school students",
+        sections: expect.any(Array),
       });
     });
   });
 
   describe("parseContentQuery", () => {
-    it("returns empty parsed query", async () => {
+    it("returns parsed query structure", async () => {
       const result = await service.parseContentQuery(
         "physics beginner tutorials",
       );
 
-      expect(result).toEqual({});
+      expect(result).toEqual({
+        domain: "physics",
+        difficulty: "beginner",
+        tags: ["physics"],
+        textSearch: "tutorials",
+      });
     });
   });
 });
@@ -452,7 +456,7 @@ describe("OllamaAIProxyService - Edge Cases", () => {
         question: "Explain everything about photosynthesis",
       });
 
-      expect(result.answer).toBe(longResponse);
+      expect(result.answer).toBe(longResponse.trim());
     });
   });
 

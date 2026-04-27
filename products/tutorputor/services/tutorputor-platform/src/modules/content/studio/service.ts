@@ -1651,7 +1651,9 @@ export function createContentStudioService(
         score: independentResult.score,
         validatorVersion: independentResult.validatorVersion,
         requiresHumanReview: independentResult.requiresHumanReview,
-        reviewQueueId: independentResult.reviewQueueId,
+        ...(independentResult.reviewQueueId !== undefined
+          ? { reviewQueueId: independentResult.reviewQueueId }
+          : {}),
         recommendations: independentResult.recommendations,
       };
 
@@ -1670,12 +1672,11 @@ export function createContentStudioService(
           independentResult.overallStatus === "PASS"
             ? `Independent validator passed (${independentResult.score}/100).`
             : `Independent validator returned ${independentResult.overallStatus} (${independentResult.score}/100).`,
-        suggestion:
-          independentResult.recommendations.length > 0
-            ? independentResult.recommendations.join(" ")
-            : independentResult.requiresHumanReview
-              ? "Route the experience for manual review before publishing."
-              : undefined,
+        ...(independentResult.recommendations.length > 0
+          ? { suggestion: independentResult.recommendations.join(" ") }
+          : independentResult.requiresHumanReview
+            ? { suggestion: "Route the experience for manual review before publishing." }
+            : {}),
       });
     }
 
