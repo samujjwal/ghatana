@@ -290,9 +290,13 @@ export async function setupPlatform(
   // -------------------------------------------------------------------------
   app.addHook("onRequest", async (req, reply) => {
     const url = req.raw.url ?? req.url;
-    // Guard versioned API routes and content-studio routes
+    // Guard versioned API routes, content-studio routes, and generation routes.
+    // /api/generation/* routes have preHandler roleGuards that depend on req.user
+    // being populated by JWT verification first.
     const isGuarded =
-      url.startsWith("/api/v1/") || url.startsWith("/api/content-studio/");
+      url.startsWith("/api/v1/") ||
+      url.startsWith("/api/content-studio/") ||
+      url.startsWith("/api/generation/");
     if (!isGuarded) return;
     // Public auth sub-routes (only under /api/v1/)
     if (

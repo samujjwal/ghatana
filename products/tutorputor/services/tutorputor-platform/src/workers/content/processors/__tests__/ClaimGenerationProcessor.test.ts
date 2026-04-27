@@ -16,6 +16,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ClaimGenerationProcessor } from '../ClaimGenerationProcessor';
 import {
+  DEFAULT_FEATURE_FLAGS,
+  type ContentGenerationFlags,
+} from '../../../../config/feature-flags';
+import {
   createMockLogger,
   createMockPrisma,
   createMockQueue,
@@ -30,6 +34,16 @@ describe('ClaimGenerationProcessor', () => {
   let mockLogger: ReturnType<typeof createMockLogger>;
   let mockGrpcClient: any;
 
+  const createProcessor = (featureFlags?: ContentGenerationFlags) =>
+    new ClaimGenerationProcessor(
+      mockGrpcClient as any,
+      mockPrisma as any,
+      mockQueue as any,
+      mockLogger as any,
+      undefined,
+      featureFlags,
+    );
+
   beforeEach(() => {
     mockPrisma = createMockPrisma();
     mockQueue = createMockQueue();
@@ -38,12 +52,7 @@ describe('ClaimGenerationProcessor', () => {
       generateClaims: vi.fn(),
     };
 
-    processor = new ClaimGenerationProcessor(
-      mockGrpcClient as any,
-      mockPrisma as any,
-      mockQueue as any,
-      mockLogger as any
-    );
+    processor = createProcessor();
   });
 
   describe('process', () => {
@@ -183,7 +192,7 @@ describe('ClaimGenerationProcessor', () => {
               examples: { required: false },
               simulation: {
                 required: true,
-                interaction_type: 'INTERACTIVE_EXPLORATION',
+                interactionType: 'INTERACTIVE_EXPLORATION',
                 complexity: 'INTERMEDIATE',
               },
               animation: { required: false },
@@ -206,10 +215,15 @@ describe('ClaimGenerationProcessor', () => {
           experienceId: 'exp-1',
           claimRef: 'C1',
           claimText: 'Test claim',
+          domain: 'PHYSICS',
+          tenantId: 'tenant-1',
+          gradeLevel: 'GRADE_9_12',
           interactionType: 'INTERACTIVE_EXPLORATION',
           complexity: 'INTERMEDIATE',
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'generate-simulation:exp-1:C1',
+        }),
       );
     });
 
@@ -236,12 +250,17 @@ describe('ClaimGenerationProcessor', () => {
               simulation: { required: false },
               animation: {
                 required: true,
-                type: 'CONCEPT_VISUALIZATION',
-                duration_seconds: 120,
+                animationType: 'CONCEPT_VISUALIZATION',
+                durationSeconds: 120,
               },
             },
           },
         ],
+      });
+
+      processor = createProcessor({
+        ...DEFAULT_FEATURE_FLAGS,
+        enableAnimationGeneration: true,
       });
 
       mockGrpcClient.generateClaims.mockResolvedValue(grpcResponse);
@@ -258,10 +277,12 @@ describe('ClaimGenerationProcessor', () => {
           experienceId: 'exp-1',
           claimRef: 'C1',
           claimText: 'Test claim',
-          animationType: 'TWO_D',
+          animationType: 'CONCEPT_VISUALIZATION',
           durationSeconds: 120,
         }),
-        expect.any(Object),
+        expect.objectContaining({
+          jobId: 'generate-animation:exp-1:C1',
+        }),
       );
     });
 
@@ -285,11 +306,16 @@ describe('ClaimGenerationProcessor', () => {
             text: 'Test claim',
             content_needs: {
               examples: { required: true, count: 2, types: ['REAL_WORLD'] },
-              simulation: { required: true, interaction_type: 'INTERACTIVE' },
-              animation: { required: true, type: 'VISUALIZATION' },
+              simulation: { required: true, interactionType: 'INTERACTIVE' },
+              animation: { required: true, animationType: 'VISUALIZATION' },
             },
           },
         ],
+      });
+
+      processor = createProcessor({
+        ...DEFAULT_FEATURE_FLAGS,
+        enableAnimationGeneration: true,
       });
 
       mockGrpcClient.generateClaims.mockResolvedValue(grpcResponse);

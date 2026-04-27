@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDashboard } from "../hooks/useDashboard";
 import { useRecommendations } from "../hooks/useRecommendations";
 import { Box, Card, Button } from "@/components/ui";
 import { cardStyles, textStyles, badgeStyles, cn } from "../theme";
 import { StatCard } from "../components/StatCard";
-import { ChevronDown, ChevronUp, Sparkles, BookOpen, Compass, Brain, Target } from "lucide-react";
+import { Sparkles, BookOpen, FlaskConical, FileText, MessageSquare } from "lucide-react";
 
 // Local type definitions for component props
 type EnrollmentStatus = "active" | "completed" | "paused" | "expired";
@@ -13,6 +12,7 @@ type EnrollmentStatus = "active" | "completed" | "paused" | "expired";
 interface Enrollment {
   id: string;
   moduleId: string;
+  moduleSlug?: string;
   moduleTitle?: string;
   status: EnrollmentStatus;
   progress: number;
@@ -44,7 +44,6 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useDashboard();
   const { data: aiRecommendations } = useRecommendations();
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   if (isLoading) {
     return (
@@ -78,22 +77,18 @@ export function DashboardPage() {
     averageProgress: data.stats?.averageProgress ?? 0,
   };
 
-  // Primary quick actions (always visible)
-  const primaryActions = [
-    { icon: BookOpen, label: "Browse Modules", href: "/modules", color: "bg-blue-500" },
-    { icon: Brain, label: "AI Tutor", href: "/ai-tutor", color: "bg-purple-500" },
-  ];
-
-  // Advanced tools (progressively disclosed)
-  const advancedActions = [
-    { icon: Compass, label: "Learning Pathways", href: "/pathways", color: "bg-green-500" },
-    { icon: Target, label: "Assessments", href: "/assessments", color: "bg-orange-500" },
-  ];
-
   const getModuleRoute = (enrollment: Enrollment) => {
     const modulePathSegment = enrollment.moduleSlug ?? enrollment.moduleId;
     return `/modules/${modulePathSegment}`;
   };
+
+  const continueLearningHref = topEnrollment ? getModuleRoute(topEnrollment) : "/modules";
+  const learnerActions = [
+    { icon: BookOpen, label: "Continue Learning", href: continueLearningHref, color: "bg-blue-600" },
+    { icon: FlaskConical, label: "Try Simulation", href: "/simulations", color: "bg-emerald-600" },
+    { icon: FileText, label: "View Evidence", href: "/analytics", color: "bg-indigo-600" },
+    { icon: MessageSquare, label: "Get Feedback", href: "/assessments", color: "bg-amber-600" },
+  ];
 
   return (
     <Box className="p-6">
@@ -140,24 +135,24 @@ export function DashboardPage() {
           </section>
         )}
 
-        {/* Secondary: Start Something New */}
+        {/* Secondary: Try Simulation */}
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className={textStyles.h2}>Start Something New</h2>
+            <h2 className={textStyles.h2}>Try Simulation</h2>
             <Link 
-              to="/modules" 
+              to="/simulations" 
               className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
             >
-              Explore all →
+              Open simulation library →
             </Link>
           </div>
           
           {recommendedModules.length === 0 ? (
             <EmptyState 
               icon="🎯"
-              title="Discover your next learning adventure"
-              description="Our AI will recommend modules based on your interests and goals."
-              action={{ label: "Browse Modules", href: "/modules" }}
+              title="Run a simulation to test your prediction"
+              description="Pick a simulation, predict the outcome, and compare with observed results."
+              action={{ label: "Try Simulation", href: "/simulations" }}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -176,28 +171,9 @@ export function DashboardPage() {
         <section className="mb-8">
           <h2 className={cn(textStyles.h2, "mb-4")}>Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {primaryActions.map((action) => (
+            {learnerActions.map((action) => (
               <QuickActionButton key={action.label} {...action} />
             ))}
-          </div>
-
-          {/* Progressive Disclosure: More Options */}
-          <div className="mt-4">
-            <button
-              onClick={() => setShowMoreOptions(!showMoreOptions)}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              {showMoreOptions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              {showMoreOptions ? "Show less" : "More options"}
-            </button>
-            
-            {showMoreOptions && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 animate-in fade-in slide-in-from-top-2">
-                {advancedActions.map((action) => (
-                  <QuickActionButton key={action.label} {...action} />
-                ))}
-              </div>
-            )}
           </div>
         </section>
 

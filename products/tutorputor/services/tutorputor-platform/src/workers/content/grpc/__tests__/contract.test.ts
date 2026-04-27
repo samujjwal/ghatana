@@ -22,6 +22,26 @@ import {
 } from '../RealContentGenerationClient';
 import type { Logger } from 'pino';
 
+const resolveContractProtoPath = (): string => {
+    const fs = require('fs');
+    const path = require('path');
+
+    const candidates = [
+        path.resolve(__dirname, '../../../../../../../contracts/proto/content_generation.proto'),
+        path.resolve(__dirname, '../../../../../../contracts/proto/content_generation.proto'),
+        path.resolve(process.cwd(), 'products/tutorputor/contracts/proto/content_generation.proto'),
+        path.resolve(process.cwd(), '../../contracts/proto/content_generation.proto'),
+        path.resolve(process.cwd(), 'contracts/proto/content_generation.proto'),
+    ];
+
+    const found = candidates.find((candidate: string) => fs.existsSync(candidate));
+    if (!found) {
+        throw new Error(`content_generation.proto not found in candidates: ${candidates.join(', ')}`);
+    }
+
+    return found;
+};
+
 // Mock pino logger
 const createMockLogger = (): Logger => {
     return {
@@ -44,24 +64,14 @@ describe('Content Generation Contract Tests', () => {
         it('should resolve proto file from contracts/proto/', () => {
             // This test verifies the proto file exists at the authoritative location
             const fs = require('fs');
-            const path = require('path');
-
-            const protoPath = path.resolve(
-                __dirname,
-                '../../../../../contracts/proto/content_generation.proto'
-            );
+            const protoPath = resolveContractProtoPath();
 
             expect(fs.existsSync(protoPath)).toBe(true);
         });
 
         it('should have valid proto syntax', () => {
             const fs = require('fs');
-            const path = require('path');
-
-            const protoPath = path.resolve(
-                __dirname,
-                '../../../../../contracts/proto/content_generation.proto'
-            );
+            const protoPath = resolveContractProtoPath();
 
             const protoContent = fs.readFileSync(protoPath, 'utf-8');
 
@@ -285,12 +295,7 @@ describe('Content Generation Contract Tests', () => {
 
         it('should have correct proto package structure', () => {
             const fs = require('fs');
-            const path = require('path');
-
-            const protoPath = path.resolve(
-                __dirname,
-                '../../../../../contracts/proto/content_generation.proto'
-            );
+            const protoPath = resolveContractProtoPath();
 
             const protoContent = fs.readFileSync(protoPath, 'utf-8');
 

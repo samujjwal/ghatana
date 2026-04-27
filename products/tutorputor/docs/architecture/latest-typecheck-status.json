@@ -1,0 +1,34 @@
+{
+  "_note": "Generated 2026-04-27. Regenerate by running: cd products/tutorputor/contracts && pnpm exec tsc -p tsconfig.json && cd ../services/tutorputor-platform && pnpm exec tsc --noEmit",
+  "commitSha": "4a5e8c6dc468b518e83448bce6c64f45b462e0e4",
+  "date": "2026-04-27",
+  "packages": {
+    "@tutorputor/contracts": {
+      "command": "pnpm exec tsc -p tsconfig.json",
+      "status": "PASS",
+      "errorCount": 0,
+      "notes": "Must be built first; dist/ is not checked in."
+    },
+    "@tutorputor/platform": {
+      "command": "pnpm exec tsc --noEmit",
+      "status": "PASS",
+      "errorCount": 0,
+      "notes": "Requires @tutorputor/contracts dist/ to be present."
+    }
+  },
+  "resolvedIssues": [
+    {
+      "file": "services/tutorputor-platform/src/modules/content/studio/service.ts",
+      "lines": [1649, 1658],
+      "kind": "TS2375 / TS2379",
+      "description": "exactOptionalPropertyTypes violation: reviewQueueId and suggestion now use conditional spread instead of assigning string|undefined to required optional properties."
+    },
+    {
+      "file": "libs/tutorputor-core/src/db/index.ts",
+      "lines": [154, 171, 185, 192],
+      "kind": "TS2532",
+      "description": "Previously flagged in stale probe; confirmed clean in current codebase — noUncheckedIndexedAccess now satisfied by regex-match guard pattern in hexToRgb."
+    }
+  ],
+  "archivedProbe": "docs/archive/tsc_probe_2026-04-19_archived.txt"
+}

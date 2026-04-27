@@ -40,6 +40,10 @@ import type {
   PlanningResult,
   ReviewPath,
 } from "../types.js";
+import {
+  assertSameTenant,
+  buildTenantScopedWhere,
+} from "../../policy/resource-access-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -152,7 +156,7 @@ export class GenerationPlannerService {
     requestId: string,
   ): Promise<GenerationRequestWithJobs | null> {
     const row = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId, tenantId },
+      where: buildTenantScopedWhere(tenantId, requestId),
       include: { jobs: true },
     });
     if (!row) return null;
@@ -206,12 +210,14 @@ export class GenerationPlannerService {
     requestId: string,
   ): Promise<PlanningResult> {
     const request = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId, tenantId },
+      where: buildTenantScopedWhere(tenantId, requestId),
     });
 
     if (!request) {
       throw new Error(`Generation request ${requestId} not found`);
     }
+
+    assertSameTenant(tenantId, request.tenantId, "plan generation request");
 
     if (request.status !== "DRAFT") {
       throw new Error(
@@ -358,12 +364,14 @@ export class GenerationPlannerService {
     requestId: string,
   ): Promise<GenerationRequest> {
     const request = await this.prisma.generationRequest.findFirst({
-      where: { id: requestId, tenantId },
+      where: buildTenantScopedWhere(tenantId, requestId),
     });
 
     if (!request) {
       throw new Error(`Generation request ${requestId} not found`);
     }
+
+    assertSameTenant(tenantId, request.tenantId, "cancel generation request");
 
     const terminalStatuses = ["COMPLETED", "FAILED", "CANCELLED"];
     if (terminalStatuses.includes(request.status)) {
@@ -718,6 +726,13 @@ function stripRequestRef(ref: string): string {
   return slashIndex === -1 ? ref : `__REQUEST__/${ref.slice(slashIndex + 1)}`;
 }
 
+/** Safely convert a Date or ISO string from DB/stub rows to an ISO string. */
+function toIso(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "string") return value;
+  return new Date().toISOString();
+}
+
 function mapRequest(row: Record<string, unknown>): GenerationRequest {
   return {
     id: row.id as string,
@@ -738,9 +753,11 @@ function mapRequest(row: Record<string, unknown>): GenerationRequest {
     ...(row.artifactNeeds
       ? { artifactNeeds: row.artifactNeeds as Record<string, number> }
       : {}),
-    riskLevel: (row.riskLevel as string).toLowerCase() as RiskLevel,
+    riskLevel: row.riskLevel
+      ? ((row.riskLevel as string).toLowerCase() as RiskLevel)
+      : "low",
     ...(row.riskFactors ? { riskFactors: row.riskFactors as string[] } : {}),
-    reviewPath: enumToReviewPath(row.reviewPath as string),
+    reviewPath: enumToReviewPath((row.reviewPath as string | null) ?? null),
     ...(row.estimatedCost
       ? { estimatedCost: row.estimatedCost as GenerationCostEstimate }
       : {}),
@@ -751,16 +768,16 @@ function mapRequest(row: Record<string, unknown>): GenerationRequest {
     completedJobs: row.completedJobs as number,
     failedJobs: row.failedJobs as number,
     ...(row.plannedAt
-      ? { plannedAt: (row.plannedAt as Date).toISOString() }
+      ? { plannedAt: toIso(row.plannedAt) }
       : {}),
     ...(row.startedAt
-      ? { startedAt: (row.startedAt as Date).toISOString() }
+      ? { startedAt: toIso(row.startedAt) }
       : {}),
     ...(row.completedAt
-      ? { completedAt: (row.completedAt as Date).toISOString() }
+      ? { completedAt: toIso(row.completedAt) }
       : {}),
-    createdAt: (row.createdAt as Date).toISOString(),
-    updatedAt: (row.updatedAt as Date).toISOString(),
+    createdAt: toIso(row.createdAt),
+    updatedAt: toIso(row.updatedAt),
   };
 }
 
@@ -789,17 +806,17 @@ function mapJob(row: Record<string, unknown>): GenerationJob {
     retryCount: row.retryCount as number,
     maxRetries: row.maxRetries as number,
     ...(row.startedAt
-      ? { startedAt: (row.startedAt as Date).toISOString() }
+      ? { startedAt: toIso(row.startedAt) }
       : {}),
     ...(row.completedAt
-      ? { completedAt: (row.completedAt as Date).toISOString() }
+      ? { completedAt: toIso(row.completedAt) }
       : {}),
-    createdAt: (row.createdAt as Date).toISOString(),
-    updatedAt: (row.updatedAt as Date).toISOString(),
+    createdAt: toIso(row.createdAt),
+    updatedAt: toIso(row.updatedAt),
   };
 }
 
-function enumToReviewPath(value: string): ReviewPath {
+function enumToReviewPath(value: string | null): ReviewPath {
   switch (value) {
     case "AUTO_PUBLISH":
       return "auto_publish";
