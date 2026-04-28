@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
+import { AISourceChip } from '../ai/AISourceChip';
 
 import type { ApprovalDecisionStatus, ApprovalRecord } from './ApprovalInbox';
 
@@ -22,6 +23,8 @@ export interface EnrichmentSuggestion {
   storyTrace: string;
   confidence: number;
   rationale: string;
+  /** Which subsystem produced this enrichment: deterministic rule engine or probabilistic model. */
+  source: 'RULE' | 'MODEL';
 }
 
 export interface PolicyDecisionSummary {
@@ -133,7 +136,12 @@ export const ApprovalDetail: React.FC<ApprovalDetailProps> = ({
               </Box>
             )}
 
-            <Box className="flex items-center gap-2">
+            <Box className="flex items-center gap-2 flex-wrap">
+              <AISourceChip
+                source={enrichmentSuggestion.source}
+                confidence={enrichmentSuggestion.source === 'MODEL' ? enrichmentSuggestion.confidence : undefined}
+                rationale={enrichmentSuggestion.rationale}
+              />
               <Typography className="text-xs font-medium text-blue-700 uppercase tracking-wide">Confidence</Typography>
               <Box
                 className={[

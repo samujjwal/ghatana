@@ -62,6 +62,19 @@ export interface RunLineageEntry {
   details: Record<string, unknown>;
 }
 
+export interface RunAgentVersionReference {
+  agentId: string;
+  version: string;
+}
+
+export interface RunProvenanceSummary {
+  pipelineVersion?: string;
+  agentVersions: RunAgentVersionReference[];
+  policyBundle: string[];
+  evaluationGate?: string;
+  complianceBundle: Record<string, unknown>;
+}
+
 export interface RunDecisionEntry {
   reviewItemId: string;
   skillId: string;
@@ -82,6 +95,7 @@ export interface PipelineRunDetail extends PipelineRun {
   lineage: RunLineageEntry[];
   decisions: RunDecisionEntry[];
   policies: RunPolicyEntry[];
+  provenance: RunProvenanceSummary;
 }
 
 export interface GovernanceComplianceSummary {
@@ -94,6 +108,14 @@ export interface GovernanceComplianceSummary {
     generatedAt: string;
     overallStatus: string;
     controlCount: number;
+    freshness: {
+      status: "FRESH" | "STALE" | "MISSING";
+      reportAvailable: boolean;
+      newestEvidenceAt: string | null;
+      evidenceAgeDays: number | null;
+      maxAgeDays: number;
+      message: string;
+    };
     controls: Array<{
       controlId: string;
       description: string;
@@ -131,6 +153,41 @@ export interface GovernanceTenancySummary {
   mode: string;
 }
 
+export type ConsentDecisionStatus = "granted" | "denied" | "withdrawn";
+
+export interface ConsentDecisionRecord {
+  consentId: string;
+  userId: string;
+  status: ConsentDecisionStatus;
+  purposes: string[];
+  decidedAt: string;
+}
+
+export interface ConsentDecisionSummary {
+  tenantId: string;
+  count: number;
+  items: ConsentDecisionRecord[];
+}
+
+export interface GovernanceOpsSummary {
+  tenantId: string;
+  backupConfigured: boolean;
+  backupCount: number;
+  lastBackupAt: string | null;
+  latestBackupStatus: string;
+  drReadiness: "PASS" | "FAIL" | "UNAVAILABLE";
+  lastDrDrillAt: string | null;
+  exportQueueConfigured: boolean;
+  exportQueueDepth: number | null;
+  automatedBackupsScheduled: boolean;
+  trustedProxyForwardedAcceptedCount: number;
+  trustedProxyForwardedRejectedCount: number;
+  trustedProxyAlertState: "OK" | "ALERT" | "UNAVAILABLE";
+  trustedProxyRejectionReasons: Record<string, number>;
+  notes: string[];
+  timestamp: string;
+}
+
 export type PipelineRunWire = Partial<PipelineRun> & {
   runId?: string;
   completedAt?: string;
@@ -148,6 +205,169 @@ export function normalizePipelineRun(raw: PipelineRunWire): PipelineRun {
     finishedAt: raw.finishedAt ?? raw.completedAt,
     eventsProcessed: raw.eventsProcessed ?? 0,
     errorsCount: raw.errorsCount ?? 0,
+  };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((item) => asString(item))
+    .filter((item): item is string => item !== undefined);
+}
+
+function candidateRecords(details: Record<string, unknown>): Record<string, unknown>[] {
+  const nested = [asRecord(details.provenance), asRecord(details.metadata), asRecord(details.complianceBundle)];
+  return [details, ...nested.filter((value): value is Record<string, unknown> => value !== null)];
+}
+
+function derivePipelineVersion(lineage: RunLineageEntry[]): string | undefined {
+  for (const entry of lineage) {
+    for (const record of candidateRecords(entry.details)) {
+      const value = asString(record.pipelineVersion);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+}
+
+function deriveEvaluationGate(lineage: RunLineageEntry[]): string | undefined {
+  for (const entry of lineage) {
+    for (const record of candidateRecords(entry.details)) {
+      const value = asString(record.evaluationGate) ?? asString(record.gateName);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return undefined;
+}
+
+function deriveComplianceBundle(lineage: RunLineageEntry[]): Record<string, unknown> {
+  for (const entry of lineage) {
+    const directBundle = asRecord(entry.details.complianceBundle);
+    if (directBundle) {
+      return directBundle;
+    }
+  }
+
+  const flattened: Record<string, unknown> = {};
+  for (const entry of lineage) {
+    for (const record of candidateRecords(entry.details)) {
+      for (const key of ["piiEnforcement", "piiBlockDefault", "auditLogEnabled", "killSwitchEnabled"]) {
+        if (!(key in flattened) && key in record) {
+          flattened[key] = record[key];
+        }
+      }
+    }
+  }
+  return flattened;
+}
+
+function derivePolicyBundle(lineage: RunLineageEntry[], policies: RunPolicyEntry[]): string[] {
+  const values = new Set<string>();
+  for (const policy of policies) {
+    const versionSuffix = policy.version ? `@${policy.version}` : "";
+    if (policy.policyId) {
+      values.add(`${policy.policyId}${versionSuffix}`);
+    }
+  }
+
+  for (const entry of lineage) {
+    for (const record of candidateRecords(entry.details)) {
+      for (const value of asStringArray(record.policyBundle)) {
+        values.add(value);
+      }
+      for (const value of asStringArray(record.policySet)) {
+        values.add(value);
+      }
+    }
+  }
+
+  return Array.from(values);
+}
+
+function deriveAgentVersions(lineage: RunLineageEntry[]): RunAgentVersionReference[] {
+  const versions = new Map<string, string>();
+
+  for (const entry of lineage) {
+    for (const record of candidateRecords(entry.details)) {
+      const agentVersionsList = record.agentVersions;
+      if (Array.isArray(agentVersionsList)) {
+        for (const item of agentVersionsList) {
+          const raw = asRecord(item);
+          if (!raw) {
+            continue;
+          }
+          const agentId = asString(raw.agentId) ?? asString(raw.skillId) ?? asString(raw.agent);
+          const version = asString(raw.version) ?? asString(raw.agentVersion);
+          if (agentId && version) {
+            versions.set(agentId, version);
+          }
+        }
+      } else {
+        const agentVersionMap = asRecord(agentVersionsList);
+        if (agentVersionMap) {
+          for (const [agentId, version] of Object.entries(agentVersionMap)) {
+            const normalizedVersion = asString(version);
+            if (normalizedVersion) {
+              versions.set(agentId, normalizedVersion);
+            }
+          }
+        }
+      }
+
+      const singleVersion = asString(record.agentVersion);
+      const singleAgentId =
+        asString(record.agentId) ?? asString(record.skillId) ?? asString(record.agent);
+      if (singleAgentId && singleVersion) {
+        versions.set(singleAgentId, singleVersion);
+      }
+    }
+  }
+
+  return Array.from(versions.entries()).map(([agentId, version]) => ({ agentId, version }));
+}
+
+function normalizeRunProvenance(
+  provenance: unknown,
+  lineage: RunLineageEntry[],
+  policies: RunPolicyEntry[],
+): RunProvenanceSummary {
+  const raw = asRecord(provenance);
+  return {
+    pipelineVersion: asString(raw?.pipelineVersion) ?? derivePipelineVersion(lineage),
+    agentVersions: raw?.agentVersions && Array.isArray(raw.agentVersions)
+      ? deriveAgentVersions([
+          {
+            eventType: "summary",
+            timestamp: "",
+            pipelineId: "",
+            stepType: "summary",
+            status: "",
+            details: { agentVersions: raw.agentVersions },
+          },
+          ...lineage,
+        ])
+      : deriveAgentVersions(lineage),
+    policyBundle: asStringArray(raw?.policyBundle).length > 0
+      ? asStringArray(raw?.policyBundle)
+      : derivePolicyBundle(lineage, policies),
+    evaluationGate: asString(raw?.evaluationGate) ?? deriveEvaluationGate(lineage),
+    complianceBundle: asRecord(raw?.complianceBundle) ?? deriveComplianceBundle(lineage),
   };
 }
 
@@ -293,6 +513,19 @@ export interface CostBreakdown {
   lastSeenAt?: string;
 }
 
+export interface CostBudgetWindow {
+  budgetUsd: number;
+  observedUsd: number;
+  remainingUsd: number;
+  usagePercent: number;
+  status: "healthy" | "warning" | "exceeded";
+}
+
+export interface CostBudgetSummary {
+  daily: CostBudgetWindow;
+  monthly: CostBudgetWindow;
+}
+
 export interface CostAlert {
   id: string;
   severity: "info" | "warning" | "critical";
@@ -323,9 +556,37 @@ export interface CostSummary {
   averageCostPerRunUsd: number;
   perPipeline: CostBreakdown[];
   perAgent: CostBreakdown[];
+  perModel: CostBreakdown[];
+  budget: CostBudgetSummary;
   alerts: CostAlert[];
   dataSource: string;
   allocationModel: string;
+}
+
+export type PrivacyRequestType =
+  | "gdpr_access"
+  | "gdpr_erasure"
+  | "gdpr_portability"
+  | "ccpa_opt_out";
+
+export interface ComplianceReport {
+  operationType: PrivacyRequestType | string;
+  tenantId: string;
+  subjectId: string;
+  success: boolean;
+  message: string;
+  total: number;
+  breakdown: Record<string, number>;
+  warnings: string[];
+  start: string;
+  end: string;
+}
+
+export interface PrivacyPortabilityExport {
+  tenantId?: string;
+  subjectId?: string;
+  exportedAt?: string;
+  [key: string]: unknown;
 }
 
 interface AgentListResponse {
@@ -704,11 +965,14 @@ export async function getRunDetail(
   const { data } = await client.get<PipelineRunWire & Partial<PipelineRunDetail>>(`/api/v1/runs/${runId}`, {
     params: { tenantId },
   });
+  const lineage = data.lineage ?? [];
+  const policies = data.policies ?? [];
   return {
     ...normalizePipelineRun(data),
-    lineage: data.lineage ?? [],
+    lineage,
     decisions: data.decisions ?? [],
-    policies: data.policies ?? [],
+    policies,
+    provenance: normalizeRunProvenance((data as Partial<PipelineRunDetail>).provenance, lineage, policies),
   };
 }
 
@@ -716,7 +980,7 @@ export async function getGovernanceComplianceSummary(
   tenantId = "default",
 ): Promise<GovernanceComplianceSummary> {
   const { data } = await client.get<GovernanceComplianceSummary>(
-    "/governance/compliance/summary",
+    "/api/v1/governance/compliance/summary",
     {
       params: { tenantId },
     },
@@ -729,7 +993,7 @@ export async function getGovernanceAuditSummary(
   limit = 20,
 ): Promise<GovernanceAuditSummary> {
   const { data } = await client.get<GovernanceAuditSummary>(
-    "/governance/audit/summary",
+    "/api/v1/governance/audit/summary",
     {
       params: { tenantId, limit },
     },
@@ -741,10 +1005,10 @@ export async function getGovernanceTenancySummary(
   tenantId = "default",
 ): Promise<GovernanceTenancySummary> {
   const [{ data: killSwitch }, { data: degradation }] = await Promise.all([
-    client.get<GovernanceKillSwitchResponse>("/governance/kill-switch", {
+    client.get<GovernanceKillSwitchResponse>("/api/v1/governance/kill-switch", {
       params: { tenantId },
     }),
-    client.get<GovernanceDegradationResponse>("/governance/degradation", {
+    client.get<GovernanceDegradationResponse>("/api/v1/governance/degradation", {
       params: { tenantId },
     }),
   ]);
@@ -755,6 +1019,30 @@ export async function getGovernanceTenancySummary(
     globalActive: killSwitch.globalActive,
     mode: degradation.mode,
   };
+}
+
+export async function listConsentDecisions(
+  tenantId = "default",
+  limit = 100,
+  offset = 0,
+): Promise<ConsentDecisionSummary> {
+  const { data } = await client.get<ConsentDecisionSummary>("/api/v1/consent", {
+    params: { tenantId, limit, offset },
+  });
+  return {
+    tenantId: data.tenantId ?? tenantId,
+    count: data.count ?? 0,
+    items: data.items ?? [],
+  };
+}
+
+export async function getGovernanceOpsSummary(
+  tenantId = "default",
+): Promise<GovernanceOpsSummary> {
+  const { data } = await client.get<GovernanceOpsSummary>("/api/v1/governance/ops/summary", {
+    params: { tenantId },
+  });
+  return data;
 }
 
 export async function listMarketplaceAgents(
@@ -831,11 +1119,61 @@ export async function createMarketplaceReview(
 
 export async function getCostSummary(
   tenantId = "default",
+  options: {
+    dailyBudgetUsd?: number;
+    monthlyBudgetUsd?: number;
+    from?: string;
+    to?: string;
+  } = {},
 ): Promise<CostSummary> {
   const { data } = await client.get<CostSummaryResponse>("/api/v1/costs/summary", {
-    params: { tenantId },
+    params: { tenantId, ...options },
   });
   return data.summary;
+}
+
+export async function requestGdprAccess(
+  subjectId: string,
+  tenantId = "default",
+): Promise<ComplianceReport> {
+  const { data } = await client.post<ComplianceReport>("/api/v1/compliance/gdpr/access", {
+    tenantId,
+    subjectId,
+  });
+  return data;
+}
+
+export async function requestGdprErasure(
+  subjectId: string,
+  tenantId = "default",
+): Promise<ComplianceReport> {
+  const { data } = await client.post<ComplianceReport>("/api/v1/compliance/gdpr/erasure", {
+    tenantId,
+    subjectId,
+  });
+  return data;
+}
+
+export async function requestGdprPortability(
+  subjectId: string,
+  tenantId = "default",
+): Promise<PrivacyPortabilityExport> {
+  const { data } = await client.post<PrivacyPortabilityExport>("/api/v1/compliance/gdpr/portability", {
+    tenantId,
+    subjectId,
+  });
+  return data;
+}
+
+export async function requestCcpaOptOut(
+  consumerId: string,
+  tenantId = "default",
+): Promise<ComplianceReport> {
+  const { data } = await client.post<ComplianceReport>("/api/v1/compliance/ccpa/opt-out", {
+    tenantId,
+    consumerId,
+  });
+  return data;
 }
 
 // ─── HITL Queue ──────────────────────────────────────────────────────

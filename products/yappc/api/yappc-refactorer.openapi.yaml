@@ -1,0 +1,630 @@
+openapi: 3.0.3
+info:
+  title: YAPPC Refactorer Service API
+  version: 1.0.0
+  description: |
+    Standalone HTTP service for long-running refactoring jobs.
+    Runs as a separate process from the main YAPPC API server.
+    Base URL is configured independently; typical default is http://localhost:8082.
+
+servers:
+  - url: http://localhost:8082
+    description: Local development
+  - url: https://refactorer.yappc.internal
+    description: Internal production
+
+tags:
+  - name: Health
+    description: Service health and readiness probes
+  - name: Diagnostics
+    description: Diagnostic utilities and configuration inspection
+  - name: Jobs
+    description: Refactoring job lifecycle management
+  - name: Runs
+    description: Individual run execution within a job
+  - name: Streaming
+    description: WebSocket event streams for live progress
+
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      operationId: healthCheck
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      summary: Readiness probe
+      operationId: readinessCheck
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service not yet ready
+
+  /v1/diagnose:
+    post:
+      summary: Run diagnostic analysis on code paths
+      operationId: diagnose
+      tags: [Diagnostics]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagnoseRequest'
+      responses:
+        '200':
+          description: Diagnostic results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagnoseResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/config:
+    get:
+      summary: Get service configuration (safe fields only)
+      operationId: getConfig
+      tags: [Diagnostics]
+      responses:
+        '200':
+          description: Safe configuration snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/jobs:
+    post:
+      summary: Create a new refactoring job
+      operationId: createJob
+      tags: [Jobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobRequest'
+      responses:
+        '201':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/jobs/{jobId}:
+    get:
+      summary: Get job details
+      operationId: getJob
+      tags: [Jobs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Cancel and delete a job
+      operationId: deleteJob
+      tags: [Jobs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '204':
+          description: Job deleted
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/jobs/{jobId}/report:
+    get:
+      summary: Get job analysis report
+      operationId: getJobReport
+      tags: [Jobs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          description: Job not found
+
+  /api/v1/jobs/{jobId}/start:
+    post:
+      summary: Start a job
+      operationId: startJob
+      tags: [Jobs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '404':
+          description: Job not found
+        '409':
+          description: Job already running or completed
+
+  /api/v1/jobs/{jobId}/stop:
+    post:
+      summary: Stop (cancel) a running job
+      operationId: stopJob
+      tags: [Jobs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponse'
+        '404':
+          description: Job not found
+
+  /api/v1/jobs/{jobId}/runs:
+    post:
+      summary: Submit a new run for a job
+      operationId: createRun
+      tags: [Runs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunRequest'
+      responses:
+        '201':
+          description: Run created and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStatus'
+        '404':
+          description: Job not found
+        '409':
+          description: Job is not in an executable state
+    get:
+      summary: List all runs for a job
+      operationId: listRuns
+      tags: [Runs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Run list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RunStatus'
+                  total:
+                    type: integer
+                    format: int64
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '404':
+          description: Job not found
+
+  /api/v1/jobs/{jobId}/runs/{runId}:
+    get:
+      summary: Get run detail
+      operationId: getRun
+      tags: [Runs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/RunId'
+      responses:
+        '200':
+          description: Run detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStatus'
+        '404':
+          description: Job or run not found
+
+  /api/v1/jobs/{jobId}/runs/{runId}/logs:
+    get:
+      summary: Get structured logs for a run
+      operationId: getRunLogs
+      tags: [Runs]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/RunId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+        - name: since
+          in: query
+          description: Return logs after this ISO-8601 timestamp
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogEntry'
+        '404':
+          description: Job or run not found
+
+  /ws/jobs/{jobId}:
+    get:
+      summary: WebSocket stream for real-time job progress events
+      operationId: streamJobProgress
+      tags: [Streaming]
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '101':
+          description: WebSocket upgrade — emits ProgressEvent messages until job terminates
+        '404':
+          description: Job not found
+      x-websocket-message:
+        schema:
+          $ref: '#/components/schemas/ProgressEvent'
+
+components:
+  parameters:
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum:
+            - UP
+            - DOWN
+            - DEGRADED
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    DiagnoseRequest:
+      type: object
+      required:
+        - targetPaths
+      properties:
+        targetPaths:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        patterns:
+          type: array
+          items:
+            type: string
+
+    DiagnoseResponse:
+      type: object
+      required:
+        - findings
+        - analysedAt
+      properties:
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagnosticFinding'
+        analysedAt:
+          type: string
+          format: date-time
+
+    DiagnosticFinding:
+      type: object
+      required:
+        - severity
+        - message
+        - path
+      properties:
+        severity:
+          type: string
+          enum:
+            - ERROR
+            - WARNING
+            - INFO
+        message:
+          type: string
+        path:
+          type: string
+        line:
+          type: integer
+        rule:
+          type: string
+
+    CreateJobRequest:
+      type: object
+      required:
+        - targetProjectId
+        - patterns
+      properties:
+        targetProjectId:
+          type: string
+          format: uuid
+        patterns:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        dryRun:
+          type: boolean
+          default: false
+
+    JobResponse:
+      type: object
+      required:
+        - jobId
+        - status
+        - createdAt
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        targetProjectId:
+          type: string
+          format: uuid
+        dryRun:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    JobStatus:
+      type: string
+      enum:
+        - CREATED
+        - RUNNING
+        - COMPLETED
+        - FAILED
+        - CANCELLED
+
+    RunRequest:
+      type: object
+      properties:
+        maxParallelism:
+          type: integer
+          default: 4
+          minimum: 1
+          maximum: 16
+        timeoutSeconds:
+          type: integer
+          default: 300
+
+    RunStatus:
+      type: object
+      required:
+        - runId
+        - jobId
+        - status
+        - createdAt
+      properties:
+        runId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - QUEUED
+            - RUNNING
+            - COMPLETED
+            - FAILED
+            - CANCELLED
+        filesProcessed:
+          type: integer
+        filesChanged:
+          type: integer
+        errorsEncountered:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    Report:
+      type: object
+      required:
+        - jobId
+        - generatedAt
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        generatedAt:
+          type: string
+          format: date-time
+        summary:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiagnosticFinding'
+        changesSummary:
+          type: object
+          properties:
+            totalFilesChanged:
+              type: integer
+            totalInsertions:
+              type: integer
+            totalDeletions:
+              type: integer
+
+    ProgressEvent:
+      type: object
+      required:
+        - eventType
+        - jobId
+        - timestamp
+      properties:
+        eventType:
+          type: string
+          enum:
+            - JOB_STARTED
+            - FILE_PROCESSING
+            - FILE_CHANGED
+            - RUN_COMPLETED
+            - JOB_COMPLETED
+            - JOB_FAILED
+            - JOB_CANCELLED
+        jobId:
+          type: string
+          format: uuid
+        runId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+
+    LogEntry:
+      type: object
+      required:
+        - level
+        - message
+        - timestamp
+      properties:
+        level:
+          type: string
+          enum:
+            - DEBUG
+            - INFO
+            - WARN
+            - ERROR
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        context:
+          type: object
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string

@@ -3,6 +3,11 @@ package com.ghatana.datacloud.governance;
 /**
  * Service interface for checking tenant-level quotas.
  * Implementations may be in-memory, database-backed, or distributed.
+ *
+ * @doc.type class
+ * @doc.purpose Defines the contract for checking tenant quota limits across different operation types.
+ * @doc.layer product
+ * @doc.pattern Service
  */
 public interface TenantQuotaService {
 

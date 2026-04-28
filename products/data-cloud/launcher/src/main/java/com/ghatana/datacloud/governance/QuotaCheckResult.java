@@ -2,6 +2,11 @@ package com.ghatana.datacloud.governance;
 
 /**
  * Result of a tenant quota check.
+ *
+ * @doc.type class
+ * @doc.purpose Represents the outcome of a tenant quota check, including allowance status and quota details.
+ * @doc.layer product
+ * @doc.pattern Record
  */
 public record QuotaCheckResult(boolean allowed, String message, int quotaValue, int usedAmount) {
 

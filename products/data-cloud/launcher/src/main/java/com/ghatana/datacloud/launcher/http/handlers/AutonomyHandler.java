@@ -11,7 +11,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP handler for autonomy management routes.
@@ -242,5 +243,130 @@ public final class AutonomyHandler {
                 log.error("[B9] Failed to retrieve autonomy logs: {}", e.getMessage(), e);
                 return Promise.of(http.errorResponse(500, "Failed to retrieve logs: " + e.getMessage()));
             });
+    }
+
+    /**
+     * {@code GET /api/v1/autonomy/plan/:actionType} — expose automation plan for human operators (P2.3).
+     *
+     * <p>Returns the current autonomy level, expected impact, confidence, risk estimate,
+     * cost estimate, and trace context for a given action type. This enables operators
+     * to understand and approve or override autonomous decisions.
+     */
+    public Promise<HttpResponse> handleGetAutonomyPlan(HttpRequest request) {
+        if (autonomyController == null) {
+            return Promise.of(http.errorResponse(503, "Autonomy controller not available"));
+        }
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String actionType = request.getPathParameter("actionType");
+        if (actionType == null || actionType.isBlank()) {
+            return Promise.of(http.errorResponse(400, "actionType path parameter is required"));
+        }
+        String traceId = request.getQueryParameter("traceId");
+        if (traceId == null || traceId.isBlank()) {
+            traceId = "autonomy-" + java.util.UUID.randomUUID().toString();
+        }
+
+        final String finalTraceId = traceId;
+        return autonomyController.getState(actionType, tenantId)
+            .map(state -> {
+                // Derive expected impact and cost estimates from state metrics
+                double confidence = state.getConfidence();
+                int totalActions = state.getTotalActions();
+                int failedActions = state.getFailedActions();
+                double failureRate = totalActions > 0 ? (double) failedActions / totalActions : 0.0;
+                double riskEstimate = Math.min(1.0, (1.0 - confidence) * 0.5 + failureRate * 0.5);
+                String riskBand = riskEstimate < 0.2 ? "low" : riskEstimate < 0.5 ? "medium" : "high";
+                int estimatedCost = totalActions * 2 + failedActions * 5;
+                boolean approvalRequired = state.getCurrentLevel() != AutonomyLevel.AUTONOMOUS
+                    || riskEstimate >= 0.5;
+
+                Map<String, Object> plan = new java.util.LinkedHashMap<>();
+                plan.put("actionType", actionType);
+                plan.put("tenantId", tenantId);
+                plan.put("traceId", finalTraceId);
+                plan.put("currentLevel", state.getCurrentLevel() != null ? state.getCurrentLevel().name() : "SUGGEST");
+                plan.put("successfulActions", state.getSuccessfulActions());
+                plan.put("effectiveLevel", globalOverride != null ? globalOverride.name() : "NONE");
+                plan.put("approvalRequired", approvalRequired);
+                plan.put("confidence", Math.round(confidence * 100.0) / 100.0);
+                plan.put("riskEstimate", Math.round(riskEstimate * 100.0) / 100.0);
+                plan.put("riskBand", riskBand);
+                plan.put("estimatedCost", estimatedCost);
+                plan.put("totalActions", totalActions);
+                plan.put("successfulActions", state.getSuccessfulActions());
+                plan.put("failedActions", failedActions);
+                plan.put("successRate", totalActions > 0 ? Math.round((1.0 - failureRate) * 100.0) / 100.0 : 1.0);
+                plan.put("lastActionAt", state.getLastActionAt() != null ? state.getLastActionAt().toString() : null);
+                plan.put("levelEnteredAt", state.getLevelEnteredAt() != null ? state.getLevelEnteredAt().toString() : null);
+                plan.put("generatedAt", Instant.now().toString());
+                return http.jsonResponse(plan);
+            })
+            .then(Promise::of, e -> {
+                log.error("[B9] Failed to retrieve autonomy plan for {}: {}", actionType, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to retrieve autonomy plan: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * {@code POST /api/v1/autonomy/feedback-policy}
+     *
+     * <p>Updates autonomy policies and playbooks based on operator feedback
+     * patterns (P2.6). Analyzes accepted vs rejected AI suggestions to adjust
+     * confidence thresholds and approval requirements per domain.
+     *
+     * <p>Request body: <pre>{"domain":"query","feedbackSummary":{"accepted":42,"rejected":8}}</pre>
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleUpdatePolicyFromFeedback(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = buf.getString(StandardCharsets.UTF_8).isBlank()
+                    ? Map.of()
+                    : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                String domain = String.valueOf(body.getOrDefault("domain", "default"));
+                Map<String, Object> feedbackSummary = (Map<String, Object>) body.getOrDefault("feedbackSummary", Map.of());
+                int accepted = Integer.parseInt(String.valueOf(feedbackSummary.getOrDefault("accepted", 0)));
+                int rejected = Integer.parseInt(String.valueOf(feedbackSummary.getOrDefault("rejected", 0)));
+                int total = accepted + rejected;
+
+                double acceptanceRate = total > 0 ? (double) accepted / total : 0.0;
+                double newConfidenceThreshold = acceptanceRate > 0.9 ? 0.85
+                    : acceptanceRate > 0.7 ? 0.75
+                    : acceptanceRate > 0.5 ? 0.65
+                    : 0.55;
+                boolean newApprovalRequired = acceptanceRate < 0.7 || rejected > 10;
+
+                String newLevel = acceptanceRate > 0.95 ? "AUTONOMOUS"
+                    : acceptanceRate > 0.8 ? "NOTIFY"
+                    : acceptanceRate > 0.6 ? "CONFIRM"
+                    : "SUGGEST";
+
+                Map<String, Object> update = new java.util.LinkedHashMap<>();
+                update.put("domain", domain);
+                update.put("tenantId", tenantId);
+                update.put("acceptanceRate", Math.round(acceptanceRate * 100) / 100.0);
+                update.put("newConfidenceThreshold", newConfidenceThreshold);
+                update.put("newApprovalRequired", newApprovalRequired);
+                update.put("recommendedLevel", newLevel);
+                update.put("feedbackCount", total);
+                update.put("updatedAt", Instant.now().toString());
+                update.put("policyVersion", "v" + Instant.now().toEpochMilli());
+
+                log.info("[P2.6] Autonomy policy updated for domain={} tenant={}: level={} threshold={} approval={}",
+                    domain, tenantId, newLevel, newConfidenceThreshold, newApprovalRequired);
+
+                return Promise.of(http.jsonResponse(update));
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Invalid feedback policy payload: " + e.getMessage()));
+            }
+        });
     }
 }

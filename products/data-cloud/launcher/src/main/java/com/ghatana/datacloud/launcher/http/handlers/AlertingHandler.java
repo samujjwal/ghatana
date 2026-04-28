@@ -1,6 +1,8 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.client.autonomy.AutonomyController;
+import com.ghatana.datacloud.client.autonomy.AutonomyLevel;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -42,10 +44,19 @@ public final class AlertingHandler {
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
+    private AutonomyController autonomyController;
 
     public AlertingHandler(DataCloudClient client, HttpHandlerSupport http) {
         this.client = client;
         this.http = http;
+    }
+
+    /**
+     * Attaches an autonomy controller for gated auto-remediation (P2.4).
+     */
+    public AlertingHandler withAutonomyController(AutonomyController controller) {
+        this.autonomyController = controller;
+        return this;
     }
 
     public Promise<HttpResponse> handleListAlerts(HttpRequest request) {
@@ -116,6 +127,7 @@ public final class AlertingHandler {
                 if (nextCursor != null) {
                     response.put("nextCursor", nextCursor);
                 }
+                response.put("slaTracking", true);
                 response.put("timestamp", Instant.now().toString());
                 return http.jsonResponse(response);
             });
@@ -132,6 +144,264 @@ public final class AlertingHandler {
     public Promise<HttpResponse> handleEscalateAlert(HttpRequest request) {
         return escalateAlert(request);
     }
+
+    /**
+     * {@code POST /api/v1/alerts/:alertId/auto-remediate} — gated auto-remediation (P2.4).
+     *
+     * <p>Attempts to automatically resolve an alert if the autonomy controller
+     * permits it for the alerts domain and the alert is low-risk (non-critical).
+     */
+    public Promise<HttpResponse> handleAutoRemediate(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
+        }
+        String alertId = request.getPathParameter("id");
+        if (alertId == null || alertId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
+        }
+        return client.findById(tenantId, ALERTS_COLLECTION, alertId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(http.errorResponse(404, "Alert not found: " + alertId));
+                }
+                Map<String, Object> alertData = opt.get().data();
+                String severity = String.valueOf(alertData.getOrDefault("severity", "info")).toLowerCase(Locale.ROOT);
+                boolean isCritical = "critical".equals(severity);
+
+                if (isCritical) {
+                    return Promise.of(http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "alertId", alertId,
+                        "autoRemediated", false,
+                        "reason", "Critical alerts require explicit human resolution",
+                        "requiredAction", "manual-resolve",
+                        "timestamp", Instant.now().toString()
+                    )));
+                }
+
+                if (autonomyController != null) {
+                    return autonomyController.getCurrentLevel("alerts", tenantId)
+                        .then(level -> {
+                            if (level == AutonomyLevel.AUTONOMOUS) {
+                                return autoResolveAlert(tenantId, alertId, "auto-remediated by autonomy controller");
+                            }
+                            if (level == AutonomyLevel.SUGGEST) {
+                                return Promise.of(http.jsonResponse(Map.of(
+                                    "tenantId", tenantId,
+                                    "alertId", alertId,
+                                    "autoRemediated", false,
+                                    "reason", "Autonomy level is SUGGEST — manual action required",
+                                    "suggestedAction", "resolve",
+                                    "autonomyLevel", level.name(),
+                                    "timestamp", Instant.now().toString()
+                                )));
+                            }
+                            // CONFIRM, NOTIFY, DISABLED
+                            return Promise.of(http.jsonResponse(Map.of(
+                                "tenantId", tenantId,
+                                "alertId", alertId,
+                                "autoRemediated", false,
+                                "reason", "Autonomy level " + level.name() + " does not permit auto-remediation",
+                                "autonomyLevel", level.name(),
+                                "timestamp", Instant.now().toString()
+                            )));
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[autoRemediate] autonomy check failed tenant={} alert={}: {}", tenantId, alertId, e.getMessage(), e);
+                            return autoResolveAlert(tenantId, alertId, "auto-remediated (autonomy check failed, fail-open)");
+                        });
+                }
+
+                // No autonomy controller: manual only for safety
+                return Promise.of(http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "alertId", alertId,
+                    "autoRemediated", false,
+                    "reason", "Autonomy controller not available — manual resolution required",
+                    "timestamp", Instant.now().toString()
+                )));
+            })
+            .then(Promise::of, e -> {
+                log.error("[autoRemediate] tenant={} alert={} failed: {}", tenantId, alertId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Auto-remediation failed: " + e.getMessage()));
+            });
+    }
+
+    private Promise<HttpResponse> autoResolveAlert(String tenantId, String alertId, String reason) {
+        Map<String, Object> updates = new LinkedHashMap<>();
+        updates.put("id", alertId);
+        updates.put("status", "resolved");
+        updates.put("resolvedAt", Instant.now().toString());
+        updates.put("resolvedBy", "system.auto-remediate");
+        updates.put("resolutionReason", reason);
+        return client.save(tenantId, ALERTS_COLLECTION, updates)
+            .map(saved -> http.jsonResponse(Map.of(
+                "tenantId", tenantId,
+                "alertId", alertId,
+                "autoRemediated", true,
+                "status", "resolved",
+                "reason", reason,
+                "timestamp", Instant.now().toString()
+            )));
+    }
+
+    /**
+     * {@code POST /api/v1/alerts/:id/remediate} — apply a remediation action to an alert (P2.4).
+     *
+     * <p>Records the remediation action as an entity for audit and supports rollback.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRemediateAlert(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
+        }
+        String alertId = request.getPathParameter("id");
+        if (alertId == null || alertId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> payload = http.objectMapper().readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+                String actionId = (String) payload.getOrDefault("actionId", "remediate-" + UUID.randomUUID().toString());
+                String actionType = (String) payload.getOrDefault("actionType", "manual-resolution");
+                String actor = (String) payload.getOrDefault("actor", "operator");
+                String reason = (String) payload.getOrDefault("reason", "");
+
+                Map<String, Object> record = new LinkedHashMap<>();
+                record.put("id", actionId);
+                record.put("alertId", alertId);
+                record.put("tenantId", tenantId);
+                record.put("actionType", actionType);
+                record.put("actor", actor);
+                record.put("reason", reason);
+                record.put("appliedAt", Instant.now().toString());
+                record.put("status", "applied");
+                record.put("rolledBack", false);
+
+                // Also update the alert with remediation metadata
+                Map<String, Object> alertUpdate = new LinkedHashMap<>();
+                alertUpdate.put("id", alertId);
+                alertUpdate.put("status", "remediated");
+                alertUpdate.put("remediatedAt", Instant.now().toString());
+                alertUpdate.put("remediationActionId", actionId);
+                alertUpdate.put("remediationActionType", actionType);
+
+                return client.save(tenantId, DC_REMEDIATION_ACTIONS_COLLECTION, record)
+                    .then(saved -> client.save(tenantId, ALERTS_COLLECTION, alertUpdate))
+                    .map(savedAlert -> http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "alertId", alertId,
+                        "actionId", actionId,
+                        "actionType", actionType,
+                        "status", "applied",
+                        "appliedAt", Instant.now().toString()
+                    )))
+                    .then(Promise::of, e -> {
+                        log.error("[P2.4] Remediation apply failed tenant={} alert={}: {}", tenantId, alertId, e.getMessage(), e);
+                        return Promise.of(http.errorResponse(500, "Remediation failed: " + e.getMessage()));
+                    });
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Invalid remediation payload: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * {@code POST /api/v1/alerts/:id/remediate/rollback} — rollback a remediation (P2.4).
+     *
+     * <p>Marks the remediation action as rolled back and optionally reverts
+     * the alert status to its previous state.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRollbackRemediation(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
+        }
+        String alertId = request.getPathParameter("id");
+        if (alertId == null || alertId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> payload = http.objectMapper().readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+                String actionId = (String) payload.get("actionId");
+                if (actionId == null || actionId.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "actionId is required"));
+                }
+                String reason = (String) payload.getOrDefault("reason", "");
+
+                Map<String, Object> rollbackRecord = new LinkedHashMap<>();
+                rollbackRecord.put("id", actionId);
+                rollbackRecord.put("status", "rolled-back");
+                rollbackRecord.put("rolledBack", true);
+                rollbackRecord.put("rolledBackAt", Instant.now().toString());
+                rollbackRecord.put("rollbackReason", reason);
+
+                Map<String, Object> alertUpdate = new LinkedHashMap<>();
+                alertUpdate.put("id", alertId);
+                alertUpdate.put("status", "active");
+                alertUpdate.put("rollbackActionId", actionId);
+                alertUpdate.put("rollbackAt", Instant.now().toString());
+
+                return client.save(tenantId, DC_REMEDIATION_ACTIONS_COLLECTION, rollbackRecord)
+                    .then(saved -> client.save(tenantId, ALERTS_COLLECTION, alertUpdate))
+                    .map(savedAlert -> http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "alertId", alertId,
+                        "actionId", actionId,
+                        "status", "rolled-back",
+                        "rolledBackAt", Instant.now().toString()
+                    )))
+                    .then(Promise::of, e -> {
+                        log.error("[P2.4] Remediation rollback failed tenant={} alert={}: {}", tenantId, alertId, e.getMessage(), e);
+                        return Promise.of(http.errorResponse(500, "Rollback failed: " + e.getMessage()));
+                    });
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Invalid rollback payload: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * {@code GET /api/v1/alerts/:id/remediations} — list remediation actions for an alert (P2.4).
+     */
+    public Promise<HttpResponse> handleListRemediations(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
+        }
+        String alertId = request.getPathParameter("id");
+        if (alertId == null || alertId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
+        }
+        int limit = HttpHandlerSupport.parseIntParam(request.getQueryParameter("limit"), 50);
+        return client.query(tenantId, DC_REMEDIATION_ACTIONS_COLLECTION,
+                DataCloudClient.Query.limit(limit))
+            .map(entities -> {
+                List<Map<String, Object>> remediations = entities.stream()
+                    .filter(e -> alertId.equals(e.data().get("alertId")))
+                    .map(e -> e.data())
+                    .toList();
+                return http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "alertId", alertId,
+                    "remediations", remediations,
+                    "total", remediations.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[P2.4] List remediations failed tenant={} alert={}: {}", tenantId, alertId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to list remediations: " + e.getMessage()));
+            });
+    }
+
+    static final String DC_REMEDIATION_ACTIONS_COLLECTION = "dc_remediation_actions";
 
     public Promise<HttpResponse> handleListAlertGroups(HttpRequest request) {
         String tenantId = resolveTenantId(request);
@@ -194,6 +464,7 @@ public final class AlertingHandler {
                 "tenantId", tenantId,
                 "suggestions", suggestions,
                 "count", suggestions.size(),
+                "total", suggestions.size(),
                 "timestamp", Instant.now().toString()
             ));
         });
@@ -661,6 +932,13 @@ public final class AlertingHandler {
         putIfPresent(view, "incidentId", data.get("incidentId"));
         view.put("incidentStatus", String.valueOf(data.getOrDefault("incidentStatus", "open")));
         putIfPresent(view, "incidentClosedAt", data.get("incidentClosedAt"));
+
+        // SLA tracking: compute SLA minutes and breach status based on severity and age
+        long slaMinutes = computeSlaMinutes(view.get("severity"));
+        boolean slaBreached = computeSlaBreached(String.valueOf(view.get("createdAt")), slaMinutes);
+        view.put("slaMinutes", slaMinutes);
+        view.put("slaBreached", slaBreached);
+
         return Map.copyOf(view);
     }
 
@@ -849,5 +1127,35 @@ public final class AlertingHandler {
             return list.stream().map(String::valueOf).toList();
         }
         return List.of();
+    }
+
+    /**
+     * Computes SLA threshold in minutes based on alert severity.
+     * critical = 60min, warning = 240min (4h), info = 1440min (24h).
+     */
+    private static long computeSlaMinutes(Object severityObj) {
+        String severity = String.valueOf(severityObj).toLowerCase(Locale.ROOT);
+        return switch (severity) {
+            case "critical" -> 60L;
+            case "warning" -> 240L;
+            case "info" -> 1440L;
+            default -> 240L;
+        };
+    }
+
+    /**
+     * Determines whether the alert has breached its SLA based on creation time and severity.
+     */
+    private static boolean computeSlaBreached(String createdAtIso, long slaMinutes) {
+        if (createdAtIso == null || createdAtIso.isBlank() || "null".equals(createdAtIso)) {
+            return false;
+        }
+        try {
+            Instant created = Instant.parse(createdAtIso);
+            long ageMinutes = Duration.between(created, Instant.now()).toMinutes();
+            return ageMinutes > slaMinutes;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

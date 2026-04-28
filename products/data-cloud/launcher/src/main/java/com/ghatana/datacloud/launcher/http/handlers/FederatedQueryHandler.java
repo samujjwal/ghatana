@@ -148,6 +148,7 @@ public final class FederatedQueryHandler {
     private Promise<HttpResponse> executeViaTrino(String sql, String tenantId) {
         return Promise.ofBlocking(http.blockingExecutor(), () -> {
             long startMs = System.currentTimeMillis();
+            List<String> warnings = new ArrayList<>();
             // Tenant-scoped catalog: eventcloud_<tenantId>
             String tenantCatalog = "eventcloud_" + tenantId;
             String tenantUrl = buildTenantUrl(trinoUrl, tenantCatalog);
@@ -163,6 +164,7 @@ public final class FederatedQueryHandler {
                     }
                 } catch (Exception explainEx) {
                     log.debug("EXPLAIN failed for tenant {} (non-fatal): {}", tenantId, explainEx.getMessage());
+                    warnings.add("EXPLAIN failed — cost estimate unavailable: " + explainEx.getMessage());
                 }
 
                 // 2. Enforce query timeout before main execution
@@ -201,6 +203,8 @@ public final class FederatedQueryHandler {
                     result.put("executionTimeMs", durationMs);
                     result.put("queryTimeoutSeconds", queryTimeoutSeconds);
                     result.put("optimized", true);
+                    result.put("warnings", warnings);
+                    result.put("partialResult", !warnings.isEmpty());
                     result.put("timestamp", java.time.Instant.now().toString());
                     return http.jsonResponse(200, result);
                 }

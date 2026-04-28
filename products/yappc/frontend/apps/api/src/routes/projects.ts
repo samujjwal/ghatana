@@ -1169,5 +1169,54 @@ export default async function projectRoutes(fastify: FastifyInstance) {
       });
     }
   );
+
+  /**
+   * GET /api/projects/:projectId/ai-cost
+   * Returns aggregated AI agent run counts and estimated cost for a project.
+   * Costs are derived from the AgentRun log; model rates are indicative.
+   */
+  fastify.get<{ Params: ProjectParams }>(
+    '/projects/:projectId/ai-cost',
+    { preHandler: requireProjectReadable() },
+    async (request: FastifyRequest<{ Params: ProjectParams }>, reply: FastifyReply) => {
+      const { projectId } = request.params;
+
+      const runs = await prisma.agentRun.findMany({
+        where: { projectId },
+        select: { id: true, agentName: true, status: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 500,
+      });
+
+      const succeededRuns = runs.filter((r) => r.status === 'SUCCEEDED');
+      const totalRuns = runs.length;
+      const succeededCount = succeededRuns.length;
+
+      // Indicative per-run cost: flat rate of $0.005 per succeeded agent call.
+      // Replace with summed AIMetric.costUSD once the projectId FK is added.
+      const COST_PER_RUN_USD = 0.005;
+      const estimatedCostUSD = succeededCount * COST_PER_RUN_USD;
+
+      // Breakdown by agent type
+      const byAgent: Record<string, { count: number; estimatedCostUSD: number }> = {};
+      for (const run of succeededRuns) {
+        const key = run.agentName;
+        const entry = byAgent[key] ?? { count: 0, estimatedCostUSD: 0 };
+        entry.count += 1;
+        entry.estimatedCostUSD = Math.round((entry.count * COST_PER_RUN_USD) * 10000) / 10000;
+        byAgent[key] = entry;
+      }
+
+      return reply.send({
+        projectId,
+        totalRuns,
+        succeededRuns: succeededCount,
+        estimatedCostUSD: Math.round(estimatedCostUSD * 10000) / 10000,
+        currency: 'USD',
+        costBasis: 'indicative',
+        byAgent,
+      });
+    }
+  );
 }
 

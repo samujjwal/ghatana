@@ -11,6 +11,9 @@ import React from 'react';
 import { Box, Button, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
 import { RefreshCw, CirclePlay, CircleCheck, CircleX } from 'lucide-react';
 
+import { RunLineage } from '@/components/ai/RunLineage';
+import { fetchAepRunLineage } from '@/services/ai/aepRunLineageApi';
+
 export type AgentRunStatus = 'QUEUED' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED';
 
 export interface AgentRunRecord {
@@ -104,6 +107,16 @@ export const AgentRunViewer: React.FC<AgentRunViewerProps> = ({
 
             {run.errorMessage && (
               <Typography className="text-sm text-red-700">Error: {run.errorMessage}</Typography>
+            )}
+
+            {/* AEP run lineage — shown for SUCCEEDED and FAILED runs (C-Y4 / F-Y009) */}
+            {(run.status === 'SUCCEEDED' || run.status === 'FAILED') && (
+              <Box className="mt-2 border-t pt-2">
+                <Typography className="mb-1 text-xs font-medium text-gray-500">
+                  AEP run lineage
+                </Typography>
+                <RunLineage runId={run.id} fetchLineage={fetchAepRunLineage} />
+              </Box>
             )}
 
             {run.status === 'FAILED' && onRetryRun && (

@@ -30,6 +30,8 @@ import { useRequirementOrchestration } from '../../../hooks/useRequirementOrches
 import { useAgentRunStream } from '../../../hooks/useAgentRunStream';
 import { useLifecycleTransition } from '../../../hooks/useLifecycleTransition';
 import { FOW_STAGE_LABELS, getFOWStageForPhase } from '../../../types/fow-stages';
+import { LIFECYCLE_PHASE } from '../../../types/lifecycle';
+import { PHASE_GATES } from '../../../shared/types/phase-gates';
 
 type RequirementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 type RequirementStatus =
@@ -355,6 +357,20 @@ export default function Component() {
     const isAuthorizedApprover = hasPermission('approvals:decide');
     const { currentPhase, gateStatuses, canTransition } = usePhaseGates(resolvedProjectId);
     const currentStage = getFOWStageForPhase(currentPhase);
+
+    // Derive gate-blocked state for the outgoing transition (C-Y13)
+    const nextPhase = React.useMemo(() => {
+        const idx = LIFECYCLE_PHASE.indexOf(currentPhase);
+        return idx >= 0 && idx < LIFECYCLE_PHASE.length - 1 ? LIFECYCLE_PHASE[idx + 1] : undefined;
+    }, [currentPhase]);
+    const outgoingGate = React.useMemo(
+        () => (nextPhase ? PHASE_GATES.find((g) => g.fromPhase === currentPhase && g.toPhase === nextPhase) : undefined),
+        [currentPhase, nextPhase]
+    );
+    const outgoingGateStatus = outgoingGate ? gateStatuses[outgoingGate.id] : undefined;
+    const isGateBlocked =
+        outgoingGateStatus?.status === 'blocked' || outgoingGateStatus?.status === 'failed';
+    const gateBlockReason = isGateBlocked ? outgoingGateStatus?.blockedReason : undefined;
     const [decisionDetailVisible, setDecisionDetailVisible] = React.useState(false);
     const [clientPanelsReady, setClientPanelsReady] = React.useState(false);
 

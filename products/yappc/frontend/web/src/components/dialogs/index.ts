@@ -26,3 +26,7 @@ export type {
     StandardDrawerProps,
     FormDrawerProps,
 } from './StandardDrawer';
+
+// Phase Gate Dialog (F-Y042 / AI-Y3)
+export { PhaseGateDialog } from './PhaseGateDialog';
+export type { PhaseGateDialogProps } from './PhaseGateDialog';

@@ -19,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -78,13 +80,17 @@ import com.ghatana.datacloud.launcher.http.handlers.PluginInstallHandler;
 import com.ghatana.datacloud.launcher.http.handlers.StorageCostHandler;
 import com.ghatana.datacloud.launcher.http.handlers.FederatedQueryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.TierMigrationHandler;
+import com.ghatana.datacloud.launcher.http.handlers.DataSourceRegistryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.CapabilityRegistryHandler;
 import com.ghatana.datacloud.launcher.http.handlers.CollectionContextHandler;
+import com.ghatana.datacloud.launcher.http.handlers.ComplianceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.ContextLayerHandler;
 import com.ghatana.datacloud.launcher.http.handlers.DataProductHandler;
 import com.ghatana.datacloud.launcher.http.handlers.LineageHandler;
+import com.ghatana.datacloud.launcher.http.handlers.ProviderConformanceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SettingsHandler;
+import com.ghatana.datacloud.launcher.http.handlers.SovereignProfileHandler;
 import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
@@ -1049,7 +1055,7 @@ public class DataCloudHttpServer {
         eventHandler.withTraceSupport(traceSpanSupport);
         if (tenantQuotaService != null) eventHandler.withTenantQuotaService(tenantQuotaService);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
-        alertingHandler = new AlertingHandler(client, httpSupport);
+        alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
         runtimePluginManager = new DataCloudRuntimePluginManager();
         if (workflowExecutionEnabled) {
             runtimePluginManager.registerWorkflowPlugin(client);
@@ -1072,6 +1078,9 @@ public class DataCloudHttpServer {
         analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
 
         workflowExecutionHandler = new WorkflowExecutionHandler(httpSupport, runtimePluginManager);
+        if (client != null) {
+            workflowExecutionHandler.withClient(client);
+        }
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
         aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
@@ -1086,6 +1095,7 @@ public class DataCloudHttpServer {
             blockingExecutor,
             new AiRecommendationMetrics(metricsCollector));
         if (tenantQuotaService != null) aiAssistHandler.withTenantQuotaService(tenantQuotaService);
+        if (client != null) aiAssistHandler.withClient(client);
 
         // DC-E4: Voice gateway handler — wire Whisper STT adapter if DC_STT_URL is configured
         WhisperSttConfig sttConfig = WhisperSttConfig.fromEnv();
@@ -1186,6 +1196,19 @@ public class DataCloudHttpServer {
         SettingsStore resolvedStore = settingsStore != null ? settingsStore : new InMemorySettingsStore();
         settingsHandler = new SettingsHandler(httpSupport, resolvedStore);
 
+        // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
+        DataSourceRegistryHandler dataSourceRegistryHandler = new DataSourceRegistryHandler(
+            client, httpSupport, null /* no DataFabricConnector implementation yet */);
+
+        // P3.6: Compliance handler for legal holds and evidence packages
+        ComplianceHandler complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
+
+        // P3.3: Sovereign profile handler for air-gapped, model routing, and policy enforcement
+        SovereignProfileHandler sovereignProfileHandler = new SovereignProfileHandler(client, httpSupport, objectMapper);
+
+        // P3.1: Provider conformance suite handler for EntityStore and EventLogStore validation
+        ProviderConformanceHandler conformanceHandler = new ProviderConformanceHandler(httpSupport, client);
+
         log.info("[DC-CAP] Runtime capability summary {}", buildCapabilitySummaryLog());
 
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
@@ -1218,7 +1241,11 @@ public class DataCloudHttpServer {
             .withStorageCostRoutes(storageCostHandler, httpSupport)
             .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
             .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
+            .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
             .withSettingsRoutes(settingsHandler)
+            .withComplianceRoutes(complianceHandler)
+            .withSovereignProfileRoutes(sovereignProfileHandler)
+            .withConformanceRoutes(conformanceHandler)
             .build();
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
@@ -1370,6 +1397,36 @@ public class DataCloudHttpServer {
         capabilities.put("storage.compaction", capabilityEntry(storageCompactionTask != null, resolveSubsystemStatus("storage_compaction")));
         capabilities.put("tierMigration.warm", capabilityEntry(warmMigrationScheduler != null, null));
         capabilities.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
+        // P1.4: Document tier routing policy in capability registry
+        List<Map<String, Object>> tiers = new ArrayList<>();
+        Map<String, Object> hotTier = new LinkedHashMap<>();
+        hotTier.put("name", "hot");
+        hotTier.put("description", "Recent, frequently accessed data — in-memory / high-performance storage");
+        hotTier.put("defaultRetentionDays", 7);
+        hotTier.put("autoMigrateAfterDays", 7);
+        tiers.add(hotTier);
+        Map<String, Object> warmTier = new LinkedHashMap<>();
+        warmTier.put("name", "warm");
+        warmTier.put("description", "Older, less frequently accessed data — columnar / Iceberg catalog");
+        warmTier.put("defaultRetentionDays", 90);
+        warmTier.put("autoMigrateAfterDays", 30);
+        tiers.add(warmTier);
+        Map<String, Object> coldTier = new LinkedHashMap<>();
+        coldTier.put("name", "cold");
+        coldTier.put("description", "Archived data — compressed, object storage with point-in-time recovery");
+        coldTier.put("defaultRetentionDays", 2555);
+        coldTier.put("autoMigrateAfterDays", 90);
+        tiers.add(coldTier);
+        Map<String, Object> defaultRules = new LinkedHashMap<>();
+        defaultRules.put("hotToWarm", "lastAccess > 7d OR recordAge > 7d");
+        defaultRules.put("warmToCold", "lastAccess > 30d OR recordAge > 90d");
+        defaultRules.put("coldToWarm", "explicitRestoreRequest OR scheduledQuery");
+        defaultRules.put("costModel", "hot = 10x base, warm = 2x base, cold = 0.5x base");
+        Map<String, Object> tierRoutingPolicy = new LinkedHashMap<>();
+        tierRoutingPolicy.put("tiers", tiers);
+        tierRoutingPolicy.put("defaultRules", defaultRules);
+        tierRoutingPolicy.put("schedulerAvailable", warmMigrationScheduler != null || coldMigrationScheduler != null);
+        capabilities.put("tierRoutingPolicy", tierRoutingPolicy);
         capabilities.put("health.database", capabilityEntry(healthSubsystemSuppliers.containsKey("database"), resolveSubsystemStatus("database")));
         capabilities.put("health.aiInference", capabilityEntry(healthSubsystemSuppliers.containsKey("ai_inference"), resolveSubsystemStatus("ai_inference")));
         capabilities.put("health.eventStore", capabilityEntry(healthSubsystemSuppliers.containsKey("event_store"), resolveSubsystemStatus("event_store")));

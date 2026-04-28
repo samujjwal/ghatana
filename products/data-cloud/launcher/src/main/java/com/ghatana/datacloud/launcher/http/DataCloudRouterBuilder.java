@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
  *     .withStorageCostRoutes(storageCostHandler, httpSupport)
  *     .withFederatedQueryRoutes(federatedQueryHandler, httpSupport)
  *     .withTierMigrationRoutes(tierMigrationHandler, httpSupport)
+ *     .withConnectorRoutes(dataSourceRegistryHandler, httpSupport)
  *     .build();
  * }</pre>
  *
@@ -170,9 +171,13 @@ public class DataCloudRouterBuilder {
     public DataCloudRouterBuilder withAlertRoutes(AlertingHandler alertingHandler, SseStreamingHandler sseHandler) {
         builder
             .with(HttpMethod.GET, "/api/v1/alerts", alertingHandler::handleListAlerts)
-            .with(HttpMethod.POST, "/api/v1/alerts/:alertId/acknowledge", alertingHandler::handleAcknowledgeAlert)
-            .with(HttpMethod.POST, "/api/v1/alerts/:alertId/resolve", alertingHandler::handleResolveAlert)
-            .with(HttpMethod.POST, "/api/v1/alerts/:alertId/escalate", alertingHandler::handleEscalateAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:id/acknowledge", alertingHandler::handleAcknowledgeAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:id/resolve", alertingHandler::handleResolveAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:id/escalate", alertingHandler::handleEscalateAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:id/auto-remediate", alertingHandler::handleAutoRemediate)
+            .with(HttpMethod.POST, "/api/v1/alerts/:id/remediate", alertingHandler::handleRemediateAlert)
+            .with(HttpMethod.POST, "/api/v1/alerts/:id/remediate/rollback", alertingHandler::handleRollbackRemediation)
+            .with(HttpMethod.GET, "/api/v1/alerts/:id/remediations", alertingHandler::handleListRemediations)
             .with(HttpMethod.GET, "/api/v1/alerts/groups", alertingHandler::handleListAlertGroups)
             .with(HttpMethod.POST, "/api/v1/alerts/groups/:groupId/resolve", alertingHandler::handleResolveGroup)
             .with(HttpMethod.GET, "/api/v1/alerts/suggestions", alertingHandler::handleListResolutionSuggestions)
@@ -257,7 +262,13 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/reports/:reportId", analyticsHandler::handleGetReport)
             .with(HttpMethod.GET, "/api/v1/executions/:executionId", workflowExecutionHandler::handleGetExecution)
             .with(HttpMethod.GET, "/api/v1/executions/:executionId/logs", workflowExecutionHandler::handleExecutionLogs)
-            .with(HttpMethod.POST, "/api/v1/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution);
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/retry", workflowExecutionHandler::handleRetryExecution)
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/rollback", workflowExecutionHandler::handleRollbackExecution)
+            // P2.2: Event-backed checkpoints for durable workflow execution
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/checkpoint", workflowExecutionHandler::handleCreateCheckpoint)
+            .with(HttpMethod.GET, "/api/v1/executions/:executionId/checkpoints", workflowExecutionHandler::handleListCheckpoints)
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/restore", workflowExecutionHandler::handleRestoreCheckpoint);
         return this;
     }
 
@@ -307,15 +318,36 @@ public class DataCloudRouterBuilder {
     public DataCloudRouterBuilder withAiAssistRoutes(AiAssistHandler aiAssistHandler) {
         builder
             .with(HttpMethod.POST, "/api/v1/entities/:collection/suggest", aiAssistHandler::handleEntitySuggest)
-            .with(HttpMethod.POST, "/api/v1/analytics/suggest", aiAssistHandler::handleAnalyticsSuggest)
-            .with(HttpMethod.POST, "/api/v1/pipelines/draft", aiAssistHandler::handlePipelineDraft)
-            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
+            // TODO: handleInferSchema method not found in AiAssistHandler - temporarily disabled
+            // .with(HttpMethod.POST, "/api/v1/entities/:collection/infer-schema", aiAssistHandler::handleInferSchema)
+            .with(HttpMethod.POST, "/api/v1/analytics/automate", aiAssistHandler::handleAnalyticsAutomate)
             .with(HttpMethod.POST, "/api/v1/brain/explain", aiAssistHandler::handleBrainExplain)
+            .with(HttpMethod.POST, "/api/v1/ai/context/rank", aiAssistHandler::handleContextRank)
+            .with(HttpMethod.POST, "/api/v1/ai/quality/drift-detect", aiAssistHandler::handleContractDrift)
+            .with(HttpMethod.POST, "/api/v1/operations/anomaly-group", aiAssistHandler::handleAnomalyGroup)
+            .with(HttpMethod.POST, "/api/v1/operations/forecast", aiAssistHandler::handleCapacityForecast)
+            .with(HttpMethod.POST, "/api/v1/ai/next-action", aiAssistHandler::handleNextBestAction)
+            .with(HttpMethod.POST, "/api/v1/connectors/suggest-mapping", aiAssistHandler::handleSuggestConnectorMapping)
+            .with(HttpMethod.POST, "/api/v1/connectors/:connectorId/sync-health", aiAssistHandler::handleConnectorSyncHealth)
             .with(HttpMethod.GET, "/api/v1/ai/quality-summary", aiAssistHandler::handleAiQualitySummary)
+            .with(HttpMethod.POST, "/api/v1/query/nlq", aiAssistHandler::handleNaturalLanguageQuery)
+            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/optimise-hint", aiAssistHandler::handlePipelineOptimiseHint)
+            .with(HttpMethod.POST, "/api/v1/governance/recommend", aiAssistHandler::handleGovernanceRecommend)
             // DC-AUD-008: Cross-surface AI operation routes expected by the UI client
             .with(HttpMethod.POST, "/api/v1/ai/suggestions", aiAssistHandler::handleAiSuggestions)
             .with(HttpMethod.POST, "/api/v1/ai/suggestions/:id/apply", aiAssistHandler::handleApplyAiSuggestion)
             .with(HttpMethod.GET, "/api/v1/ai/correlations", aiAssistHandler::handleAiCorrelations)
+            // P2.1: AI action audit log for learning-loop telemetry
+            .with(HttpMethod.GET, "/api/v1/ai/actions", aiAssistHandler::handleListAiActions)
+            // P2.6: AI suggestion feedback for learning loop
+            .with(HttpMethod.POST, "/api/v1/ai/suggestions/:id/feedback", aiAssistHandler::handleAiSuggestionFeedback)
+            .with(HttpMethod.GET, "/api/v1/ai/feedback", aiAssistHandler::handleListAiFeedback)
+            // P1.6: RAG feedback loop and agent memory retention policies
+            .with(HttpMethod.POST, "/api/v1/ai/rag-feedback", aiAssistHandler::handleRagFeedback)
+            .with(HttpMethod.POST, "/api/v1/ai/memory/retention", aiAssistHandler::handleMemoryRetention)
+            // P2.2: Workflow risk analysis and DAG validation endpoints
+            .with(HttpMethod.POST, "/api/v1/workflows/analyze-risk", aiAssistHandler::handleAnalyzeWorkflowRisk)
+            .with(HttpMethod.POST, "/api/v1/workflows/validate", aiAssistHandler::handleWorkflowValidate)
             .with(HttpMethod.GET, "/api/v1/ai/advisories/workflows/:workflowId", aiAssistHandler::handleAiWorkflowAdvisory)
             .with(HttpMethod.GET, "/api/v1/ai/advisories/quality/:collectionId", aiAssistHandler::handleAiQualityAdvisory)
             .with(HttpMethod.GET, "/api/v1/ai/advisories/fabric/:collectionId", aiAssistHandler::handleAiFabricAdvisory);
@@ -377,10 +409,12 @@ public class DataCloudRouterBuilder {
         builder
             .with(HttpMethod.GET, "/api/v1/context", contextLayerHandler::handleGetContext)
             .with(HttpMethod.GET, "/api/v1/context/:collection", collectionContextHandler::handleGetCollectionContext)
+            .with(HttpMethod.GET, "/api/v1/context/:collection/lineage/trust", collectionContextHandler::handleTrustCenterLineage)
             .with(HttpMethod.PUT, "/api/v1/context", contextLayerHandler::handlePutContext)
             .with(HttpMethod.DELETE, "/api/v1/context/keys/:key", contextLayerHandler::handleDeleteContextKey)
             .with(HttpMethod.GET, "/api/v1/context/snapshot", contextLayerHandler::handleGetSnapshot)
-            .with(HttpMethod.POST, "/api/v1/context/:collection/rag", semanticSearchHandler::handleCollectionRag);
+            .with(HttpMethod.POST, "/api/v1/context/:collection/rag", semanticSearchHandler::handleCollectionRag)
+            .with(HttpMethod.POST, "/api/v1/context/:collection/rag-policy-check", collectionContextHandler::handleRagPolicyCheck);
         return this;
     }
 
@@ -401,7 +435,11 @@ public class DataCloudRouterBuilder {
         builder
             .with(HttpMethod.GET, "/api/v1/data-products", dataProductHandler::handleListDataProducts)
             .with(HttpMethod.POST, "/api/v1/data-products", dataProductHandler::handlePublishDataProduct)
-            .with(HttpMethod.POST, "/api/v1/data-products/:productId/subscribe", dataProductHandler::handleSubscribe);
+            .with(HttpMethod.POST, "/api/v1/data-products/:productId/subscribe", dataProductHandler::handleSubscribe)
+            // P1.3: SLA monitoring with automated degradation alerts
+            .with(HttpMethod.POST, "/api/v1/data-products/:productId/sla-monitor", dataProductHandler::handleMonitorSla)
+            // P1.3: Contract compatibility check for schema/SLA changes
+            .with(HttpMethod.POST, "/api/v1/data-products/:productId/contract-check", dataProductHandler::handleCheckContractCompatibility);
         return this;
     }
 
@@ -414,7 +452,11 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/autonomy/level", autonomyHandler::handleGetGlobalLevel)
             .with(HttpMethod.GET, "/api/v1/autonomy/domains", autonomyHandler::handleListDomains)
             .with(HttpMethod.GET, "/api/v1/autonomy/domains/:domain", autonomyHandler::handleGetDomain)
-            .with(HttpMethod.GET, "/api/v1/autonomy/logs", autonomyHandler::handleGetLogs);
+            .with(HttpMethod.GET, "/api/v1/autonomy/logs", autonomyHandler::handleGetLogs)
+            // P2.3: Expose automation plan to human operators
+            .with(HttpMethod.GET, "/api/v1/autonomy/plan/:actionType", autonomyHandler::handleGetAutonomyPlan)
+            // P2.6: Update autonomy policies from operator feedback patterns
+            .with(HttpMethod.POST, "/api/v1/autonomy/feedback-policy", autonomyHandler::handleUpdatePolicyFromFeedback);
         return this;
     }
 
@@ -432,12 +474,17 @@ public class DataCloudRouterBuilder {
      * Adds plugin lifecycle management endpoints.
      */
     public DataCloudRouterBuilder withPluginRoutes(PluginInstallHandler pluginInstallHandler) {
+        if (pluginInstallHandler == null) return this;
         builder
             .with(HttpMethod.GET, "/api/v1/plugins", pluginInstallHandler::handleListPlugins)
             .with(HttpMethod.GET, "/api/v1/plugins/:id", pluginInstallHandler::handleGetPlugin)
             .with(HttpMethod.POST, "/api/v1/plugins/:id/enable", pluginInstallHandler::handleEnablePlugin)
             .with(HttpMethod.POST, "/api/v1/plugins/:id/disable", pluginInstallHandler::handleDisablePlugin)
-            .with(HttpMethod.POST, "/api/v1/plugins/:id/upgrade", pluginInstallHandler::handleUpgradePlugin);
+            .with(HttpMethod.POST, "/api/v1/plugins/:id/upgrade", pluginInstallHandler::handleUpgradePlugin)
+            .with(HttpMethod.GET, "/api/v1/plugins/marketplace", pluginInstallHandler::handleMarketplaceCatalog)
+            .with(HttpMethod.GET, "/api/v1/plugins/:id/sandbox", pluginInstallHandler::handlePluginSandboxStatus)
+            .with(HttpMethod.POST, "/api/v1/plugins/:id/validate", pluginInstallHandler::handleValidatePluginSchema)
+            .with(HttpMethod.POST, "/api/v1/plugins/:id/conformance", pluginInstallHandler::handlePluginConformanceTest);
         return this;
     }
 
@@ -482,6 +529,40 @@ public class DataCloudRouterBuilder {
     }
 
     /**
+     * Adds connector registry endpoints for external data sources (P1.1).
+     */
+    public DataCloudRouterBuilder withConnectorRoutes(DataSourceRegistryHandler dataSourceRegistryHandler, HttpHandlerSupport httpSupport) {
+        if (dataSourceRegistryHandler != null) {
+            builder
+                .with(HttpMethod.GET,  "/api/v1/connectors", dataSourceRegistryHandler::handleListConnections)
+                .with(HttpMethod.POST, "/api/v1/connectors", dataSourceRegistryHandler::handleRegisterConnection)
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId", dataSourceRegistryHandler::handleGetConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/test", dataSourceRegistryHandler::handleTestConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/rotate-credentials", dataSourceRegistryHandler::handleRotateCredentials)
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/health", dataSourceRegistryHandler::handleGetHealth)
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/schema", dataSourceRegistryHandler::handleGetSchema)
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/sync/status", dataSourceRegistryHandler::handleGetSyncStatus);
+        } else {
+            builder
+                .with(HttpMethod.GET,  "/api/v1/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/api/v1/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/test", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/enable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/disable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/rotate-credentials", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/health", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/schema", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/sync", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/sync/status", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")));
+        }
+        return this;
+    }
+
+    /**
      * Adds admin settings CRUD endpoints (GH-90000 / ADMIN-004).
      */
     public DataCloudRouterBuilder withSettingsRoutes(SettingsHandler settingsHandler) {
@@ -500,7 +581,58 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/settings/preferences", settingsHandler::handleGetPreferences)
             .with(HttpMethod.PATCH, "/api/v1/settings/preferences", settingsHandler::handleUpdatePreferences)
             .with(HttpMethod.GET, "/api/v1/settings/notifications", settingsHandler::handleGetNotificationPreferences)
-            .with(HttpMethod.PATCH, "/api/v1/settings/notifications", settingsHandler::handleUpdateNotificationPreferences);
+            .with(HttpMethod.PATCH, "/api/v1/settings/notifications", settingsHandler::handleUpdateNotificationPreferences)
+            // P3.5: Admin approval workflow for sensitive settings changes
+            .with(HttpMethod.POST, "/api/v1/settings/approval-request", settingsHandler::handleRequestApproval)
+            .with(HttpMethod.GET, "/api/v1/settings/approvals", settingsHandler::handleListApprovals)
+            .with(HttpMethod.POST, "/api/v1/settings/approvals/:id/approve", settingsHandler::handleApproveRequest)
+            .with(HttpMethod.POST, "/api/v1/settings/approvals/:id/reject", settingsHandler::handleRejectRequest);
+        return this;
+    }
+
+    /**
+     * Adds compliance endpoints for legal holds and evidence package generation (P3.6).
+     */
+    public DataCloudRouterBuilder withComplianceRoutes(ComplianceHandler complianceHandler) {
+        if (complianceHandler == null) return this;
+        builder
+            .with(HttpMethod.POST, "/api/v1/compliance/legal-holds", complianceHandler::handleApplyLegalHold)
+            .with(HttpMethod.GET, "/api/v1/compliance/legal-holds", complianceHandler::handleListLegalHolds)
+            .with(HttpMethod.POST, "/api/v1/compliance/legal-holds/:id/extend", complianceHandler::handleExtendLegalHold)
+            .with(HttpMethod.POST, "/api/v1/compliance/legal-holds/:id/release", complianceHandler::handleReleaseLegalHold)
+            .with(HttpMethod.POST, "/api/v1/compliance/evidence-package", complianceHandler::handleGenerateEvidencePackage)
+            .with(HttpMethod.GET, "/api/v1/compliance/posture", complianceHandler::handleCompliancePosture);
+        return this;
+    }
+
+    /**
+     * Adds sovereign profile and air-gapped policy endpoints (P3.3).
+     */
+    public DataCloudRouterBuilder withConformanceRoutes(ProviderConformanceHandler conformanceHandler) {
+        if (conformanceHandler == null) return this;
+        builder
+            .with(HttpMethod.GET, "/api/v1/conformance", conformanceHandler::handleFullConformance)
+            .with(HttpMethod.GET, "/api/v1/conformance/entity-store", conformanceHandler::handleEntityStoreConformance)
+            .with(HttpMethod.GET, "/api/v1/conformance/event-log-store", conformanceHandler::handleEventLogStoreConformance);
+        return this;
+    }
+
+    public DataCloudRouterBuilder withSovereignProfileRoutes(SovereignProfileHandler sovereignProfileHandler) {
+        if (sovereignProfileHandler == null) return this;
+        builder
+            .with(HttpMethod.GET, "/api/v1/sovereign/profile", sovereignProfileHandler::handleGetSovereignProfile)
+            .with(HttpMethod.PUT, "/api/v1/sovereign/profile", sovereignProfileHandler::handleUpdateSovereignProfile)
+            .with(HttpMethod.GET, "/api/v1/sovereign/models", sovereignProfileHandler::handleGetModelPolicy)
+            .with(HttpMethod.GET, "/api/v1/sovereign/audit", sovereignProfileHandler::handleGetSovereignAudit)
+            .with(HttpMethod.GET, "/api/v1/sovereign/backup", sovereignProfileHandler::handleGetBackupStatus)
+            .with(HttpMethod.POST, "/api/v1/sovereign/backup", sovereignProfileHandler::handleTriggerBackup)
+            .with(HttpMethod.POST, "/api/v1/sovereign/restore", sovereignProfileHandler::handleRestoreBackup)
+            .with(HttpMethod.GET, "/api/v1/sovereign/data-subject-controls", sovereignProfileHandler::handleGetDataSubjectControls)
+            .with(HttpMethod.PUT, "/api/v1/sovereign/data-subject-controls", sovereignProfileHandler::handleUpdateDataSubjectControls)
+            .with(HttpMethod.GET, "/api/v1/sovereign/conformance", sovereignProfileHandler::handleRunConformanceTests)
+            .with(HttpMethod.GET, "/api/v1/sovereign/data-residency", sovereignProfileHandler::handleGetDataResidencyAudit)
+            .with(HttpMethod.POST, "/api/v1/sovereign/validate-transfer", sovereignProfileHandler::handleValidateTransfer)
+            .with(HttpMethod.GET, "/api/v1/sovereign/region-policy", sovereignProfileHandler::handleGetRegionPolicy);
         return this;
     }
 
@@ -510,7 +642,7 @@ public class DataCloudRouterBuilder {
      * @return the configured routing servlet
      */
     public RoutingServlet build() {
-        log.info("Data-Cloud router built with {} route groups", 26);
+        log.info("Data-Cloud router built with {} route groups", 28);
         return builder.build();
     }
 }

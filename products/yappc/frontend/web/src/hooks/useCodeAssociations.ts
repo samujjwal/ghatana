@@ -8,7 +8,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import { codeAssociations as codeAssociationsApi } from '@/lib/api';
 
 /**
  * Code relationship types
@@ -58,11 +58,7 @@ export interface CreateCodeAssociationInput {
 export function useCodeAssociations(artifactId: string) {
     return useQuery({
         queryKey: ['codeAssociations', artifactId],
-        queryFn: async () => {
-            const response = await fetch(`/api/artifacts/${artifactId}/code-associations`);
-            if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to fetch code associations'));
-            return parseJsonResponse<CodeAssociation[]>(response, 'fetch code associations');
-        },
+        queryFn: () => codeAssociationsApi.listForArtifact(artifactId),
         enabled: !!artifactId,
         staleTime: 30 * 1000, // 30 seconds
     });
@@ -75,15 +71,8 @@ export function useCreateCodeAssociation() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (input: CreateCodeAssociationInput) => {
-            const response = await fetch(`/api/code-associations`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(input),
-            });
-            if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to create code association'));
-            return parseJsonResponse<CodeAssociation>(response, 'create code association');
-        },
+        mutationFn: (input: CreateCodeAssociationInput) =>
+            codeAssociationsApi.create(input) as Promise<CodeAssociation>,
         onSuccess: (data) => {
             // Invalidate queries for both artifacts
             queryClient.invalidateQueries({ queryKey: ['codeAssociations', data.artifactId] });
@@ -100,13 +89,7 @@ export function useDeleteCodeAssociation() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (associationId: string) => {
-            const response = await fetch(`/api/code-associations/${associationId}`, {
-                method: 'DELETE',
-            });
-            if (!response.ok) throw new Error(await readErrorResponse(response, 'Failed to delete code association'));
-            return parseJsonResponse<unknown>(response, 'delete code association');
-        },
+        mutationFn: (associationId: string) => codeAssociationsApi.delete(associationId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['codeAssociations'] });
             queryClient.invalidateQueries({ queryKey: ['artifacts'] });

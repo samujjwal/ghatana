@@ -8,6 +8,8 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -30,6 +32,7 @@ import java.util.UUID;
  */
 public final class DataProductHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(DataProductHandler.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
     private static final String DATA_PRODUCTS_COLLECTION = "dc_data_products";
     private static final String SUBSCRIPTIONS_COLLECTION = "dc_data_product_subscriptions";
@@ -301,6 +304,150 @@ public final class DataProductHandler {
             return "array";
         }
         return "string";
+    }
+
+    /**
+     * {@code POST /api/v1/data-products/:productId/sla-monitor}
+     *
+     * <p>Monitors SLA health for a data product and emits alerts on
+     * degradation (P1.3). Compares actual quality snapshot against the
+     * published SLA targets and returns status with breach details.
+     */
+    public Promise<HttpResponse> handleMonitorSla(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = http.resolveCorrelationId(request);
+        String productId = request.getPathParameter("productId");
+
+        return client.findById(tenantId, DATA_PRODUCTS_COLLECTION, productId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(http.errorResponse(404, "Data product not found: " + productId));
+                }
+                Map<String, Object> productData = opt.get().data();
+                String collection = stringValue(productData.get("collection"));
+                Map<String, Object> sla = mapValue(productData.get("sla"));
+
+                if (collection == null || collection.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "Product has no associated collection"));
+                }
+
+                return client.query(tenantId, collection, DataCloudClient.Query.limit(SCHEMA_SAMPLE_LIMIT))
+                    .map(samples -> {
+                        ProductQualitySnapshot snapshot = computeQualitySnapshot(samples);
+                        String slaStatus = evaluateSlaStatus(sla, snapshot);
+                        boolean degraded = !"HEALTHY".equals(slaStatus);
+
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("tenantId", tenantId);
+                        result.put("productId", productId);
+                        result.put("collection", collection);
+                        result.put("slaStatus", slaStatus);
+                        result.put("degraded", degraded);
+                        result.put("quality", snapshot.toMap());
+                        result.put("sla", sla);
+                        result.put("checkedAt", Instant.now().toString());
+                        result.put("requestId", requestId);
+
+                        if (degraded) {
+                            // Emit event log entry for degradation alert
+                            if (client != null) {
+                                client.appendEvent(tenantId,
+                                    DataCloudClient.Event.of("data-product.sla-breach", Map.of(
+                                        "productId", productId,
+                                        "collection", collection,
+                                        "slaStatus", slaStatus,
+                                        "quality", snapshot.toMap(),
+                                        "detectedAt", Instant.now().toString()
+                                    ))).whenException(e -> log.warn("Failed to emit SLA breach event: {}", e.getMessage()));
+                            }
+                        }
+                        return http.jsonResponse(result, requestId);
+                    });
+            });
+    }
+
+    /**
+     * {@code POST /api/v1/data-products/:productId/contract-check}
+     *
+     * <p>Validates schema and SLA contract compatibility when a product is
+     * updated or its upstream collection schema changes (P1.3).
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleCheckContractCompatibility(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = http.resolveCorrelationId(request);
+        String productId = request.getPathParameter("productId");
+
+        return request.loadBody().then(buf -> {
+            Map<String, Object> input = parseBody(buf.getString(StandardCharsets.UTF_8));
+            Map<String, Object> proposedSchema = mapValue(input.get("proposedSchema"));
+            Map<String, Object> proposedSla = mapValue(input.get("proposedSla"));
+
+            return client.findById(tenantId, DATA_PRODUCTS_COLLECTION, productId)
+                .then(opt -> {
+                    if (opt.isEmpty()) {
+                        return Promise.of(http.errorResponse(404, "Data product not found: " + productId));
+                    }
+                    Map<String, Object> current = opt.get().data();
+                    Map<String, Object> currentSchema = mapValue(((Map<String, Object>) current.getOrDefault("schema", Map.of())).get("fields"));
+                    Map<String, Object> currentSla = mapValue(current.get("sla"));
+
+                    List<Map<String, Object>> issues = new ArrayList<>();
+
+                    // Schema compatibility checks
+                    for (String field : proposedSchema.keySet()) {
+                        if (!currentSchema.containsKey(field)) {
+                            issues.add(Map.of(
+                                "type", "schema-breaking",
+                                "field", field,
+                                "reason", "New field not present in published contract"
+                            ));
+                        }
+                    }
+                    for (String field : currentSchema.keySet()) {
+                        if (!proposedSchema.containsKey(field)) {
+                            issues.add(Map.of(
+                                "type", "schema-breaking",
+                                "field", field,
+                                "reason", "Removed field breaks backward compatibility"
+                            ));
+                        }
+                    }
+
+                    // SLA compatibility checks
+                    for (Map.Entry<String, Object> entry : proposedSla.entrySet()) {
+                        String key = entry.getKey();
+                        Object currentValue = currentSla.get(key);
+                        if (currentValue != null && !String.valueOf(currentValue).equals(String.valueOf(entry.getValue()))) {
+                            issues.add(Map.of(
+                                "type", "sla-breaking",
+                                "field", key,
+                                "current", currentValue,
+                                "proposed", entry.getValue(),
+                                "reason", "SLA target changed from published contract"
+                            ));
+                        }
+                    }
+
+                    boolean compatible = issues.isEmpty();
+                    Map<String, Object> result = Map.of(
+                        "tenantId", tenantId,
+                        "productId", productId,
+                        "compatible", compatible,
+                        "issueCount", issues.size(),
+                        "issues", issues,
+                        "checkedAt", Instant.now().toString(),
+                        "requestId", requestId
+                    );
+                    return Promise.of(http.jsonResponse(result, requestId));
+                });
+        });
     }
 
     private Map<String, Object> parseBody(String json) {

@@ -75,6 +75,7 @@ interface AuthContextValue {
   sessionToken: string | null;
   isAuthenticated: boolean;
   isBootstrappingSession: boolean;
+  isVerifyingAuth: boolean;
   roles: UserRole[];
   hasRole: (role: UserRole) => boolean;
   hasAnyRole: (roles: UserRole[]) => boolean;
@@ -99,14 +100,36 @@ async function requestSessionToken(): Promise<string | null> {
   }
 }
 
+function normalizeRoles(rawRoles: string[]): UserRole[] {
+  return rawRoles
+    .map((r) => r.toLowerCase() as UserRole)
+    .filter((r): r is UserRole =>
+      r === 'admin' || r === 'operator' || r === 'viewer' || r === 'auditor',
+    );
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authTokenState, setAuthTokenState] = useState<string | null>(() => getAuthToken());
   const [sessionTokenState, setSessionTokenState] = useState<string | null>(() => getSessionToken());
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(() => getSessionExpiry());
   const [isBootstrappingSession, setIsBootstrappingSession] = useState(false);
+  const [isVerifyingAuth, setIsVerifyingAuth] = useState<boolean>(() => getAuthToken() !== null);
   const [roles, setRoles] = useState<UserRole[]>([]);
   const attemptedSessionBootstrap = useRef<string | null>(null);
+  const verifiedAuthToken = useRef<string | null>(null);
   const warnedRef = useRef(false);
+
+  const clearClientAuthState = useCallback((): void => {
+    attemptedSessionBootstrap.current = null;
+    verifiedAuthToken.current = null;
+    warnedRef.current = false;
+    clearAuthState();
+    setAuthTokenState(null);
+    setSessionTokenState(null);
+    setSessionExpiresAt(null);
+    setRoles([]);
+    setIsVerifyingAuth(false);
+  }, []);
 
   const bootstrapSession = async (): Promise<void> => {
     const token = getAuthToken();
@@ -134,17 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    if (!authTokenState || sessionTokenState || attemptedSessionBootstrap.current === authTokenState) {
-      return;
-    }
-
-    attemptedSessionBootstrap.current = authTokenState;
-    void bootstrapSession();
-    // F-032: Also sync roles whenever a fresh token is present (page reload case).
-    void fetchAndSetRoles();
-  }, [authTokenState, sessionTokenState]);
-
   // ── Session expiry guard ───────────────────────────────────────────
   useEffect(() => {
     if (!sessionExpiresAt) return;
@@ -153,11 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const remainingMs = sessionExpiresAt - Date.now();
       if (remainingMs <= 0) {
         clearInterval(intervalId);
-        clearAuthState();
-        setAuthTokenState(null);
-        setSessionTokenState(null);
-        setSessionExpiresAt(null);
-        warnedRef.current = false;
+        clearClientAuthState();
         toast.error('Your session has expired. Please sign in again.');
         window.location.reload();
         return;
@@ -169,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 30_000);
 
     return () => clearInterval(intervalId);
-  }, [sessionExpiresAt]);
+  }, [clearClientAuthState, sessionExpiresAt]);
 
   const bootstrapPlatformSession = async (): Promise<void> => {
     if (!isFeatureEnabled('LEGACY_JWT_PASTE')) {
@@ -186,22 +194,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  /** F-032: Fetch the verified roles from the backend after a token is set. */
-  const fetchAndSetRoles = async (): Promise<void> => {
-    try {
-      const response = await apiClient.get<RolesResponse>('/api/v1/auth/roles');
-      const rawRoles = response.data.roles ?? [];
-      const knownRoles: UserRole[] = rawRoles
-        .map((r) => r.toLowerCase() as UserRole)
-        .filter((r): r is UserRole =>
-          r === 'admin' || r === 'operator' || r === 'viewer' || r === 'auditor',
-        );
-      setRoles(knownRoles);
-    } catch {
-      // Roles unavailable — keep empty list; gate checks will deny action buttons
+  const fetchVerifiedRoles = useCallback(async (): Promise<UserRole[]> => {
+    const response = await apiClient.get<RolesResponse>('/api/v1/auth/roles');
+    return normalizeRoles(response.data.roles ?? []);
+  }, []);
+
+  useEffect(() => {
+    if (!authTokenState) {
       setRoles([]);
+      setIsVerifyingAuth(false);
+      return;
     }
-  };
+
+    if (verifiedAuthToken.current === authTokenState) {
+      setIsVerifyingAuth(false);
+      return;
+    }
+
+    if (!isJwtTokenFresh(authTokenState)) {
+      clearClientAuthState();
+      return;
+    }
+
+    let cancelled = false;
+    setIsVerifyingAuth(true);
+
+    void (async () => {
+      try {
+        const verifiedRoles = await fetchVerifiedRoles();
+        if (cancelled) {
+          return;
+        }
+        setRoles(verifiedRoles);
+        verifiedAuthToken.current = authTokenState;
+        setIsVerifyingAuth(false);
+
+        if (!sessionTokenState && attemptedSessionBootstrap.current !== authTokenState) {
+          attemptedSessionBootstrap.current = authTokenState;
+          try {
+            await bootstrapSession();
+          } catch {
+            // Sessions are continuation tokens only; verified JWT auth remains usable without one.
+          }
+        }
+      } catch {
+        if (cancelled) {
+          return;
+        }
+        clearClientAuthState();
+        toast.error('Your authentication token could not be verified. Please sign in again.');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authTokenState, clearClientAuthState, fetchVerifiedRoles, sessionTokenState]);
 
   useEffect(() => {
     void bootstrapPlatformSession();
@@ -221,9 +269,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       authToken: authTokenState,
       sessionToken: sessionTokenState,
-      // F-007: isAuthenticated requires a present AND unexpired JWT, not merely a non-null string.
-      isAuthenticated: authTokenState !== null && isJwtTokenFresh(authTokenState),
+      // F-007: isAuthenticated becomes true only after the backend has accepted the JWT.
+      isAuthenticated: !isVerifyingAuth && authTokenState !== null && isJwtTokenFresh(authTokenState),
       isBootstrappingSession,
+      isVerifyingAuth,
       roles,
       hasRole,
       hasAnyRole,
@@ -234,28 +283,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         attemptedSessionBootstrap.current = null;
+        warnedRef.current = false;
+        setIsVerifyingAuth(true);
         setAuthToken(normalizedToken);
         setAuthTokenState(normalizedToken);
-        await bootstrapSession();
-        // F-032: Fetch roles immediately after login so gate checks work right away.
-        await fetchAndSetRoles();
+        try {
+          const verifiedRoles = await fetchVerifiedRoles();
+          setRoles(verifiedRoles);
+          verifiedAuthToken.current = normalizedToken;
+          setIsVerifyingAuth(false);
+          try {
+            await bootstrapSession();
+          } catch {
+            // Session bootstrap is optional once the JWT has been verified.
+          }
+        } catch {
+          clearClientAuthState();
+          throw new Error('Unable to verify JWT access token');
+        }
       },
       async loginWithPlatform(): Promise<void> {
         await bootstrapPlatformSession();
-        await fetchAndSetRoles();
+        if (getAuthToken()) {
+          try {
+            const verifiedRoles = await fetchVerifiedRoles();
+            setRoles(verifiedRoles);
+            verifiedAuthToken.current = getAuthToken();
+          } catch {
+            clearClientAuthState();
+          }
+        }
       },
       logout(): void {
-        attemptedSessionBootstrap.current = null;
-        warnedRef.current = false;
-        clearAuthState();
-        setAuthTokenState(null);
-        setSessionTokenState(null);
-        setSessionExpiresAt(null);
-        setRoles([]);
+        clearClientAuthState();
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [authTokenState, hasAnyRole, hasRole, isBootstrappingSession, roles, sessionTokenState],
+    [authTokenState, clearClientAuthState, fetchVerifiedRoles, hasAnyRole, hasRole, isBootstrappingSession, isVerifyingAuth, roles, sessionTokenState],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

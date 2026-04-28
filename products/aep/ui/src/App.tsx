@@ -58,6 +58,21 @@ import { AuthProvider } from '@/context/AuthContext';
 import { useLocation, useNavigate } from 'react-router';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { RuntimeTruthBanner } from '@/components/shared/RuntimeTruthBanner';
+import {
+  getAgentRegistryUrl,
+  getCostDashboardUrl,
+  getGovernanceUrl,
+  getLearningEpisodesUrl,
+  getMarketplaceUrl,
+  getMemoryExplorerUrl,
+  getNewPipelineUrl,
+  getOperateUrl,
+  getPatternStudioUrl,
+  getPipelineListUrl,
+  getPrivacyRequestsUrl,
+  getReviewQueueUrl,
+  getWorkflowCatalogUrl,
+} from '@/lib/routes';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,84 +87,91 @@ const getAEPFinderItems = (navigate: (path: string) => void) => [
     label: 'Monitoring Dashboard',
     icon: <BarChart3 className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/operate'),
+    action: () => navigate(getOperateUrl()),
   },
   {
     id: 'costs',
     label: 'Cost Dashboard',
     icon: <BarChart3 className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/operate/costs'),
+    action: () => navigate(getCostDashboardUrl()),
   },
   {
     id: 'reviews',
     label: 'HITL Reviews',
     icon: <FileText className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/operate/reviews'),
+    action: () => navigate(getReviewQueueUrl()),
   },
   {
     id: 'pipelines',
     label: 'Pipelines',
     icon: <FileText className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/build/pipelines'),
+    action: () => navigate(getPipelineListUrl()),
   },
   {
     id: 'new-pipeline',
     label: 'New Pipeline',
     icon: <FileText className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/build/pipelines/new'),
+    action: () => navigate(getNewPipelineUrl()),
   },
   {
     id: 'patterns',
     label: 'Pattern Studio',
     icon: <FileText className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/build/patterns'),
+    action: () => navigate(getPatternStudioUrl()),
   },
   {
     id: 'episodes',
     label: 'Learning Episodes',
     icon: <Database className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/learn/episodes'),
+    action: () => navigate(getLearningEpisodesUrl()),
   },
   {
     id: 'memory',
     label: 'Memory Explorer',
     icon: <Database className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/learn/memory'),
+    action: () => navigate(getMemoryExplorerUrl()),
   },
   {
     id: 'governance',
     label: 'Governance',
     icon: <Shield className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/govern'),
+    action: () => navigate(getGovernanceUrl()),
+  },
+  {
+    id: 'privacy',
+    label: 'Privacy Requests',
+    icon: <Shield className="h-4 w-4" />,
+    category: 'Pages',
+    action: () => navigate(getPrivacyRequestsUrl()),
   },
   {
     id: 'agents',
     label: 'Agent Registry',
     icon: <Settings className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/catalog/agents'),
+    action: () => navigate(getAgentRegistryUrl()),
   },
   {
     id: 'marketplace',
     label: 'Agent Marketplace',
     icon: <Settings className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/catalog/marketplace'),
+    action: () => navigate(getMarketplaceUrl()),
   },
   {
     id: 'workflows',
     label: 'Workflow Catalog',
     icon: <FileText className="h-4 w-4" />,
     category: 'Pages',
-    action: () => navigate('/catalog/workflows'),
+    action: () => navigate(getWorkflowCatalogUrl()),
   },
 ];
 
@@ -182,6 +204,9 @@ const MemoryExplorerPage = lazy(() =>
 );
 const GovernancePage = lazy(() =>
   import('@/pages/GovernancePage').then((m) => ({ default: m.GovernancePage })),
+);
+const PrivacyRequestPage = lazy(() =>
+  import('@/pages/PrivacyRequestPage').then((m) => ({ default: m.PrivacyRequestPage })),
 );
 const AgentRegistryPage = lazy(() =>
   import('@/pages/AgentRegistryPage').then((m) => ({ default: m.AgentRegistryPage })),
@@ -329,6 +354,7 @@ function formatBreadcrumbLabel(segment: string): string {
     'patterns': 'Patterns',
     'episodes': 'Episodes',
     'memory': 'Memory',
+    'privacy': 'Privacy',
     'agents': 'Agents',
     'marketplace': 'Marketplace',
     'workflows': 'Workflows',
@@ -394,6 +420,7 @@ export function App() {
                 <Route path="/learn/memory" element={<MemoryExplorerPage />} />
 
                 <Route path="/govern" element={<GovernancePage />} />
+                <Route path="/govern/privacy" element={<PrivacyRequestPage />} />
 
                 <Route path="/catalog/agents" element={<AgentRegistryPage />} />
                 <Route path="/catalog/agents/:agentId" element={<AgentRegistryPage />} />

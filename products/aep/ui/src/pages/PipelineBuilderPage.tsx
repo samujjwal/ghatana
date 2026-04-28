@@ -14,6 +14,7 @@ import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useSearchParams, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { toast, Toaster } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 import {
   PipelineCanvas,
   StagePalette,
@@ -40,6 +41,15 @@ import {
   exportPipelineSpec,
 } from '@/api/pipeline.api';
 import { tenantIdAtom } from '@/stores/tenant.store';
+import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
+import {
+  getAiConfidenceTier,
+  getAiRouting,
+  getAiRoutingDescription,
+  getAiRoutingLabel,
+  normalizeAiSources,
+  type AiAssistSource,
+} from '@/lib/ai-assist';
 import type {
   PipelineSpec,
   PipelineStageSpec,
@@ -95,6 +105,7 @@ function nodesToSpec(
 // ─── Page Component ──────────────────────────────────────────────────
 
 export function PipelineBuilderPage() {
+  const { hasAnyRole, isVerifyingAuth } = useAuth();
   const [pipeline, setPipeline] = useAtom(pipelineAtom);
   const [nodes, setNodes] = useAtom(nodesAtom);
   const [edges, setEdges] = useAtom(edgesAtom);
@@ -126,6 +137,7 @@ export function PipelineBuilderPage() {
   >(null);
   const [aiExplanation, setAiExplanation] = useState('');
   const [aiConfidence, setAiConfidence] = useState(0);
+  const [aiSources, setAiSources] = useState<AiAssistSource[]>([]);
 
   // ── Responsive panel toggles ────────────────────────────────────
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
@@ -139,6 +151,7 @@ export function PipelineBuilderPage() {
   const [mobileAdvisoryDismissed, setMobileAdvisoryDismissed] = useState(false);
   const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 1024;
   const showMobileAdvisory = isMobileViewport && !mobileAdvisoryDismissed;
+  const canManagePipelines = hasAnyRole(['admin', 'operator']);
 
   // ── Load existing pipeline when ?id= present ───────────────────
   const {
@@ -398,14 +411,14 @@ export function PipelineBuilderPage() {
     setPendingNewAction(false);
   }, []);
 
-  const handleAiSuggest = useCallback(async () => {
-    if (!aiDescription.trim()) return;
+  const requestAiSuggestions = useCallback(async (description: string, goal?: string) => {
+    if (!description.trim()) return;
     setAiLoading(true);
     try {
       const result = await suggestPipelineStages(
         {
-          description: aiDescription,
-          goal: aiGoal || undefined,
+          description,
+          goal,
           existingStages: nodes
             .filter((n): n is typeof n & { type: 'stage' } => n.type === 'stage')
             .map((n) => ({
@@ -423,15 +436,20 @@ export function PipelineBuilderPage() {
           description: s.description ?? '',
         })),
       );
-      setAiExplanation(result.explanation);
+      setAiExplanation(result.rationale ?? result.message ?? 'AI suggestions prepared from the current tenant context.');
       setAiConfidence(result.confidence);
+      setAiSources(normalizeAiSources(result.evidence));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(`AI suggestion failed: ${msg}`);
     } finally {
       setAiLoading(false);
     }
-  }, [aiDescription, aiGoal, nodes, tenantId]);
+  }, [nodes, tenantId]);
+
+  const handleAiSuggest = useCallback(async () => {
+    await requestAiSuggestions(aiDescription, aiGoal || undefined);
+  }, [aiDescription, aiGoal, requestAiSuggestions]);
 
   const handleApplySuggestions = useCallback(() => {
     if (!aiSuggestions) return;
@@ -457,6 +475,7 @@ export function PipelineBuilderPage() {
     setAiSuggestions(null);
     setAiDescription('');
     setAiGoal('');
+    setAiSources([]);
     toast.success(`Added ${newNodes.length} suggested stage(s)`);
   }, [aiSuggestions, nodes, edges, setNodes, pushHistory, setDirty]);
 
@@ -558,6 +577,11 @@ export function PipelineBuilderPage() {
         </div>
       )}
       <div className="flex flex-col h-screen w-screen bg-white" data-testid="pipeline-builder">
+        {!isVerifyingAuth && !canManagePipelines && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+            Read-only access: saving and running pipelines requires an operator or admin role.
+          </div>
+        )}
         <PipelineToolbar
           onSave={handleSave}
           onValidate={handleValidate}
@@ -569,6 +593,8 @@ export function PipelineBuilderPage() {
           saving={saving}
           validating={validating}
           running={running}
+          canPersistChanges={canManagePipelines}
+          canRunPipelines={canManagePipelines}
         />
         {aiOpen && (
           <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
@@ -623,7 +649,7 @@ export function PipelineBuilderPage() {
                   type="button"
                   onClick={() => {
                     setAiDescription(t.template);
-                    void handleAiSuggest();
+                    void requestAiSuggestions(t.template, aiGoal || undefined);
                   }}
                   className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950"
                 >
@@ -635,12 +661,15 @@ export function PipelineBuilderPage() {
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Confidence: {Math.round(aiConfidence * 100)}%
+                    {getAiRoutingLabel(getAiRouting(aiConfidence))}
                   </p>
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setAiSuggestions(null)}
+                      onClick={() => {
+                        setAiSuggestions(null);
+                        setAiSources([]);
+                      }}
                       className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     >
                       Dismiss
@@ -648,13 +677,49 @@ export function PipelineBuilderPage() {
                     <button
                       type="button"
                       onClick={handleApplySuggestions}
+                      disabled={getAiRouting(aiConfidence) === 'advisory'}
                       className="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
                     >
-                      Apply Suggestions
+                      {getAiRouting(aiConfidence) === 'reviewable' ? 'Apply after review' : 'Apply suggestions'}
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{aiExplanation}</p>
+                <ConfidenceExplanation
+                  tier={getAiConfidenceTier(aiConfidence)}
+                  score={aiConfidence}
+                  reasoning={aiExplanation || getAiRoutingDescription(getAiRouting(aiConfidence))}
+                  evidenceUrl={aiSources.find((source) => source.href)?.href}
+                  className="mb-2"
+                />
+                {aiSources.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                    {aiSources.map((source) => (
+                      source.href ? (
+                        <a
+                          key={source.label}
+                          href={source.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-full border border-gray-200 px-2 py-1 hover:underline dark:border-gray-700"
+                        >
+                          {source.label}
+                        </a>
+                      ) : (
+                        <span
+                          key={source.label}
+                          className="rounded-full border border-gray-200 px-2 py-1 dark:border-gray-700"
+                        >
+                          {source.label}
+                        </span>
+                      )
+                    ))}
+                  </div>
+                )}
+                {getAiRouting(aiConfidence) === 'advisory' && (
+                  <p className="mb-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+                    Advisory only: inspect the suggested stages and evidence before adding them manually.
+                  </p>
+                )}
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {aiSuggestions.map((s, i) => (
                     <div
@@ -663,6 +728,9 @@ export function PipelineBuilderPage() {
                     >
                       <p className="font-semibold text-gray-900 dark:text-gray-100">{s.label}</p>
                       <p className="text-gray-500 dark:text-gray-400">{s.kind}</p>
+                      {s.description && (
+                        <p className="mt-1 max-w-40 text-[11px] text-gray-500 dark:text-gray-400">{s.description}</p>
+                      )}
                     </div>
                   ))}
                 </div>

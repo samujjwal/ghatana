@@ -1,0 +1,110 @@
+/**
+ * WebSocketDegradedBanner — honest degraded-state disclosure (C-Y5)
+ *
+ * Shows a non-intrusive banner when the WebSocket connection is degraded
+ * (reconnecting) or down (disconnected/failed). When the connection is healthy
+ * or the user explicitly dismisses the banner, it is hidden.
+ *
+ * The banner includes:
+ *  - A colour-coded severity indicator (yellow = degraded, red = down)
+ *  - The current reconnect attempt count
+ *  - A dismiss button (reappears if health worsens again)
+ *
+ * @doc.type component
+ * @doc.purpose Transparent WebSocket degradation disclosure
+ * @doc.layer product
+ * @doc.pattern Molecule
+ */
+
+import React, { useEffect, useState } from 'react';
+import { WifiOff, Wifi } from 'lucide-react';
+import { useWebSocketHealth } from '@/hooks/useWebSocketHealth';
+import type { WebSocketHealth } from '@/hooks/useWebSocketHealth';
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
+export interface WebSocketDegradedBannerProps {
+  /** Override hook result for testing */
+  healthOverride?: WebSocketHealth;
+  reconnectAttemptOverride?: number;
+  /** Extra class names */
+  className?: string;
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const HEALTH_CONFIG: Record<
+  'degraded' | 'down',
+  { bg: string; icon: React.ReactNode; label: string }
+> = {
+  degraded: {
+    bg: 'border-yellow-300 bg-yellow-50 text-yellow-800',
+    icon: <Wifi className="h-4 w-4 text-yellow-600" aria-hidden="true" />,
+    label: 'Live updates degraded — reconnecting',
+  },
+  down: {
+    bg: 'border-red-300 bg-red-50 text-red-800',
+    icon: <WifiOff className="h-4 w-4 text-red-600" aria-hidden="true" />,
+    label: 'Live updates unavailable',
+  },
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export function WebSocketDegradedBanner({
+  healthOverride,
+  reconnectAttemptOverride,
+  className,
+}: WebSocketDegradedBannerProps) {
+  const { health: rawHealth, reconnectAttempt: rawAttempt } = useWebSocketHealth();
+  const health = healthOverride ?? rawHealth;
+  const reconnectAttempt = reconnectAttemptOverride ?? rawAttempt;
+
+  const [dismissed, setDismissed] = useState(false);
+
+  // Reset dismissed state when health goes from ok → degraded/down
+  useEffect(() => {
+    if (health === 'degraded' || health === 'down') {
+      setDismissed(false);
+    }
+  }, [health]);
+
+  if (health === 'ok' || health === 'idle' || dismissed) {
+    return null;
+  }
+
+  const config = HEALTH_CONFIG[health];
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className={[
+        'flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium',
+        config.bg,
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      data-testid="ws-degraded-banner"
+      data-health={health}
+    >
+      {config.icon}
+      <span className="flex-1">
+        {config.label}
+        {health === 'degraded' && reconnectAttempt > 0
+          ? ` (attempt ${reconnectAttempt})`
+          : null}
+      </span>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss connection warning"
+        className="ml-auto p-0.5 opacity-60 transition-opacity hover:opacity-100"
+        data-testid="btn-dismiss-ws-banner"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}

@@ -2,15 +2,20 @@ plugins {
     id("java-module")
 }
 
-description = "YAPPC Consolidated Services Module"
+description = "YAPPC Consolidated Services Module — absorbs services-platform and services-lifecycle (SIMP-Y8)"
 
 dependencies {
     // Platform modules
     implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:runtime"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:governance"))
     implementation(project(":platform:java:security"))
+    implementation(project(":platform:java:observability"))
+    implementation(project(":platform:java:domain"))
+    implementation(project(":platform:java:database"))
+    implementation(project(":platform:java:agent-core"))
 
     // YAPPC domain (both core and libs versions)
     implementation(project(":products:yappc:core:yappc-domain-impl"))
@@ -18,6 +23,13 @@ dependencies {
 
     // YAPPC agents runtime (for AepEventPublisher)
     implementation(project(":products:yappc:core:agents:runtime"))
+    implementation(project(":products:yappc:core:agents"))
+
+    // AEP integration (absorbed from services-lifecycle)
+    implementation(project(":products:aep:aep-operator-contracts"))
+    implementation(project(":products:aep:orchestrator"))
+    implementation(project(":products:aep:aep-engine"))
+    implementation(project(":products:aep:aep-agent-runtime"))
 
     // Data-Cloud SPI (for DataCloudClient)
     // TODO(ADAPTER-SEAM): data-cloud coupling in a domain services module.
@@ -31,14 +43,44 @@ dependencies {
     // YAPPC shared utilities
     implementation(project(":products:yappc:core:yappc-shared"))
 
-    // Validation
+    // AI and scaffold (absorbed from services-lifecycle)
+    implementation(project(":products:yappc:core:ai"))
+    implementation(project(":products:yappc:core:scaffold:core"))
+    implementation(project(":platform-kernel:kernel-plugin"))
 
-    // JSON processing
+    // ActiveJ for async + HTTP
+    implementation(libs.activej.promise)
+    implementation(libs.activej.inject)
+    implementation(libs.activej.http)
+    implementation(libs.activej.boot)
+    implementation(libs.activej.launcher)
+
+    // JSON + YAML Processing
+    implementation(platform(libs.jackson.bom))
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.dataformat.yaml)
 
-    // Async processing
-    implementation(libs.activej.promise)
+    // Protobuf for JSON formatting (absorbed from services-lifecycle)
+    implementation(libs.protobuf.java)
+    implementation("com.google.protobuf:protobuf-java-util:4.34.1")
+
+    // JSON Schema validation for configuration governance
+    implementation(libs.networknt.validator)
+
+    // Database (absorbed from services-platform)
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    runtimeOnly(libs.postgresql)
+
+    // Validation
+    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
+    implementation("org.hibernate.validator:hibernate-validator:8.0.1.Final")
+
+    // Observability — Prometheus metrics scrape endpoint
+    implementation(libs.micrometer.registry.prometheus)
+
+    // LLM (absorbed from services-lifecycle)
+    implementation("dev.langchain4j:langchain4j:0.25.0")
 
     // Graph algorithms and caching
     implementation(libs.jgrapht.core)
@@ -48,11 +90,20 @@ dependencies {
     implementation(libs.javaparser.core)
     implementation(libs.jooq)
 
+    // Logging
+    implementation(libs.slf4j.api)
+
     // Testing
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
+    testImplementation("org.testcontainers:postgresql:1.19.3")
+    testImplementation(libs.jmh.core)
+    testAnnotationProcessor(libs.jmh.generator.annprocess)
 }
 
 tasks.test {

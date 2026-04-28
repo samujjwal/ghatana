@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,6 +29,15 @@ import java.util.concurrent.TimeUnit;
  *
  * ActiveJ/gRPC server for Canvas AI operations.
  * Hosts validation and code generation services.
+ *
+ * <p>Lifecycle:
+ * <ul>
+ *   <li>gRPC service on port {@code GRPC_PORT} (default 50051)</li>
+ *   <li>HTTP health endpoint on port {@code HEALTH_PORT} (default 8080):
+ *       {@code GET /health} returns {@code {"status":"ok"}}</li>
+ *   <li>Graceful shutdown: health server closes first, then gRPC drains with a
+ *       30-second timeout before hard-stopping</li>
+ * </ul>
  *
  * @doc.type class
  * @doc.purpose Main server for Canvas AI backend
@@ -36,43 +47,75 @@ import java.util.concurrent.TimeUnit;
 public class CanvasAIServer extends Launcher {
 
     private static final Logger logger = LoggerFactory.getLogger(CanvasAIServer.class);
-    private static final int PORT = 50051;  // Standard gRPC port
+    private static final int GRPC_PORT = 50051;
+    private static final int HEALTH_PORT = 8080;
 
-    private Server server;
+    private Server grpcServer;
+    private com.sun.net.httpserver.HttpServer healthServer;
 
     @Override
     protected void run() throws Exception {
-        logger.info("Starting Canvas AI Server on port {}", PORT);
+        logger.info("Starting Canvas AI Server — gRPC port {}, health port {}", GRPC_PORT, HEALTH_PORT);
+
+        startHealthServer();
 
         CanvasAIServiceImpl canvasAIService =
             Injector.of(getModule()).getInstance(CanvasAIServiceImpl.class);
 
         // Build gRPC server with injected service
-        server = ServerBuilder.forPort(PORT)
+        grpcServer = ServerBuilder.forPort(GRPC_PORT)
             .addService(canvasAIService)
             .build()
             .start();
 
-        logger.info("Canvas AI Server started successfully on port {}", PORT);
+        logger.info("Canvas AI Server started — gRPC ready on port {}", GRPC_PORT);
 
-        // Add shutdown hook
+        // Register JVM shutdown hook for graceful drain
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutting down Canvas AI Server...");
+            logger.info("Shutdown signal received — stopping Canvas AI Server");
             try {
-                CanvasAIServer.this.stopServer();
+                stopServer();
             } catch (InterruptedException e) {
-                logger.error("Error during shutdown", e);
+                Thread.currentThread().interrupt();
+                logger.error("Interrupted during shutdown", e);
             }
-        }));
+        }, "canvas-ai-shutdown"));
 
-        // Wait for termination
-        server.awaitTermination();
+        // Block until gRPC server terminates
+        grpcServer.awaitTermination();
+    }
+
+    /** Starts the lightweight HTTP health endpoint. */
+    private void startHealthServer() throws java.io.IOException {
+        healthServer = com.sun.net.httpserver.HttpServer.create(
+            new InetSocketAddress(HEALTH_PORT), 0);
+        healthServer.createContext("/health", exchange -> {
+            byte[] body = ("{\"status\":\"ok\",\"grpcPort\":" + GRPC_PORT + "}")
+                .getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (var os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+        healthServer.start();
+        logger.info("Health endpoint available at http://localhost:{}/health", HEALTH_PORT);
     }
 
     private void stopServer() throws InterruptedException {
-        if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
-            logger.info("Canvas AI Server shut down successfully");
+        // Stop health server first so load-balancers drain traffic immediately
+        if (healthServer != null) {
+            healthServer.stop(0);
+            logger.info("Health server stopped");
+        }
+        if (grpcServer != null) {
+            grpcServer.shutdown();
+            boolean terminated = grpcServer.awaitTermination(30, TimeUnit.SECONDS);
+            if (!terminated) {
+                logger.warn("gRPC server did not drain within 30 s — forcing shutdown");
+                grpcServer.shutdownNow();
+            }
+            logger.info("Canvas AI gRPC server stopped");
         }
     }
 

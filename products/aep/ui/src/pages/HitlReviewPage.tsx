@@ -22,6 +22,13 @@ import { Button } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
+import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
+import {
+  getAiConfidenceTier,
+  getAiRouting,
+  getAiRoutingDescription,
+  getAiRoutingLabel,
+} from '@/lib/ai-assist';
 
 // ─── PolicyDiff ──────────────────────────────────────────────────────
 
@@ -81,6 +88,15 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
     rejectMut.mutate({ reviewId: item.reviewId, reason }, { onSuccess: onClose });
   }
 
+  const changeKeys = Object.keys(item.proposedVersion).slice(0, 4);
+  const routing = getAiRouting(item.confidenceScore);
+  const summary =
+    item.itemType === 'POLICY'
+      ? 'The assistant is proposing a policy update. Review the confidence tier and the changed fields before approving.'
+      : item.itemType === 'PATTERN'
+      ? 'The assistant is proposing a pattern adjustment. Validate the changed fields against expected detection behavior.'
+      : 'The assistant is recommending an agent decision. Confirm the rationale and affected fields before accepting it.';
+
   return (
     <aside
       role="dialog"
@@ -122,6 +138,41 @@ function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () =>
 
       {/* Proposed policy — human-readable diff */}
       <div className="px-4 py-3 flex-1">
+        <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+              AI review summary
+            </p>
+            <span className="rounded-full border border-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-700 dark:text-gray-300">
+              {getAiRoutingLabel(routing)}
+            </span>
+          </div>
+          <ConfidenceExplanation
+            tier={getAiConfidenceTier(item.confidenceScore)}
+            score={item.confidenceScore}
+            reasoning={summary}
+          />
+          {changeKeys.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                Proposed changes
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {changeKeys.map((key) => (
+                  <span
+                    key={key}
+                    className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                  >
+                    {key}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {getAiRoutingDescription(routing)}
+              </p>
+            </div>
+          )}
+        </div>
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
           Proposed policy
         </p>

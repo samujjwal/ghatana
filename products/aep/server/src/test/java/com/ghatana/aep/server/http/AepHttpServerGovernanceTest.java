@@ -7,6 +7,9 @@ package com.ghatana.aep.server.http;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.observability.MetricsCollectorFactory;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -93,6 +96,32 @@ class AepHttpServerGovernanceTest {
 
             HttpResponse<String> resp = get("/governance/kill-switch");
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+        }
+
+        @Test
+        @DisplayName("canonical /api/v1/governance namespace returns the same payload without deprecation")
+        void canonicalNamespaceIsAvailable() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
+
+            HttpResponse<String> resp = get("/api/v1/governance/kill-switch?tenantId=tenant-1");
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.headers().firstValue("Deprecation")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("legacy /governance route includes deprecation and sunset headers")
+        void legacyNamespaceIsDeprecated() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
+
+            HttpResponse<String> resp = get("/governance/kill-switch?tenantId=tenant-1");
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.headers().firstValue("Deprecation")).contains("true");
+            assertThat(resp.headers().firstValue("Sunset")).contains("Thu, 31 Dec 2026 00:00:00 GMT");
+            assertThat(resp.headers().firstValue("Link")).contains("</api/v1/governance/kill-switch>; rel=\"successor-version\"");
         }
     }
 
@@ -329,6 +358,13 @@ class AepHttpServerGovernanceTest {
             assertThat(body).containsKey("supportedOperations");
             assertThat(body).containsKey("registeredCollections");
             assertThat(body).containsKey("soc2");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> soc2 = (Map<String, Object>) body.get("soc2");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> freshness = (Map<String, Object>) soc2.get("freshness");
+            assertThat(freshness.get("status")).isEqualTo("MISSING");
+            assertThat(freshness.get("reportAvailable")).isEqualTo(false);
+            assertThat(freshness.get("maxAgeDays")).isEqualTo(90);
         }
     }
 
@@ -447,6 +483,61 @@ class AepHttpServerGovernanceTest {
             HttpResponse<String> resp = post("/governance/security/scan", // GH-90000
                 mapper.writeValueAsString(Map.of("tenantId", "tenant-1"))); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/governance/ops/summary")
+    class OperationsSummaryTests {
+
+        @Test
+        @DisplayName("returns truthful unavailable backup posture when Data Cloud is not configured")
+        void returnsUnavailableOpsSummaryWithoutDataCloud() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
+
+            HttpResponse<String> resp = get("/api/v1/governance/ops/summary?tenantId=tenant-1");
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(body.get("backupConfigured")).isEqualTo(false);
+            assertThat(body.get("drReadiness")).isEqualTo("UNAVAILABLE");
+            assertThat(body.get("exportQueueConfigured")).isEqualTo(false);
+            assertThat(body.get("trustedProxyAlertState")).isEqualTo("OK");
+            assertThat(body.get("trustedProxyForwardedRejectedCount")).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("returns trusted proxy alert telemetry from the metrics registry")
+        void returnsTrustedProxyAlertTelemetry() throws Exception { // GH-90000
+            PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+            prometheusRegistry.counter("aep.security.proxy.forwarded.accepted").increment(3.0);
+            prometheusRegistry.counter("aep.security.proxy.forwarded.rejected", "reason", "untrusted_proxy").increment();
+            prometheusRegistry.counter("aep.security.proxy.forwarded.rejected", "reason", "invalid_forwarded_for").increment();
+
+            server = AepHttpServer.builder()
+                .engine(engine)
+                .port(port)
+                .metricsCollector(MetricsCollectorFactory.create(prometheusRegistry))
+                .prometheusRegistry(prometheusRegistry)
+                .build();
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/ops/summary?tenantId=tenant-1");
+            assertThat(resp.statusCode()).isEqualTo(200);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("trustedProxyAlertState")).isEqualTo("ALERT");
+            assertThat(body.get("trustedProxyForwardedAcceptedCount")).isEqualTo(3);
+            assertThat(body.get("trustedProxyForwardedRejectedCount")).isEqualTo(2);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> reasons = (Map<String, Object>) body.get("trustedProxyRejectionReasons");
+            assertThat(reasons).containsEntry("untrusted_proxy", 1).containsEntry("invalid_forwarded_for", 1);
         }
     }
 

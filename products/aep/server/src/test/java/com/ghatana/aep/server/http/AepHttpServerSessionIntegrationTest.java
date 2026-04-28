@@ -66,27 +66,16 @@ class AepHttpServerSessionIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/session issues a reusable session token")
-    void postSessionIssuesReusableToken() throws Exception { // GH-90000
+    @DisplayName("POST /api/v1/session rejects unauthenticated requests")
+    void postSessionRejectsUnauthenticatedRequests() throws Exception { // GH-90000
         HttpResponse<String> sessionResponse = post("/api/v1/session", ""); // GH-90000
 
-        assertThat(sessionResponse.statusCode()).isEqualTo(200); // GH-90000
-        String sessionToken = sessionResponse.headers().firstValue(SESSION_HEADER).orElse(null); // GH-90000
-        assertThat(sessionToken).isNotBlank(); // GH-90000
-
+        assertThat(sessionResponse.statusCode()).isEqualTo(401); // GH-90000
+        assertThat(sessionResponse.headers().firstValue(SESSION_HEADER)).isEmpty(); // GH-90000
         @SuppressWarnings("unchecked")
         Map<String, Object> sessionBody = mapper.readValue(sessionResponse.body(), Map.class); // GH-90000
-        assertThat(sessionBody).containsEntry("session", sessionToken); // GH-90000
-        assertThat(sessionBody).containsKey("expiresInSeconds");
-
-        HttpRequest agentsRequest = HttpRequest.newBuilder() // GH-90000
-            .GET() // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/agents")) // GH-90000
-            .header(SESSION_HEADER, sessionToken) // GH-90000
-            .build(); // GH-90000
-
-        HttpResponse<String> agentsResponse = httpClient.send(agentsRequest, HttpResponse.BodyHandlers.ofString()); // GH-90000
-        assertThat(agentsResponse.statusCode()).isEqualTo(200); // GH-90000
+        assertThat(sessionBody).containsEntry("error", "Unauthorized"); // GH-90000
+        assertThat(String.valueOf(sessionBody.get("message"))).contains("Verified JWT required"); // GH-90000
     }
 
     private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000

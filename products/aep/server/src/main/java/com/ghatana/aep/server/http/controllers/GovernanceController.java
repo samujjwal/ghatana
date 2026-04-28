@@ -23,8 +23,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -273,32 +276,66 @@ public final class GovernanceController {
         }
 
         AepSoc2ControlFramework.Soc2Report report = soc2Framework.generateReport();
-        return Promise.of(jsonResponse.apply(Map.of(
-            "tenantId", tenantId,
-            "configured", complianceService != null,
-            "supportedOperations", List.of(
-                "GDPR_ACCESS",
-                "GDPR_ERASURE",
-                "GDPR_CORRECTION",
-                "GDPR_PORTABILITY",
-                "CCPA_OPT_OUT"
-            ),
-            "registeredCollections", complianceService != null
-                ? complianceService.registeredCollections()
-                : List.of(),
-            "soc2", Map.of(
-                "title", report.title(),
-                "generatedAt", report.generatedAt(),
-                "overallStatus", report.overallStatus(),
-                "controlCount", report.controls().size(),
-                "controls", report.controls().stream().map(control -> Map.of(
-                    "controlId", control.controlId(),
-                    "description", control.description(),
-                    "status", control.status()
-                )).toList()
-            ),
-            "timestamp", Instant.now().toString()
-        )));
+        long maxAgeDays = ComplianceController.resolveEvidenceMaxAgeDays();
+        Optional<Instant> newestEvidence = soc2Framework.newestEvidenceTimestamp();
+        Optional<Long> evidenceAgeDays = newestEvidence.map(timestamp -> Duration.between(timestamp, Instant.now()).toDays());
+        String freshnessStatus;
+        boolean reportAvailable;
+        String freshnessMessage;
+        if (newestEvidence.isEmpty()) {
+            freshnessStatus = "MISSING";
+            reportAvailable = false;
+            freshnessMessage = "No SOC 2 evidence has been collected yet.";
+        } else if (evidenceAgeDays.orElse(0L) > maxAgeDays) {
+            freshnessStatus = "STALE";
+            reportAvailable = false;
+            freshnessMessage = String.format(
+                "SOC 2 evidence is %d days old; the configured maximum is %d days.",
+                evidenceAgeDays.orElse(0L),
+                maxAgeDays
+            );
+        } else {
+            freshnessStatus = "FRESH";
+            reportAvailable = true;
+            freshnessMessage = "SOC 2 evidence is fresh enough to render the compliance report.";
+        }
+
+        Map<String, Object> freshness = new LinkedHashMap<>();
+        freshness.put("status", freshnessStatus);
+        freshness.put("reportAvailable", reportAvailable);
+        freshness.put("newestEvidenceAt", newestEvidence.map(Instant::toString).orElse(null));
+        freshness.put("evidenceAgeDays", evidenceAgeDays.orElse(null));
+        freshness.put("maxAgeDays", maxAgeDays);
+        freshness.put("message", freshnessMessage);
+
+        Map<String, Object> soc2 = new LinkedHashMap<>();
+        soc2.put("title", report.title());
+        soc2.put("generatedAt", report.generatedAt());
+        soc2.put("overallStatus", report.overallStatus());
+        soc2.put("controlCount", report.controls().size());
+        soc2.put("controls", report.controls().stream().map(control -> Map.of(
+            "controlId", control.controlId(),
+            "description", control.description(),
+            "status", control.status()
+        )).toList());
+        soc2.put("freshness", freshness);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("tenantId", tenantId);
+        response.put("configured", complianceService != null);
+        response.put("supportedOperations", List.of(
+            "GDPR_ACCESS",
+            "GDPR_ERASURE",
+            "GDPR_CORRECTION",
+            "GDPR_PORTABILITY",
+            "CCPA_OPT_OUT"
+        ));
+        response.put("registeredCollections", complianceService != null
+            ? complianceService.registeredCollections()
+            : List.of());
+        response.put("soc2", soc2);
+        response.put("timestamp", Instant.now().toString());
+        return Promise.of(jsonResponse.apply(response));
     }
 
     // ---- Policy Evaluation -------------------------------------------------

@@ -96,3 +96,58 @@ eventually move to a `yappc-project-domain` lib if needed by other modules.
 2. **Cross-module sharing** MUST use the lib, never import from `backend/api/domain/` directly
 3. **Overlapping entities** in `backend/api/domain/` are DEPRECATED — use yappc-domain canonical
 4. A domain model is **canonical** when it lives in a `libs/` module
+
+---
+
+## Persistence Stack Ownership (F-Y008 / K-Y8)
+
+YAPPC uses **two distinct persistence stacks**. Each entity is owned by exactly one stack.
+Cross-stack access is forbidden — services must go through the owning module's API.
+
+### Stack A — Java JDBC (ActiveJ + platform:java:database)
+
+Owns all **core workflow and AI domain state** in `yappc-domain-impl`.
+
+| Entity / Table | Module | Technology |
+|---|---|---|
+| `AiWorkflow` | `yappc-domain-impl` | Java JDBC, `ai_workflows` table |
+| `AiWorkflowStep` | `yappc-domain-impl` | Java JDBC, `ai_workflow_steps` table |
+| `AiPlan` | `yappc-domain-impl` | Java JDBC, `ai_plans` table |
+| `AiPlanStep` | `yappc-domain-impl` | Java JDBC, `ai_plan_steps` table |
+| `AiExecutionLog` | `yappc-domain-impl` | Java JDBC, `ai_execution_logs` table |
+| Workflow audit trail | `yappc-domain-impl` | Java JDBC — append-only log rows |
+
+**Owner**: `products/yappc/core/yappc-domain-impl`
+**Technology**: `platform:java:database` (ActiveJ Promises, no blocking JDBC on event loop)
+**Connection**: configured via `DATABASE_URL` env var, tenant-scoped by `tenantId` column
+
+### Stack B — Node + Prisma (GraphQL API layer)
+
+Owns all **project management and collaboration domain state** in `yappc-api`.
+
+| Entity / Table | Module | Technology |
+|---|---|---|
+| `Project` | `yappc-api` | Prisma + PostgreSQL, `projects` table |
+| `Incident` | `yappc-api` | Prisma + PostgreSQL, `incidents` table |
+| `Story` | `yappc-api` | Prisma + PostgreSQL, `stories` table |
+| `Sprint` | `yappc-api` | Prisma + PostgreSQL, `sprints` table |
+| `Requirement` | `yappc-api` | Prisma + PostgreSQL, `requirements` table |
+| `ComplianceAssessment` | `yappc-api` | Prisma + PostgreSQL, `compliance_assessments` table |
+| `ScanJob` / `ScanFinding` | `yappc-api` | Prisma + PostgreSQL, `scan_jobs` / `scan_findings` |
+| `SecurityAlert` | `yappc-api` | Prisma + PostgreSQL, `security_alerts` table |
+| `Dashboard` | `yappc-api` | Prisma + PostgreSQL, `dashboards` table |
+| `Dependency` | `yappc-api` | Prisma + PostgreSQL, `dependencies` table |
+
+**Owner**: `products/yappc/backend/api` (Node.js, GraphQL, `@prisma/client`)
+**Technology**: Prisma ORM, type-safe schema in `products/yappc/backend/api/prisma/schema.prisma`
+**Connection**: configured via `DATABASE_URL` env var, tenant-isolated via Prisma middleware
+
+### Cross-Stack Access Rules
+
+| Rule | Rationale |
+|---|---|
+| Java code MUST NOT import `@prisma/client` or call the GraphQL API directly | Stack boundary — use async events or REST if needed |
+| Node code MUST NOT call `yappc-domain-impl` JDBC tables directly | Stack boundary — use the Java HTTP API |
+| Shared entities (Project, Incident) that appear in both stacks are MAPPED at the API boundary | See Overlapping Entities section above |
+| New entities serving workflow/AI goals go in Stack A | AI execution is Java-native (ActiveJ Promise model) |
+| New entities serving project/collab goals go in Stack B | GraphQL API layer owns project-management context |

@@ -6,7 +6,11 @@ group = "com.ghatana.products.yappc.services"
 version = rootProject.version.toString()
 base.archivesName.set("yappc-services-platform")
 
-description = "YAPPC Services: Platform — Combined domain and infrastructure services (merges services:domain + services:infrastructure)"
+// DEPRECATED (SIMP-Y8): This module has been merged into :products:yappc:core:yappc-services.
+// All source code has been copied to yappc-services. This facade is kept only for
+// transitive compatibility during the migration window. Remove after all dependents
+// are updated to depend directly on yappc-services.
+description = "[DEPRECATED] YAPPC Services: Platform — Merged into yappc-services (SIMP-Y8)"
 
 dependencies {
     // YAPPC domain library

@@ -9,6 +9,7 @@ import com.ghatana.aep.server.compliance.AepComplianceService;
 import com.ghatana.aep.server.analytics.DataCloudAnalyticsStore;
 import com.ghatana.aep.server.query.AepQueryService;
 import com.ghatana.aep.server.report.AepReportingService;
+import com.ghatana.aep.server.backup.AepBackupRecoveryService;
 import com.ghatana.aep.server.store.DataCloudPatternStore;
 import com.ghatana.aep.server.store.DataCloudPipelineStore;
 import com.ghatana.aep.di.AepRuntimeProfile;
@@ -91,6 +92,7 @@ import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Statistic;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -112,10 +114,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.slf4j.MDC;
 
@@ -1050,17 +1054,40 @@ public class AepHttpServer {
             .with(HttpMethod.GET,  "/api/v1/consent",           consentController::handleListConsent)
             .with(HttpMethod.GET,  "/api/v1/consent/:userId",   req -> consentController.handleGetConsent(req, req.getPathParameter("userId")))
 
-            // Governance endpoints (delegated to GovernanceController)
-            .with(HttpMethod.GET, "/governance/kill-switch", governanceController::handleKillSwitchStatus)
-            .with(HttpMethod.POST, "/governance/kill-switch/activate", governanceController::handleActivateKillSwitch)
-            .with(HttpMethod.POST, "/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch)
-            .with(HttpMethod.GET, "/governance/degradation", governanceController::handleDegradationStatus)
-            .with(HttpMethod.POST, "/governance/degradation", governanceController::handleSetDegradation)
-            .with(HttpMethod.GET, "/governance/compliance/summary", governanceController::handleComplianceSummary)
-            .with(HttpMethod.GET, "/governance/audit/summary", this::handleGovernanceAuditSummary)
-            .with(HttpMethod.POST, "/governance/policy/evaluate", governanceController::handlePolicyEvaluate)
-            .with(HttpMethod.GET,  "/governance/security/egress", governanceController::handleEgressStats)
-            .with(HttpMethod.POST, "/governance/security/scan", governanceController::handleInjectionScan)
+            // Governance endpoints — canonical /api/v1 namespace
+            .with(HttpMethod.GET, "/api/v1/governance/kill-switch", governanceController::handleKillSwitchStatus)
+            .with(HttpMethod.POST, "/api/v1/governance/kill-switch/activate", governanceController::handleActivateKillSwitch)
+            .with(HttpMethod.POST, "/api/v1/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch)
+            .with(HttpMethod.GET, "/api/v1/governance/degradation", governanceController::handleDegradationStatus)
+            .with(HttpMethod.POST, "/api/v1/governance/degradation", governanceController::handleSetDegradation)
+            .with(HttpMethod.GET, "/api/v1/governance/compliance/summary", governanceController::handleComplianceSummary)
+            .with(HttpMethod.GET, "/api/v1/governance/audit/summary", this::handleGovernanceAuditSummary)
+            .with(HttpMethod.POST, "/api/v1/governance/policy/evaluate", governanceController::handlePolicyEvaluate)
+            .with(HttpMethod.GET, "/api/v1/governance/security/egress", governanceController::handleEgressStats)
+            .with(HttpMethod.POST, "/api/v1/governance/security/scan", governanceController::handleInjectionScan)
+            .with(HttpMethod.GET, "/api/v1/governance/ops/summary", this::handleGovernanceOpsSummary)
+
+            // Governance endpoints — legacy compatibility surface with deprecation headers
+            .with(HttpMethod.GET, "/governance/kill-switch",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/kill-switch", governanceController::handleKillSwitchStatus))
+            .with(HttpMethod.POST, "/governance/kill-switch/activate",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/kill-switch/activate", governanceController::handleActivateKillSwitch))
+            .with(HttpMethod.POST, "/governance/kill-switch/deactivate",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/kill-switch/deactivate", governanceController::handleDeactivateKillSwitch))
+            .with(HttpMethod.GET, "/governance/degradation",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/degradation", governanceController::handleDegradationStatus))
+            .with(HttpMethod.POST, "/governance/degradation",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/degradation", governanceController::handleSetDegradation))
+            .with(HttpMethod.GET, "/governance/compliance/summary",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/compliance/summary", governanceController::handleComplianceSummary))
+            .with(HttpMethod.GET, "/governance/audit/summary",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/audit/summary", this::handleGovernanceAuditSummary))
+            .with(HttpMethod.POST, "/governance/policy/evaluate",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/policy/evaluate", governanceController::handlePolicyEvaluate))
+            .with(HttpMethod.GET,  "/governance/security/egress",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/security/egress", governanceController::handleEgressStats))
+            .with(HttpMethod.POST, "/governance/security/scan",
+                req -> legacyGovernanceRoute(req, "/api/v1/governance/security/scan", governanceController::handleInjectionScan))
 
             // Lifecycle endpoints — change approval (delegated to LifecycleController)
             .with(HttpMethod.POST, "/lifecycle/changes", lifecycleController::handleSubmitChange)
@@ -2445,6 +2472,154 @@ public class AepHttpServer {
             .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to load governance audit summary: " + e.getMessage())));
     }
 
+    private Promise<HttpResponse> handleGovernanceOpsSummary(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        ProxyTelemetrySnapshot proxyTelemetry = snapshotProxyTelemetry();
+        if (agentDataCloud == null) {
+            return Promise.of(jsonResponse(buildGovernanceOpsSummary(
+                tenantId,
+                false,
+                0,
+                null,
+                "UNAVAILABLE",
+                "UNAVAILABLE",
+                null,
+                false,
+                null,
+                false,
+                proxyTelemetry,
+                List.of(
+                    "Backup and DR telemetry require Data Cloud storage.",
+                    "Export queue telemetry is not configured in this deployment."
+                )
+            )));
+        }
+
+        AepBackupRecoveryService backupService = new AepBackupRecoveryService(agentDataCloud, integrationMeterRegistry);
+        return backupService.listBackups(tenantId)
+            .then(backups -> {
+                Optional<AepBackupRecoveryService.BackupMetadata> latestComplete = backups.stream()
+                    .filter(backup -> "COMPLETE".equals(backup.status()))
+                    .findFirst();
+
+                if (latestComplete.isEmpty()) {
+                    return Promise.of(jsonResponse(buildGovernanceOpsSummary(
+                        tenantId,
+                        true,
+                        backups.size(),
+                        null,
+                        backups.isEmpty() ? "NONE" : backups.get(0).status(),
+                        "UNAVAILABLE",
+                        null,
+                        false,
+                        null,
+                        false,
+                        proxyTelemetry,
+                        List.of(
+                            "No completed backups found for this tenant.",
+                            "Export queue telemetry is not configured in this deployment."
+                        )
+                    )));
+                }
+
+                AepBackupRecoveryService.BackupMetadata latestBackup = latestComplete.get();
+                return backupService.verifyBackup(tenantId, latestBackup.backupId())
+                    .map(verification -> jsonResponse(buildGovernanceOpsSummary(
+                        tenantId,
+                        true,
+                        backups.size(),
+                        latestBackup.createdAt().toString(),
+                        latestBackup.status(),
+                        verification.valid() ? "PASS" : "FAIL",
+                        null,
+                        false,
+                        null,
+                        false,
+                        proxyTelemetry,
+                        List.of(
+                            "DR readiness is derived from verifying the latest completed backup.",
+                            "Historical DR drill timestamps are not yet persisted.",
+                            "Export queue telemetry is not configured in this deployment."
+                        )
+                    )));
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to load governance ops summary: " + e.getMessage())));
+    }
+
+    private Map<String, Object> buildGovernanceOpsSummary(
+        String tenantId,
+        boolean backupConfigured,
+        int backupCount,
+        @Nullable String lastBackupAt,
+        String latestBackupStatus,
+        String drReadiness,
+        @Nullable String lastDrDrillAt,
+        boolean exportQueueConfigured,
+        @Nullable Integer exportQueueDepth,
+        boolean automatedBackupsScheduled,
+        ProxyTelemetrySnapshot proxyTelemetry,
+        List<String> notes
+    ) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("tenantId", tenantId);
+        body.put("backupConfigured", backupConfigured);
+        body.put("backupCount", backupCount);
+        body.put("lastBackupAt", lastBackupAt);
+        body.put("latestBackupStatus", latestBackupStatus);
+        body.put("drReadiness", drReadiness);
+        body.put("lastDrDrillAt", lastDrDrillAt);
+        body.put("exportQueueConfigured", exportQueueConfigured);
+        body.put("exportQueueDepth", exportQueueDepth);
+        body.put("automatedBackupsScheduled", automatedBackupsScheduled);
+        body.put("trustedProxyForwardedAcceptedCount", proxyTelemetry.acceptedCount());
+        body.put("trustedProxyForwardedRejectedCount", proxyTelemetry.rejectedCount());
+        body.put("trustedProxyAlertState", proxyTelemetry.alertState());
+        body.put("trustedProxyRejectionReasons", proxyTelemetry.rejectionReasons());
+        body.put("notes", notes);
+        body.put("timestamp", Instant.now().toString());
+        return body;
+    }
+
+    private ProxyTelemetrySnapshot snapshotProxyTelemetry() {
+        MeterRegistry registry = metricsCollector.getMeterRegistry();
+        if (registry == null) {
+            return new ProxyTelemetrySnapshot(0L, 0L, "UNAVAILABLE", Map.of());
+        }
+
+        long acceptedCount = Math.round(sumMetricCount(registry, AepSecurityFilter.FORWARDED_HEADER_ACCEPTED));
+        long rejectedCount = Math.round(sumMetricCount(registry, AepSecurityFilter.FORWARDED_HEADER_REJECTED));
+        Map<String, Long> rejectionReasons = registry.getMeters().stream()
+            .filter(meter -> AepSecurityFilter.FORWARDED_HEADER_REJECTED.equals(meter.getId().getName()))
+            .collect(java.util.stream.Collectors.toMap(
+                meter -> meter.getId().getTag("reason") != null ? meter.getId().getTag("reason") : "unknown",
+                meter -> Math.round(meter.measure().stream()
+                    .filter(measurement -> measurement.getStatistic() == Statistic.COUNT)
+                    .mapToDouble(measurement -> measurement.getValue())
+                    .sum()),
+                Long::sum,
+                LinkedHashMap::new
+            ));
+        String alertState = rejectedCount > 0 ? "ALERT" : "OK";
+        return new ProxyTelemetrySnapshot(acceptedCount, rejectedCount, alertState, rejectionReasons);
+    }
+
+    private double sumMetricCount(MeterRegistry registry, String meterName) {
+        return registry.getMeters().stream()
+            .filter(meter -> meterName.equals(meter.getId().getName()))
+            .mapToDouble(meter -> meter.measure().stream()
+                .filter(measurement -> measurement.getStatistic() == Statistic.COUNT)
+                .mapToDouble(measurement -> measurement.getValue())
+                .sum())
+            .sum();
+    }
+
+    private record ProxyTelemetrySnapshot(
+        long acceptedCount,
+        long rejectedCount,
+        String alertState,
+        Map<String, Long> rejectionReasons
+    ) {}
+
     /**
      * Returns aggregate pipeline metrics computed from the in-memory run buffer.
      *
@@ -2924,6 +3099,35 @@ public class AepHttpServer {
         Map<String, Object> converted = new java.util.HashMap<>();
         rawMap.forEach((key, item) -> converted.put(String.valueOf(key), item));
         return converted;
+    }
+
+    private Promise<HttpResponse> legacyGovernanceRoute(
+            HttpRequest request,
+            String successorPath,
+            Function<HttpRequest, Promise<HttpResponse>> delegate) {
+        return delegate.apply(request)
+            .map(response -> addGovernanceDeprecationHeaders(response, successorPath));
+    }
+
+    private HttpResponse addGovernanceDeprecationHeaders(HttpResponse response, String successorPath) {
+        HttpResponse.Builder builder = HttpResponse.ofCode(response.getCode())
+            .withBody(response.getBody());
+        copyHeaderIfPresent(response, builder, HttpHeaders.CONTENT_TYPE);
+        copyHeaderIfPresent(response, builder, HttpHeaders.of("X-Content-Type-Options"));
+        copyHeaderIfPresent(response, builder, HttpHeaders.of("X-Correlation-ID"));
+        copyHeaderIfPresent(response, builder, HttpHeaders.of("traceparent"));
+        copyHeaderIfPresent(response, builder, HttpHeaders.of("tracestate"));
+        builder.withHeader(HttpHeaders.of("Deprecation"), "true");
+        builder.withHeader(HttpHeaders.of("Sunset"), "Thu, 31 Dec 2026 00:00:00 GMT");
+        builder.withHeader(HttpHeaders.of("Link"), "<" + successorPath + ">; rel=\"successor-version\"");
+        return builder.build();
+    }
+
+    private void copyHeaderIfPresent(HttpResponse response, HttpResponse.Builder builder, HttpHeader header) {
+        String value = response.getHeader(header);
+        if (value != null && !value.isBlank()) {
+            builder.withHeader(header, value);
+        }
     }
 
     private List<Map<String, Object>> rawMapList(Object value) {

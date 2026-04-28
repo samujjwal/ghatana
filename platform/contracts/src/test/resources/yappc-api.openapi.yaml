@@ -1,22 +1,24 @@
 openapi: 3.1.0
 info:
-  title: YAPPC Code Generation API
+  title: YAPPC Product Development Platform API
   version: 1.0.0
   description: |
-    API for designing system architectures and generating production-ready code artifacts.
+    Complete API for YAPPC - Product Development Platform (Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve)
     
     ## Authentication
     Bearer token authentication required for all endpoints.
     
-    ## Code Generation
-    - YAPPC generates code in multiple languages (Java, Python, Go, TypeScript)
-    - Generation is asynchronous for large projects
-    - Use `artifactId` to retrieve generated code
+    ## Tenant Isolation
+    All endpoints require X-Tenant-ID header for tenant-scoped operations.
     
-    ## Design Validation
-    - Designs are validated for circular dependencies
-    - Component relationships must be acyclic
-    - All design elements must have valid types
+    ## API Surface Areas
+    - **Workflows**: AI-driven workflow orchestration and state management
+    - **Agents**: AI agent discovery, execution, and health monitoring
+    - **Vector**: Semantic search, document indexing, and RAG operations
+    - **Designs**: System architecture design and validation
+    - **Code Generation**: Generate production-ready code artifacts
+    - **Artifacts**: Retrieve generated code artifacts
+    - **Refactoring**: Get refactoring suggestions
   contact:
     name: YAPPC Support
   license:
@@ -27,16 +29,1903 @@ servers:
     description: Production
 
 tags:
+  - name: Workspaces
+    description: Workspace CRUD and member management
+  - name: Projects
+    description: Project CRUD, archival, and export
+  - name: Requirements
+    description: Requirement creation, AI enrichment, similarity, and feedback
+  - name: Workflows
+    description: AI workflow orchestration and state management
+  - name: Agents
+    description: AI agent discovery, execution, and health monitoring
+  - name: Vector
+    description: Semantic search, indexing, and RAG operations
   - name: Designs
     description: Create and manage system designs
   - name: Code Generation
-    description: Generate code from designs
+    description: Generate code from designs with quality gate enforcement
   - name: Artifacts
     description: Retrieve generated artifacts
   - name: Refactoring
-    description: Get refactoring suggestions
+    description: Refactoring suggestions, simulation, application, and undo
+  - name: PromptVersions
+    description: Prompt version management (admin only)
+  - name: ABTesting
+    description: A/B testing for AI model variants (operator only)
+  - name: PhaseGates
+    description: Phase-transition readiness gates
+  - name: FeatureFlags
+    description: Tenant-scoped feature flag management (admin only)
+  - name: AICost
+    description: Per-project AI cost tracking
 
 paths:
+  # ==================== WORKSPACES ====================
+  /workspaces:
+    post:
+      summary: Create a workspace
+      operationId: createWorkspace
+      tags: [Workspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workspaces/{id}:
+    get:
+      summary: Get workspace by ID
+      operationId: getWorkspace
+      tags: [Workspaces]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workspace detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          description: Workspace not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      summary: Update workspace
+      operationId: updateWorkspace
+      tags: [Workspaces]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceRequest'
+      responses:
+        '200':
+          description: Updated workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          description: Workspace not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      summary: Delete workspace
+      operationId: deleteWorkspace
+      tags: [Workspaces]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workspace deleted
+        '404':
+          description: Workspace not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workspaces/{id}/members:
+    post:
+      summary: Add member to workspace
+      operationId: addWorkspaceMember
+      tags: [Workspaces]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '200':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workspaces/{id}/members/{memberId}:
+    delete:
+      summary: Remove member from workspace
+      operationId: removeWorkspaceMember
+      tags: [Workspaces]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Member removed
+        '404':
+          description: Workspace or member not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workspaces/{workspaceId}/projects:
+    get:
+      summary: List projects in a workspace
+      operationId: listProjectsInWorkspace
+      tags: [Projects]
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: cursor
+          in: query
+          description: Opaque cursor for keyset pagination (preferred over offset for large result sets)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Project page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectPage'
+        '404':
+          description: Workspace not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== PROJECTS ====================
+  /projects:
+    post:
+      summary: Create project
+      operationId: createProject
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{id}:
+    get:
+      summary: Get project
+      operationId: getProject
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      summary: Update project
+      operationId: updateProject
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+      responses:
+        '200':
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      summary: Archive project
+      operationId: archiveProject
+      tags: [Projects]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Project archived
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/requirements:
+    post:
+      summary: Create requirement
+      operationId: createRequirement
+      tags: [Requirements]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequirementRequest'
+      responses:
+        '201':
+          description: Requirement created with AI enrichment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequirementResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/export/{format}:
+    get:
+      summary: Export project in a given format
+      operationId: exportProject
+      tags: [Projects]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+              - pdf
+              - zip
+      responses:
+        '200':
+          description: Project export
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== REQUIREMENTS ====================
+  /requirements/{id}:
+    get:
+      summary: Get requirement with AI suggestions
+      operationId: getRequirement
+      tags: [Requirements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: includeSuggestions
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Requirement detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequirementResponse'
+        '404':
+          description: Requirement not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /requirements/{id}/similar:
+    get:
+      summary: Find similar requirements
+      operationId: findSimilarRequirements
+      tags: [Requirements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+            minimum: 1
+            maximum: 20
+        - name: minSimilarity
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 0.8
+            minimum: 0
+            maximum: 1
+      responses:
+        '200':
+          description: Similar requirements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimilarRequirementsResult'
+        '404':
+          description: Requirement not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /requirements/{id}/suggestions:
+    post:
+      summary: Generate AI suggestions for a requirement
+      operationId: generateRequirementSuggestions
+      tags: [Requirements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSuggestionsRequest'
+      responses:
+        '200':
+          description: AI-generated suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISuggestionList'
+        '404':
+          description: Requirement not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /suggestions/{id}/feedback:
+    post:
+      summary: Record feedback on an AI suggestion
+      operationId: recordSuggestionFeedback
+      tags: [Requirements]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordFeedbackRequest'
+      responses:
+        '204':
+          description: Feedback recorded
+        '404':
+          description: Suggestion not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== PHASE GATES ====================
+  /projects/{projectId}/phase-gates/{phase}:
+    get:
+      summary: Get phase-gate readiness for a project
+      operationId: getPhaseGateReadiness
+      tags: [PhaseGates]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: phase
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/LifecyclePhase'
+      responses:
+        '200':
+          description: Phase-gate readiness status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhaseGateResult'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{projectId}/phase-transition:
+    post:
+      summary: Advance project to next phase (blocked if gate not met)
+      operationId: advanceProjectPhase
+      tags: [PhaseGates]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhaseTransitionRequest'
+      responses:
+        '200':
+          description: Phase advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '409':
+          description: Phase gate not met; transition blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhaseGateResult'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== AI COST ====================
+  /projects/{projectId}/ai-cost:
+    get:
+      summary: Per-project AI cost summary
+      operationId: getProjectAiCost
+      tags: [AICost]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: AI cost summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiCostSummary'
+        '404':
+          description: Project not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== PROMPT VERSIONS (admin) ====================
+  /admin/prompt-versions:
+    get:
+      summary: List prompt versions (admin only)
+      operationId: listPromptVersions
+      tags: [PromptVersions]
+      parameters:
+        - name: promptKey
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prompt version page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptVersionPage'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — admin role required
+
+  /admin/prompt-versions/{id}/rollback:
+    post:
+      summary: Roll back to a specific prompt version (admin only)
+      operationId: rollbackPromptVersion
+      tags: [PromptVersions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active version updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptVersion'
+        '404':
+          description: Version not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — admin role required
+
+  /admin/prompt-versions/{id}/weight:
+    put:
+      summary: Adjust prompt version sampling weight (admin only)
+      operationId: setPromptVersionWeight
+      tags: [PromptVersions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetWeightRequest'
+      responses:
+        '200':
+          description: Weight updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptVersion'
+        '404':
+          description: Version not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — admin role required
+
+  # ==================== A/B TESTING (operator) ====================
+  /admin/ab-tests:
+    get:
+      summary: List A/B test variants (operator only)
+      operationId: listAbTests
+      tags: [ABTesting]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A/B test page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbTestPage'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — operator role required
+    post:
+      summary: Register a new A/B test variant (operator only)
+      operationId: createAbTest
+      tags: [ABTesting]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAbTestRequest'
+      responses:
+        '201':
+          description: A/B test created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbTest'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — operator role required
+
+  /admin/ab-tests/{id}/winner:
+    post:
+      summary: Promote A/B test winner (operator only)
+      operationId: promoteAbTestWinner
+      tags: [ABTesting]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoteWinnerRequest'
+      responses:
+        '200':
+          description: Winner promoted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbTest'
+        '404':
+          description: Test not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — operator role required
+
+  # ==================== FEATURE FLAGS (admin) ====================
+  /admin/feature-flags:
+    get:
+      summary: List tenant-scoped feature flags (admin only)
+      operationId: listFeatureFlags
+      tags: [FeatureFlags]
+      parameters:
+        - name: enabled
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Feature flag page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlagPage'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — admin role required
+    post:
+      summary: Create feature flag (admin only)
+      operationId: createFeatureFlag
+      tags: [FeatureFlags]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeatureFlagRequest'
+      responses:
+        '201':
+          description: Feature flag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+        '400':
+          description: Invalid request
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — admin role required
+
+  /admin/feature-flags/{key}:
+    put:
+      summary: Update feature flag (admin only)
+      operationId: updateFeatureFlag
+      tags: [FeatureFlags]
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeatureFlagRequest'
+      responses:
+        '200':
+          description: Updated flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+        '404':
+          description: Flag not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden — admin role required
+
+  # ==================== WORKFLOWS ====================
+  /workflows:
+    post:
+      summary: Create new workflow
+      operationId: createWorkflow
+      tags:
+        - Workflows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      summary: List workflows for tenant
+      operationId: listWorkflows
+      tags:
+        - Workflows
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Opaque cursor returned by prior page; takes precedence over offset when supplied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}:
+    get:
+      summary: Get workflow by ID
+      operationId: getWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      summary: Delete workflow
+      operationId: deleteWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Workflow deleted
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/start:
+    post:
+      summary: Start workflow
+      operationId: startWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '409':
+          description: Invalid workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/pause:
+    post:
+      summary: Pause workflow
+      operationId: pauseWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '409':
+          description: Invalid workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/resume:
+    post:
+      summary: Resume workflow
+      operationId: resumeWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '409':
+          description: Invalid workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/cancel:
+    post:
+      summary: Cancel workflow (durable cancellation with audit)
+      operationId: cancelWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow cancellation initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '409':
+          description: Invalid workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/steps/advance:
+    post:
+      summary: Advance to next workflow step
+      operationId: advanceStep
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StepResultDto'
+      responses:
+        '200':
+          description: Step advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/steps/{stepId}/goto:
+    post:
+      summary: Go to specific workflow step
+      operationId: goToStep
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: stepId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workflow transitioned to step
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '409':
+          description: Invalid workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/plans/generate:
+    post:
+      summary: Generate AI plan for workflow
+      operationId: generatePlan
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratePlanDto'
+      responses:
+        '200':
+          description: AI plan generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiPlan'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{workflowId}/plans/{planId}/approve:
+    post:
+      summary: Approve AI plan (with audit chain)
+      operationId: approvePlan
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plan approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiPlan'
+        '404':
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{workflowId}/plans/{planId}/reject:
+    post:
+      summary: Reject AI plan (with audit chain)
+      operationId: rejectPlan
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectPlanDto'
+      responses:
+        '200':
+          description: Plan rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiPlan'
+        '404':
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{workflowId}/plans/{planId}/steps:
+    put:
+      summary: Modify plan steps
+      operationId: modifyPlanSteps
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifyStepsDto'
+      responses:
+        '200':
+          description: Plan steps modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiPlan'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /workflows/{id}/route:
+    post:
+      summary: Get routing decision for workflow
+      operationId: routeWorkflow
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequestDto'
+      responses:
+        '200':
+          description: Routing decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingDecision'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== AGENTS ====================
+  /agents:
+    get:
+      summary: List all registered agents
+      operationId: listAgents
+      tags:
+        - Agents
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Opaque cursor for keyset pagination.
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/capabilities:
+    get:
+      summary: List all available capabilities across agents
+      operationId: listCapabilities
+      tags:
+        - Agents
+      responses:
+        '200':
+          description: Capabilities mapping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapabilityMap'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/health:
+    get:
+      summary: Get health status of all agents
+      operationId: getAllAgentsHealth
+      tags:
+        - Agents
+      responses:
+        '200':
+          description: Health status of all agents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentHealthList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/{name}:
+    get:
+      summary: Get detailed information about a specific agent
+      operationId: getAgent
+      tags:
+        - Agents
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDetail'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/{name}/health:
+    get:
+      summary: Get health status of a specific agent
+      operationId: getAgentHealth
+      tags:
+        - Agents
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentHealth'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/{name}/execute:
+    post:
+      summary: Execute an agent with provided input
+      operationId: executeAgent
+      tags:
+        - Agents
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Agent execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentExecutionResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/copilot/chat:
+    post:
+      summary: Specialized endpoint for copilot chat interactions
+      operationId: copilotChat
+      tags:
+        - Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Copilot response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentExecutionResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/search:
+    post:
+      summary: Specialized endpoint for semantic search
+      operationId: agentSearch
+      tags:
+        - Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentExecutionResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/predict:
+    post:
+      summary: Specialized endpoint for predictions
+      operationId: predict
+      tags:
+        - Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentExecutionResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /agents/by-capability/{capability}:
+    get:
+      summary: Find agents with a specific capability
+      operationId: findByCapability
+      tags:
+        - Agents
+      parameters:
+        - name: capability
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agents with capability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentList'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== VECTOR ====================
+  /vector/search:
+    post:
+      summary: Perform semantic search
+      operationId: semanticSearch
+      tags:
+        - Vector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchDto'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/search/hybrid:
+    post:
+      summary: Perform hybrid search (semantic + keyword)
+      operationId: hybridSearch
+      tags:
+        - Vector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HybridSearchDto'
+      responses:
+        '200':
+          description: Hybrid search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/similar/{id}:
+    get:
+      summary: Find similar items by ID
+      operationId: findSimilar
+      tags:
+        - Vector
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: threshold
+          in: query
+          schema:
+            type: number
+            format: double
+            default: 0.7
+      responses:
+        '200':
+          description: Similar items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimilarItemsResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/index:
+    post:
+      summary: Index a document
+      operationId: indexDocument
+      tags:
+        - Vector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IndexDocumentDto'
+      responses:
+        '200':
+          description: Document indexed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Indexing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/index/batch:
+    post:
+      summary: Batch index multiple documents
+      operationId: batchIndex
+      tags:
+        - Vector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchIndexDto'
+      responses:
+        '200':
+          description: Batch index results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchIndexResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/index/{id}:
+    delete:
+      summary: Delete a document from the index
+      operationId: deleteDocument
+      tags:
+        - Vector
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Document deleted
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/rag:
+    post:
+      summary: Generate a RAG response
+      operationId: rag
+      tags:
+        - Vector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RagDto'
+      responses:
+        '200':
+          description: RAG response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vector/rag/chat:
+    post:
+      summary: Generate a conversational RAG response
+      operationId: ragChat
+      tags:
+        - Vector
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationalRagDto'
+      responses:
+        '200':
+          description: Conversational RAG response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ==================== DESIGNS ====================
   /designs:
     post:
       summary: Create new design
@@ -190,13 +2079,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ProblemDetail'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
   /generated-code/{operationId}:
     get:
-      summary: Get generation status
+      summary: Get generation status (includes quality gate results once complete)
       operationId: getGenerationStatus
       tags:
         - Code Generation
@@ -208,11 +2097,41 @@ paths:
             type: string
       responses:
         '200':
-          description: Generation status
+          description: Generation status including quality gate results when COMPLETED
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CodeGenerationOperation'
+        '404':
+          description: Operation not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /generated-code/{operationId}/accept:
+    post:
+      summary: Accept generated code (blocked until quality gate is green)
+      operationId: acceptGeneratedCode
+      tags:
+        - Code Generation
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Accepted — artifact promoted to next pipeline stage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeGenerationOperation'
+        '409':
+          description: Quality gate not passed — acceptance blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeQualityReport'
         '404':
           description: Operation not found
         '401':
@@ -312,6 +2231,117 @@ paths:
             application/json:
               schema:
                 type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RefactoringSuggestion'
+        '404':
+          description: Design not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /refactoring-suggestions/{designId}/{suggestionId}/simulate:
+    post:
+      summary: Simulate applying a refactoring suggestion (dry-run; returns diff preview)
+      operationId: simulateRefactoring
+      tags:
+        - Refactoring
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Diff preview — no files changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefactoringDiffPreview'
+        '404':
+          description: Suggestion not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /refactoring-suggestions/{designId}/{suggestionId}/apply:
+    post:
+      summary: Apply a refactoring suggestion (creates undo checkpoint)
+      operationId: applyRefactoring
+      tags:
+        - Refactoring
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Refactoring applied; undoToken returned for rollback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefactoringApplyResult'
+        '409':
+          description: Conflict — simulate first or resolve conflicts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          description: Suggestion not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /refactoring-suggestions/{designId}/{suggestionId}/undo:
+    post:
+      summary: Undo the most recent apply for this suggestion
+      operationId: undoRefactoring
+      tags:
+        - Refactoring
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UndoRefactoringRequest'
+      responses:
+        '200':
+          description: Undo applied successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefactoringUndoResult'
+        '404':
+          description: Suggestion or undo token not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
                 properties:
                   suggestions:
                     type: array
@@ -545,8 +2575,74 @@ components:
         completedAt:
           type: string
           format: date-time
+        qualityReport:
+          description: Quality gate results; present when status is COMPLETED or FAILED
+          $ref: '#/components/schemas/CodeQualityReport'
+        acceptanceBlocked:
+          type: boolean
+          description: True when any quality gate check is non-green; UI must block the "Accept" action
         error:
-          $ref: '#/components/schemas/Error'
+          $ref: '#/components/schemas/ProblemDetail'
+
+    CodeQualityReport:
+      type: object
+      required:
+        - compile
+        - lint
+        - test
+        - overallGreen
+      properties:
+        overallGreen:
+          type: boolean
+          description: True only when compile, lint, and test are all green
+        compile:
+          $ref: '#/components/schemas/QualityCheckResult'
+        lint:
+          $ref: '#/components/schemas/QualityCheckResult'
+        test:
+          $ref: '#/components/schemas/QualityCheckResult'
+        generatedAt:
+          type: string
+          format: date-time
+
+    QualityCheckResult:
+      type: object
+      required:
+        - green
+        - summary
+      properties:
+        green:
+          type: boolean
+        summary:
+          type: string
+          description: Human-readable summary (e.g. "4/4 tests passed", "2 lint errors")
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityIssue'
+
+    QualityIssue:
+      type: object
+      required:
+        - severity
+        - message
+      properties:
+        severity:
+          type: string
+          enum:
+            - ERROR
+            - WARNING
+            - INFO
+        message:
+          type: string
+        file:
+          type: string
+        line:
+          type: integer
+        column:
+          type: integer
+        rule:
+          type: string
 
     GeneratedArtifact:
       type: object
@@ -638,29 +2734,1606 @@ components:
           type: object
           additionalProperties: true
 
+    RefactoringDiffPreview:
+      type: object
+      required:
+        - suggestionId
+        - hunks
+      properties:
+        suggestionId:
+          type: string
+          format: uuid
+        hunks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffHunk'
+        estimatedRiskLevel:
+          type: string
+          enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+        conflictsDetected:
+          type: boolean
+
+    DiffHunk:
+      type: object
+      required:
+        - filePath
+        - before
+        - after
+      properties:
+        filePath:
+          type: string
+        before:
+          type: string
+          description: Unified diff — removed lines
+        after:
+          type: string
+          description: Unified diff — added lines
+
+    RefactoringApplyResult:
+      type: object
+      required:
+        - suggestionId
+        - undoToken
+        - appliedAt
+      properties:
+        suggestionId:
+          type: string
+          format: uuid
+        undoToken:
+          type: string
+          description: Opaque token passed to the undo endpoint to roll back this apply
+        appliedAt:
+          type: string
+          format: date-time
+        filesChanged:
+          type: array
+          items:
+            type: string
+
+    UndoRefactoringRequest:
+      type: object
+      required:
+        - undoToken
+      properties:
+        undoToken:
+          type: string
+
+    RefactoringUndoResult:
+      type: object
+      required:
+        - suggestionId
+        - undoneAt
+      properties:
+        suggestionId:
+          type: string
+          format: uuid
+        undoneAt:
+          type: string
+          format: date-time
+        filesRestored:
+          type: array
+          items:
+            type: string
+
+    # ==================== WORKSPACE / PROJECT / REQUIREMENT ====================
+
+    Workspace:
+      type: object
+      required:
+        - id
+        - name
+        - tenantId
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+        tenantId:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceMember'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkspaceMember:
+      type: object
+      required:
+        - userId
+        - role
+      properties:
+        userId:
+          type: string
+        role:
+          type: string
+          enum:
+            - OWNER
+            - ADMIN
+            - MEMBER
+            - VIEWER
+        joinedAt:
+          type: string
+          format: date-time
+
+    CreateWorkspaceRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+
+    UpdateWorkspaceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+
+    AddMemberRequest:
+      type: object
+      required:
+        - userId
+        - role
+      properties:
+        userId:
+          type: string
+        role:
+          type: string
+          enum:
+            - ADMIN
+            - MEMBER
+            - VIEWER
+
+    Project:
+      type: object
+      required:
+        - id
+        - workspaceId
+        - name
+        - status
+        - currentPhase
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - ARCHIVED
+            - SUSPENDED
+        currentPhase:
+          $ref: '#/components/schemas/LifecyclePhase'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProjectPage:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        offset:
+          type: integer
+        nextCursor:
+          type: string
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - workspaceId
+        - name
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+
+    LifecyclePhase:
+      type: string
+      enum:
+        - REQUIREMENTS_GATHERING
+        - DESIGN
+        - CODE_GENERATION
+        - TESTING
+        - REVIEW
+        - DEPLOYMENT
+        - COMPLETED
+
+    PhaseGateResult:
+      type: object
+      required:
+        - phase
+        - gateOpen
+        - checks
+      properties:
+        phase:
+          $ref: '#/components/schemas/LifecyclePhase'
+        gateOpen:
+          type: boolean
+          description: True when all checks pass and the transition is allowed
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PhaseGateCheck'
+
+    PhaseGateCheck:
+      type: object
+      required:
+        - name
+        - passed
+      properties:
+        name:
+          type: string
+        passed:
+          type: boolean
+        reason:
+          type: string
+          description: Human-readable explanation if failed
+
+    PhaseTransitionRequest:
+      type: object
+      required:
+        - targetPhase
+      properties:
+        targetPhase:
+          $ref: '#/components/schemas/LifecyclePhase'
+        force:
+          type: boolean
+          default: false
+          description: Admin override; bypasses gate (audit-logged)
+
+    Requirement:
+      type: object
+      required:
+        - id
+        - projectId
+        - text
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - APPROVED
+            - REJECTED
+            - SUPERSEDED
+        tags:
+          type: array
+          items:
+            type: string
+        embeddingId:
+          type: string
+          description: Internal reference for semantic vector
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RequirementResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Requirement'
+        - type: object
+          properties:
+            suggestions:
+              type: array
+              items:
+                $ref: '#/components/schemas/AISuggestion'
+            duplicateWarning:
+              $ref: '#/components/schemas/DuplicateWarning'
+
+    CreateRequirementRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        tags:
+          type: array
+          items:
+            type: string
+
+    SimilarRequirementsResult:
+      type: object
+      required:
+        - requirementId
+        - similar
+      properties:
+        requirementId:
+          type: string
+          format: uuid
+        similar:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimilarRequirement'
+
+    SimilarRequirement:
+      type: object
+      required:
+        - requirement
+        - similarity
+      properties:
+        requirement:
+          $ref: '#/components/schemas/Requirement'
+        similarity:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    DuplicateWarning:
+      type: object
+      required:
+        - hasDuplicates
+      properties:
+        hasDuplicates:
+          type: boolean
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimilarRequirement'
+
+    AISuggestion:
+      type: object
+      required:
+        - id
+        - type
+        - text
+        - source
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - IMPROVEMENT
+            - CLARIFICATION
+            - CONFLICT_DETECTION
+            - COMPLETENESS
+        text:
+          type: string
+        source:
+          $ref: '#/components/schemas/AISource'
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    AISource:
+      type: string
+      enum:
+        - RULE
+        - MODEL
+      description: >
+        RULE — deterministic rule engine produced this result.
+        MODEL — probabilistic LLM produced this result.
+
+    AISuggestionList:
+      type: object
+      required:
+        - requirementId
+        - suggestions
+      properties:
+        requirementId:
+          type: string
+          format: uuid
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AISuggestion'
+
+    GenerateSuggestionsRequest:
+      type: object
+      properties:
+        persona:
+          type: string
+          enum:
+            - DEVELOPER
+            - PRODUCT_MANAGER
+            - SECURITY_ANALYST
+            - ARCHITECT
+          default: DEVELOPER
+        limit:
+          type: integer
+          default: 5
+          minimum: 1
+          maximum: 20
+
+    RecordFeedbackRequest:
+      type: object
+      required:
+        - feedbackType
+      properties:
+        feedbackType:
+          type: string
+          enum:
+            - ACCEPTED
+            - REJECTED
+            - PARTIALLY_ACCEPTED
+        comment:
+          type: string
+          maxLength: 1000
+
+    # ==================== AI COST ====================
+
+    AiCostSummary:
+      type: object
+      required:
+        - projectId
+        - totalCostUsd
+        - breakdown
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        totalCostUsd:
+          type: number
+          format: double
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/CostLineItem'
+
+    CostLineItem:
+      type: object
+      required:
+        - category
+        - costUsd
+        - tokenCount
+      properties:
+        category:
+          type: string
+          description: e.g. "code-generation", "requirements-suggestions", "vector-indexing"
+        costUsd:
+          type: number
+          format: double
+        tokenCount:
+          type: integer
+          format: int64
+        modelId:
+          type: string
+
+    # ==================== PROMPT VERSIONS ====================
+
+    PromptVersion:
+      type: object
+      required:
+        - id
+        - promptKey
+        - version
+        - weight
+        - isActive
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        promptKey:
+          type: string
+        version:
+          type: string
+        weight:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PromptVersionPage:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptVersion'
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        nextCursor:
+          type: string
+
+    SetWeightRequest:
+      type: object
+      required:
+        - weight
+      properties:
+        weight:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    # ==================== A/B TESTING ====================
+
+    AbTest:
+      type: object
+      required:
+        - id
+        - name
+        - status
+        - variants
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - RUNNING
+            - COMPLETED
+            - CANCELLED
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbVariant'
+        winnerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+
+    AbVariant:
+      type: object
+      required:
+        - id
+        - name
+        - trafficWeight
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        trafficWeight:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        promptVersionId:
+          type: string
+          format: uuid
+        metrics:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+
+    AbTestPage:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AbTest'
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        nextCursor:
+          type: string
+
+    CreateAbTestRequest:
+      type: object
+      required:
+        - name
+        - variants
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        variants:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required:
+              - name
+              - trafficWeight
+            properties:
+              name:
+                type: string
+              trafficWeight:
+                type: number
+                format: double
+              promptVersionId:
+                type: string
+                format: uuid
+
+    PromoteWinnerRequest:
+      type: object
+      required:
+        - variantId
+      properties:
+        variantId:
+          type: string
+          format: uuid
+
+    # ==================== FEATURE FLAGS ====================
+
+    FeatureFlag:
+      type: object
+      required:
+        - key
+        - enabled
+        - scope
+      properties:
+        key:
+          type: string
+          pattern: '^[a-z][a-z0-9_-]{1,63}$'
+        enabled:
+          type: boolean
+        scope:
+          type: string
+          enum:
+            - TENANT
+            - GLOBAL
+        rolloutPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        metadata:
+          type: object
+          additionalProperties: true
+
+    FeatureFlagPage:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureFlag'
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        nextCursor:
+          type: string
+
+    CreateFeatureFlagRequest:
+      type: object
+      required:
+        - key
+        - enabled
+      properties:
+        key:
+          type: string
+          pattern: '^[a-z][a-z0-9_-]{1,63}$'
+        enabled:
+          type: boolean
+        scope:
+          type: string
+          enum:
+            - TENANT
+            - GLOBAL
+          default: TENANT
+        rolloutPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 100
+
+    UpdateFeatureFlagRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        rolloutPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    # ==================== COMMON ====================
+
+    ProblemDetail:
+      type: object
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        traceId:
+          type: string
+
     DesignValidationError:
       allOf:
-        - $ref: '#/components/schemas/Error'
+        - $ref: '#/components/schemas/ProblemDetail'
         - type: object
           properties:
             validationErrors:
               type: array
               items:
                 $ref: '#/components/schemas/ValidationError'
+          format: uuid
 
-    Error:
+    # ==================== WORKFLOW SCHEMAS ====================
+    CreateWorkflowRequest:
       type: object
       required:
-        - code
-        - message
+        - name
+        - description
+        - type
       properties:
-        code:
+        name:
           type: string
-        message:
+          minLength: 1
+          maxLength: 200
+        description:
           type: string
-        traceId:
+        type:
+          type: string
+          enum:
+            - REQUIREMENT_ANALYSIS
+            - CODE_GENERATION
+            - REFACTORING
+            - TESTING
+            - DEPLOYMENT
+        createdBy:
+          type: string
+
+    Workflow:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - type
+        - status
+        - tenantId
+        - createdAt
+      properties:
+        id:
           type: string
           format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - REQUIREMENT_ANALYSIS
+            - CODE_GENERATION
+            - REFACTORING
+            - TESTING
+            - DEPLOYMENT
+        status:
+          type: string
+          enum:
+            - PENDING
+            - RUNNING
+            - PAUSED
+            - COMPLETED
+            - FAILED
+            - CANCELLED
+        tenantId:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        currentStep:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+
+    WorkflowList:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        offset:
+          type: integer
+        nextCursor:
+          type: string
+          description: Opaque cursor for keyset pagination; present when more results follow.
+
+    WorkflowStep:
+      type: object
+      properties:
+        stepId:
+          type: string
+        stepName:
+          type: string
+        status:
+          type: string
+          enum:
+            - PENDING
+            - IN_PROGRESS
+            - COMPLETED
+            - FAILED
+            - SKIPPED
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    StepResultDto:
+      type: object
+      required:
+        - stepId
+        - stepName
+        - status
+        - startedAt
+      properties:
+        stepId:
+          type: string
+        stepName:
+          type: string
+        status:
+          type: string
+          enum:
+            - COMPLETED
+            - FAILED
+        output:
+          type: object
+          additionalProperties: true
+        aiGenerated:
+          type: string
+        userModified:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        errorMessage:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    GeneratePlanDto:
+      type: object
+      required:
+        - objective
+      properties:
+        objective:
+          type: string
+          minLength: 1
+
+    AiPlan:
+      type: object
+      required:
+        - planId
+        - workflowId
+        - status
+        - createdAt
+      properties:
+        planId:
+          type: string
+          format: uuid
+        workflowId:
+          type: string
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - PENDING_APPROVAL
+            - APPROVED
+            - REJECTED
+        objective:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanStep'
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        rationale:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+        approvedBy:
+          type: string
+
+    PlanStep:
+      type: object
+      required:
+        - stepId
+        - stepName
+        - stepType
+      properties:
+        stepId:
+          type: string
+        stepName:
+          type: string
+        stepType:
+          type: string
+          enum:
+            - ANALYSIS
+            - GENERATION
+            - VALIDATION
+            - DEPLOYMENT
+        description:
+          type: string
+        estimatedDuration:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+
+    RejectPlanDto:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    ModifyStepsDto:
+      type: object
+      required:
+        - steps
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanStep'
+
+    RouteRequestDto:
+      type: object
+      properties:
+        userInput:
+          type: string
+
+    RoutingDecision:
+      type: object
+      required:
+        - decision
+        - timestamp
+      properties:
+        decision:
+          type: string
+          enum:
+            - ADVANCE
+            - RETRY
+            - ESCALATE
+            - TERMINATE
+        targetStep:
+          type: string
+        reason:
+          type: string
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        timestamp:
+          type: string
+          format: date-time
+
+    # ==================== AGENT SCHEMAS ====================
+    AgentList:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentInfo'
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        offset:
+          type: integer
+        nextCursor:
+          type: string
+          description: Opaque cursor for keyset pagination; present when more results follow.
+
+    AgentInfo:
+      type: object
+      required:
+        - name
+        - displayName
+        - version
+        - description
+        - capabilities
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        supportedModels:
+          type: array
+          items:
+            type: string
+
+    AgentDetail:
+      type: object
+      required:
+        - name
+        - displayName
+        - version
+        - description
+        - capabilities
+        - latencySlaMs
+        - isHealthy
+      properties:
+        name:
+          type: string
+        displayName:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        supportedModels:
+          type: array
+          items:
+            type: string
+        latencySlaMs:
+          type: integer
+        isHealthy:
+          type: boolean
+
+    AgentHealth:
+      type: object
+      required:
+        - agent
+        - healthy
+        - latencyMs
+        - lastCheck
+      properties:
+        agent:
+          type: string
+        healthy:
+          type: boolean
+        latencyMs:
+          type: number
+          format: double
+        lastCheck:
+          type: string
+          format: date-time
+        dependencies:
+          type: array
+          items:
+            type: string
+        errorMessage:
+          type: string
+
+    AgentHealthList:
+      type: object
+      required:
+        - agents
+        - total
+        - healthy
+        - unhealthy
+      properties:
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentHealth'
+        total:
+          type: integer
+        healthy:
+          type: integer
+        unhealthy:
+          type: integer
+
+    AgentExecutionResult:
+      type: object
+      required:
+        - agent
+        - success
+        - trace
+      properties:
+        agent:
+          type: string
+        success:
+          type: boolean
+        data:
+          type: object
+          additionalProperties: true
+        metrics:
+          type: object
+          properties:
+            latencyMs:
+              type: number
+              format: double
+            tokensUsed:
+              type: integer
+            model:
+              type: string
+            confidence:
+              type: number
+              format: double
+            costUSD:
+              type: number
+              format: double
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            retryable:
+              type: boolean
+        trace:
+          type: object
+          required:
+            - requestId
+            - timestamp
+            - agentName
+          properties:
+            requestId:
+              type: string
+              format: uuid
+            timestamp:
+              type: string
+              format: date-time
+            agentName:
+              type: string
+            metadata:
+              type: object
+              additionalProperties: true
+
+    CapabilityMap:
+      type: object
+      required:
+        - capabilities
+        - totalCapabilities
+      properties:
+        capabilities:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        totalCapabilities:
+          type: integer
+
+    # ==================== VECTOR SCHEMAS ====================
+    SearchDto:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+        threshold:
+          type: number
+          format: double
+          default: 0.7
+          minimum: 0
+          maximum: 1
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+
+    SearchResult:
+      type: object
+      required:
+        - hits
+        - count
+      properties:
+        hits:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              score:
+                type: number
+                format: double
+              content:
+                type: string
+              metadata:
+                type: object
+                additionalProperties: true
+        count:
+          type: integer
+
+    HybridSearchDto:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 100
+        threshold:
+          type: number
+          format: double
+          default: 0.7
+          minimum: 0
+          maximum: 1
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        keywordBoost:
+          type: number
+          format: double
+          default: 0.2
+          minimum: 0
+          maximum: 1
+
+    SimilarItemsResult:
+      type: object
+      required:
+        - sourceId
+        - similar
+        - count
+      properties:
+        sourceId:
+          type: string
+        similar:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              score:
+                type: number
+                format: double
+        count:
+          type: integer
+
+    IndexDocumentDto:
+      type: object
+      required:
+        - id
+        - content
+      properties:
+        id:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+
+    IndexResult:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+
+    BatchIndexDto:
+      type: object
+      required:
+        - documents
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndexDocumentDto'
+          minItems: 1
+          maxItems: 100
+
+    BatchIndexResult:
+      type: object
+      required:
+        - results
+        - total
+        - success
+        - failed
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndexResult'
+        total:
+          type: integer
+        success:
+          type: integer
+        failed:
+          type: integer
+
+    RagDto:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+        systemPrompt:
+          type: string
+        contextLimit:
+          type: integer
+          default: 5
+          minimum: 1
+          maximum: 20
+        relevanceThreshold:
+          type: number
+          format: double
+          default: 0.7
+          minimum: 0
+          maximum: 1
+        maxTokens:
+          type: integer
+          default: 1000
+          minimum: 100
+          maximum: 4000
+        temperature:
+          type: number
+          format: double
+          default: 0.7
+          minimum: 0
+          maximum: 2
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+
+    RagResult:
+      type: object
+      required:
+        - response
+        - sources
+      properties:
+        response:
+          type: string
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              content:
+                type: string
+              score:
+                type: number
+                format: double
+        warning:
+          type: string
+
+    ConversationalRagDto:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationTurnDto'
+        systemPrompt:
+          type: string
+        contextLimit:
+          type: integer
+          default: 5
+          minimum: 1
+          maximum: 20
+        relevanceThreshold:
+          type: number
+          format: double
+          default: 0.7
+          minimum: 0
+          maximum: 1
+        maxTokens:
+          type: integer
+          default: 1000
+          minimum: 100
+          maximum: 4000
+        temperature:
+          type: number
+          format: double
+          default: 0.7
+          minimum: 0
+          maximum: 2
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+
+    ConversationTurnDto:
+      type: object
+      required:
+        - userMessage
+      properties:
+        userMessage:
+          type: string
+        assistantMessage:
+          type: string
 
   responses:
     UnauthorizedError:

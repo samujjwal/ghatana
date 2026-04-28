@@ -10,6 +10,12 @@ import { ProtectedRoute } from '@/components/security/ProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
 import { LoginPage } from '@/pages/LoginPage';
 
+function makeJwt(expOffsetSeconds = 3600): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payload = btoa(JSON.stringify({ sub: 'user-1', exp: Math.floor(Date.now() / 1000) + expOffsetSeconds }));
+  return `${header}.${payload}.signature`;
+}
+
 vi.mock('@/api/sse', () => ({
   subscribeToAepStream: () => ({ close: vi.fn() }),
 }));
@@ -64,16 +70,26 @@ describe('AEP auth flow', () => {
     await waitFor(() => expect(screen.getByText('Login screen')).toBeInTheDocument());
   });
 
-  it('stores token and session token after sign in', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ session: 'session-123', expiresInSeconds: 3600 }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-AEP-Session': 'session-123',
-        },
-      }),
-    );
+  it('stores the verified token and attempts session bootstrap after sign in', async () => {
+    const token = makeJwt();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ roles: ['operator'], retrievedAt: new Date().toISOString() }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ session: 'session-123', expiresInSeconds: 3600 }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-AEP-Session': 'session-123',
+          },
+        }),
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     renderWithProviders(
@@ -86,27 +102,72 @@ describe('AEP auth flow', () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/jwt access token/i), 'jwt-token-value');
+    await user.type(screen.getByLabelText(/jwt access token/i), token);
     await user.click(screen.getByRole('button', { name: /sign in with token/i }));
 
     await waitFor(() => expect(screen.getByText('Operate')).toBeInTheDocument());
-    expect(sessionStorage.getItem('aep-token')).toBe('jwt-token-value');
-    expect(sessionStorage.getItem('aep-session')).toBe('session-123');
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(sessionStorage.getItem('aep-token')).toBe(token);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/v1/auth/roles',
+      expect.objectContaining({
+        method: 'GET',
+      }),
+    );
+    expect(fetchMock.mock.calls).toContainEqual([
       '/api/v1/session',
       expect.objectContaining({
         method: 'POST',
       }),
+    ]);
+  });
+
+  it('rejects sign in when the backend cannot verify the JWT', async () => {
+    const token = makeJwt();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Authentication failed' }), {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     );
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>,
+    );
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/jwt access token/i), token);
+    await user.click(screen.getByRole('button', { name: /sign in with token/i }));
+
+    await waitFor(() => expect(screen.getByText(/unable to verify jwt access token/i)).toBeInTheDocument());
+    expect(sessionStorage.getItem('aep-token')).toBeNull();
+    expect(sessionStorage.getItem('aep-session')).toBeNull();
   });
 
   it('clears auth state when signing out from the nav bar', async () => {
-    sessionStorage.setItem('aep-token', 'jwt-token-value');
+    const token = makeJwt();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ roles: ['operator'], retrievedAt: new Date().toISOString() }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    sessionStorage.setItem('aep-token', token);
     sessionStorage.setItem('aep-session', 'session-123');
 
     renderWithProviders(<NavBar />);
 
     const user = userEvent.setup();
+    await waitFor(() => expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: /sign out/i }));
 
     expect(sessionStorage.getItem('aep-token')).toBeNull();

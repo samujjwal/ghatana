@@ -35,8 +35,9 @@ dependencies {
 
     // YAPPC modules
     // ===== Services bounded-context sub-modules =====
-    implementation(project(":products:yappc:core:services-platform"))
-    implementation(project(":products:yappc:core:services-lifecycle"))  // was: services:lifecycle (Phase 2: moved to core/)
+    // SIMP-Y8: services-platform and services-lifecycle merged into yappc-services.
+    // Both modules are now deprecated facades kept temporarily for compatibility.
+    // Depend only on yappc-services going forward.
 
     // backend:api removed (2026-03-23) — functionality consolidated into core modules
     implementation(project(":products:yappc:platform"))

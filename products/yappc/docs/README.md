@@ -2,6 +2,8 @@
 
 **AI-Native Product Development Platform**
 
+> **Looking for everything?** → [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) is the canonical entry point for all YAPPC docs.
+
 ## Quick Links
 
 - [Start Here Architecture](START_HERE_ARCHITECTURE.md) - Current module topology, deployable surfaces, and contributor entry points

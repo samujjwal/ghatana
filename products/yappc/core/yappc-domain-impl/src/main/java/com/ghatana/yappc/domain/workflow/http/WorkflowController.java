@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.products.yappc.domain.workflow.*;
+import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -19,6 +20,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,9 +40,23 @@ public class WorkflowController {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowController.class);
 
+    // ── Header constants (use HttpHeader objects — ActiveJ requires these, not raw strings) ──
+    static final String CORRELATION_ID_HEADER   = "X-Correlation-ID";
+    static final String ROLE_HEADER             = "X-User-Role";
+    private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
+    private static final String USER_ID_HEADER     = "X-User-Id";
+    private static final String ACTOR_HEADER       = "X-Actor";
+
+    private static final HttpHeader HTTP_CORRELATION_ID  = HttpHeaders.of(CORRELATION_ID_HEADER);
+    private static final HttpHeader HTTP_ROLE            = HttpHeaders.of(ROLE_HEADER);
+    private static final HttpHeader HTTP_IDEMPOTENCY     = HttpHeaders.of(IDEMPOTENCY_HEADER);
+    private static final HttpHeader HTTP_USER_ID         = HttpHeaders.of(USER_ID_HEADER);
+    private static final HttpHeader HTTP_ACTOR           = HttpHeaders.of(ACTOR_HEADER);
+
     private final AiWorkflowService workflowService;
     private final ObjectMapper objectMapper;
     private final IdempotencyCache idempotencyCache;
+    private final WorkflowProblemHandler problemHandler;
 
     /**
      * Creates a new WorkflowController.
@@ -53,6 +71,70 @@ public class WorkflowController {
         this.workflowService = Objects.requireNonNull(workflowService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.idempotencyCache = new IdempotencyCache();
+        this.problemHandler = new WorkflowProblemHandler(objectMapper);
+    }
+
+    // ==================== ROLE-BASED ACCESS CONTROL ====================
+
+    /**
+     * Canonical role names for YAPPC workflow operations.
+     * Roles are populated by the upstream auth gateway/filter into the
+     * {@code X-User-Role} request header before reaching this controller.
+     */
+    static final class WorkflowRoles {
+        /** Full control: create, modify, approve, delete, admin actions. */
+        static final String OWNER     = "OWNER";
+        /** Admin-level: create, modify, approve, delete. */
+        static final String ADMIN     = "ADMIN";
+        /** Tech lead: create, modify, approve/reject plans. Cannot delete. */
+        static final String LEAD      = "LEAD";
+        /** Developer: create and modify workflows. Cannot approve plans or delete. */
+        static final String DEVELOPER = "DEVELOPER";
+        /** Read-only: no state mutations. */
+        static final String VIEWER    = "VIEWER";
+
+        /** Roles that may create or modify workflows and plans. */
+        static final Set<String> WRITE_ROLES    = Set.of(OWNER, ADMIN, LEAD, DEVELOPER);
+        /** Roles that may approve or reject AI plans (decision actions). */
+        static final Set<String> APPROVAL_ROLES = Set.of(OWNER, ADMIN, LEAD);
+        /** Roles that may delete workflows (destructive actions). */
+        static final Set<String> ADMIN_ROLES    = Set.of(OWNER, ADMIN);
+
+        private WorkflowRoles() {}
+    }
+
+    /**
+     * Verifies that the requesting user holds one of the required roles.
+     * Returns an empty Optional when access is granted; returns a 403 response
+     * wrapped in an Optional when the role check fails.
+     *
+     * @param request      incoming HTTP request
+     * @param allowedRoles set of role strings that grant access
+     * @return empty Optional on success, non-empty Optional containing 403 on denial
+     */
+    @NotNull
+    private Optional<HttpResponse> requireRole(
+        @NotNull HttpRequest request,
+        @NotNull Set<String> allowedRoles
+    ) {
+        String role = request.getHeader(HTTP_ROLE);
+        if (role == null || role.isBlank()) {
+            LOG.warn("RBAC: missing {} header — denying mutation", ROLE_HEADER);
+            return Optional.of(
+                ResponseBuilder.forbidden()
+                    .json(Map.of("error", "Missing required role header"))
+                    .build()
+            );
+        }
+        if (!allowedRoles.contains(role)) {
+            LOG.warn("RBAC: role {} not in allowed set {} — denying mutation", role, allowedRoles);
+            return Optional.of(
+                ResponseBuilder.forbidden()
+                    .json(Map.of("error", "Insufficient role: " + role))
+                    .build()
+            );
+        }
+        return Optional.empty();
     }
 
     // ==================== WORKFLOW CRUD ====================
@@ -63,6 +145,11 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> createWorkflow(@NotNull HttpRequest request) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -72,6 +159,7 @@ public class WorkflowController {
                     );
 
                     String tenantId = extractTenantId(request);
+                    String correlationId = extractOrGenerateCorrelationId(request);
 
                     AiWorkflowService.CreateWorkflowRequest createRequest =
                         new AiWorkflowService.CreateWorkflowRequest(
@@ -83,7 +171,7 @@ public class WorkflowController {
                         );
 
                     return workflowService.createWorkflow(createRequest)
-                        .map(workflow -> ResponseBuilder.created().json(workflow).build());
+                        .map(workflow -> withCorrelationId(ResponseBuilder.created().json(workflow), correlationId));
 
                 } catch (Exception e) {
                     LOG.error("Failed to create workflow", e);
@@ -101,10 +189,11 @@ public class WorkflowController {
     @NotNull
     public Promise<HttpResponse> getWorkflow(@NotNull HttpRequest request, @NotNull String id) {
         String tenantId = extractTenantId(request);
+        String correlationId = extractOrGenerateCorrelationId(request);
 
         return workflowService.getWorkflow(id, tenantId)
             .map(optWorkflow -> optWorkflow
-                .map(w -> ResponseBuilder.ok().json(w).build())
+                .map(w -> withCorrelationId(ResponseBuilder.ok().json(w), correlationId))
                 .orElseGet(() -> ResponseBuilder.notFound()
                     .json(Map.of("error", "Workflow not found: " + id))
                     .build()));
@@ -149,6 +238,11 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> deleteWorkflow(@NotNull HttpRequest request, @NotNull String id) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.ADMIN_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         String tenantId = extractTenantId(request);
 
         return workflowService.deleteWorkflow(id, tenantId)
@@ -167,6 +261,11 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> startWorkflow(@NotNull HttpRequest request, @NotNull String id) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         String tenantId = extractTenantId(request);
 
         return workflowService.startWorkflow(id, tenantId)
@@ -180,6 +279,11 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> pauseWorkflow(@NotNull HttpRequest request, @NotNull String id) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         String tenantId = extractTenantId(request);
 
         return workflowService.pauseWorkflow(id, tenantId)
@@ -193,6 +297,11 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> resumeWorkflow(@NotNull HttpRequest request, @NotNull String id) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         String tenantId = extractTenantId(request);
 
         return workflowService.resumeWorkflow(id, tenantId)
@@ -206,9 +315,15 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> cancelWorkflow(@NotNull HttpRequest request, @NotNull String id) {
-        String tenantId = extractTenantId(request);
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
 
-        return workflowService.cancelWorkflow(id, tenantId)
+        String tenantId = extractTenantId(request);
+        String actor = extractActor(request);
+
+        return workflowService.cancelWorkflow(id, tenantId, actor, null)
             .map(workflow -> ResponseBuilder.ok().json(workflow).build())
             .then(Promise::of, this::handleWorkflowException);
     }
@@ -264,6 +379,11 @@ public class WorkflowController {
         @NotNull String id,
         @NotNull String stepId
     ) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         String tenantId = extractTenantId(request);
 
         return workflowService.goToStep(id, tenantId, stepId)
@@ -279,6 +399,11 @@ public class WorkflowController {
      */
     @NotNull
     public Promise<HttpResponse> generatePlan(@NotNull HttpRequest request, @NotNull String id) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -311,9 +436,15 @@ public class WorkflowController {
         @NotNull String workflowId,
         @NotNull String planId
     ) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.APPROVAL_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         String tenantId = extractTenantId(request);
         String actor = extractActor(request);
-        String idempotencyKey = request.getHeader("Idempotency-Key");
+        String idempotencyKey = request.getHeader(HTTP_IDEMPOTENCY);
+        String correlationId = extractOrGenerateCorrelationId(request);
 
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             return Promise.of(ResponseBuilder.badRequest()
@@ -331,7 +462,7 @@ public class WorkflowController {
 
         return workflowService.approvePlan(planId, tenantId, actor)
             .map(plan -> {
-                HttpResponse response = ResponseBuilder.ok().json(plan).build();
+                HttpResponse response = withCorrelationId(ResponseBuilder.ok().json(plan), correlationId);
                 // Cache response for replay window (24 hours)
                 idempotencyCache.put(cacheKey, response, java.time.Duration.ofHours(24));
                 return response;
@@ -349,12 +480,17 @@ public class WorkflowController {
         @NotNull String workflowId,
         @NotNull String planId
     ) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.APPROVAL_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         return request.loadBody()
             .then(body -> {
                 try {
                     String tenantId = extractTenantId(request);
                     String actor = extractActor(request);
-                    String idempotencyKey = request.getHeader("Idempotency-Key");
+                    String idempotencyKey = request.getHeader(HTTP_IDEMPOTENCY);
 
                     if (idempotencyKey == null || idempotencyKey.isBlank()) {
                         return Promise.of(ResponseBuilder.badRequest()
@@ -403,6 +539,11 @@ public class WorkflowController {
         @NotNull String workflowId,
         @NotNull String planId
     ) {
+        Optional<HttpResponse> forbidden = requireRole(request, WorkflowRoles.WRITE_ROLES);
+        if (forbidden.isPresent()) {
+            return Promise.of(forbidden.get());
+        }
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -468,11 +609,41 @@ public class WorkflowController {
     private String extractActor(HttpRequest request) {
         // Extract actor from request - could be from JWT, session, or a dedicated header
         // For now, extract from X-User-Id header or use a default
-        String actor = request.getHeader("X-User-Id");
+        String actor = request.getHeader(HTTP_USER_ID);
         if (actor == null || actor.isBlank()) {
-            actor = request.getHeader("X-Actor");
+            actor = request.getHeader(HTTP_ACTOR);
         }
         return actor != null ? actor : "system";
+    }
+
+    /**
+     * Extracts the correlation ID from the request, or generates a new UUID if absent.
+     * The correlation ID is used to trace requests across service boundaries (F-Y026).
+     *
+     * @param request incoming HTTP request
+     * @return correlation ID string (never null or blank)
+     */
+    @NotNull
+    String extractOrGenerateCorrelationId(@NotNull HttpRequest request) {
+        String correlationId = request.getHeader(HTTP_CORRELATION_ID);
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString();
+            LOG.debug("No {} header found — generated correlation ID: {}", CORRELATION_ID_HEADER, correlationId);
+        }
+        return correlationId;
+    }
+
+    /**
+     * Propagates the correlation ID from the request to the response.
+     * Call this on every outgoing {@link HttpResponse} to maintain trace continuity.
+     *
+     * @param builder       the response builder (NOT yet built)
+     * @param correlationId the correlation ID to propagate
+     * @return the built response with the correlation-id header
+     */
+    @NotNull
+    static HttpResponse withCorrelationId(@NotNull ResponseBuilder builder, @NotNull String correlationId) {
+        return builder.header(HTTP_CORRELATION_ID, correlationId).build();
     }
 
     private int getIntParam(HttpRequest request, String name, int defaultValue) {
@@ -488,24 +659,10 @@ public class WorkflowController {
     }
 
     private Promise<HttpResponse> handleWorkflowException(Exception e) {
-        if (e instanceof AiWorkflowService.WorkflowNotFoundException) {
-            return Promise.of(ResponseBuilder.notFound()
-                .json(Map.of("error", e.getMessage()))
-                .build());
-        } else if (e instanceof AiWorkflowService.InvalidWorkflowStateException) {
-            return Promise.of(ResponseBuilder.conflict()
-                .json(Map.of("error", e.getMessage()))
-                .build());
-        } else if (e instanceof AiWorkflowService.WorkflowExecutionException) {
-            return Promise.of(ResponseBuilder.internalServerError()
-                .json(Map.of("error", e.getMessage()))
-                .build());
-        } else {
-            LOG.error("Unexpected workflow error", e);
-            return Promise.of(ResponseBuilder.internalServerError()
-                .json(Map.of("error", "Workflow operation failed: " + e.getMessage()))
-                .build());
-        }
+        // Delegate to central RFC-7807 problem handler (F-Y045 / K-Y12).
+        // Instance and correlationId are not available here — callers that have them
+        // should prefer problemHandler.asPromiseHandler(path, correlationId) directly.
+        return Promise.of(problemHandler.handle(e, null, null));
     }
 
     private String buildIdempotencyKey(String operation, String tenantId, String planId, String idempotencyKey) {

@@ -1106,6 +1106,1081 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Sprint Planning (C-Y7) ──────────────────────────────────────────────────
+
+  # ── Canvas ────────────────────────────────────────────────────────────────
+
+  /api/canvas:
+    get:
+      operationId: listCanvas
+      summary: List all canvases accessible to the requester
+      tags: [Canvas]
+      responses:
+        "200":
+          description: Canvas list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Canvas"
+
+  /api/canvas/{projectId}/{canvasId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: canvasId
+        in: path
+        required: false
+        schema:
+          type: string
+    get:
+      operationId: getCanvas
+      summary: Get a canvas by project and optional canvas ID
+      tags: [Canvas]
+      responses:
+        "200":
+          description: Canvas detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Canvas"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/{projectId}/canvas:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getProjectCanvas
+      summary: Get the canvas for a project
+      tags: [Canvas]
+      responses:
+        "200":
+          description: Canvas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Canvas"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: saveProjectCanvas
+      summary: Save (upsert) the canvas for a project
+      tags: [Canvas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanvasPayload"
+      responses:
+        "200":
+          description: Canvas saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Canvas"
+
+  /api/projects/{projectId}/canvas/versions:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listCanvasVersions
+      summary: List historical versions of a project canvas
+      tags: [Canvas]
+      responses:
+        "200":
+          description: Canvas version list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanvasVersion"
+
+  /api/projects/{projectId}/canvas/restore:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: restoreCanvasVersion
+      summary: Restore a canvas to a previous version
+      tags: [Canvas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versionId]
+              properties:
+                versionId:
+                  type: string
+      responses:
+        "200":
+          description: Canvas restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Canvas"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Code Associations ────────────────────────────────────────────────────────
+
+  /api/code-associations:
+    get:
+      operationId: listCodeAssociations
+      summary: List code associations
+      tags: [CodeAssociations]
+      parameters:
+        - name: artifactId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Code associations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CodeAssociation"
+    post:
+      operationId: createCodeAssociation
+      summary: Create a code association
+      tags: [CodeAssociations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCodeAssociationRequest"
+      responses:
+        "201":
+          description: Code association created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeAssociation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/code-associations/{associationId}:
+    parameters:
+      - name: associationId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getCodeAssociation
+      summary: Get a code association
+      tags: [CodeAssociations]
+      responses:
+        "200":
+          description: Code association
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeAssociation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteCodeAssociation
+      summary: Delete a code association
+      tags: [CodeAssociations]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/artifacts/{artifactId}/code-associations:
+    parameters:
+      - name: artifactId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listArtifactCodeAssociations
+      summary: List code associations for an artifact
+      tags: [CodeAssociations]
+      responses:
+        "200":
+          description: Code associations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CodeAssociation"
+
+  /api/code-associations/stats/{artifactId}:
+    parameters:
+      - name: artifactId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getCodeAssociationStats
+      summary: Get code association statistics for an artifact
+      tags: [CodeAssociations]
+      responses:
+        "200":
+          description: Association stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeAssociationStats"
+
+  # ── DevSecOps ────────────────────────────────────────────────────────────────
+
+  /api/devsecops/overview:
+    get:
+      operationId: getDevSecOpsOverview
+      summary: Get DevSecOps dashboard overview
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: DevSecOps overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevSecOpsOverview"
+
+  /api/devsecops/ai-insights:
+    get:
+      operationId: getDevSecOpsAiInsights
+      summary: Get AI-generated DevSecOps insights
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: AI insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiInsight"
+
+  /api/devsecops/anomaly-alerts:
+    get:
+      operationId: getDevSecOpsAnomalyAlerts
+      summary: Get active anomaly alerts
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: Anomaly alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnomalyAlert"
+
+  /api/devsecops/items:
+    get:
+      operationId: listDevSecOpsItems
+      summary: List DevSecOps items (vulnerabilities, findings, etc.)
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: DevSecOps items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DevSecOpsItem"
+    post:
+      operationId: createDevSecOpsItem
+      summary: Create a DevSecOps item
+      tags: [DevSecOps]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDevSecOpsItemRequest"
+      responses:
+        "201":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevSecOpsItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/devsecops/items/bulk-update:
+    patch:
+      operationId: bulkUpdateDevSecOpsItems
+      summary: Bulk update DevSecOps items
+      tags: [DevSecOps]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids, update]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                update:
+                  $ref: "#/components/schemas/UpdateDevSecOpsItemRequest"
+      responses:
+        "200":
+          description: Items updated
+
+  /api/devsecops/items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getDevSecOpsItem
+      summary: Get a DevSecOps item
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: Item detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevSecOpsItem"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateDevSecOpsItem
+      summary: Update a DevSecOps item
+      tags: [DevSecOps]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDevSecOpsItemRequest"
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevSecOpsItem"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteDevSecOpsItem
+      summary: Delete a DevSecOps item
+      tags: [DevSecOps]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/devsecops/phases:
+    get:
+      operationId: listDevSecOpsPhases
+      summary: List DevSecOps phases
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: Phases list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DevSecOpsPhase"
+
+  /api/devsecops/phases/{phaseId}:
+    parameters:
+      - name: phaseId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getDevSecOpsPhase
+      summary: Get a DevSecOps phase
+      tags: [DevSecOps]
+      responses:
+        "200":
+          description: Phase detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevSecOpsPhase"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Lifecycle Execution Results ───────────────────────────────────────────────
+
+  /api/results:
+    get:
+      operationId: listExecutionResults
+      summary: List lifecycle execution results
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Execution results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExecutionResult"
+
+  /api/results/{executionId}:
+    parameters:
+      - name: executionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getExecutionResult
+      summary: Get a lifecycle execution result
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionResult"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/results/{executionId}/phase:
+    parameters:
+      - name: executionId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getExecutionPhaseResult
+      summary: Get the phase-level result for an execution
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Phase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionPhaseResult"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/{projectId}/results:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listProjectExecutionResults
+      summary: List execution results for a project
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Execution results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExecutionResult"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Lifecycle Artifacts & Gates ──────────────────────────────────────────────
+
+  /api/artifacts:
+    get:
+      operationId: listArtifacts
+      summary: List lifecycle artifacts
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Artifacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Artifact"
+    post:
+      operationId: createArtifact
+      summary: Create a lifecycle artifact
+      tags: [Lifecycle]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateArtifactRequest"
+      responses:
+        "201":
+          description: Artifact created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifact"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/artifacts/{artifactId}:
+    parameters:
+      - name: artifactId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getArtifact
+      summary: Get a lifecycle artifact
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifact"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateArtifact
+      summary: Update a lifecycle artifact
+      tags: [Lifecycle]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateArtifactRequest"
+      responses:
+        "200":
+          description: Artifact updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifact"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteArtifact
+      summary: Delete a lifecycle artifact
+      tags: [Lifecycle]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/gates/validate:
+    post:
+      operationId: validateGate
+      summary: Validate whether phase gate requirements are met
+      tags: [Lifecycle]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phase, projectId]
+              properties:
+                phase:
+                  type: string
+                projectId:
+                  type: string
+      responses:
+        "200":
+          description: Gate validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GateValidationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/personas/derive:
+    post:
+      operationId: derivePersonas
+      summary: AI-derive personas from project artifacts
+      tags: [Lifecycle]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId]
+              properties:
+                projectId:
+                  type: string
+      responses:
+        "200":
+          description: Derived personas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Persona"
+
+  /api/phases:
+    get:
+      operationId: listPhases
+      summary: List all lifecycle phases
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Phases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Phase"
+
+  /api/phases/{phase}/next:
+    parameters:
+      - name: phase
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getNextPhase
+      summary: Get the next phase after the given phase
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Next phase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Phase"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/{projectId}/current:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getCurrentProjectPhase
+      summary: Get the current lifecycle phase for a project
+      tags: [Lifecycle]
+      responses:
+        "200":
+          description: Current phase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectPhaseStatus"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Project Extensions ────────────────────────────────────────────────────────
+
+  /api/projects/{projectId}/activity:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getProjectActivity
+      summary: Get activity log for a project
+      tags: [Projects]
+      responses:
+        "200":
+          description: Activity log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEntry"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/{projectId}/ai-cost:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getProjectAiCost
+      summary: Get AI cost for a project
+      tags: [Projects]
+      responses:
+        "200":
+          description: AI cost breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectAiCost"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/projects/{projectId}/capabilities:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getProjectCapabilities
+      summary: Get capability gates for a project
+      tags: [Projects]
+      responses:
+        "200":
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectCapabilities"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: updateProjectCapabilities
+      summary: Update capability gates for a project
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCapabilities"
+      responses:
+        "200":
+          description: Capabilities updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectCapabilities"
+
+  /api/projects/{projectId}/refresh-ai:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: refreshProjectAiSuggestions
+      summary: Trigger AI suggestion refresh for a project
+      tags: [Projects]
+      responses:
+        "202":
+          description: Refresh triggered
+
+  # ── Workspace Extensions ──────────────────────────────────────────────────────
+
+  /api/workspaces/{workspaceId}/refresh-ai:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: refreshWorkspaceAiSuggestions
+      summary: Trigger AI suggestion refresh for a workspace
+      tags: [Workspaces]
+      responses:
+        "202":
+          description: Refresh triggered
+
+  # ── Telemetry ────────────────────────────────────────────────────────────────
+
+  /api/telemetry/frontend-errors:
+    post:
+      operationId: reportFrontendError
+      summary: Report a frontend error for observability
+      tags: [Telemetry]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FrontendErrorReport"
+      responses:
+        "204":
+          description: Error reported
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /planning/{projectId}/sprints:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listSprints
+      summary: List sprints for a project
+      tags: [Planning]
+      responses:
+        "200":
+          description: List of sprints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sprint"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: createSprint
+      summary: Create a sprint for a project
+      tags: [Planning]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSprintRequest"
+      responses:
+        "201":
+          description: Sprint created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sprint"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /planning/{projectId}/sprints/{sprintId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: sprintId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSprint
+      summary: Get a single sprint
+      tags: [Planning]
+      responses:
+        "200":
+          description: Sprint detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sprint"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateSprint
+      summary: Update a sprint (name, dates, status)
+      tags: [Planning]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSprintRequest"
+      responses:
+        "200":
+          description: Sprint updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sprint"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /planning/{projectId}/backlog:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getProjectBacklog
+      summary: Get the product backlog for a project
+      tags: [Planning]
+      responses:
+        "200":
+          description: Backlog items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BacklogItem"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /planning/{projectId}/items/move:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: moveBacklogItem
+      summary: Move a backlog item to a sprint or back to the backlog
+      tags: [Planning]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveItemRequest"
+      responses:
+        "200":
+          description: Item moved
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Workspace Members ────────────────────────────────────────────────────────
+
+  /workspaces/{workspaceId}/members:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listWorkspaceMembers
+      summary: List workspace members
+      tags: [Workspaces]
+      responses:
+        "200":
+          description: Members list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceMember"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: addWorkspaceMember
+      summary: Add a member to a workspace
+      tags: [Workspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemberRequest"
+      responses:
+        "201":
+          description: Member added
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /workspaces/{workspaceId}/members/{userId}/role:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      operationId: updateWorkspaceMemberRole
+      summary: Update workspace member role
+      tags: [Workspaces]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMemberRoleRequest"
+      responses:
+        "200":
+          description: Role updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspaceId}/members/{userId}:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      operationId: removeWorkspaceMember
+      summary: Remove a member from a workspace
+      tags: [Workspaces]
+      responses:
+        "204":
+          description: Member removed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 # ─────────────────────────────────────────────────────────────────────────────
 components:
 
@@ -1132,21 +2207,45 @@ components:
     BadRequest:
       description: Bad request — invalid or missing parameters
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/ProblemDetail"
     Unauthorized:
       description: Authentication required or token invalid
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/ProblemDetail"
+    Forbidden:
+      description: Permission denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
     NotFound:
       description: Resource not found
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: "#/components/schemas/ProblemDetail"
+    Conflict:
+      description: Resource conflict (e.g. duplicate or concurrent edit)
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    UnprocessableEntity:
+      description: Semantically invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetail"
 
   schemas:
 
@@ -1840,10 +2939,593 @@ components:
         policyId:
           type: string
 
+    # ── Canvas ─────────────────────────────────────────────────────────────────
+
+    Canvas:
+      type: object
+      required: [id, projectId, data, updatedAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+          description: Canvas JSON payload (nodes, edges, layout)
+        updatedAt:
+          type: string
+          format: date-time
+
+    CanvasPayload:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+
+    CanvasVersion:
+      type: object
+      required: [id, projectId, version, createdAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        label:
+          type: string
+
+    # ── Code Associations ─────────────────────────────────────────────────────
+
+    CodeAssociation:
+      type: object
+      required: [id, artifactId, filePath, createdAt]
+      properties:
+        id:
+          type: string
+        artifactId:
+          type: string
+        filePath:
+          type: string
+        lineStart:
+          type: integer
+        lineEnd:
+          type: integer
+        kind:
+          type: string
+          enum: [implements, references, tests, generates]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCodeAssociationRequest:
+      type: object
+      required: [artifactId, filePath]
+      properties:
+        artifactId:
+          type: string
+        filePath:
+          type: string
+        lineStart:
+          type: integer
+        lineEnd:
+          type: integer
+        kind:
+          type: string
+          enum: [implements, references, tests, generates]
+
+    CodeAssociationStats:
+      type: object
+      required: [artifactId, count]
+      properties:
+        artifactId:
+          type: string
+        count:
+          type: integer
+        byKind:
+          type: object
+          additionalProperties:
+            type: integer
+
+    # ── DevSecOps ─────────────────────────────────────────────────────────────
+
+    DevSecOpsOverview:
+      type: object
+      required: [criticalCount, highCount, mediumCount, lowCount]
+      properties:
+        criticalCount:
+          type: integer
+        highCount:
+          type: integer
+        mediumCount:
+          type: integer
+        lowCount:
+          type: integer
+        lastScanAt:
+          type: string
+          format: date-time
+
+    AiInsight:
+      type: object
+      required: [id, title, severity, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [info, low, medium, high, critical]
+        createdAt:
+          type: string
+          format: date-time
+
+    AnomalyAlert:
+      type: object
+      required: [id, type, detectedAt]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        detectedAt:
+          type: string
+          format: date-time
+
+    DevSecOpsItem:
+      type: object
+      required: [id, title, severity, status]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [open, in-progress, resolved, accepted]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateDevSecOpsItemRequest:
+      type: object
+      required: [title, severity]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+
+    UpdateDevSecOpsItemRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in-progress, resolved, accepted]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+
+    DevSecOpsPhase:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        checks:
+          type: array
+          items:
+            type: string
+
+    # ── Lifecycle Execution ───────────────────────────────────────────────────
+
+    ExecutionResult:
+      type: object
+      required: [id, projectId, phase, status, startedAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        phase:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, success, failed, cancelled]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ExecutionPhaseResult:
+      type: object
+      required: [executionId, phase, status]
+      properties:
+        executionId:
+          type: string
+        phase:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, success, failed, cancelled]
+        output:
+          type: object
+          additionalProperties: true
+
+    # ── Artifacts ─────────────────────────────────────────────────────────────
+
+    Artifact:
+      type: object
+      required: [id, projectId, phase, type, status]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        phase:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [draft, complete, approved]
+        content:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateArtifactRequest:
+      type: object
+      required: [projectId, phase, type]
+      properties:
+        projectId:
+          type: string
+        phase:
+          type: string
+        type:
+          type: string
+        content:
+          type: object
+          additionalProperties: true
+
+    UpdateArtifactRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, complete, approved]
+        content:
+          type: object
+          additionalProperties: true
+
+    GateValidationResult:
+      type: object
+      required: [phase, canAdvance, missingArtifacts]
+      properties:
+        phase:
+          type: string
+        canAdvance:
+          type: boolean
+        missingArtifacts:
+          type: array
+          items:
+            type: string
+        readinessScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    Persona:
+      type: object
+      required: [id, name, role]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+        painPoints:
+          type: array
+          items:
+            type: string
+
+    Phase:
+      type: object
+      required: [id, name, order]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        order:
+          type: integer
+        description:
+          type: string
+
+    ProjectPhaseStatus:
+      type: object
+      required: [projectId, currentPhase]
+      properties:
+        projectId:
+          type: string
+        currentPhase:
+          type: string
+        advancedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    # ── Project Extensions ────────────────────────────────────────────────────
+
+    ActivityEntry:
+      type: object
+      required: [id, projectId, action, actorId, occurredAt]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        action:
+          type: string
+        actorId:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        occurredAt:
+          type: string
+          format: date-time
+
+    ProjectAiCost:
+      type: object
+      required: [projectId, totalTokens, estimatedUsd]
+      properties:
+        projectId:
+          type: string
+        totalTokens:
+          type: integer
+        estimatedUsd:
+          type: number
+          format: double
+        breakdown:
+          type: object
+          additionalProperties:
+            type: number
+
+    ProjectCapabilities:
+      type: object
+      properties:
+        aiAssist:
+          type: boolean
+        codeGeneration:
+          type: boolean
+        securityScan:
+          type: boolean
+        knowledgeGraph:
+          type: boolean
+
+    # ── Telemetry ─────────────────────────────────────────────────────────────
+
+    FrontendErrorReport:
+      type: object
+      required: [message, level]
+      properties:
+        message:
+          type: string
+        level:
+          type: string
+          enum: [error, warning, info]
+        stack:
+          type: string
+        url:
+          type: string
+        userAgent:
+          type: string
+        sessionId:
+          type: string
+        correlationId:
+          type: string
+
+    # ── Planning ───────────────────────────────────────────────────────────────
+
+    Sprint:
+      type: object
+      required: [id, projectId, name, status, startDate, endDate]
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [planned, active, completed, cancelled]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        goal:
+          type: string
+
+    CreateSprintRequest:
+      type: object
+      required: [name, startDate, endDate]
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        goal:
+          type: string
+
+    UpdateSprintRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        goal:
+          type: string
+        status:
+          type: string
+          enum: [planned, active, completed, cancelled]
+
+    BacklogItem:
+      type: object
+      required: [id, title, type]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [story, task, bug, epic]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        sprintId:
+          type: string
+          nullable: true
+        storyPoints:
+          type: integer
+        assigneeId:
+          type: string
+
+    MoveItemRequest:
+      type: object
+      required: [itemId]
+      properties:
+        itemId:
+          type: string
+        sprintId:
+          type: string
+          nullable: true
+          description: Target sprint ID; null moves item back to backlog
+
+    # ── Workspace Members ──────────────────────────────────────────────────────
+
+    WorkspaceMember:
+      type: object
+      required: [userId, workspaceId, role]
+      properties:
+        userId:
+          type: string
+        workspaceId:
+          type: string
+        role:
+          type: string
+          enum: [owner, admin, member, viewer]
+        joinedAt:
+          type: string
+          format: date-time
+
+    AddMemberRequest:
+      type: object
+      required: [userId, role]
+      properties:
+        userId:
+          type: string
+        role:
+          type: string
+          enum: [admin, member, viewer]
+
+    UpdateMemberRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [admin, member, viewer]
+
     # ── Common ────────────────────────────────────────────────────────────────
+
+    # RFC-7807 Problem Detail — canonical error envelope for all 4xx/5xx responses.
+    # Consumers must check Content-Type: application/problem+json before parsing.
+    ProblemDetail:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI reference identifying the problem type (e.g. "https://yappc.ghatana.com/problems/not-found")
+          example: "https://yappc.ghatana.com/problems/not-found"
+        title:
+          type: string
+          description: Short human-readable summary of the problem type
+          example: "Resource Not Found"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        detail:
+          type: string
+          description: Human-readable explanation specific to this occurrence
+          example: "Project with id 'abc123' does not exist"
+        instance:
+          type: string
+          format: uri
+          description: URI reference identifying the specific occurrence
+          example: "/api/projects/abc123"
+        correlationId:
+          type: string
+          description: Request correlation ID for tracing
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        extensions:
+          type: object
+          additionalProperties: true
+          description: Problem-type-specific extension members
 
     ErrorResponse:
       type: object
+      description: Legacy error response; new code should use ProblemDetail (RFC-7807)
       properties:
         error:
           type: string

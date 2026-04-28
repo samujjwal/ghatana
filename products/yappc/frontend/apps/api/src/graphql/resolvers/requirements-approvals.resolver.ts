@@ -63,7 +63,7 @@ interface AiEnrichmentSuggestion {
   storyTrace: string;
   confidence: number;
   rationale: string;
-  source: 'rule' | 'model';
+  source: 'RULE' | 'MODEL';
 }
 
 const toISOString = (date: Date | null | undefined): string | null =>
@@ -80,12 +80,13 @@ function isTerminalRunStatus(status: AgentRunStatus): boolean {
   return status === 'SUCCEEDED' || status === 'FAILED' || status === 'CANCELLED';
 }
 
+// ── Enrichment: rule engine ────────────────────────────────────────────────────
+
 /**
- * Builds a deterministic enrichment suggestion from the requirement title and
- * description. This is a structured placeholder — replace with an LLM call to
- * canvas-ai-service when real providers are available.
+ * Deterministic rule-based enrichment. Always succeeds; used as the fallback
+ * when the LLM path is unavailable or returns an unparseable response.
  */
-function buildEnrichmentSuggestion(
+function buildRuleBasedSuggestion(
   title: string,
   description: string
 ): AiEnrichmentSuggestion {
@@ -125,7 +126,141 @@ function buildEnrichmentSuggestion(
     isAuth ? 'Auth-related criteria added. ' : ''
   }${isApi ? 'API contract criteria added. ' : ''}Standard observability criterion always included.`;
 
-  return { normalizedTitle, acceptanceCriteria, storyTrace, confidence, rationale };
+  return { normalizedTitle, acceptanceCriteria, storyTrace, confidence, rationale, source: 'RULE' as const };
+}
+
+// ── Enrichment: LLM path ───────────────────────────────────────────────────────
+
+interface OpenAIChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface OpenAIChatResponse {
+  choices: Array<{
+    message: { role: string; content: string };
+    finish_reason: string;
+  }>;
+}
+
+/** Parsed shape we expect the LLM to return as JSON. */
+interface LlmEnrichmentJson {
+  normalizedTitle: string;
+  acceptanceCriteria: string[];
+  storyTrace: string;
+  confidence: number;
+  rationale: string;
+}
+
+const ENRICHMENT_SYSTEM_PROMPT = `You are a requirements-engineering assistant.
+Given a requirement title and description, return a JSON object with exactly these fields:
+- normalizedTitle: string — sentence-cased, concise restatement of the requirement.
+- acceptanceCriteria: string[] — 3–5 testable Given/When/Then or bullet criteria.
+- storyTrace: string — user story in "As a … I want … so that …" format.
+- confidence: number — your confidence in the enrichment (0.0–1.0).
+- rationale: string — brief explanation of how you interpreted the requirement.
+
+Respond ONLY with the JSON object. No markdown, no prose.`;
+
+/**
+ * Calls the OpenAI chat completions API to enrich a requirement.
+ * Throws if the API key is absent, the request fails, or the response is invalid.
+ */
+async function callLlmForEnrichment(
+  title: string,
+  description: string
+): Promise<AiEnrichmentSuggestion> {
+  const apiKey = process.env['OPENAI_API_KEY'];
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY not configured — LLM path unavailable');
+  }
+
+  const model = process.env['ENRICHMENT_LLM_MODEL'] ?? 'gpt-4o-mini';
+
+  const messages: OpenAIChatMessage[] = [
+    { role: 'system', content: ENRICHMENT_SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `Title: ${title}\nDescription: ${description || '(no description provided)'}`,
+    },
+  ];
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+
+  let response: Response;
+  try {
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 512 }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!response.ok) {
+    throw new Error(`OpenAI API error ${response.status}: ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as OpenAIChatResponse;
+  const raw = data.choices[0]?.message?.content;
+  if (typeof raw !== 'string' || !raw.trim()) {
+    throw new Error('LLM returned empty content');
+  }
+
+  let parsed: LlmEnrichmentJson;
+  try {
+    parsed = JSON.parse(raw) as LlmEnrichmentJson;
+  } catch {
+    throw new Error(`LLM response was not valid JSON: ${raw.slice(0, 200)}`);
+  }
+
+  // Validate required fields — don't trust LLM output without boundary checks
+  if (
+    typeof parsed.normalizedTitle !== 'string' ||
+    !Array.isArray(parsed.acceptanceCriteria) ||
+    typeof parsed.storyTrace !== 'string' ||
+    typeof parsed.confidence !== 'number' ||
+    typeof parsed.rationale !== 'string'
+  ) {
+    throw new Error('LLM response missing required enrichment fields');
+  }
+
+  return {
+    normalizedTitle: parsed.normalizedTitle,
+    acceptanceCriteria: parsed.acceptanceCriteria.map(String),
+    storyTrace: parsed.storyTrace,
+    confidence: Math.min(1, Math.max(0, parsed.confidence)),
+    rationale: parsed.rationale,
+    source: 'MODEL' as const,
+  };
+}
+
+// ── Enrichment: hybrid entry point ─────────────────────────────────────────────
+
+/**
+ * Hybrid enrichment: attempts the LLM path first, falls back to deterministic
+ * rule engine on any failure (missing API key, timeout, network error, bad JSON).
+ *
+ * The returned suggestion carries `source: 'MODEL'` or `source: 'RULE'` so the
+ * UI can display the correct {@link AISourceChip} provenance label.
+ */
+async function buildEnrichmentSuggestion(
+  title: string,
+  description: string
+): Promise<AiEnrichmentSuggestion> {
+  try {
+    return await callLlmForEnrichment(title, description);
+  } catch (err: unknown) {
+    const reason = err instanceof Error ? err.message : String(err);
+    console.warn(`[enrichRequirement] LLM path failed (${reason}), using rule fallback`);
+    return buildRuleBasedSuggestion(title, description);
+  }
 }
 
 export const requirementsApprovalsResolvers = {
@@ -470,13 +605,12 @@ export const requirementsApprovalsResolvers = {
         },
       });
 
-      // Build enrichment suggestions deterministically from the requirement text.
-      // Replace this block with a real LLM call when canvas-ai-service is ready.
+      // Build enrichment suggestion: LLM path with rule-based fallback (AI-Y2).
       const desc: string =
         typeof requirement.description === 'string'
           ? requirement.description
           : '';
-      const suggestion: AiEnrichmentSuggestion = buildEnrichmentSuggestion(
+      const suggestion: AiEnrichmentSuggestion = await buildEnrichmentSuggestion(
         requirement.title,
         desc
       );

@@ -20,7 +20,12 @@ import {
 import { getCostSummary } from '@/api/aep.api';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { Link } from 'react-router';
-import { getEditPipelineUrl, getRunDetailUrl } from '@/lib/routes';
+import {
+  getEditPipelineUrl,
+  getOperateUrl,
+  getPipelineListUrl,
+  getRunDetailUrl,
+} from '@/lib/routes';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 
@@ -40,9 +45,18 @@ function StatCard({ title, value, detail }: { title: string; value: React.ReactN
 
 export function CostDashboardPage() {
   const tenantId = useAtomValue(tenantIdAtom);
+  const [isUpdatingBudget, startBudgetTransition] = React.useTransition();
+  const [draftBudget, setDraftBudget] = React.useState({
+    dailyBudgetUsd: '25',
+    monthlyBudgetUsd: '750',
+  });
+  const [appliedBudget, setAppliedBudget] = React.useState({
+    dailyBudgetUsd: 25,
+    monthlyBudgetUsd: 750,
+  });
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['cost-summary', tenantId],
-    queryFn: () => getCostSummary(tenantId),
+    queryKey: ['cost-summary', tenantId, appliedBudget.dailyBudgetUsd, appliedBudget.monthlyBudgetUsd],
+    queryFn: () => getCostSummary(tenantId, appliedBudget),
     staleTime: 30_000,
   });
 
@@ -59,6 +73,20 @@ export function CostDashboardPage() {
       />
     );
   }
+
+  const applyBudgetThresholds = () => {
+    const nextDaily = Number.parseFloat(draftBudget.dailyBudgetUsd);
+    const nextMonthly = Number.parseFloat(draftBudget.monthlyBudgetUsd);
+    startBudgetTransition(() => {
+      setAppliedBudget({
+        dailyBudgetUsd: Number.isFinite(nextDaily) && nextDaily > 0 ? nextDaily : 25,
+        monthlyBudgetUsd: Number.isFinite(nextMonthly) && nextMonthly > 0 ? nextMonthly : 750,
+      });
+    });
+  };
+
+  const dailyBudget = data.budget.daily;
+  const monthlyBudget = data.budget.monthly;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-gray-50 p-6 dark:bg-gray-950">
@@ -95,6 +123,130 @@ export function CostDashboardPage() {
           value={data.alerts.length}
           detail="Budget, concentration, and telemetry alerts currently raised"
         />
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Budget guardrails</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Tune daily and monthly budget thresholds, then compare observed and projected usage against them.
+              </p>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Budget state refreshes from the live cost summary endpoint.
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Daily budget (USD)</span>
+              <input
+                value={draftBudget.dailyBudgetUsd}
+                onChange={(event) => setDraftBudget((current) => ({ ...current, dailyBudgetUsd: event.target.value }))}
+                inputMode="decimal"
+                className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-indigo-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Monthly budget (USD)</span>
+              <input
+                value={draftBudget.monthlyBudgetUsd}
+                onChange={(event) => setDraftBudget((current) => ({ ...current, monthlyBudgetUsd: event.target.value }))}
+                inputMode="decimal"
+                className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-indigo-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={applyBudgetThresholds}
+              disabled={isUpdatingBudget}
+              className="h-11 self-end rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUpdatingBudget ? 'Refreshing…' : 'Apply thresholds'}
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Daily budget</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <Currency value={dailyBudget.budgetUsd} />
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300">
+                  {dailyBudget.status}
+                </span>
+              </div>
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                Observed <Currency value={dailyBudget.observedUsd} /> • Remaining <Currency value={dailyBudget.remainingUsd} />
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{dailyBudget.usagePercent.toFixed(1)}% of threshold used</p>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Monthly projection</p>
+                  <p className="mt-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <Currency value={monthlyBudget.budgetUsd} />
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-gray-600 shadow-sm dark:bg-gray-900 dark:text-gray-300">
+                  {monthlyBudget.status}
+                </span>
+              </div>
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                Projection <Currency value={monthlyBudget.observedUsd} /> • Remaining <Currency value={monthlyBudget.remainingUsd} />
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{monthlyBudget.usagePercent.toFixed(1)}% of threshold used</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Model Spend Breakdown</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Model-level cost concentration is shown when telemetry publishes `cost.model.usd` or model tags.
+              </p>
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{data.perModel.length} models</span>
+          </div>
+          <div className="mt-4 overflow-x-auto">
+            {data.perModel.length === 0 ? (
+              <EmptyState
+                title="No per-model breakdown"
+                description="Model cost shares will appear once the runtime publishes model-tagged telemetry."
+              />
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <th className="pb-3 pr-4">Model</th>
+                    <th className="pb-3 pr-4">Cost</th>
+                    <th className="pb-3 pr-4">Share</th>
+                    <th className="pb-3">Runs</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-900">
+                  {data.perModel.map((item) => (
+                    <tr key={item.id}>
+                      <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">{item.name}</td>
+                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-300"><Currency value={item.costUsd} /></td>
+                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">{item.sharePercent.toFixed(1)}%</td>
+                      <td className="py-3 text-gray-600 dark:text-gray-300">{item.runCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.9fr)]">
@@ -182,7 +334,7 @@ export function CostDashboardPage() {
                       </Link>
                     ) : (
                       <Link
-                        to="/build/pipelines"
+                        to={getPipelineListUrl()}
                         className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
                       >
                         Review pipelines →
@@ -197,7 +349,7 @@ export function CostDashboardPage() {
                       </Link>
                     ) : (
                       <Link
-                        to="/operate"
+                        to={getOperateUrl()}
                         className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
                       >
                         Check runs →

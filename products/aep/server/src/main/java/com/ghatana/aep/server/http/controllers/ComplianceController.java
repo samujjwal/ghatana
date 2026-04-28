@@ -205,7 +205,7 @@ public class ComplianceController {
         }
     }
 
-    private static long resolveEvidenceMaxAgeDays() {
+    static long resolveEvidenceMaxAgeDays() {
         String raw = System.getenv("AEP_SOC2_EVIDENCE_MAX_AGE_DAYS");
         if (raw == null || raw.isBlank()) return DEFAULT_EVIDENCE_MAX_AGE_DAYS;
         try {

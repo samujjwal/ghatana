@@ -341,6 +341,17 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
         }
 
         @Override
+        public Promise<ExecutionSnapshot> retryExecution(String tenantId, String executionId) {
+            // TODO: Implement retry execution logic
+            return getExecution(tenantId, executionId).then(optionalSnapshot -> {
+                if (optionalSnapshot.isEmpty()) {
+                    return Promise.ofException(new IllegalArgumentException("Execution not found: " + executionId));
+                }
+                return Promise.of(optionalSnapshot.get());
+            });
+        }
+
+        @Override
         public Promise<ExecutionSnapshot> cancelExecution(String tenantId, String executionId) {
             return getExecution(tenantId, executionId).then(optionalSnapshot -> {
                 if (optionalSnapshot.isEmpty()) {

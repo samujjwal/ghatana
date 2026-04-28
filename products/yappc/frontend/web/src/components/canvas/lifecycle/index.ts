@@ -13,8 +13,12 @@
 export { ArtifactsPanel } from './ArtifactsPanel';
 export { RequirementsPanel } from './RequirementsPanel';
 export { AdrPanel } from './AdrPanel';
-export { UxSpecPanel } from './UxSpecPanel';
+export { AdrLifecycle } from './AdrLifecycle';
+export type { AdrLifecycleProps, AdrLifecycleRecord, AdrLifecycleStatus, AdrAuditEntry } from './AdrLifecycle';
 export { ThreatModelPanel } from './ThreatModelPanel';
+export { ThreatLifecycle } from './ThreatLifecycle';
+export type { ThreatLifecycleProps, ThreatRecord, ThreatDispositionStatus, ThreatAuditEntry } from './ThreatLifecycle';
+export { UxSpecPanel } from './UxSpecPanel';
 export { ImprovePanel } from './ImprovePanel';
 export { TraceabilityPanel } from './TraceabilityPanel';
 export { CanvasRightPanelHost } from './CanvasRightPanelHost';

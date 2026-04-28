@@ -16,6 +16,7 @@ import org.slf4j.MDC;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -114,10 +115,21 @@ public final class SessionFilter implements AsyncServlet {
     // ---- Internals ---------------------------------------------------------
 
     private Promise<HttpResponse> issueSession(HttpRequest request) {
+        AepAuthFilter.JwtPayload jwtPayload =
+            (AepAuthFilter.JwtPayload) request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT);
+        if (jwtPayload == null) {
+            log.warn("[session] Rejecting session issuance without verified JWT");
+            return Promise.of(unauthorizedResponse("Verified JWT required before issuing a session token"));
+        }
+
         String token = UUID.randomUUID().toString().replace("-", "");
         store.put(token, sessionTtl);
 
-        log.debug("[session] Issued token={} ttlSeconds={}", token.substring(0, 8), sessionTtl.toSeconds());
+        log.debug(
+            "[session] Issued token={} ttlSeconds={} subject={}",
+            token.substring(0, 8),
+            sessionTtl.toSeconds(),
+            jwtPayload.sub());
 
         byte[] body = ("{\"session\":\"" + token + "\","
             + "\"expiresInSeconds\":" + sessionTtl.toSeconds() + "}")
@@ -128,6 +140,20 @@ public final class SessionFilter implements AsyncServlet {
             .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/json; charset=utf-8"))
             .withBody(body)
             .build());
+    }
+
+    private HttpResponse unauthorizedResponse(String message) {
+        byte[] body = ("{\"error\":\"Unauthorized\",\"message\":\""
+            + message.replace("\"", "\\\"")
+            + "\",\"timestamp\":\""
+            + Instant.now()
+            + "\"}")
+            .getBytes(StandardCharsets.UTF_8);
+
+        return HttpResponse.ofCode(401)
+            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/json; charset=utf-8"))
+            .withBody(body)
+            .build();
     }
 
     private boolean isValid(String token) {

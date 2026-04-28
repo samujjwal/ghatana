@@ -28,8 +28,8 @@ import {
   headerContextActionsAtom,
   headerPhaseInfoAtom
 } from '../../../state/atoms/layoutAtom';
-import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon, LayoutDashboard } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon, LayoutDashboard, Lightbulb, Shapes, CheckCircle, Zap, Play, BarChart2, BookOpen, TrendingUp } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
@@ -40,46 +40,61 @@ import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { UnifiedContextHeader } from '../../../components/navigation';
 
-// Simplified tabs - only essential views
+/**
+ * 8-phase IA navigation — the only top-level project navigation.
+ * Admin / dev / ops views surface as context-sensitive panels
+ * inside the Run, Observe, Learn, and Evolve phases.
+ */
 const BASE_PROJECT_TABS = [
   {
-    key: '',
-    label: 'Overview',
-    icon: LayoutDashboard,
-    tooltip: 'Project cockpit with status, next action, and recent activity',
+    key: 'intent',
+    label: 'Intent',
+    icon: Lightbulb,
+    tooltip: 'Capture goals, problems, and ideas — the "why" of this project',
   },
   {
-    key: 'canvas',
-    label: 'Canvas',
-    icon: Brush,
-    tooltip: 'Unified canvas with all Epic 1-10 features',
+    key: 'shape',
+    label: 'Shape',
+    icon: Shapes,
+    tooltip: 'Define requirements, user stories, and design the solution',
   },
   {
-    key: 'lifecycle',
-    label: 'Lifecycle',
-    icon: LifecycleIcon,
-    tooltip: 'Explore phases, artifacts, and transitions (Observe → Learn → Improve)',
+    key: 'validate',
+    label: 'Validate',
+    icon: CheckCircle,
+    tooltip: 'Review, approve, and gate requirements before generation',
   },
   {
-    key: 'deploy',
-    label: 'Deploy',
-    icon: RocketLaunch,
-    tooltip: 'Release planning and lifecycle promotion',
+    key: 'generate',
+    label: 'Generate',
+    icon: Zap,
+    tooltip: 'AI-powered code, test, and artefact generation',
   },
   {
-    key: 'settings',
-    label: 'Settings',
-    icon: SettingsIcon,
-    tooltip: 'Project settings',
+    key: 'run',
+    label: 'Run',
+    icon: Play,
+    tooltip: 'Execute pipelines, deployments, and agent workflows',
+  },
+  {
+    key: 'observe',
+    label: 'Observe',
+    icon: BarChart2,
+    tooltip: 'Metrics, incidents, alerts, and live dashboards',
+  },
+  {
+    key: 'learn',
+    label: 'Learn',
+    icon: BookOpen,
+    tooltip: 'Retrospectives, AI insights, and knowledge capture',
+  },
+  {
+    key: 'evolve',
+    label: 'Evolve',
+    icon: TrendingUp,
+    tooltip: 'Plan the next cycle: refine, promote, or retire',
   },
 ] as const;
-
-const PREVIEW_TAB = {
-  key: 'preview',
-  label: 'Preview',
-  icon: Visibility,
-  tooltip: 'Preview your application',
-} as const;
 
 /**
  * Project shell layout with minimal navigation
@@ -89,9 +104,6 @@ export function Layout() {
   const navigate = useNavigate();
   const basePath = `/p/${projectId}`;
   const isHeaderVisible = useAtomValue(headerVisibleAtom);
-  const location = useLocation();
-  const isCanvasView = location.pathname.endsWith('/canvas');
-  const previewEnabled = import.meta.env.VITE_FEATURE_PROJECT_PREVIEW === 'true';
   const aiAssistEnabled = import.meta.env.VITE_FEATURE_AI_ASSIST === 'true';
 
   const { setLastOpenedProject } = useLastOpenedProject();
@@ -113,6 +125,37 @@ export function Layout() {
   });
 
   const currentUser = useAtomValue(currentUserAtom);
+  const queryClient = useQueryClient();
+
+  // SIMP-Y18: Eagerly prefetch data that child routes commonly need,
+  // so navigating to any phase tab starts without a loading spinner.
+  useEffect(() => {
+    if (!projectId) return;
+
+    void queryClient.prefetchQuery({
+      queryKey: ['project-artifacts', projectId],
+      queryFn: () => fetch(`/api/projects/${projectId}/artifacts`).then((r) => r.json()),
+      staleTime: 60_000,
+    });
+
+    void queryClient.prefetchQuery({
+      queryKey: ['project-sprint-current', projectId],
+      queryFn: () => fetch(`/api/projects/${projectId}/sprints/current`).then((r) => r.json()),
+      staleTime: 60_000,
+    });
+
+    void queryClient.prefetchQuery({
+      queryKey: ['project-backlog', projectId],
+      queryFn: () => fetch(`/api/projects/${projectId}/backlog?limit=20`).then((r) => r.json()),
+      staleTime: 60_000,
+    });
+
+    void queryClient.prefetchQuery({
+      queryKey: ['project-runs-recent', projectId],
+      queryFn: () => fetch(`/api/projects/${projectId}/runs?limit=10`).then((r) => r.json()),
+      staleTime: 60_000,
+    });
+  }, [projectId, queryClient]);
   const currentUserProfile = currentUser as
     | { firstName?: string; lastName?: string; email?: string }
     | null;
@@ -241,16 +284,7 @@ export function Layout() {
   }, [project, setHeaderActionContext, setHeaderContextActions, setHeaderPhaseInfo]);
 
   const projectName = project?.name || 'Loading...';
-  const projectTabs = (previewEnabled
-    ? [
-        BASE_PROJECT_TABS[0],
-        BASE_PROJECT_TABS[1],
-        PREVIEW_TAB,
-        BASE_PROJECT_TABS[2],
-        BASE_PROJECT_TABS[3],
-        BASE_PROJECT_TABS[4],
-      ]
-    : [...BASE_PROJECT_TABS]) as (typeof BASE_PROJECT_TABS[number])[];
+  const projectTabs = [...BASE_PROJECT_TABS] as (typeof BASE_PROJECT_TABS[number])[];
 
   // Initialize lifecycle services
   const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(
@@ -305,33 +339,32 @@ export function Layout() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Navigation Tabs - Clean horizontal tab bar - Hidden on canvas to keep single bar */}
-      {!isCanvasView && (
-        <nav
-          role="tablist"
-          aria-label="Project navigation"
-          className="flex gap-1 px-4 py-1.5 border-b border-divider bg-bg-default"
-        >
-          {projectTabs.map((tab) => (
-            <NavLink
-              key={tab.key}
-              to={`${basePath}/${tab.key}`}
-              role="tab"
-              className={({ isActive }) =>
-                [
-                  'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors no-underline',
-                  isActive
-                    ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800',
-                ].join(' ')
-              }
-            >
-              <tab.icon className="text-base" />
-              <span>{tab.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      )}
+      {/* 8-phase IA navigation — the canonical top-level project nav */}
+      <nav
+        role="tablist"
+        aria-label="Project phase navigation"
+        className="flex gap-1 px-4 py-1.5 border-b border-divider bg-bg-default overflow-x-auto"
+      >
+        {projectTabs.map((tab) => (
+          <NavLink
+            key={tab.key}
+            to={`${basePath}/${tab.key}`}
+            role="tab"
+            title={tab.tooltip}
+            className={({ isActive }) =>
+              [
+                'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors no-underline whitespace-nowrap',
+                isActive
+                  ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-grey-100 dark:hover:bg-grey-800',
+              ].join(' ')
+            }
+          >
+            <tab.icon className="text-base" aria-hidden="true" />
+            <span>{tab.label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       {/* Route Content - Full height minus header and tabs */}
       <main className="flex-1 overflow-hidden bg-bg-default">

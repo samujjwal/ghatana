@@ -12,6 +12,7 @@ export {
   runSemanticSearchBenchmark,
   DEFAULT_BENCHMARK_THRESHOLDS,
 } from './knowledgeGraphBenchmark';
+export { RetrievalExplanation } from './RetrievalExplanation';
 export type {
   KnowledgeNode,
   KnowledgeEdge,
@@ -24,3 +25,8 @@ export type {
   BenchmarkRunResult,
   BenchmarkThresholds,
 } from './knowledgeGraphBenchmark';
+export type {
+  RetrievedNodeExplanation,
+  RetrievalExplanationData,
+  RetrievalExplanationProps,
+} from './RetrievalExplanation';

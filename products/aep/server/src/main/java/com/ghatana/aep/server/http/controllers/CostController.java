@@ -94,6 +94,7 @@ public final class CostController {
                 .toList();
 
         Map<String, MutableBreakdown> pipelineCosts = new LinkedHashMap<>();
+        Map<String, MutableBreakdown> modelCosts = new LinkedHashMap<>();
         double totalCostUsd = 0.0;
         int totalRuns = 0;
 
@@ -105,13 +106,20 @@ public final class CostController {
             String pipelineName = stringValue(run.get("pipelineName"), pipelineId);
             pipelineCosts.computeIfAbsent(pipelineId, ignored -> new MutableBreakdown(pipelineId, pipelineName))
                     .accumulate(runCostUsd, parseInstant(stringValue(run.get("startedAt"), Instant.now().toString()), Instant.now()));
+            String modelId = stringValue(run.get("model"), "").trim();
+            if (!modelId.isEmpty()) {
+                modelCosts.computeIfAbsent(modelId, ignored -> new MutableBreakdown(modelId, modelId))
+                        .accumulate(runCostUsd, parseInstant(stringValue(run.get("startedAt"), Instant.now().toString()), Instant.now()));
+            }
         }
 
         double projectedMonthlyCostUsd = projectMonthly(totalCostUsd, from, to);
         List<CostBreakdown> perPipeline = finalizeBreakdown(pipelineCosts, totalCostUsd);
+        List<CostBreakdown> perModel = finalizeBreakdown(modelCosts, totalCostUsd);
         final double finalTotalCostUsd = totalCostUsd;
         final int finalTotalRuns = totalRuns;
         final double finalProjectedMonthlyCostUsd = projectedMonthlyCostUsd;
+        final List<CostBreakdown> finalPerModel = perModel;
 
         return loadRegisteredAgents(tenantId).map(agents -> {
             Map<String, MutableBreakdown> agentCosts = new LinkedHashMap<>();
@@ -142,6 +150,8 @@ public final class CostController {
                     finalTotalRuns == 0 ? 0.0 : round(finalTotalCostUsd / finalTotalRuns),
                     perPipeline,
                     perAgent,
+                    finalPerModel,
+                    buildBudgetSummary(finalTotalCostUsd, finalProjectedMonthlyCostUsd, dailyBudgetUsd, monthlyBudgetUsd),
                     alerts,
                     "estimated",
                     agents.isEmpty() ? "no-agent-registry" : "equal-share-fallback");
@@ -157,6 +167,7 @@ public final class CostController {
             double monthlyBudgetUsd) {
         Map<String, MutableBreakdown> pipelineCosts = new LinkedHashMap<>();
         Map<String, MutableBreakdown> agentCosts = new LinkedHashMap<>();
+        Map<String, MutableBreakdown> modelCosts = new LinkedHashMap<>();
         double totalCostUsd = 0.0;
         int totalRuns = 0;
 
@@ -179,6 +190,12 @@ public final class CostController {
                     agentCosts.computeIfAbsent(id, ignored -> new MutableBreakdown(id, name))
                             .accumulate(metric.value(), metric.recordedAt());
                 }
+                case "cost.model.usd" -> {
+                    String id = !metric.entityId().isBlank() ? metric.entityId() : tagValue(metric.tags(), "model");
+                    String name = defaultString(tagValue(metric.tags(), "name"), id);
+                    modelCosts.computeIfAbsent(id, ignored -> new MutableBreakdown(id, name))
+                            .accumulate(metric.value(), metric.recordedAt());
+                }
                 case "cost.run.usd", "cost.usd", "cost.tenant.usd" -> {
                     totalCostUsd += metric.value();
                     totalRuns += 1;
@@ -195,6 +212,7 @@ public final class CostController {
         double projectedMonthlyCostUsd = projectMonthly(totalCostUsd, from, to);
         List<CostBreakdown> perPipeline = finalizeBreakdown(pipelineCosts, totalCostUsd);
         List<CostBreakdown> perAgent = finalizeBreakdown(agentCosts, totalCostUsd);
+        List<CostBreakdown> perModel = finalizeBreakdown(modelCosts, totalCostUsd);
         List<CostAlert> alerts = buildAlerts(
                 totalCostUsd,
                 projectedMonthlyCostUsd,
@@ -213,9 +231,37 @@ public final class CostController {
                 totalRuns == 0 ? 0.0 : round(totalCostUsd / totalRuns),
                 perPipeline,
                 perAgent,
+                perModel,
+                buildBudgetSummary(totalCostUsd, projectedMonthlyCostUsd, dailyBudgetUsd, monthlyBudgetUsd),
                 alerts,
                 "metrics",
                 perAgent.isEmpty() ? "metrics-without-agent-breakdown" : "analytics-metrics");
+    }
+
+    private static CostBudgetSummary buildBudgetSummary(
+            double totalCostUsd,
+            double projectedMonthlyCostUsd,
+            double dailyBudgetUsd,
+            double monthlyBudgetUsd) {
+        return new CostBudgetSummary(
+                buildBudgetWindow(totalCostUsd, totalCostUsd, dailyBudgetUsd),
+                buildBudgetWindow(projectedMonthlyCostUsd, projectedMonthlyCostUsd, monthlyBudgetUsd));
+    }
+
+    private static CostBudgetWindow buildBudgetWindow(double observedUsd, double projectedUsd, double budgetUsd) {
+        double remainingUsd = round(budgetUsd - projectedUsd);
+        double usagePercent = budgetUsd <= 0.0 ? 0.0 : round((projectedUsd / budgetUsd) * 100.0);
+        String status = projectedUsd > budgetUsd
+                ? "exceeded"
+                : usagePercent >= 80.0
+                ? "warning"
+                : "healthy";
+        return new CostBudgetWindow(
+                round(budgetUsd),
+                round(observedUsd),
+                remainingUsd,
+                usagePercent,
+                status);
     }
 
     private Promise<List<AgentRecord>> loadRegisteredAgents(String tenantId) {
@@ -433,6 +479,8 @@ public final class CostController {
             double averageCostPerRunUsd,
             List<CostBreakdown> perPipeline,
             List<CostBreakdown> perAgent,
+            List<CostBreakdown> perModel,
+            CostBudgetSummary budget,
             List<CostAlert> alerts,
             String dataSource,
             String allocationModel) {
@@ -466,5 +514,30 @@ public final class CostController {
             String description,
             double currentValue,
             double thresholdValue) {
+    }
+
+    /**
+     * @doc.type record
+     * @doc.purpose Daily and monthly cost budget status for tenant spend controls
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record CostBudgetSummary(
+            CostBudgetWindow daily,
+            CostBudgetWindow monthly) {
+    }
+
+    /**
+     * @doc.type record
+     * @doc.purpose Single budget window status for cost threshold visibility
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record CostBudgetWindow(
+            double budgetUsd,
+            double observedUsd,
+            double remainingUsd,
+            double usagePercent,
+            String status) {
     }
 }

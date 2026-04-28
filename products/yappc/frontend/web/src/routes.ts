@@ -37,15 +37,39 @@ export default [
       route('settings', 'routes/settings.tsx'),
 
       // Project-specific route: /p/:projectId
+      // 8-phase IA navigation — each phase is a first-class route
       route('p/:projectId', 'routes/app/project/_shell.tsx', [
-        // Project tabs
+        // Default: redirect to intent phase
         index('routes/app/project/index.tsx'),
-        route('canvas', 'routes/app/project/canvas.tsx'), // Unified canvas with all Epic 1-10 features
+        // Phase 1: Intent — capture goals and problems
+        route('intent', 'routes/app/project/intent.tsx'),
+        // Phase 2: Shape — define solution via canvas
+        route('shape', 'routes/app/project/shape.tsx'),
+        // Phase 3: Validate — review and gate requirements
+        route('validate', 'routes/app/project/validate.tsx'),
+        // Phase 4: Generate — AI-powered code and doc generation
+        route('generate', 'routes/app/project/generate.tsx'),
+        // Phase 5: Run — execute pipelines and deployments
+        route('run', 'routes/app/project/run.tsx'),
+        // Phase 6: Observe — metrics, incidents, and live signals
+        route('observe', 'routes/app/project/observe.tsx'),
+        // Phase 7: Learn — retrospectives and AI insights
+        route('learn', 'routes/app/project/learn.tsx'),
+        // Phase 8: Evolve — plan the next cycle
+        route('evolve', 'routes/app/project/evolve.tsx'),
+        // Project configuration (not a phase tab — accessible via settings icon)
+        route('settings', 'routes/app/project/settings.tsx'),
+        // Legacy routes preserved for deep-links (may be removed in a future cycle)
+        route('canvas', 'routes/app/project/canvas.tsx'),
         route('preview', 'routes/app/project/preview.tsx'),
         route('deploy', 'routes/app/project/deploy.tsx'),
-        route('settings', 'routes/app/project/settings.tsx'),
         route('lifecycle', 'routes/app/project/lifecycle.tsx'),
       ]),
+
+      // Admin routes (OWNER/ADMIN only — capability-gated via useCapabilityGate)
+      route('admin/prompt-versions', 'routes/app/admin/prompt-versions.tsx'),
+      route('admin/ab-testing', 'routes/app/admin/ab-testing.tsx'),
+      route('admin/feature-flags', 'routes/app/admin/feature-flags.tsx'),
     ]),
 
     // Catch-all route for 404

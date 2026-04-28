@@ -35,7 +35,7 @@ function readRedirectTarget(state: unknown): string {
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, isBootstrappingSession, loginWithToken } = useAuth();
+  const { isAuthenticated, isBootstrappingSession, isVerifyingAuth, loginWithToken } = useAuth();
 
   const redirectTarget = useMemo(() => readRedirectTarget(location.state), [location.state]);
   const [token, setToken] = useState('');
@@ -104,7 +104,7 @@ export function LoginPage() {
 
             <Button
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isVerifyingAuth}
               variant="primary"
               fullWidth
               onClick={() => {
@@ -153,15 +153,17 @@ export function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isVerifyingAuth}
                   variant="secondary"
                   fullWidth
                 >
-                  {isSubmitting ? 'Signing in…' : 'Sign in with Token'}
+                  {isSubmitting || isVerifyingAuth ? 'Verifying…' : 'Sign in with Token'}
                 </Button>
 
                 <p className="text-xs leading-5 text-slate-400">
-                  {isBootstrappingSession
+                  {isVerifyingAuth
+                    ? 'Checking that the JWT is accepted by the backend…'
+                    : isBootstrappingSession
                     ? 'Issuing AEP session token…'
                     : 'AEP will request an X-AEP-Session token after sign-in when the backend allows it.'}
                 </p>

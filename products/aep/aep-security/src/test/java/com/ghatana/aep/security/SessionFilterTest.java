@@ -36,6 +36,14 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class) // GH-90000
 @DisplayName("SessionFilter")
 class SessionFilterTest extends EventloopTestBase {
+    private static final AepAuthFilter.JwtPayload JWT_PAYLOAD = new AepAuthFilter.JwtPayload(
+        "user-1",
+        "test-suite",
+        System.currentTimeMillis() / 1000L + 3600,
+        System.currentTimeMillis() / 1000L,
+        java.util.List.of("operator"),
+        java.util.List.of("pipeline:write"),
+        "tenant-1");
 
     @Mock
     private AsyncServlet next;
@@ -55,6 +63,7 @@ class SessionFilterTest extends EventloopTestBase {
         SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
         HttpRequest request = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build(); // GH-90000
+        request.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT, JWT_PAYLOAD);
         HttpResponse response = serve(filter, request); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
@@ -73,6 +82,7 @@ class SessionFilterTest extends EventloopTestBase {
 
         // First: issue a session
         HttpRequest issueRequest = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build(); // GH-90000
+        issueRequest.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT, JWT_PAYLOAD);
         HttpResponse issueResponse = serve(filter, issueRequest); // GH-90000
         String token = issueResponse.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER)); // GH-90000
         assertThat(token).isNotNull(); // GH-90000
@@ -107,6 +117,7 @@ class SessionFilterTest extends EventloopTestBase {
 
         // Issue a session with a negative TTL (will be expired on arrival) // GH-90000
         HttpRequest issueRequest = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build(); // GH-90000
+        issueRequest.attach(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT, JWT_PAYLOAD);
         HttpResponse issueResponse = serve(filter, issueRequest); // GH-90000
         String expiredToken = issueResponse.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER)); // GH-90000
         assertThat(expiredToken).isNotNull(); // GH-90000
@@ -133,5 +144,19 @@ class SessionFilterTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         verify(next).serve(any()); // GH-90000
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/session rejects requests without a verified JWT attachment")
+    void postToSessionPath_requiresVerifiedJwt() {
+        SessionFilter filter = new SessionFilter(next, Duration.ofHours(1));
+
+        HttpRequest request = HttpRequest.post("http://localhost" + SessionFilter.SESSION_PATH).build();
+        HttpResponse response = serve(filter, request);
+
+        assertThat(response.getCode()).isEqualTo(401);
+        assertThat(response.getHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER))).isNull();
+        assertThat(response.getBody().asString(StandardCharsets.UTF_8))
+            .contains("Verified JWT required");
     }
 }

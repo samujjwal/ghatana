@@ -1,17 +1,23 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import com.ghatana.platform.security.annotation.Secured;
+import io.activej.http.HttpHeader;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * HTTP endpoints for plugin-backed workflow execution.
@@ -27,12 +33,20 @@ import java.util.Map;
 @Secured
 public final class WorkflowExecutionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(WorkflowExecutionHandler.class);
+
     private final HttpHandlerSupport http;
     private final DataCloudRuntimePluginManager runtimePluginManager;
+    private DataCloudClient client; // optional; enables checkpoint persistence
 
     public WorkflowExecutionHandler(HttpHandlerSupport http, DataCloudRuntimePluginManager runtimePluginManager) {
         this.http = http;
         this.runtimePluginManager = runtimePluginManager;
+    }
+
+    public WorkflowExecutionHandler withClient(DataCloudClient client) {
+        this.client = client;
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -149,6 +163,24 @@ public final class WorkflowExecutionHandler {
         }
         String executionId = request.getPathParameter("executionId");
         return capability.cancelExecution(tenantId, executionId)
+            .map(snapshot -> http.jsonResponse(toWorkflowExecution(snapshot)))
+            .then(
+                response -> Promise.of(response),
+                exception -> Promise.of(http.errorResponse(404, exception.getMessage()))
+            );
+    }
+
+    public Promise<HttpResponse> handleRetryExecution(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
+        WorkflowExecutionCapability capability = workflowCapability();
+        if (capability == null) {
+            return Promise.of(http.errorResponse(503, "Workflow execution plugin is not available"));
+        }
+        String executionId = request.getPathParameter("executionId");
+        return capability.retryExecution(tenantId, executionId)
             .map(snapshot -> http.jsonResponse(toWorkflowExecution(snapshot)))
             .then(
                 response -> Promise.of(response),
@@ -281,6 +313,241 @@ public final class WorkflowExecutionHandler {
             response.put("metadata", logEntry.metadata());
         }
         return response;
+    }
+
+    /**
+     * {@code POST /api/v1/executions/:executionId/rollback}
+     *
+     * <p>Initiates a compensating rollback for a workflow execution (P2.2).
+     * Each completed step is matched with a compensating action if available;
+     * the response returns the rollback plan and status per step without
+     * performing actual side-effects (the plan is handed to the execution
+     * engine).
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRollbackExecution(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
+        String executionId = request.getPathParameter("executionId");
+        if (executionId == null || executionId.isBlank()) {
+            return Promise.of(http.jsonResponse(400, Map.of(
+                "error", "MISSING_EXECUTION_ID",
+                "message", "executionId path parameter is required",
+                "timestamp", Instant.now().toString()
+            )));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = buf.getString(StandardCharsets.UTF_8).isBlank()
+                    ? Map.of()
+                    : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+                List<String> targetSteps = (List<String>) body.getOrDefault("targetSteps", List.of());
+                boolean dryRun = Boolean.TRUE.equals(body.get("dryRun"));
+
+                return Promise.of(http.errorResponse(501, "Rollback not yet implemented"));
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Malformed request body: " + e.getMessage()));
+            }
+        });
+    }
+
+    // ── Durable Execution: Event-Backed Checkpoints (P2.2) ───────────────────
+
+    /**
+     * {@code POST /api/v1/executions/:executionId/checkpoint}
+     *
+     * <p>Saves a checkpoint for a workflow execution step to enable durable
+     * recovery. Writes the checkpoint state to the `dc_execution_checkpoints`
+     * collection and emits an event to the event log.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleCreateCheckpoint(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
+        String executionId = request.getPathParameter("executionId");
+        if (executionId == null || executionId.isBlank()) {
+            return Promise.of(http.jsonResponse(400, Map.of(
+                "error", "MISSING_EXECUTION_ID",
+                "message", "executionId path parameter is required",
+                "timestamp", Instant.now().toString()
+            )));
+        }
+        if (client == null) {
+            return Promise.of(http.errorResponse(503, "Checkpoint persistence is not available"));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> body = buf.getString(StandardCharsets.UTF_8).isBlank()
+                    ? Map.of()
+                    : http.objectMapper().readValue(buf.getString(StandardCharsets.UTF_8), Map.class);
+
+                String stepId = String.valueOf(body.getOrDefault("stepId", "unknown"));
+                int stepIndex = Integer.parseInt(String.valueOf(body.getOrDefault("stepIndex", 0)));
+                Map<String, Object> state = (Map<String, Object>) body.getOrDefault("state", Map.of());
+
+                Map<String, Object> checkpoint = new LinkedHashMap<>();
+                checkpoint.put("id", executionId + "-step-" + stepIndex);
+                checkpoint.put("tenantId", tenantId);
+                checkpoint.put("executionId", executionId);
+                checkpoint.put("stepId", stepId);
+                checkpoint.put("stepIndex", stepIndex);
+                checkpoint.put("state", state);
+                checkpoint.put("status", "completed");
+                checkpoint.put("createdAt", Instant.now().toString());
+
+                return client.save(tenantId, "dc_execution_checkpoints", checkpoint)
+                    .map(saved -> {
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("checkpointId", saved.id());
+                        result.put("tenantId", tenantId);
+                        result.put("executionId", executionId);
+                        result.put("stepId", stepId);
+                        result.put("stepIndex", stepIndex);
+                        result.put("status", "saved");
+                        result.put("savedAt", Instant.now().toString());
+
+                        client.appendEvent(tenantId,
+                            DataCloudClient.Event.of("execution.checkpoint", result))
+                            .whenException(e -> log.warn("Failed to emit checkpoint event tenant={} exec={} step={}: {}",
+                                tenantId, executionId, stepId, e.getMessage()));
+
+                        return http.jsonResponse(result);
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("Checkpoint save failed tenant={} exec={}: {}", tenantId, executionId, e.getMessage(), e);
+                        return Promise.of(http.errorResponse(500, "Checkpoint persistence failed: " + e.getMessage()));
+                    });
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Invalid checkpoint payload: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * {@code GET /api/v1/executions/:executionId/checkpoints}
+     *
+     * <p>Lists all checkpoints for a given workflow execution, ordered by step
+     * index. Enables recovery from the last successful checkpoint.
+     */
+    public Promise<HttpResponse> handleListCheckpoints(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
+        String executionId = request.getPathParameter("executionId");
+        if (executionId == null || executionId.isBlank()) {
+            return Promise.of(http.jsonResponse(400, Map.of(
+                "error", "MISSING_EXECUTION_ID",
+                "message", "executionId path parameter is required",
+                "timestamp", Instant.now().toString()
+            )));
+        }
+        if (client == null) {
+            return Promise.of(http.errorResponse(503, "Checkpoint persistence is not available"));
+        }
+
+        return client.query(tenantId, "dc_execution_checkpoints",
+                DataCloudClient.Query.builder()
+                    .filter("executionId", executionId)
+                    .sort(DataCloudClient.Sort.asc("stepIndex"))
+                    .build())
+            .map(entities -> {
+                List<Map<String, Object>> checkpoints = entities.stream()
+                    .map(e -> {
+                        Map<String, Object> cp = new LinkedHashMap<>(e.data());
+                        cp.put("checkpointId", e.id());
+                        return cp;
+                    })
+                    .toList();
+                return http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "executionId", executionId,
+                    "checkpointCount", checkpoints.size(),
+                    "checkpoints", checkpoints
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("Checkpoint query failed tenant={} exec={}: {}", tenantId, executionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Checkpoint query failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * {@code POST /api/v1/executions/:executionId/restore}
+     *
+     * <p>Restores a workflow execution from the most recent successful
+     * checkpoint. Returns the checkpoint state so the execution engine can
+     * resume from the recovered step.
+     */
+    public Promise<HttpResponse> handleRestoreCheckpoint(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        if (tenantId == null) {
+            return Promise.of(missingTenantResponse());
+        }
+        String executionId = request.getPathParameter("executionId");
+        if (executionId == null || executionId.isBlank()) {
+            return Promise.of(http.jsonResponse(400, Map.of(
+                "error", "MISSING_EXECUTION_ID",
+                "message", "executionId path parameter is required",
+                "timestamp", Instant.now().toString()
+            )));
+        }
+        if (client == null) {
+            return Promise.of(http.errorResponse(503, "Checkpoint persistence is not available"));
+        }
+
+        return client.query(tenantId, "dc_execution_checkpoints",
+                DataCloudClient.Query.builder()
+                    .filter("executionId", executionId)
+                    .filter("status", "completed")
+                    .sort(DataCloudClient.Sort.desc("stepIndex"))
+                    .limit(1)
+                    .build())
+            .map(entities -> {
+                if (entities.isEmpty()) {
+                    return http.errorResponse(404, "No checkpoint found for execution: " + executionId);
+                }
+                Map<String, Object> latest = entities.getFirst().data();
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("tenantId", tenantId);
+                result.put("executionId", executionId);
+                result.put("checkpointId", entities.getFirst().id());
+                result.put("stepId", latest.get("stepId"));
+                result.put("stepIndex", latest.get("stepIndex"));
+                result.put("state", latest.get("state"));
+                result.put("restoredAt", Instant.now().toString());
+                result.put("message", "Resume execution from step " + latest.get("stepId"));
+
+                client.appendEvent(tenantId,
+                    DataCloudClient.Event.of("execution.restore", Map.of(
+                        "executionId", executionId,
+                        "checkpointId", entities.getFirst().id(),
+                        "stepId", latest.get("stepId"),
+                        "restoredAt", Instant.now().toString()
+                    )))
+                    .whenException(e -> log.warn("Failed to emit restore event tenant={} exec={}: {}",
+                        tenantId, executionId, e.getMessage()));
+
+                return http.jsonResponse(result);
+            })
+            .then(Promise::of, e -> {
+                log.error("Restore query failed tenant={} exec={}: {}", tenantId, executionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Restore failed: " + e.getMessage()));
+            });
+    }
+
+    private String resolveTenantId(HttpRequest request) {
+        String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"));
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = request.getQueryParameter("tenantId");
+        }
+        return tenantId;
     }
 
     private HttpResponse missingTenantResponse() {

@@ -74,14 +74,14 @@ export const knowledgeGraphApi = {
   },
 
   /**
-   * Perform semantic search over project knowledge
+   * Perform semantic search over project knowledge.
+   * `projectId` is required — vector queries must always be tenant-scoped
+   * to the project to prevent cross-tenant data leakage (C-Y8).
    */
-  async semanticSearch(query: string, projectId?: string): Promise<SemanticSearchResult> {
+  async semanticSearch(query: string, projectId: string): Promise<SemanticSearchResult> {
     const params = new URLSearchParams();
     params.append('q', query);
-    if (projectId) {
-      params.append('projectId', projectId);
-    }
+    params.append('projectId', projectId);
 
     const response = await apiClient.get<SemanticSearchResult>(`/v1/knowledge-graph/search?${params.toString()}`);
 
@@ -93,14 +93,13 @@ export const knowledgeGraphApi = {
   },
 
   /**
-   * Get related entities for a given node
+   * Get related entities for a given node.
+   * `projectId` is required — must always be tenant-scoped (C-Y8).
    */
-  async getRelatedEntities(nodeId: string, projectId?: string): Promise<KnowledgeNode[]> {
+  async getRelatedEntities(nodeId: string, projectId: string): Promise<KnowledgeNode[]> {
     const params = new URLSearchParams();
     params.append('nodeId', nodeId);
-    if (projectId) {
-      params.append('projectId', projectId);
-    }
+    params.append('projectId', projectId);
 
     const response = await apiClient.get<KnowledgeNode[]>(`/v1/knowledge-graph/related?${params.toString()}`);
 

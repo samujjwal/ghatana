@@ -9,6 +9,25 @@ import type { Plugin } from 'vite';
 
 const enableBuildSourcemaps = process.env.VITE_BUILD_SOURCEMAP === 'true';
 
+// F-Y049: Sentry release tagging + source maps.
+// Uncomment and install `@sentry/vite-plugin` when wiring Sentry in CI:
+//
+// import { sentryVitePlugin } from '@sentry/vite-plugin';
+//
+// Add to plugins array (after reactRouter()):
+//   process.env.SENTRY_AUTH_TOKEN
+//     ? sentryVitePlugin({
+//         org: process.env.SENTRY_ORG,
+//         project: process.env.SENTRY_PROJECT,
+//         authToken: process.env.SENTRY_AUTH_TOKEN,
+//         release: { name: process.env.VITE_APP_VERSION },
+//         sourcemaps: { assets: './dist/**' },
+//       })
+//     : undefined,
+//
+// Required CI env vars: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT,
+//   VITE_APP_VERSION (semver+sha), VITE_APP_ENV, VITE_SENTRY_DSN.
+
 // https://vitejs.dev/config/
 const rrPlugin = reactRouter();
 

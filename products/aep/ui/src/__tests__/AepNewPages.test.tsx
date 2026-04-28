@@ -246,6 +246,9 @@ describe('AgentRegistryPage', () => {
     await user.click(screen.getByText('ValidatorAgent'));
     await waitFor(() => screen.getByText(/deregister agent/i));
     await user.click(screen.getByText(/deregister agent/i));
+    await user.type(screen.getByLabelText(/reason/i), 'Retiring outdated agent');
+    await user.type(screen.getByLabelText(/to confirm/i), 'DEREGISTER');
+    await user.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() => expect(aepApi.deregisterAgent).toHaveBeenCalledWith('agent-001', 'default'));
   });
@@ -411,6 +414,8 @@ describe('HitlReviewPage', () => {
     await waitFor(() => screen.getByText('email-routing'));
     await user.click(screen.getByRole('button', { name: /email-routing/i }));
     await waitFor(() => screen.getByText(/proposed policy/i));
+    expect(screen.getByText(/ai review summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/review before apply/i)).toBeInTheDocument();
     expect(screen.getByText(/escalate/i)).toBeInTheDocument();
   });
 

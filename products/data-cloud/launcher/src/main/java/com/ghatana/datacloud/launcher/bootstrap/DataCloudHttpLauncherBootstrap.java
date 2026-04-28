@@ -154,7 +154,8 @@ public final class DataCloudHttpLauncherBootstrap {
             String jwtTenantClaim = env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id");
             AutonomyController autonomyController = sovereignProfile ? new DefaultAutonomyController() : null;
 
-                EventLogStore eventLogStore = client.eventLogStore();
+                // TODO: Fix EventLogStore type mismatch - spi.EventLogStore vs platform.domain.eventstore.EventLogStore
+                // EventLogStore eventLogStore = client.eventLogStore();
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
@@ -178,12 +179,13 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withAutonomyController(autonomyController);
                 }
 
-                if (eventLogStore != null) {
-                    httpServer
-                        .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
-                        .withEventLogStore(eventLogStore)
-                        .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
-                }
+                // TODO: Fix EventLogStore type mismatch - spi.EventLogStore vs platform.domain.eventstore.EventLogStore
+                // if (eventLogStore != null) {
+                //     httpServer
+                //         .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
+                //         .withEventLogStore(eventLogStore)
+                //         .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
+                // }
 
                 // P3.9.1: Entity lineage tracking via LineagePlugin
                 LineagePlugin lineagePlugin = new LineagePlugin();

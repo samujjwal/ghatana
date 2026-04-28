@@ -22,6 +22,7 @@ import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
+import { useAuth } from '@/context/AuthContext';
 
 interface PublishFormState {
   name: string;
@@ -135,6 +136,7 @@ function MarketplaceCard({
 }
 
 export function AgentMarketplacePage() {
+  const { hasAnyRole, isVerifyingAuth } = useAuth();
   const tenantId = useAtomValue(tenantIdAtom);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -157,6 +159,7 @@ export function AgentMarketplacePage() {
   });
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [installTarget, setInstallTarget] = useState<MarketplaceAgentListing | null>(null);
+  const canManageMarketplace = hasAnyRole(['admin', 'operator']);
 
   const { data: listings, isLoading, isError, error } = useQuery({
     queryKey: ['marketplace-agents', tenantId],
@@ -248,12 +251,19 @@ export function AgentMarketplacePage() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                if (tab === 'publish' && !canManageMarketplace) {
+                  return;
+                }
+                setActiveTab(tab);
+              }}
+              disabled={tab === 'publish' && !canManageMarketplace}
               className={[
                 'rounded-md px-3 py-1.5 text-sm font-medium transition',
                 activeTab === tab
                   ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
                   : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
+                tab === 'publish' && !canManageMarketplace ? 'cursor-not-allowed opacity-50' : '',
               ].join(' ')}
             >
               {tab === 'browse' ? 'Browse' : 'Publish'}
@@ -297,6 +307,11 @@ export function AgentMarketplacePage() {
           </>
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            {!isVerifyingAuth && !canManageMarketplace && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                Marketplace publishing is limited to operator or admin roles. Browse remains available in read-only mode.
+              </div>
+            )}
             <div className="grid gap-4 lg:grid-cols-2">
               <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <span className="font-medium">Agent name</span>
@@ -377,9 +392,10 @@ export function AgentMarketplacePage() {
                     }
                     setPublishConfirmOpen(true);
                   }}
-                  disabled={!publishForm.name.trim() || publishMutation.isPending}
+                  disabled={!publishForm.name.trim() || publishMutation.isPending || !canManageMarketplace}
                   variant="primary"
                   className="rounded-lg px-4 py-2 text-sm font-medium"
+                  title={canManageMarketplace ? undefined : 'Requires operator or admin role'}
                 >
                   {publishMutation.isPending ? 'Publishing…' : 'Publish Agent'}
                 </Button>
@@ -472,20 +488,26 @@ export function AgentMarketplacePage() {
               </div>
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <Button
-                type="button"
-                variant="primary"
-                className="flex-1 rounded-lg px-4 py-2 text-sm font-medium"
-                onClick={() => {
-                  if (selectedAgent) {
-                    setInstallTarget(selectedAgent.listing);
-                  }
-                }}
-              >
-                Install to tenant
-              </Button>
-            </div>
+            {canManageMarketplace ? (
+              <div className="mt-4 flex gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="flex-1 rounded-lg px-4 py-2 text-sm font-medium"
+                  onClick={() => {
+                    if (selectedAgent) {
+                      setInstallTarget(selectedAgent.listing);
+                    }
+                  }}
+                >
+                  Install to tenant
+                </Button>
+              </div>
+            ) : !isVerifyingAuth ? (
+              <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+                Installing marketplace agents requires an operator or admin role.
+              </div>
+            ) : null}
 
             <div className="mt-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Add Review</h3>

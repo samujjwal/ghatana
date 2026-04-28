@@ -21,6 +21,7 @@ const BUILD_PATTERNS = "/build/patterns";
 const LEARN_EPISODES = "/learn/episodes";
 const LEARN_MEMORY = "/learn/memory";
 const GOVERN = "/govern";
+const GOVERN_PRIVACY = "/govern/privacy";
 const CATALOG_AGENTS = "/catalog/agents";
 const CATALOG_MARKETPLACE = "/catalog/marketplace";
 const CATALOG_WORKFLOWS = "/catalog/workflows";
@@ -81,6 +82,11 @@ export function getMemoryExplorerUrl(): string {
 /** Governance page. */
 export function getGovernanceUrl(): string {
   return GOVERN;
+}
+
+/** Privacy request workbench. */
+export function getPrivacyRequestsUrl(): string {
+  return GOVERN_PRIVACY;
 }
 
 /** Agent registry. */

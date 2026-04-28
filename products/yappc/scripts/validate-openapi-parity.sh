@@ -14,6 +14,10 @@ ROUTE_FILES=(
   "$YAPPC_DIR/core/yappc-domain-impl/src/main/java/com/ghatana/yappc/domain/agent/http/AgentRoutes.java"
   "$YAPPC_DIR/core/yappc-domain-impl/src/main/java/com/ghatana/yappc/domain/vector/http/VectorRoutes.java"
   "$YAPPC_DIR/core/yappc-domain-impl/src/main/java/com/ghatana/yappc/domain/workflow/http/WorkflowRoutes.java"
+  "$YAPPC_DIR/core/ai/src/main/java/com/ghatana/yappc/ai/requirements/api/rest/WorkspaceController.java"
+  "$YAPPC_DIR/core/ai/src/main/java/com/ghatana/yappc/ai/requirements/api/rest/ProjectController.java"
+  "$YAPPC_DIR/core/ai/src/main/java/com/ghatana/yappc/ai/requirements/api/rest/RequirementController.java"
+  "$YAPPC_DIR/core/ai/src/main/java/com/ghatana/yappc/ai/requirements/api/rest/ExportController.java"
 )
 
 echo "=== OpenAPI ↔ Route Table Parity Validation ==="

@@ -174,3 +174,164 @@ describe('requirementsApprovalsResolvers.Mutation.approveRequirement', () => {
     expect(result).toEqual({ id: 'approval-1', status: 'APPROVED' });
   });
 });
+
+// ── AI-Y2: enrichRequirement — hybrid LLM + rule-fallback ─────────────────────
+
+describe('requirementsApprovalsResolvers.Mutation.enrichRequirement', () => {
+  const ctx = { userId: 'user-enricher' };
+
+  const baseRequirement = {
+    id: 'req-enrich-1',
+    projectId: 'proj-1',
+    title: 'User login via SSO',
+    description: 'Authenticate users with corporate SSO using SAML 2.0 tokens.',
+    status: 'DRAFT',
+    versions: [{ version: 1 }],
+    approvalRequests: [],
+    agentRuns: [],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    vi.stubGlobal('fetch', vi.fn());
+    mockPrisma.$transaction.mockImplementation(
+      async (fn: (tx: typeof mockPrisma) => Promise<unknown>) => fn(mockPrisma)
+    );
+    mockPrisma.agentRun.create.mockResolvedValue({ id: 'run-1' });
+    mockPrisma.requirementVersion.create.mockResolvedValue({});
+    mockPrisma.requirement.update.mockResolvedValue({});
+    mockPrisma.agentRun.update.mockResolvedValue({});
+    mockPrisma.requirement.findUniqueOrThrow
+      .mockResolvedValueOnce(baseRequirement)   // guard read
+      .mockResolvedValueOnce({ ...baseRequirement, status: 'PENDING_APPROVAL' }); // final return
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('uses LLM (MODEL) when OPENAI_API_KEY is set and API succeeds', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'sk-test-key');
+
+    const llmPayload = {
+      normalizedTitle: 'Authenticate users via SSO',
+      acceptanceCriteria: ['Given a valid SAML token, user is authenticated'],
+      storyTrace: 'As a user, I want to log in via SSO so that I can access the platform.',
+      confidence: 0.92,
+      rationale: 'SSO/auth keywords detected; SAML specifics extracted.',
+    };
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{ message: { role: 'assistant', content: JSON.stringify(llmPayload) }, finish_reason: 'stop' }],
+      }),
+    } as Response);
+
+    await requirementsApprovalsResolvers.Mutation.enrichRequirement(
+      undefined,
+      { requirementId: 'req-enrich-1' },
+      ctx
+    );
+
+    // AgentRun output recorded with MODEL source
+    expect(mockPrisma.agentRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          output: expect.objectContaining({ source: 'MODEL', confidence: 0.92 }),
+        }),
+      })
+    );
+
+    // Version metadata also carries MODEL
+    expect(mockPrisma.requirementVersion.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({ source: 'MODEL' }),
+        }),
+      })
+    );
+  });
+
+  it('falls back to RULE when OPENAI_API_KEY is absent', async () => {
+    // No API key stubbed → callLlmForEnrichment throws immediately
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('should not be called'));
+
+    await requirementsApprovalsResolvers.Mutation.enrichRequirement(
+      undefined,
+      { requirementId: 'req-enrich-1' },
+      ctx
+    );
+
+    expect(mockPrisma.agentRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          output: expect.objectContaining({ source: 'RULE' }),
+        }),
+      })
+    );
+  });
+
+  it('falls back to RULE when LLM returns non-ok HTTP status', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'sk-test-key');
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests',
+      json: async () => ({}),
+    } as Response);
+
+    await requirementsApprovalsResolvers.Mutation.enrichRequirement(
+      undefined,
+      { requirementId: 'req-enrich-1' },
+      ctx
+    );
+
+    expect(mockPrisma.agentRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          output: expect.objectContaining({ source: 'RULE' }),
+        }),
+      })
+    );
+  });
+
+  it('falls back to RULE when LLM returns malformed JSON', async () => {
+    vi.stubEnv('OPENAI_API_KEY', 'sk-test-key');
+
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{ message: { role: 'assistant', content: 'not-valid-json' }, finish_reason: 'stop' }],
+      }),
+    } as Response);
+
+    await requirementsApprovalsResolvers.Mutation.enrichRequirement(
+      undefined,
+      { requirementId: 'req-enrich-1' },
+      ctx
+    );
+
+    expect(mockPrisma.agentRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          output: expect.objectContaining({ source: 'RULE' }),
+        }),
+      })
+    );
+  });
+
+  it('throws when unauthenticated', async () => {
+    await expect(
+      requirementsApprovalsResolvers.Mutation.enrichRequirement(
+        undefined,
+        { requirementId: 'req-enrich-1' },
+        {}
+      )
+    ).rejects.toThrow('Authentication required');
+  });
+});

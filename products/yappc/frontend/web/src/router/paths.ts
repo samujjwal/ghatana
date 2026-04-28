@@ -31,6 +31,19 @@ export const ROUTES = {
   unifiedPhase: (projectId: string, phase: string) =>
     `/project/${projectId}/unified/${phase}`,
 
+  // ── 8-Phase IA Navigation (canonical project routes under /p/:projectId) ──
+  ia: {
+    intent: (projectId: string) => `/p/${projectId}/intent`,
+    shape: (projectId: string) => `/p/${projectId}/shape`,
+    validate: (projectId: string) => `/p/${projectId}/validate`,
+    generate: (projectId: string) => `/p/${projectId}/generate`,
+    run: (projectId: string) => `/p/${projectId}/run`,
+    observe: (projectId: string) => `/p/${projectId}/observe`,
+    learn: (projectId: string) => `/p/${projectId}/learn`,
+    evolve: (projectId: string) => `/p/${projectId}/evolve`,
+    settings: (projectId: string) => `/p/${projectId}/settings`,
+  },
+
   // ── Phase 1: Bootstrapping ─────────────────────────────────────────────
   bootstrap: {
     root: (projectId: string) => `/project/${projectId}/bootstrap`,
@@ -175,6 +188,8 @@ export const ROUTES = {
     root: '/admin',
     teams: '/admin/teams',
     billing: '/admin/billing',
+    promptVersions: '/admin/prompt-versions',
+    abTesting: '/admin/ab-testing',
   },
 
   // ── Errors ─────────────────────────────────────────────────────────────

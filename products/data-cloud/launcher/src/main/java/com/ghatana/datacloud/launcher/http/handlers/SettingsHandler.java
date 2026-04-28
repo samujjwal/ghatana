@@ -12,8 +12,8 @@ import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,6 +46,8 @@ public class SettingsHandler {
 
     private final HttpHandlerSupport http;
     private final SettingsStore store;
+    // P3.5: In-memory pending-approval registry for sensitive settings changes
+    private final Map<String, List<Map<String, Object>>> pendingApprovals = new ConcurrentHashMap<>();
 
     /**
      * Creates handler with default in-memory store.
@@ -329,6 +331,156 @@ public class SettingsHandler {
                 return Promise.of(http.errorResponse(400, "Malformed JSON body: " + e.getMessage()));
             }
         });
+    }
+
+    // ── Admin approval endpoints (P3.5) ─────────────────────────────────────
+
+    /**
+     * {@code POST /api/v1/settings/approval-request}
+     *
+     * <p>Proposes a sensitive settings change that requires admin approval.
+     * The request is stored as pending and must be explicitly approved or
+     * rejected before it takes effect.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleRequestApproval(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+                String changeType = String.valueOf(payload.getOrDefault("changeType", "general"));
+                String requestId = "approval-" + UUID.randomUUID().toString();
+                Map<String, Object> proposed = (Map<String, Object>) payload.getOrDefault("payload", Map.of());
+
+                Map<String, Object> approval = new LinkedHashMap<>();
+                approval.put("id", requestId);
+                approval.put("tenantId", tenantId);
+                approval.put("changeType", changeType);
+                approval.put("payload", proposed);
+                approval.put("status", "pending");
+                approval.put("requestedAt", Instant.now().toString());
+                approval.put("requestedBy", payload.getOrDefault("requestedBy", "operator"));
+                approval.put("reason", payload.getOrDefault("reason", ""));
+
+                pendingApprovals.computeIfAbsent(tenantId, k -> new java.util.ArrayList<>()).add(approval);
+
+                return Promise.of(http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "requestId", requestId,
+                    "status", "pending",
+                    "message", "Sensitive settings change requires admin approval",
+                    "requestedAt", Instant.now().toString()
+                )));
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Malformed JSON body: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * {@code GET /api/v1/settings/approvals}
+     *
+     * <p>Lists pending approval requests for the tenant (admin-only view).
+     */
+    public Promise<HttpResponse> handleListApprovals(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        List<Map<String, Object>> approvals = pendingApprovals.getOrDefault(tenantId, List.of());
+        List<Map<String, Object>> pending = approvals.stream()
+            .filter(a -> "pending".equals(a.get("status")))
+            .toList();
+
+        return Promise.of(http.jsonResponse(Map.of(
+            "tenantId", tenantId,
+            "total", approvals.size(),
+            "pending", pending.size(),
+            "approvals", pending,
+            "timestamp", Instant.now().toString()
+        )));
+    }
+
+    /**
+     * {@code POST /api/v1/settings/approvals/:id/approve}
+     *
+     * <p>Approves a pending settings change and applies it.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleApproveRequest(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String requestId = request.getPathParameter("id");
+        List<Map<String, Object>> approvals = pendingApprovals.getOrDefault(tenantId, new java.util.ArrayList<>());
+
+        for (Map<String, Object> approval : approvals) {
+            if (requestId.equals(approval.get("id")) && "pending".equals(approval.get("status"))) {
+                approval.put("status", "approved");
+                approval.put("approvedAt", Instant.now().toString());
+                String adminId = request.getHeader(io.activej.http.HttpHeaders.of("X-Admin-Id"));
+                if (adminId == null || adminId.isBlank()) adminId = "admin";
+                approval.put("approvedBy", adminId);
+
+                String changeType = String.valueOf(approval.get("changeType"));
+                Map<String, Object> proposed = (Map<String, Object>) approval.getOrDefault("payload", Map.of());
+
+                switch (changeType) {
+                    case "security" -> {
+                        Map<String, Object> current = new ConcurrentHashMap<>(store.getSecuritySettings(tenantId));
+                        proposed.forEach((k, v) -> { if (v != null) current.put(k, v); });
+                        store.updateSecuritySettings(tenantId, current);
+                    }
+                    case "general" -> {
+                        Map<String, Object> current = new ConcurrentHashMap<>(store.getGeneralSettings(tenantId));
+                        proposed.forEach((k, v) -> { if (v != null) current.put(k, v); });
+                        store.updateGeneralSettings(tenantId, current);
+                    }
+                    case "profile" -> {
+                        Map<String, Object> current = new ConcurrentHashMap<>(store.getProfile(tenantId));
+                        proposed.forEach((k, v) -> { if (v != null) current.put(k, v); });
+                        store.updateProfile(tenantId, current);
+                    }
+                    default -> {
+                        // No-op for unknown change types
+                    }
+                }
+
+                return Promise.of(http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "requestId", requestId,
+                    "status", "approved",
+                    "changeType", changeType,
+                    "appliedAt", Instant.now().toString()
+                )));
+            }
+        }
+        return Promise.of(http.errorResponse(404, "Approval request not found or already resolved: " + requestId));
+    }
+
+    /**
+     * {@code POST /api/v1/settings/approvals/:id/reject}
+     *
+     * <p>Rejects a pending settings change.
+     */
+    public Promise<HttpResponse> handleRejectRequest(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String requestId = request.getPathParameter("id");
+        List<Map<String, Object>> approvals = pendingApprovals.getOrDefault(tenantId, new java.util.ArrayList<>());
+
+        for (Map<String, Object> approval : approvals) {
+            if (requestId.equals(approval.get("id")) && "pending".equals(approval.get("status"))) {
+                approval.put("status", "rejected");
+                approval.put("rejectedAt", Instant.now().toString());
+                String rejectedBy = request.getHeader(io.activej.http.HttpHeaders.of("X-Admin-Id"));
+                if (rejectedBy == null || rejectedBy.isBlank()) rejectedBy = "admin";
+                approval.put("rejectedBy", rejectedBy);
+
+                return Promise.of(http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "requestId", requestId,
+                    "status", "rejected",
+                    "rejectedAt", Instant.now().toString()
+                )));
+            }
+        }
+        return Promise.of(http.errorResponse(404, "Approval request not found or already resolved: " + requestId));
     }
 
     /**

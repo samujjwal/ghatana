@@ -12,6 +12,13 @@ import type { AiSuggestion } from './AiSuggestionsPanel';
 import { Button } from '@ghatana/design-system';
 import { Zap } from 'lucide-react';
 import { ReviewDecisionDialog } from '@/components/shared/ReviewDecisionDialog';
+import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
+import {
+  getAiConfidenceTier,
+  getAiRouting,
+  getAiRoutingDescription,
+  getAiRoutingLabel,
+} from '@/lib/ai-assist';
 
 interface RunTableProps {
   runs: PipelineRun[];
@@ -38,20 +45,32 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-function AiSuggestionPill({ suggestion }: { suggestion: AiSuggestion }) {
+function AiSuggestionPill({
+  suggestion,
+  expanded,
+  onToggle,
+}: {
+  suggestion: AiSuggestion;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const routing = getAiRouting(suggestion.confidence);
   return (
-    <span
+    <button
+      type="button"
+      onClick={onToggle}
       className={[
         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
         suggestion.severity === 'critical' || suggestion.severity === 'high'
           ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
           : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+        expanded ? 'ring-1 ring-current/40' : '',
       ].join(' ')}
-      aria-label={`${suggestion.type} suggestion: ${suggestion.message}`}
+      aria-label={`${suggestion.type} suggestion: ${suggestion.message}. ${getAiRoutingLabel(routing)}`}
     >
       <Zap className="h-3 w-3" aria-hidden="true" />
       {suggestion.message.length > 40 ? suggestion.message.slice(0, 38) + '…' : suggestion.message}
-    </span>
+    </button>
   );
 }
 
@@ -69,6 +88,7 @@ export function RunTable({
   className,
 }: RunTableProps) {
   const [rejectTarget, setRejectTarget] = useState<{ runId: string; pipelineName: string } | null>(null);
+  const [expandedSuggestionId, setExpandedSuggestionId] = useState<string | null>(null);
   if (runs.length === 0) {
     return (
       <p className={['text-sm text-gray-400', className].join(' ')}>No pipeline runs found.</p>
@@ -147,13 +167,75 @@ export function RunTable({
                     const runSuggestions = (aiSuggestions ?? []).filter((s) => s.runId === run.id);
                     if (runSuggestions.length === 0) return null;
                     return (
-                      <div className="flex flex-wrap gap-1">
-                        {runSuggestions.slice(0, 2).map((suggestion) => (
-                          <AiSuggestionPill key={suggestion.id} suggestion={suggestion} />
-                        ))}
-                        {runSuggestions.length > 2 && (
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500">+{runSuggestions.length - 2}</span>
-                        )}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap gap-1">
+                          {runSuggestions.slice(0, 2).map((suggestion) => (
+                            <AiSuggestionPill
+                              key={suggestion.id}
+                              suggestion={suggestion}
+                              expanded={expandedSuggestionId === suggestion.id}
+                              onToggle={() =>
+                                setExpandedSuggestionId((current) => current === suggestion.id ? null : suggestion.id)
+                              }
+                            />
+                          ))}
+                          {runSuggestions.length > 2 && (
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500">+{runSuggestions.length - 2}</span>
+                          )}
+                        </div>
+                        {runSuggestions.map((suggestion) => {
+                          if (expandedSuggestionId !== suggestion.id) {
+                            return null;
+                          }
+                          const routing = getAiRouting(suggestion.confidence);
+                          return (
+                            <div
+                              key={`${suggestion.id}-detail`}
+                              className="rounded-lg border border-gray-200 bg-white p-3 text-left dark:border-gray-700 dark:bg-gray-900"
+                            >
+                              <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  Assist narrative
+                                </span>
+                                <span className="rounded-full border border-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                                  {getAiRoutingLabel(routing)}
+                                </span>
+                              </div>
+                              {suggestion.confidence !== undefined && (
+                                <ConfidenceExplanation
+                                  tier={getAiConfidenceTier(suggestion.confidence)}
+                                  score={suggestion.confidence}
+                                  reasoning={suggestion.rationale ?? getAiRoutingDescription(routing)}
+                                  evidenceUrl={suggestion.sources?.find((source) => source.href)?.href}
+                                />
+                              )}
+                              {suggestion.sources && suggestion.sources.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+                                  {suggestion.sources.map((source) => (
+                                    source.href ? (
+                                      <a
+                                        key={`${suggestion.id}-${source.label}`}
+                                        href={source.href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="rounded-full border border-gray-200 px-2 py-1 hover:underline dark:border-gray-700"
+                                      >
+                                        {source.label}
+                                      </a>
+                                    ) : (
+                                      <span
+                                        key={`${suggestion.id}-${source.label}`}
+                                        className="rounded-full border border-gray-200 px-2 py-1 dark:border-gray-700"
+                                      >
+                                        {source.label}
+                                      </span>
+                                    )
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })()}

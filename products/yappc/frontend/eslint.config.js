@@ -260,6 +260,37 @@ const standardRules = {
 // ============================================================================
 
 const governanceOverrides = [
+  // YAPPC web app consolidation gate: flag legacy @yappc/* imports in product web src.
+  // Keep this in warning mode until migration is fully complete, then switch to error.
+  {
+    files: ['products/yappc/frontend/web/src/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: ['@yappc/*'],
+              message:
+                '⚠️ CONSOLIDATION: @yappc/* imports in frontend/web/src are legacy. Migrate to canonical @ghatana/* packages or product-local modules per YAPPC audit F-Y025 / R-MT-3.',
+            },
+            {
+              group: ['@yappc/state/StateManager'],
+              message:
+                '⚠️ DEPRECATED: StateManager is deprecated. Use @ghatana/state primitives (createAtom, createPersistentAtom, createDerivedAtom, createWritableDerivedAtom) instead. See audit-todo-list.md for migration details.',
+            },
+            {
+              group: ['@ghatana/yappc-ui'],
+              importNames: ['StateManager'],
+              message:
+                '⚠️ DEPRECATED: StateManager export removed from @ghatana/yappc-ui. Use @ghatana/state primitives instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Canvas components - relaxed complexity due to domain complexity
   {
     files: ['**/components/canvas/**/*.ts', '**/components/canvas/**/*.tsx'],

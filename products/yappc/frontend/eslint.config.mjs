@@ -337,7 +337,7 @@ export default tseslint.config(
             {
               group: ['@yappc/development-ui', '@yappc/development-ui/*'],
               message:
-                '@yappc/development-ui has been deleted. Use BurndownChart / StoryCard / VelocityChart from @yappc/ui.',
+                '@yappc/development-ui is deprecated (F-Y036). Migrate: BurndownChart / StoryCard / VelocityChart → @ghatana/design-system or @yappc/ui. Do not add new imports.',
             },
             {
               group: ['@yappc/initialization-ui', '@yappc/initialization-ui/*'],

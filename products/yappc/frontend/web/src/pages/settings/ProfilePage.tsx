@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { parseJsonResponse, readErrorResponse } from '@/lib/http';
+import DeleteMyDataSection from '@/components/admin/DeleteMyDataSection';
 
 // ============================================================================
 // Types
@@ -318,6 +319,9 @@ const ProfilePage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Data Privacy — C-Y15 / F-Y058 */}
+        <DeleteMyDataSection className="mt-6" />
       </form>
     </div>
   );

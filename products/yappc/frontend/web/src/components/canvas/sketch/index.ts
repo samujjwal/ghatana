@@ -1,16 +1,12 @@
 /**
- * Sketch Components - Re-exports from @ghatana/yappc-sketch + App-specific integrations
+ * Sketch Components - Integrated canvas sketch module
  *
  * This module provides:
- * - Re-exports from @ghatana/yappc-sketch library for convenience
  * - App-specific EnhancedSketchLayer with Jotai state integration
- * - App-specific hooks that integrate with canvas atoms
+ * - App-specific hooks and types used by canvas sketch mode
  *
  * @example
  * ```tsx
- * // Import from shared library (preferred)
- * import { SketchToolbar, StickyNote } from './index';
- *
  * // Import app-specific integration
  * import { EnhancedSketchLayer } from './components/canvas/sketch';
  * ```

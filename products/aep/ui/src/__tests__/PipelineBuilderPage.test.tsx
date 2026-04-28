@@ -62,6 +62,14 @@ vi.mock('@/api/pipeline.api', () => ({
   savePipeline: vi.fn(),
   validatePipeline: vi.fn(),
   exportPipelineSpec: vi.fn(() => '{"name":"test","stages":[]}'),
+  suggestPipelineStages: vi.fn(),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({
+    hasAnyRole: () => true,
+    isVerifyingAuth: false,
+  }),
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -218,6 +226,27 @@ describe('PipelineBuilderPage', () => {
     clickSpy.mockRestore();
   });
 
+  it('keeps low-confidence AI stage suggestions advisory-only', async () => {
+    vi.mocked(pipelineApi.suggestPipelineStages).mockResolvedValueOnce({
+      suggestedStages: [
+        { name: 'Validate', kind: 'validation', description: 'Check incoming records' },
+      ],
+      confidence: 0.42,
+      rationale: 'Recent runs do not provide enough evidence for direct application.',
+      evidence: [{ label: 'Recent anomaly sample', url: 'https://example.com/evidence' }],
+    });
+
+    renderPage();
+    await userEvent.type(screen.getByPlaceholderText(/describe what this pipeline should do/i), 'Validate incoming records');
+    await userEvent.click(screen.getByText('Suggest'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/^advisory only$/i)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /recent anomaly sample/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /apply suggestions/i })).toBeDisabled();
+    });
+  });
+
   // ── Undo / Redo ─────────────────────────────────────────────────
 
   it('Undo button is disabled when no history', () => {
@@ -303,13 +332,11 @@ describe('PipelineBuilderPage', () => {
   it('handleNew shows confirm dialog when dirty', async () => {
     const store = createStore();
     store.set(isDirtyAtom, true);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     renderPage(store);
     await userEvent.click(screen.getByTestId('btn-new'));
 
-    expect(confirmSpy).toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: /discard unsaved changes/i })).toBeInTheDocument();
     expect(store.get(isDirtyAtom)).toBe(true); // not reset because user cancelled
-    confirmSpy.mockRestore();
   });
 });

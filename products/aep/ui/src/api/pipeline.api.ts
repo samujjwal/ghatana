@@ -227,7 +227,9 @@ export interface AiSuggestStagesRequest {
 export interface AiSuggestStagesResponse {
   suggestedStages: PipelineStage[];
   confidence: number;
-  explanation: string;
+  message?: string;
+  rationale?: string;
+  evidence?: Array<Record<string, unknown>>;
 }
 
 export async function suggestPipelineStages(

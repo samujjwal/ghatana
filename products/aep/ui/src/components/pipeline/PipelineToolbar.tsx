@@ -70,6 +70,8 @@ export interface PipelineToolbarProps {
   saving?: boolean;
   validating?: boolean;
   running?: boolean;
+  canPersistChanges?: boolean;
+  canRunPipelines?: boolean;
 }
 
 export function PipelineToolbar({
@@ -83,6 +85,8 @@ export function PipelineToolbar({
   saving = false,
   validating = false,
   running = false,
+  canPersistChanges = true,
+  canRunPipelines = true,
 }: PipelineToolbarProps) {
   const [pipeline] = useAtom(pipelineAtom);
   const dirty = useAtomValue(isDirtyAtom);
@@ -175,11 +179,12 @@ export function PipelineToolbar({
       <Tooltip content="Save pipeline to backend">
         <Button
           onClick={onSave}
-          disabled={!dirty || saving}
+          disabled={!dirty || saving || !canPersistChanges}
           variant="primary"
           className="px-3 py-1 text-xs font-medium"
           style={{ backgroundColor: '#2563eb' }}
           data-testid="btn-save"
+          title={canPersistChanges ? undefined : 'Requires operator or admin role'}
         >
           {saving ? 'Saving…' : 'Save'}
         </Button>
@@ -190,11 +195,12 @@ export function PipelineToolbar({
         <Tooltip content="Trigger pipeline execution with test event">
           <Button
             onClick={onRunNow}
-            disabled={running}
+            disabled={running || !canRunPipelines}
             variant="primary"
             className="px-3 py-1 text-xs font-medium"
             style={{ backgroundColor: '#16a34a' }}
             data-testid="btn-run-now"
+            title={canRunPipelines ? undefined : 'Requires operator or admin role'}
           >
             {running ? 'Running…' : '▶ Run'}
           </Button>

@@ -10,9 +10,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import {
+  getGovernanceOpsSummary,
   getGovernanceAuditSummary,
   getGovernanceComplianceSummary,
   getGovernanceTenancySummary,
+  listConsentDecisions,
+  type ConsentDecisionRecord,
+  type ConsentDecisionStatus,
   listPolicies,
   type GovernanceAuditEntry,
   type PolicyStatus,
@@ -25,7 +29,7 @@ import { PageState } from '@/components/shared/PageState';
 import { Link } from 'react-router';
 import { getEditPipelineUrl, getRunDetailUrl, getAgentRegistryUrl } from '@/lib/routes';
 
-type GovSection = 'policies' | 'compliance' | 'tenancy' | 'audit';
+type GovSection = 'policies' | 'compliance' | 'tenancy' | 'audit' | 'consent' | 'operations';
 
 const POLICY_STATUS_COLORS: Record<PolicyStatus, string> = {
   PENDING_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
@@ -56,7 +60,38 @@ const SECTIONS: { id: GovSection; label: string; icon: string }[] = [
     label: 'Audit',
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
   },
+  {
+    id: 'consent',
+    label: 'Consent',
+    icon: 'M12 11c0-1.657 1.343-3 3-3h1a3 3 0 110 6h-1m-3-3v6m-4-9a3 3 0 100 6h1m3-3H8',
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    icon: 'M3 13h2l1 4h12l1-8H6m0 0L5 5H3',
+  },
 ];
+
+function formatOptionalTimestamp(value: string | null | undefined): string {
+  if (!value) {
+    return 'Unavailable';
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 'Unavailable' : parsed.toLocaleString();
+}
+
+function downloadCsv(filename: string, rows: string[][]): void {
+  const csv = rows
+    .map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 
 function PolicyStatusBadge({ status }: { status: PolicyStatus }) {
   return (
@@ -224,14 +259,28 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
     return <PageState mode="degraded" title="No compliance data" description="Compliance metrics will populate once scans are run." className="h-full" />;
   }
 
+  const freshnessTone = summary.soc2.freshness.status === 'FRESH'
+    ? 'border-green-200 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200'
+    : summary.soc2.freshness.status === 'STALE'
+    ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200'
+    : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200';
+
   return (
     <div className="space-y-6 p-6">
+      <div className={`rounded-lg border px-4 py-3 text-sm ${freshnessTone}`}>
+        <p className="font-medium">
+          SOC 2 report availability: {summary.soc2.freshness.reportAvailable ? 'Ready to render' : 'Blocked until evidence is refreshed'}
+        </p>
+        <p className="mt-1">{summary.soc2.freshness.message}</p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           { label: 'Configured', value: summary.configured ? 'Yes' : 'No' },
           { label: 'Operations', value: summary.supportedOperations.length },
           { label: 'Collections', value: summary.registeredCollections.length },
           { label: 'SOC2 controls', value: summary.soc2.controlCount },
+          { label: 'Evidence age', value: summary.soc2.freshness.evidenceAgeDays ?? 'Unavailable' },
         ].map((item) => (
           <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
             <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
@@ -267,6 +316,9 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
             {Number.isNaN(new Date(summary.soc2.generatedAt).getTime())
               ? 'not available'
               : new Date(summary.soc2.generatedAt).toLocaleString()}
+          </p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Newest evidence: {formatOptionalTimestamp(summary.soc2.freshness.newestEvidenceAt)}
           </p>
           <p className={[
             'mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold',
@@ -451,6 +503,221 @@ function AuditPanel({ tenantId }: { tenantId: string }) {
   );
 }
 
+function ConsentPanel({ tenantId }: { tenantId: string }) {
+  const [statusFilter, setStatusFilter] = useState<ConsentDecisionStatus | 'all'>('all');
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['aep', 'governance', 'consent', tenantId],
+    queryFn: () => listConsentDecisions(tenantId, 200, 0),
+    staleTime: 15_000,
+  });
+
+  if (isLoading) {
+    return <PageState mode="loading" title="Loading consent history…" description="Fetching tenant consent records." className="h-full" />;
+  }
+  if (isError) {
+    return <PageState mode="unavailable" title="Failed to load consent records" description="The consent service is not reachable." onRetry={() => void refetch()} className="h-full" />;
+  }
+  if (!data) {
+    return <PageState mode="degraded" title="No consent data" description="Consent records are unavailable for this tenant." className="h-full" />;
+  }
+
+  const filteredItems = data.items.filter((item) => statusFilter === 'all' || item.status === statusFilter);
+  const grantedCount = data.items.filter((item) => item.status === 'granted').length;
+  const deniedCount = data.items.filter((item) => item.status === 'denied').length;
+  const withdrawnCount = data.items.filter((item) => item.status === 'withdrawn').length;
+
+  const handleExport = (): void => {
+    downloadCsv(`aep-consent-${tenantId}.csv`, [
+      ['consentId', 'userId', 'status', 'purposes', 'decidedAt'],
+      ...filteredItems.map((item) => [
+        item.consentId,
+        item.userId,
+        item.status,
+        item.purposes.join(';'),
+        item.decidedAt,
+      ]),
+    ]);
+  };
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {[
+          { label: 'Total decisions', value: data.count },
+          { label: 'Granted', value: grantedCount },
+          { label: 'Denied', value: deniedCount },
+          { label: 'Withdrawn', value: withdrawnCount },
+        ].map((item) => (
+          <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Consent change history</h3>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Server-side consent is the authoritative record for tenant <span className="font-mono">{tenantId}</span>.
+            </p>
+          </div>
+          <Button
+            onClick={handleExport}
+            variant="secondary"
+            className="rounded px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Export CSV
+          </Button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(['all', 'granted', 'denied', 'withdrawn'] as const).map((status) => (
+            <Button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              variant="text"
+              className={[
+                'rounded-full border px-3 py-1 text-xs font-medium',
+                statusFilter === status
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950 dark:text-indigo-300'
+                  : 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-300',
+              ].join(' ')}
+            >
+              {status}
+            </Button>
+          ))}
+        </div>
+
+        {filteredItems.length === 0 ? (
+          <div className="mt-6">
+            <EmptyState
+              title="No consent records for this filter"
+              description="Adjust the status filter or wait for new consent decisions to arrive."
+            />
+          </div>
+        ) : (
+          <div className="mt-5 overflow-auto rounded-lg border border-gray-200 dark:border-gray-800">
+            <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  {['User', 'Status', 'Purposes', 'Changed at', 'Consent ID'].map((header) => (
+                    <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-900 dark:bg-gray-950">
+                {filteredItems.map((item: ConsentDecisionRecord) => (
+                  <tr key={item.consentId}>
+                    <td className="px-4 py-3 text-gray-900 dark:text-white">{item.userId}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.purposes.length > 0 ? item.purposes.join(', ') : 'All purposes'}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{formatOptionalTimestamp(item.decidedAt)}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{item.consentId}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OperationsPanel({ tenantId }: { tenantId: string }) {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['aep', 'governance', 'operations', tenantId],
+    queryFn: () => getGovernanceOpsSummary(tenantId),
+    staleTime: 30_000,
+  });
+
+  if (isLoading) {
+    return <PageState mode="loading" title="Loading operations telemetry…" description="Fetching backup, DR, and export status." className="h-full" />;
+  }
+  if (isError) {
+    return <PageState mode="unavailable" title="Failed to load operations telemetry" description="The governance ops summary is not reachable." onRetry={() => void refetch()} className="h-full" />;
+  }
+  if (!data) {
+    return <PageState mode="degraded" title="No operations telemetry" description="Backup and DR signals are unavailable for this tenant." className="h-full" />;
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {[
+          { label: 'Last backup', value: formatOptionalTimestamp(data.lastBackupAt) },
+          { label: 'Backup count', value: data.backupCount },
+          { label: 'DR readiness', value: data.drReadiness },
+          { label: 'Export queue', value: data.exportQueueDepth ?? 'Unavailable' },
+          { label: 'Trusted proxy alerts', value: data.trustedProxyForwardedRejectedCount },
+        ].map((item) => (
+          <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+            <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
+            <p className="mt-1 break-words text-sm font-semibold text-gray-900 dark:text-white">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Backup and DR posture</h3>
+          <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+            <li>Latest backup status: <span className="font-medium">{data.latestBackupStatus}</span></li>
+            <li>Automated backups scheduled: <span className="font-medium">{data.automatedBackupsScheduled ? 'Yes' : 'No'}</span></li>
+            <li>Last DR drill: <span className="font-medium">{formatOptionalTimestamp(data.lastDrDrillAt)}</span></li>
+          </ul>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Trusted proxy alerting</h3>
+          <div className={[
+            'rounded-lg border px-3 py-2 text-sm',
+            data.trustedProxyAlertState === 'ALERT'
+              ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200'
+              : data.trustedProxyAlertState === 'UNAVAILABLE'
+              ? 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300'
+              : 'border-green-200 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200',
+          ].join(' ')}>
+            <p className="font-medium">State: {data.trustedProxyAlertState}</p>
+            <p className="mt-1">
+              Accepted forwarded headers: {data.trustedProxyForwardedAcceptedCount} | Rejected forwarded headers: {data.trustedProxyForwardedRejectedCount}
+            </p>
+          </div>
+          {Object.keys(data.trustedProxyRejectionReasons).length > 0 && (
+            <div className="mt-3">
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Rejection reasons</h4>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(data.trustedProxyRejectionReasons).map(([reason, count]) => (
+                  <span key={reason} className="inline-flex rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                    {reason}: {count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950 lg:col-span-2">
+          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Operational notes</h3>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            {data.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function GovernancePage() {
   const tenantId = useAtomValue(tenantIdAtom);
   const [section, setSection] = useState<GovSection>('policies');
@@ -526,6 +793,8 @@ export function GovernancePage() {
             locked
           />
         ) : null}
+        {section === 'consent' ? <ConsentPanel tenantId={tenantId} /> : null}
+        {section === 'operations' ? <OperationsPanel tenantId={tenantId} /> : null}
       </div>
     </div>
   );

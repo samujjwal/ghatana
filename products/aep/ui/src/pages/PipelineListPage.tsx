@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 import { PipelineDryRunDialog } from '@/components/pipeline/PipelineDryRunDialog';
+import { useAuth } from '@/context/AuthContext';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -57,12 +58,15 @@ function StatusBadge({ status }: { status: PipelineStatus }) {
  * Browse and manage pipelines for the active tenant.
  */
 export function PipelineListPage() {
+  const { hasAnyRole, hasRole, isVerifyingAuth } = useAuth();
   const tenantId = useAtomValue(tenantIdAtom);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [dryRunTarget, setDryRunTarget] = useState<{ id: string; name: string } | null>(null);
+  const canManagePipelines = hasAnyRole(['admin', 'operator']);
+  const canDeletePipelines = hasRole('admin');
 
   const { data: pipelines = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['aep', 'pipelines', tenantId],
@@ -105,13 +109,21 @@ export function PipelineListPage() {
             <span className="font-mono text-indigo-600">{tenantId}</span>
           </p>
         </div>
-        <Button
-          onClick={handleNew}
-          variant="primary"
-        >
-          + New Pipeline
-        </Button>
+        {canManagePipelines ? (
+          <Button
+            onClick={handleNew}
+            variant="primary"
+          >
+            + New Pipeline
+          </Button>
+        ) : null}
       </div>
+
+      {!isVerifyingAuth && !canManagePipelines && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          Read-only access: pipeline creation, edits, dry runs, and deletes are limited to operator or admin roles.
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-4">
@@ -138,7 +150,7 @@ export function PipelineListPage() {
         <EmptyState
           title={search ? 'No pipelines match your search' : 'No pipelines found'}
           description={search ? 'Try clearing the search filter.' : 'Create your first pipeline to get started.'}
-          action={!search ? { label: '+ New Pipeline', onClick: handleNew } : undefined}
+          action={!search && canManagePipelines ? { label: '+ New Pipeline', onClick: handleNew } : undefined}
         />
       )}
 
@@ -186,14 +198,16 @@ export function PipelineListPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 flex-shrink-0">
-                  <Button
-                    onClick={() => handleEdit(pipeline.id)}
-                    variant="secondary"
-                    className="text-xs font-medium"
-                  >
-                    Edit
-                  </Button>
-                  {pipeline.id && (
+                  {canManagePipelines && (
+                    <Button
+                      variant="secondary"
+                      className="text-xs font-medium"
+                      onClick={() => handleEdit(pipeline.id)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                  {canManagePipelines && pipeline.id && (
                     <Button
                       onClick={() => setDryRunTarget({ id: pipeline.id!, name: pipeline.name })}
                       variant="secondary"
@@ -202,7 +216,7 @@ export function PipelineListPage() {
                       Dry Run
                     </Button>
                   )}
-                  {pipeline.id && (
+                  {canDeletePipelines && pipeline.id && (
                     <Button
                       onClick={() => setConfirmDelete(pipeline.id!)}
                       disabled={deleteMutation.isPending}

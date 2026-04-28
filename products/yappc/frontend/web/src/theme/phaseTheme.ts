@@ -1,8 +1,11 @@
 /**
- * Phase theme — canonical source moved to @yappc/product-theme.
- * Re-exported here for backward compatibility with existing route imports.
+ * Phase theme re-export — canonical source is `@yappc/product-theme`.
+ * Import from this barrel to avoid direct product-lib coupling in app code.
  *
- * @deprecated Import directly from '@yappc/product-theme' in new code.
+ * @doc.type utility
+ * @doc.purpose Re-exports YAPPC lifecycle phase theme tokens
+ * @doc.layer product
+ * @doc.pattern Re-export
  */
 export {
   PHASE_THEMES,

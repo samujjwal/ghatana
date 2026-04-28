@@ -59,9 +59,8 @@ public class SemanticSearchService {
 
         return embeddingService.createEmbedding(request.query())
             .then(embedding -> {
-                Map<String, String> filters = request.filters() != null
-                    ? request.filters()
-                    : Map.of();
+                Map<String, String> filters = buildTenantScopedFilters(
+                    request.filters(), request.tenantId());
 
                 return vectorStore.search(
                     embedding.getVector(),
@@ -111,12 +110,14 @@ public class SemanticSearchService {
         long startTime = System.currentTimeMillis();
 
         // Perform semantic search
+        Map<String, String> tenantFilters = buildTenantScopedFilters(
+            request.filters(), request.tenantId());
         Promise<List<SearchHit>> semanticPromise = embeddingService.createEmbedding(request.query())
             .then(embedding -> vectorStore.search(
                 embedding.getVector(),
                 request.limit() * 2, // Get more for re-ranking
                 request.threshold(),
-                request.filters() != null ? request.filters() : Map.of()
+                tenantFilters
             ))
             .map(results -> results.stream()
                 .map(this::toSearchHit)
@@ -165,13 +166,10 @@ public class SemanticSearchService {
     ) {
         LOG.debug("Finding similar items for: {} in tenant: {}", id, tenantId);
 
-        Map<String, String> filters = tenantId != null
-            ? Map.of("tenantId", tenantId)
-            : Map.of();
-
-        return vectorStore.searchById(id, limit, threshold, filters)
+        return vectorStore.searchById(id, limit, threshold)
             .map(results -> results.stream()
                 .filter(r -> !r.getId().equals(id)) // Exclude self
+                .filter(r -> tenantId == null || tenantId.equals(r.getMetadata() != null ? r.getMetadata().get("tenantId") : null))
                 .map(this::toSearchHit)
                 .collect(Collectors.toList()));
     }
@@ -192,7 +190,7 @@ public class SemanticSearchService {
                 request.id(),
                 request.content(),
                 embedding.getVector(),
-                request.metadata() != null ? request.metadata() : Map.of()
+                buildTenantScopedMetadata(request.metadata(), request.tenantId())
             ).map(v -> embedding))
             .map(embedding -> {
                 long duration = System.currentTimeMillis() - startTime;
@@ -301,11 +299,7 @@ public class SemanticSearchService {
     public Promise<Boolean> delete(@NotNull String id, @Nullable String tenantId) {
         LOG.debug("Deleting document from index: {} in tenant: {}", id, tenantId);
 
-        Map<String, String> filters = tenantId != null
-            ? Map.of("tenantId", tenantId)
-            : Map.of();
-
-        return vectorStore.delete(id, filters)
+        return vectorStore.delete(id)
             .map(v -> true)
             .then(Promise::of, e -> {
                 LOG.error("Failed to delete document: {} in tenant: {}", id, tenantId, e);
@@ -314,6 +308,36 @@ public class SemanticSearchService {
     }
 
     // ==================== HELPER METHODS ====================
+
+    /**
+     * Merges explicit filters with the mandatory tenantId filter so every
+     * VectorStore query is tenant-scoped at the storage layer.
+     */
+    private static Map<String, String> buildTenantScopedFilters(
+            @Nullable Map<String, String> extraFilters,
+            @Nullable String tenantId) {
+        Map<String, String> merged = new HashMap<>(
+                extraFilters != null ? extraFilters : Map.of());
+        if (tenantId != null && !tenantId.isBlank()) {
+            merged.put("tenantId", tenantId);
+        }
+        return Collections.unmodifiableMap(merged);
+    }
+
+    /**
+     * Merges user-supplied metadata with the mandatory tenantId entry so every
+     * indexed document is tagged with its owner tenant at the storage layer.
+     */
+    private static Map<String, String> buildTenantScopedMetadata(
+            @Nullable Map<String, String> extraMetadata,
+            @Nullable String tenantId) {
+        Map<String, String> merged = new HashMap<>(
+                extraMetadata != null ? extraMetadata : Map.of());
+        if (tenantId != null && !tenantId.isBlank()) {
+            merged.put("tenantId", tenantId);
+        }
+        return Collections.unmodifiableMap(merged);
+    }
 
     private SearchHit toSearchHit(VectorSearchResult result) {
         return new SearchHit(

@@ -70,7 +70,8 @@ public class RagService {
                 request.query(),
                 request.contextLimit() > 0 ? request.contextLimit() : DEFAULT_CONTEXT_LIMIT,
                 request.relevanceThreshold() > 0 ? request.relevanceThreshold() : 0.7,
-                request.filters()
+                request.filters(),
+                null
             );
 
         return searchService.search(searchRequest)
@@ -127,7 +128,8 @@ public class RagService {
                 request.query(),
                 request.contextLimit() > 0 ? request.contextLimit() : DEFAULT_CONTEXT_LIMIT,
                 request.relevanceThreshold() > 0 ? request.relevanceThreshold() : 0.7,
-                request.filters()
+                request.filters(),
+                null
             );
 
         return searchService.search(searchRequest)
@@ -193,7 +195,8 @@ public class RagService {
                 enrichedQuery,
                 request.contextLimit() > 0 ? request.contextLimit() : DEFAULT_CONTEXT_LIMIT,
                 request.relevanceThreshold() > 0 ? request.relevanceThreshold() : 0.7,
-                request.filters()
+                request.filters(),
+                null
             );
 
         return searchService.search(searchRequest)

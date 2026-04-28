@@ -2,7 +2,7 @@ package com.ghatana.yappc.domain.vector.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.platform.security.TenantExtractor;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.products.yappc.domain.vector.RagService;
 import com.ghatana.products.yappc.domain.vector.SemanticSearchService;
 import io.activej.http.HttpRequest;

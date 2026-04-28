@@ -38,13 +38,8 @@ jobs:
       
       - name: Check TODO Count
         run: |
-          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" . --include="*.java" --include="*.ts" --include="*.tsx" | wc -l)
-          echo "TODO count: $TODO_COUNT"
-          if [ $TODO_COUNT -gt 100 ]; then
-            echo "❌ Too many TODOs: $TODO_COUNT (max: 100)"
-            exit 1
-          fi
-          echo "✅ TODO count within limits"
+          chmod +x scripts/scan-todos.sh
+          scripts/scan-todos.sh --ci --max 100
         working-directory: products/yappc
       
       - name: Run Backend Tests

@@ -11,6 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import org.mockito.ArgumentCaptor;
+
 import java.util.List;
 import java.util.Map;
 
@@ -61,7 +63,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             SemanticSearchService.SemanticSearchRequest request =
                     new SemanticSearchService.SemanticSearchRequest( // GH-90000
-                            "test query", 10, 0.7, null
+                            "test query", 10, 0.7, null, null
                     );
 
             // WHEN
@@ -123,7 +125,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
             SemanticSearchService.HybridSearchRequest request =
                     new SemanticSearchService.HybridSearchRequest( // GH-90000
                             "test query", 10, 0.7, null,
-                            List.of("keyword"), 0.5
+                            List.of("keyword"), 0.5, null
                     );
 
             // WHEN
@@ -153,7 +155,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             SemanticSearchService.IndexRequest request =
                     new SemanticSearchService.IndexRequest( // GH-90000
-                            "doc-1", "Test document content", Map.of("source", "test.md") // GH-90000
+                            "doc-1", "Test document content", Map.of("source", "test.md"), null // GH-90000
                     );
 
             // WHEN
@@ -181,9 +183,9 @@ class SemanticSearchServiceTest extends EventloopTestBase {
                     .thenReturn(Promise.of(null)); // GH-90000
 
             List<SemanticSearchService.IndexRequest> requests = List.of( // GH-90000
-                    new SemanticSearchService.IndexRequest("doc-1", "Content 1", Map.of()), // GH-90000
-                    new SemanticSearchService.IndexRequest("doc-2", "Content 2", Map.of()), // GH-90000
-                    new SemanticSearchService.IndexRequest("doc-3", "Content 3", Map.of()) // GH-90000
+                    new SemanticSearchService.IndexRequest("doc-1", "Content 1", Map.of(), null), // GH-90000
+                    new SemanticSearchService.IndexRequest("doc-2", "Content 2", Map.of(), null), // GH-90000
+                    new SemanticSearchService.IndexRequest("doc-3", "Content 3", Map.of(), null) // GH-90000
             );
 
             // WHEN
@@ -205,7 +207,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             // WHEN
             boolean result = runPromise( // GH-90000
-                    () -> service.delete("doc-1")
+                    () -> service.delete("doc-1", null)
             );
 
             // THEN
@@ -232,12 +234,170 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             // WHEN
             List<SemanticSearchService.SearchHit> result = runPromise( // GH-90000
-                    () -> service.findSimilar("ref-doc", 10, 0.7) // GH-90000
+                    () -> service.findSimilar("ref-doc", 10, 0.7, null) // GH-90000
             );
 
             // THEN
             assertThat(result).hasSize(1); // Excludes the reference document // GH-90000
             assertThat(result.get(0).id()).isEqualTo("similar-1");
+        }
+    }
+
+    // ==================== F-Y019 / C-Y8 — Tenant isolation ====================
+
+    @Nested
+    @DisplayName("Tenant Isolation (F-Y019 / C-Y8)")
+    class TenantIsolationTests {
+
+        @Test
+        @DisplayName("search() injects tenantId into VectorStore filter map")
+        void searchInjectsTenantIdIntoFilters() {
+            // GIVEN
+            float[] vec = {0.1f, 0.2f, 0.3f};
+            when(embeddingService.createEmbedding(anyString()))
+                    .thenReturn(Promise.of(EmbeddingResult.of(vec)));
+            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap()))
+                    .thenReturn(Promise.of(List.of()));
+
+            SemanticSearchService.SemanticSearchRequest request =
+                    new SemanticSearchService.SemanticSearchRequest(
+                            "test query", 5, 0.7, null, "tenant-abc");
+
+            // WHEN
+            runPromise(() -> service.search(request));
+
+            // THEN — VectorStore must have received tenantId in the filter map
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, String>> filterCaptor =
+                    (ArgumentCaptor<Map<String, String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class);
+            verify(vectorStore).search(any(float[].class), anyInt(), anyDouble(), filterCaptor.capture());
+            assertThat(filterCaptor.getValue()).containsEntry("tenantId", "tenant-abc");
+        }
+
+        @Test
+        @DisplayName("search() with extra filters merges tenantId alongside caller filters")
+        void searchMergesTenantIdWithCallerFilters() {
+            // GIVEN
+            float[] vec = {0.1f};
+            when(embeddingService.createEmbedding(anyString()))
+                    .thenReturn(Promise.of(EmbeddingResult.of(vec)));
+            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap()))
+                    .thenReturn(Promise.of(List.of()));
+
+            SemanticSearchService.SemanticSearchRequest request =
+                    new SemanticSearchService.SemanticSearchRequest(
+                            "q", 5, 0.7, Map.of("source", "wiki"), "tenant-xyz");
+
+            // WHEN
+            runPromise(() -> service.search(request));
+
+            // THEN — both caller filter and tenantId filter must be present
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, String>> captor =
+                    (ArgumentCaptor<Map<String, String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class);
+            verify(vectorStore).search(any(float[].class), anyInt(), anyDouble(), captor.capture());
+            assertThat(captor.getValue())
+                    .containsEntry("tenantId", "tenant-xyz")
+                    .containsEntry("source", "wiki");
+        }
+
+        @Test
+        @DisplayName("hybridSearch() injects tenantId into VectorStore filter map")
+        void hybridSearchInjectsTenantIdIntoFilters() {
+            // GIVEN
+            float[] vec = {0.1f};
+            when(embeddingService.createEmbedding(anyString()))
+                    .thenReturn(Promise.of(EmbeddingResult.of(vec)));
+            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap()))
+                    .thenReturn(Promise.of(List.of()));
+
+            SemanticSearchService.HybridSearchRequest request =
+                    new SemanticSearchService.HybridSearchRequest(
+                            "hybrid query", 5, 0.7, null, List.of("keyword"), 0.5, "tenant-hybrid");
+
+            // WHEN
+            runPromise(() -> service.hybridSearch(request));
+
+            // THEN
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, String>> captor =
+                    (ArgumentCaptor<Map<String, String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class);
+            verify(vectorStore).search(any(float[].class), anyInt(), anyDouble(), captor.capture());
+            assertThat(captor.getValue()).containsEntry("tenantId", "tenant-hybrid");
+        }
+
+        @Test
+        @DisplayName("index() stores tenantId in document metadata")
+        void indexStoresTenantIdInMetadata() {
+            // GIVEN
+            float[] vec = {0.1f};
+            when(embeddingService.createEmbedding(anyString()))
+                    .thenReturn(Promise.of(EmbeddingResult.of(vec)));
+            when(vectorStore.store(anyString(), anyString(), any(float[].class), anyMap()))
+                    .thenReturn(Promise.of(null));
+
+            SemanticSearchService.IndexRequest request =
+                    new SemanticSearchService.IndexRequest(
+                            "doc-t1", "some content", Map.of("tag", "v1"), "tenant-store");
+
+            // WHEN
+            runPromise(() -> service.index(request));
+
+            // THEN — metadata passed to VectorStore must contain tenantId
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, String>> metaCaptor =
+                    (ArgumentCaptor<Map<String, String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class);
+            verify(vectorStore).store(eq("doc-t1"), anyString(), any(float[].class), metaCaptor.capture());
+            assertThat(metaCaptor.getValue())
+                    .containsEntry("tenantId", "tenant-store")
+                    .containsEntry("tag", "v1");
+        }
+
+        @Test
+        @DisplayName("findSimilar() post-filters results by tenantId when provided")
+        void findSimilarPostFiltersByTenantId() {
+            // GIVEN — two docs: one from the right tenant, one from a different tenant
+            float[] vec = {0.1f};
+            List<VectorSearchResult> allResults = List.of(
+                    new VectorSearchResult("match", "content", vec, 0.9, 0,
+                            Map.of("tenantId", "tenant-a")),
+                    new VectorSearchResult("other", "content", vec, 0.85, 0,
+                            Map.of("tenantId", "tenant-b"))
+            );
+            when(vectorStore.searchById(anyString(), anyInt(), anyDouble()))
+                    .thenReturn(Promise.of(allResults));
+
+            // WHEN — search as tenant-a
+            List<SemanticSearchService.SearchHit> hits =
+                    runPromise(() -> service.findSimilar("source-doc", 10, 0.7, "tenant-a"));
+
+            // THEN — only tenant-a result is returned
+            assertThat(hits).hasSize(1);
+            assertThat(hits.get(0).id()).isEqualTo("match");
+        }
+
+        @Test
+        @DisplayName("search() with null tenantId does not inject tenantId filter")
+        void searchWithNullTenantDoesNotInjectFilter() {
+            // GIVEN
+            float[] vec = {0.1f};
+            when(embeddingService.createEmbedding(anyString()))
+                    .thenReturn(Promise.of(EmbeddingResult.of(vec)));
+            when(vectorStore.search(any(float[].class), anyInt(), anyDouble(), anyMap()))
+                    .thenReturn(Promise.of(List.of()));
+
+            SemanticSearchService.SemanticSearchRequest request =
+                    new SemanticSearchService.SemanticSearchRequest("q", 5, 0.7, null, null);
+
+            // WHEN
+            runPromise(() -> service.search(request));
+
+            // THEN — tenantId key must NOT appear in filter map
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Map<String, String>> captor =
+                    (ArgumentCaptor<Map<String, String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class);
+            verify(vectorStore).search(any(float[].class), anyInt(), anyDouble(), captor.capture());
+            assertThat(captor.getValue()).doesNotContainKey("tenantId");
         }
     }
 }

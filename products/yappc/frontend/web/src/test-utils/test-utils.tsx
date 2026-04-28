@@ -1,4 +1,14 @@
-// @ts-nocheck
+/**
+ * YAPPC test utilities — canonical scaffolding helpers.
+ *
+ * Prefer the lightweight inline pattern described in TESTING_PATTERNS.md over
+ * the full-stack MSW helpers below for new unit tests.
+ *
+ * @doc.type utility
+ * @doc.purpose Shared test helper exports (query client factory, render wrapper)
+ * @doc.layer product
+ * @doc.pattern Test Utility
+ */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

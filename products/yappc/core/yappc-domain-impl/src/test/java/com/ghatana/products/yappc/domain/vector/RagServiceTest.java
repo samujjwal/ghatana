@@ -80,7 +80,7 @@ class RagServiceTest extends EventloopTestBase {
                     .thenReturn(Promise.of(completionResult)); // GH-90000
 
             RagService.RagRequest request = new RagService.RagRequest( // GH-90000
-                    query, null, 5, 0.7, 1000, 0.7, null
+                    query, null, 5, 0.7, 1000, 0.7, null, null
             );
 
             // WHEN
@@ -174,7 +174,7 @@ class RagServiceTest extends EventloopTestBase {
 
             RagService.ConversationalRagRequest request =
                     new RagService.ConversationalRagRequest( // GH-90000
-                            currentQuery, history, null, 5, 0.7, 1000, 0.7, null
+                            currentQuery, history, null, 5, 0.7, 1000, 0.7, null, null
                     );
 
             // WHEN

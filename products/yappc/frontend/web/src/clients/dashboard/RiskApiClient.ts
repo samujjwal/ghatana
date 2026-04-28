@@ -342,7 +342,17 @@ export class RiskApiClient extends BaseDashboardApiClient {
       return this.createMockResponse(updatedItem);
     }
 
-    return this.post<DecisionQueueItem>(`/decisions/queue/${itemId}/process`, request);
+    try {
+      return await this.post<DecisionQueueItem>(`/decisions/queue/${itemId}/process`, request);
+    } catch (err: unknown) {
+      // 409 means the approval was already decided — return the current state
+      // so callers can replay safely without treating this as an error (C-Y6).
+      const status = (err as { response?: { status?: number } }).response?.status;
+      if (status === 409) {
+        return this.get<DecisionQueueItem>(`/decisions/queue/${itemId}`);
+      }
+      throw err;
+    }
   }
 
   /**

@@ -1,6 +1,6 @@
 /**
  * @fileoverview ESLint custom rules for monorepo architecture enforcement
- * @rules no-cross-product-imports, enforce-platform-boundaries, no-banned-libraries, no-deprecated-ghatana-ui, no-deleted-v41-packages, no-design-system-internal-reimplementation
+ * @rules no-cross-product-imports, enforce-platform-boundaries, no-banned-libraries, no-deprecated-ghatana-ui, no-deleted-v41-packages, no-design-system-internal-reimplementation, no-rest-for-graphql-domains, no-raw-rest-fetch
  */
 
 "use strict";
@@ -963,6 +963,159 @@ module.exports = {
                 node,
                 messageId: "dataGridImport",
               });
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-rest-for-graphql-domains (SIMP-Y9)
+     *
+     * Prevents raw fetch() calls targeting REST paths that are GraphQL-owned.
+     * Callers must use the GraphQL client instead.
+     * See docs/API_SURFACE_CANONICALIZATION.md for the full surface split.
+     *
+     * GraphQL-owned path prefixes (any fetch to these must use GraphQL):
+     *  /api/workflows, /api/requirements, /api/approvals, /api/ai-agents,
+     *  /api/versioning, /api/devsecops, /api/rate-limit (admin operations)
+     */
+    "no-rest-for-graphql-domains": {
+      meta: {
+        type: "error",
+        docs: {
+          description:
+            "Disallow raw fetch() calls to GraphQL-owned REST path prefixes",
+          category: "Architecture",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          graphqlDomainFetch:
+            "🚫 '{{path}}' is GraphQL-owned. Use the GraphQL client instead of fetch(). " +
+            "See docs/API_SURFACE_CANONICALIZATION.md.",
+        },
+      },
+
+      create(context) {
+        const GRAPHQL_OWNED_PREFIXES = [
+          "/api/workflows",
+          "/api/requirements",
+          "/api/approvals",
+          "/api/ai-agents",
+          "/api/versioning",
+          "/api/devsecops",
+        ];
+
+        function isGraphqlOwnedPath(value) {
+          return (
+            typeof value === "string" &&
+            GRAPHQL_OWNED_PREFIXES.some((prefix) => value.startsWith(prefix))
+          );
+        }
+
+        return {
+          CallExpression(node) {
+            // Match: fetch('...') or fetch(`...`)
+            if (
+              node.callee.type === "Identifier" &&
+              node.callee.name === "fetch" &&
+              node.arguments.length >= 1
+            ) {
+              const firstArg = node.arguments[0];
+              if (
+                firstArg.type === "Literal" &&
+                isGraphqlOwnedPath(firstArg.value)
+              ) {
+                context.report({
+                  node,
+                  messageId: "graphqlDomainFetch",
+                  data: { path: firstArg.value },
+                });
+              }
+              // Also catch template literals with static prefix
+              if (firstArg.type === "TemplateLiteral" && firstArg.quasis.length > 0) {
+                const head = firstArg.quasis[0].value.raw;
+                if (isGraphqlOwnedPath(head)) {
+                  context.report({
+                    node,
+                    messageId: "graphqlDomainFetch",
+                    data: { path: head + "..." },
+                  });
+                }
+              }
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-raw-rest-fetch (SIMP-Y19)
+     *
+     * In YAPPC web frontend code, raw fetch('/api/...') calls must be replaced
+     * by the typed REST API client at @/lib/api (yappcApi.*).
+     * This rule flags any direct fetch() call to /api/* in product source files.
+     *
+     * Exceptions:
+     *  - Files under src/lib/api/ (the client implementation itself)
+     *  - Test files (*.test.ts, *.test.tsx, __tests__/*)
+     */
+    "no-raw-rest-fetch": {
+      meta: {
+        type: "suggestion",
+        docs: {
+          description:
+            "In YAPPC web, prefer the typed yappcApi.* client over raw fetch('/api/...')",
+          category: "Migration",
+          recommended: false,
+        },
+        schema: [],
+        messages: {
+          rawRestFetch:
+            "⚠️ (SIMP-Y19) Use yappcApi.* from '@/lib/api' instead of raw fetch('{{path}}'). " +
+            "See products/yappc/frontend/web/src/lib/api/client.ts.",
+        },
+      },
+
+      create(context) {
+        const filePath = context.getFilename();
+        // Skip the client implementation and test files
+        if (
+          filePath.includes("/lib/api/") ||
+          filePath.includes("__tests__") ||
+          filePath.endsWith(".test.ts") ||
+          filePath.endsWith(".test.tsx")
+        ) {
+          return {};
+        }
+        // Only apply inside the YAPPC web frontend
+        if (!filePath.includes("/products/yappc/frontend/web/src/")) {
+          return {};
+        }
+
+        return {
+          CallExpression(node) {
+            if (
+              node.callee.type === "Identifier" &&
+              node.callee.name === "fetch" &&
+              node.arguments.length >= 1
+            ) {
+              const firstArg = node.arguments[0];
+              const pathValue =
+                firstArg.type === "Literal" && typeof firstArg.value === "string"
+                  ? firstArg.value
+                  : firstArg.type === "TemplateLiteral" && firstArg.quasis.length > 0
+                  ? firstArg.quasis[0].value.raw
+                  : null;
+
+              if (pathValue && pathValue.startsWith("/api/")) {
+                context.report({
+                  node,
+                  messageId: "rawRestFetch",
+                  data: { path: pathValue },
+                });
+              }
             }
           },
         };

@@ -18,13 +18,14 @@
 | `yappc-chat` | `@yappc/chat` | ✅ Active | YAPPC Frontend | Chat UI, message threading, AI chat integration |
 | `yappc-ai` | `@yappc/ai` | ✅ Active | YAPPC Frontend | AI client hooks, prompt management, model selection |
 | `yappc-artifact-compiler` | `@yappc/artifact-compiler` | ✅ Active | YAPPC Frontend | Artifact compilation, preview rendering |
-| `yappc-development-ui` | `@yappc/development-ui` | ✅ Active | YAPPC Frontend | Dev environment UI, task panels, run output |
+| `yappc-development-ui` | `@yappc/development-ui` | 🔴 Deprecated (F-Y036) | YAPPC Frontend | Dev environment UI, task panels, run output — migrate BurndownChart/StoryCard/VelocityChart to `@ghatana/design-system` or `@yappc/ui`; ESLint blocks new imports. |
 | `yappc-devsecops` | `@yappc/devsecops` | ✅ Active | YAPPC Frontend | DevSecOps dashboard, risk scores, SAST integration |
 | `yappc-initialization-ui` | `@yappc/initialization-ui` | ✅ Active | YAPPC Frontend | Project creation, onboarding wizards |
 | `yappc-product-theme` | `@yappc/product-theme` | ✅ Active | YAPPC Frontend | YAPPC-specific theme tokens, brand overrides |
 | `config-schema` | `@yappc/config-schema` | ✅ Active | YAPPC Frontend | Zod schemas for YAPPC configuration |
 | `config-compiler` | `@yappc/config-compiler` | ✅ Active | YAPPC Frontend | Compiles `@yappc/config-schema` configs to runtime form |
-| `ide` | `@yappc/ide` | 🟡 Review | YAPPC Frontend | IDE integration components — review vs. `@ghatana/code-editor` |
+| `ide` | `@yappc/ide` | ✅ Active | YAPPC Frontend | Product-scoped collaborative IDE shell (tabs/files/presence/CRDT bridge). Keep separate from `@ghatana/code-editor` which remains the canonical editor primitive package. |
+| `mobile` | `@yappc/mobile` | ✅ Active | YAPPC Frontend | Web-build compatibility shims for Capacitor packages used in browser targets. |
 | `collab` | `@yappc/collab` | ✅ Active | YAPPC Frontend | Real-time collaboration, CRDT sync |
 | `api` | `@yappc/api` | ✅ Active | YAPPC Frontend | YAPPC-specific HTTP client — wraps `@ghatana/api` |
 | `shortcuts` | `@yappc/shortcuts` | ✅ Active | YAPPC Frontend | Keyboard shortcut management |
@@ -109,3 +110,9 @@ Packages marked 🟡 Review must be resolved within 2 sprint cycles:
 
 Any new package requires sign-off from YAPPC Frontend lead and must be added to
 this table before creation.
+
+## Scope Decisions (2026-04-27)
+
+- `mobile`: Keep as a minimal compatibility surface (`libs/mobile/capacitor-shims.ts`) used by `frontend/web/vite.config.ts` aliases for web builds.
+- `ide`: Keep as product-scoped UX/orchestration package. Avoid duplicating editor primitives already provided by `@ghatana/code-editor`.
+- `sketch`: No separate frontend library is required. Sketch is integrated into the canvas runtime under `frontend/web/src/components/canvas/sketch` and should remain there unless a reusable cross-product abstraction emerges.

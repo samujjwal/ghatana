@@ -36,3 +36,6 @@ export type ImportProjectDialogProps = ComponentProps<typeof import('./ImportPro
 // Onboarding
 export { OnboardingFlow } from './OnboardingFlow';
 export type { OnboardingFlowProps } from './OnboardingFlow';
+
+export { TemplateRecommendationCard } from './TemplateRecommendationCard';
+export type { TemplateRecommendationCardProps } from './TemplateRecommendationCard';

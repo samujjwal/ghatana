@@ -281,17 +281,18 @@ class AepHttpServerComplianceTest {
     class Soc2Tests {
 
         @Test
-        @DisplayName("returns 200 with SOC2 report (always available)")
-        void soc2Report_returns200() throws Exception { // GH-90000
+        @DisplayName("returns 503 when SOC2 evidence has not been collected yet")
+        void soc2Report_withoutEvidence_returns503() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
             HttpResponse<String> resp = get("/api/v1/compliance/soc2/report");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body).isNotEmpty(); // GH-90000
+            assertThat(body.get("error")).isEqualTo("AEP_SOC2_NO_EVIDENCE");
+            assertThat(body.get("maxAgeDays")).isEqualTo(90);
         }
     }
 

@@ -203,6 +203,75 @@ components:
         utterance:
           type: string
 
+    ConnectionRegistrationRequest:
+      type: object
+      required: [name, type]
+      properties:
+        id:
+          type: string
+          description: Optional connection ID (auto-generated if omitted)
+        name:
+          type: string
+        type:
+          type: string
+          enum: [POSTGRESQL, MYSQL, MONGODB, S3, REST_API, KAFKA, SNOWFLAKE, BIGQUERY, CUSTOM]
+        credentials:
+          type: object
+          description: Connector-specific credential blob (never returned in GET)
+        properties:
+          type: object
+          description: Connector-specific configuration properties
+        residencyPolicy:
+          type: string
+          description: Data residency constraint for this connector (e.g., eu-west, us-east)
+        schedule:
+          type: string
+          description: Sync schedule expression (e.g., cron or 'once')
+        targetCollection:
+          type: string
+          description: Destination collection for synced data
+        state:
+          type: string
+          enum: [ACTIVE, INACTIVE, TESTING, ERROR, SYNCING]
+          description: Desired initial state
+
+    AiActionRecord:
+      type: object
+      required: [actionId, tenantId, domain, timestamp]
+      properties:
+        actionId:
+          type: string
+          description: Unique identifier for this AI action
+        tenantId:
+          type: string
+          description: Tenant scope
+        domain:
+          type: string
+          description: AI operation domain (entity-suggest, pipeline-draft, brain-explain, etc.)
+        intent:
+          type: string
+          description: Summarised intent or input context
+        model:
+          type: string
+          description: Model identifier or "static-heuristic" for fallback paths
+        confidence:
+          type: number
+          format: double
+          description: Confidence score 0.0–1.0
+        fallback:
+          type: boolean
+          description: Whether this action used a heuristic fallback instead of an LLM
+        latencyMs:
+          type: integer
+          description: End-to-end latency of the AI operation
+        requestId:
+          type: string
+          description: Correlates to the originating HTTP request
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp when the action was recorded
+
     RetentionClassificationRequest:
       type: object
       required: [collection, tier]
@@ -1236,6 +1305,13 @@ components:
         resolvedAt:
           type: string
           format: date-time
+        slaMinutes:
+          type: integer
+          format: int64
+          description: SLA threshold in minutes based on severity (critical=60, warning=240, info=1440).
+        slaBreached:
+          type: boolean
+          description: Whether the alert has exceeded its SLA threshold based on createdAt.
 
     AlertListResponse:
       type: object
@@ -1278,7 +1354,7 @@ components:
 
     AlertGroupListResponse:
       type: object
-      required: [tenantId, groups, count, timestamp]
+      required: [tenantId, groups, count, total, timestamp]
       properties:
         tenantId:
           type: string
@@ -1289,6 +1365,10 @@ components:
         count:
           type: integer
           format: int32
+        total:
+          type: integer
+          format: int32
+          description: Total number of alerts included in the grouped view.
         timestamp:
           type: string
           format: date-time
@@ -1314,7 +1394,7 @@ components:
 
     AlertResolutionSuggestionListResponse:
       type: object
-      required: [tenantId, suggestions, count, timestamp]
+      required: [tenantId, suggestions, count, total, timestamp]
       properties:
         tenantId:
           type: string
@@ -1323,6 +1403,9 @@ components:
           items:
             $ref: "#/components/schemas/AlertResolutionSuggestion"
         count:
+          type: integer
+          format: int32
+        total:
           type: integer
           format: int32
         timestamp:
@@ -2545,6 +2628,27 @@ paths:
                 $ref: "#/components/schemas/WorkflowExecutionSummary"
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /api/v1/pipelines/{pipelineId}/executions/{executionId}/retry:
+    post:
+      summary: Retry a failed pipeline execution
+      operationId: apiV1PipelinesPipelineIdExecutionsExecutionIdRetryPost
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Retried execution summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionSummary"
+        "404": { $ref: "#/components/responses/NotFound" }
+
   # ── Alerts ─────────────────────────────────────────────────────────────────
 
   /api/v1/alerts:
@@ -2574,14 +2678,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/AlertListResponse"
 
-  /api/v1/alerts/{alertId}/acknowledge:
+  /api/v1/alerts/{id}/acknowledge:
     post:
       summary: Acknowledge an alert
-      operationId: apiV1AlertsAlertIdAcknowledgePost
+      operationId: apiV1AlertsIdAcknowledgePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -2595,14 +2699,14 @@ paths:
                 $ref: "#/components/schemas/Alert"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/alerts/{alertId}/resolve:
+  /api/v1/alerts/{id}/resolve:
     post:
       summary: Resolve an alert
-      operationId: apiV1AlertsAlertIdResolvePost
+      operationId: apiV1AlertsIdResolvePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -2616,14 +2720,14 @@ paths:
                 $ref: "#/components/schemas/Alert"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/alerts/{alertId}/escalate:
+  /api/v1/alerts/{id}/escalate:
     post:
       summary: Escalate an alert to an incident
-      operationId: apiV1AlertsAlertIdEscalatePost
+      operationId: apiV1AlertsIdEscalatePost
       tags: [alerts]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
-        - name: alertId
+        - name: id
           in: path
           required: true
           schema:
@@ -2635,6 +2739,110 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Alert"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/{id}/auto-remediate:
+    post:
+      summary: Attempt auto-remediation of an alert (P2.4)
+      operationId: apiV1AlertsIdAutoRemediatePost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Auto-remediation result (success, blocked, or suggestion).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/{id}/remediate:
+    post:
+      summary: Apply a remediation action to an alert (P2.4)
+      operationId: apiV1AlertsIdRemediatePost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actionId: { type: string }
+                actionType: { type: string }
+                actor: { type: string }
+                reason: { type: string }
+      responses:
+        "200":
+          description: Remediation action applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/{id}/remediate/rollback:
+    post:
+      summary: Rollback a remediation action (P2.4)
+      operationId: apiV1AlertsIdRemediateRollbackPost
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actionId: { type: string }
+                reason: { type: string }
+      responses:
+        "200":
+          description: Remediation rolled back.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/alerts/{id}/remediations:
+    get:
+      summary: List remediation actions for an alert (P2.4)
+      operationId: apiV1AlertsIdRemediationsGet
+      tags: [alerts]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: Remediation action list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
         "404": { $ref: "#/components/responses/NotFound" }
 
   /api/v1/alerts/groups:
@@ -2797,6 +3005,311 @@ paths:
               schema:
                 type: string
 
+  # ── Compliance (P3.6) ─────────────────────────────────────────────────────
+
+  /api/v1/compliance/legal-holds:
+    post:
+      summary: Apply a legal hold to freeze data from deletion (P3.6)
+      operationId: apiV1ComplianceLegalHoldsPost
+      tags: [compliance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+                scope: { type: string, default: tenant-wide }
+                collections:
+                  type: array
+                  items: { type: string }
+                expiresAt: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Legal hold applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    get:
+      summary: List active legal holds for a tenant (P3.6)
+      operationId: apiV1ComplianceLegalHoldsGet
+      tags: [compliance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: List of legal holds.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/compliance/legal-holds/{id}/extend:
+    post:
+      summary: Extend an existing legal hold (P3.6)
+      operationId: apiV1ComplianceLegalHoldsIdExtendPost
+      tags: [compliance]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresAt: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Legal hold extended.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/compliance/legal-holds/{id}/release:
+    post:
+      summary: Release an active legal hold (P3.6)
+      operationId: apiV1ComplianceLegalHoldsIdReleasePost
+      tags: [compliance]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Legal hold released.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/compliance/evidence-package:
+    post:
+      summary: Generate a compliance evidence package for audit or certification (P3.6)
+      operationId: apiV1ComplianceEvidencePackagePost
+      tags: [compliance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                include:
+                  type: array
+                  items:
+                    type: string
+                    enum: [inventory, policies, audit, lineage, retention]
+                fromDate: { type: string, format: date-time }
+                toDate: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Evidence package generated and stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/compliance/posture:
+    get:
+      summary: Evidence-first compliance posture dashboard (P3.6)
+      operationId: apiV1CompliancePostureGet
+      tags: [compliance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Compliance posture derived from actual evidence packages, legal holds, and audit events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Sovereign / Air-Gapped Profile (P3.3) ──────────────────────────────────
+
+  /api/v1/sovereign/profile:
+    get:
+      summary: Get tenant sovereign profile
+      operationId: apiV1SovereignProfileGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Sovereign profile including air-gapped flag, data residency, model policy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+    put:
+      summary: Update tenant sovereign profile
+      operationId: apiV1SovereignProfilePut
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/sovereign/models:
+    get:
+      summary: Get tenant model policy (allowed/forbidden models)
+      operationId: apiV1SovereignModelsGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Allowed and forbidden model lists, air-gapped status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/sovereign/audit:
+    get:
+      summary: Sovereign policy audit events (P3.3)
+      operationId: apiV1SovereignAuditGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+      responses:
+        "200":
+          description: Audit events for sovereign policy changes, blocked calls, and backups.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "500": { $ref: "#/components/responses/ServerError" }
+
+  /api/v1/sovereign/backup:
+    get:
+      summary: Offline backup status (P3.3)
+      operationId: apiV1SovereignBackupGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns offline backup status with integrity hash, restore points, and encrypted transport flag.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    post:
+      summary: Trigger offline backup (P3.3)
+      operationId: apiV1SovereignBackupPost
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Triggers a backup snapshot with integrity hash and encrypted transport.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/restore:
+    post:
+      summary: Restore from offline backup (P3.3)
+      operationId: apiV1SovereignRestorePost
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - in: query
+          name: snapshotId
+          schema: { type: string }
+          description: Snapshot ID to restore from (defaults to latest)
+      responses:
+        "200":
+          description: Validates and restores from backup snapshot with integrity hash and schema version checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/data-subject-controls:
+    get:
+      summary: Data-subject controls (P3.3)
+      operationId: apiV1SovereignDataSubjectControlsGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns data-subject control settings including local-only processing, federated learning opt-in, data export, and retention days.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    put:
+      summary: Update data-subject controls (P3.3)
+      operationId: apiV1SovereignDataSubjectControlsPut
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Updates data-subject controls and returns the updated settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/sovereign/conformance:
+    get:
+      summary: Sovereign conformance tests (P3.3)
+      operationId: apiV1SovereignConformanceGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Runs conformance tests (no-network boot, offline query, audit-only event logging, encryption at rest) and returns PASS/FAIL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
   # ── Checkpoints ────────────────────────────────────────────────────────────
 
   /api/v1/checkpoints:
@@ -2876,6 +3389,177 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
+
+  /api/v1/plugins/marketplace:
+    get:
+      summary: Plugin marketplace catalog (P3.4)
+      operationId: apiV1PluginsMarketplaceGet
+      tags: [plugins]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+      responses:
+        "200":
+          description: Enriched plugin catalog with trust scores, vendor, capabilities, installed/enabled status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/plugins/{id}/sandbox:
+    get:
+      summary: Plugin sandbox status (P3.4)
+      operationId: apiV1PluginsIdSandboxGet
+      tags: [plugins]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/pluginId"
+      responses:
+        "200":
+          description: Sandbox status with resource quotas, tenant isolation, and audit log.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/plugins/{id}/validate:
+    post:
+      summary: Validate plugin schema version contract (P3.4)
+      operationId: apiV1PluginsIdValidatePost
+      tags: [plugins]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/pluginId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Schema compatibility result with compatible flag and contractValid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/plugins/{id}/conformance:
+    post:
+      summary: Plugin conformance test (P3.1)
+      operationId: apiV1PluginsIdConformancePost
+      tags: [plugins]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/pluginId"
+      responses:
+        "200":
+          description: Conformance test results including lifecycle init/shutdown, capability contract, audit log, tenant isolation, schema version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/conformance:
+    get:
+      summary: Full provider conformance suite (P3.1)
+      operationId: apiV1ConformanceGet
+      tags: [conformance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Full conformance summary including EntityStore and EventLogStore results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/conformance/entity-store:
+    get:
+      summary: EntityStore conformance tests (P3.1)
+      operationId: apiV1ConformanceEntityStoreGet
+      tags: [conformance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: EntityStore conformance test results (save/get, batch, query, delete, tenant isolation).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/conformance/event-log-store:
+    get:
+      summary: EventLogStore conformance tests (P3.1)
+      operationId: apiV1ConformanceEventLogStoreGet
+      tags: [conformance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: EventLogStore conformance test results (append/read, batch, by type, by time range, tenant isolation).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/data-residency:
+    get:
+      summary: Data residency audit (P3.2)
+      operationId: apiV1SovereignDataResidencyGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns data store regions and compliance against tenant policy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/validate-transfer:
+    post:
+      summary: Validate cross-border transfer (P3.2)
+      operationId: apiV1SovereignValidateTransferPost
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Transfer validation result with allowed flag and reason.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/sovereign/region-policy:
+    get:
+      summary: Region policy enforcement config (P3.2)
+      operationId: apiV1SovereignRegionPolicyGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns allowed/blocked regions, geo-fencing, and multi-region replication status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   # ── Agent memory ───────────────────────────────────────────────────────────
 
@@ -3793,6 +4477,32 @@ paths:
       responses:
         "200": { description: Schema suggestions with AI metadata }
 
+  /api/v1/entities/{collection}/infer-schema:
+    post:
+      summary: AI-assisted schema inference for entity ingestion (P2.5)
+      operationId: apiV1EntitiesCollectionInferSchemaPost
+      tags: [entities, ai]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sample:
+                  type: object
+                  description: Sample entity payload to infer types from
+      responses:
+        "200":
+          description: Inferred schema with type detection, PII flags, and dedupe suggestions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
   # ── Analytics AI and reports ─────────────────────────────────────────────
 
   /api/v1/analytics/suggest:
@@ -3815,6 +4525,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnalyticsSuggestResponse"
+
+  /api/v1/analytics/automate:
+    post:
+      summary: AI-assisted analytics automation with intent clarification and policy-aware recommendations (DC-E3)
+      operationId: apiV1AnalyticsAutomatePost
+      tags: [analytics, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Automation result with recommendations and rewritten query.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "501": { description: Analytics automation is not yet implemented. }
+
+  /api/v1/query/nlq:
+    post:
+      summary: Natural-language query (P2.5)
+      operationId: apiV1QueryNlqPost
+      tags: [analytics, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string }
+      responses:
+        "200":
+          description: Parsed query plan with intent, SQL draft, source selection, and cost warnings.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  question: { type: string }
+                  intent: { type: string }
+                  sqlDraft: { type: string }
+                  suggestedCollections: { type: array, items: { type: string } }
+                  timeFilter: { type: string }
+                  costWarning: { type: string }
+                  costLevel: { type: string }
+                  confidence: { type: number, format: double }
+                  fallback: { type: boolean }
+                  explain: { type: string }
 
   /api/v1/reports:
     post:
@@ -3915,7 +4682,127 @@ paths:
                 $ref: "#/components/schemas/WorkflowExecutionSummary"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  # ── Pipeline AI hint ─────────────────────────────────────────────────────
+  /api/v1/executions/{executionId}/retry:
+    post:
+      summary: Retry a failed execution by id
+      operationId: apiV1ExecutionsExecutionIdRetryPost
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Retried execution summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionSummary"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/executions/{executionId}/rollback:
+    post:
+      summary: Compensating rollback for a workflow execution (P2.2)
+      operationId: apiV1ExecutionsExecutionIdRollbackPost
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetSteps:
+                  type: array
+                  items: { type: string }
+                dryRun: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Rollback plan with per-step compensation actions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/executions/{executionId}/checkpoint:
+    post:
+      summary: Save a checkpoint for durable workflow execution (P2.2)
+      operationId: apiV1ExecutionsExecutionIdCheckpointPost
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stepId: { type: string }
+                stepIndex: { type: integer }
+                state:
+                  type: object
+      responses:
+        "200":
+          description: Checkpoint saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/executions/{executionId}/checkpoints:
+    get:
+      summary: List checkpoints for a workflow execution (P2.2)
+      operationId: apiV1ExecutionsExecutionIdCheckpointsGet
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: List of checkpoints ordered by step index.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/executions/{executionId}/restore:
+    post:
+      summary: Restore workflow execution from the latest checkpoint (P2.2)
+      operationId: apiV1ExecutionsExecutionIdRestorePost
+      tags: [pipelines]
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Restored checkpoint state with resume instructions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Alerts ─────────────────────────────────────────────────────────────────
 
   /api/v1/pipelines/draft:
     post:
@@ -3938,6 +4825,85 @@ paths:
               schema:
                 $ref: "#/components/schemas/WorkflowDraftResponse"
 
+  /api/v1/workflows/analyze-risk:
+    post:
+      summary: Analyze workflow execution risk and propose remediations (P2.2)
+      operationId: apiV1WorkflowsAnalyzeRiskPost
+      tags: [pipelines, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executionId: { type: string }
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      type: { type: string }
+                      dependsOn: { type: string }
+      responses:
+        "200":
+          description: Risk analysis with proposed remediations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/workflows/validate:
+    post:
+      summary: Validate a workflow/pipeline DAG (P2.2)
+      operationId: apiV1WorkflowsValidatePost
+      tags: [pipelines, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [steps]
+              properties:
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      type: { type: string }
+                edges:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      from: { type: string }
+                      to: { type: string }
+      responses:
+        "200":
+          description: Validation results with cycle detection, dependency checks, risk/cost estimation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid: { type: boolean }
+                  errors: { type: array, items: { type: string } }
+                  warnings: { type: array, items: { type: string } }
+                  stepCount: { type: integer }
+                  edgeCount: { type: integer }
+                  cycleCount: { type: integer }
+                  estimatedRisk: { type: number, format: double }
+                  riskBand: { type: string }
+                  estimatedCost: { type: integer }
+                  approvalRequired: { type: boolean }
+
   /api/v1/pipelines/{pipelineId}/optimise-hint:
     post:
       summary: AI-assisted pipeline optimisation hints (DC-E3)
@@ -3958,6 +4924,32 @@ paths:
       responses:
         "200": { description: Optimisation hints with AI metadata }
 
+  /api/v1/governance/recommend:
+    post:
+      summary: AI-assisted governance policy recommendation (P2.5)
+      operationId: apiV1GovernanceRecommendPost
+      tags: [governance, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                collection: { type: string }
+                schema:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        "200":
+          description: Governance recommendations with field classifications and compliance frameworks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
   # ── Brain AI explain ─────────────────────────────────────────────────────
 
   /api/v1/brain/explain:
@@ -3976,6 +4968,207 @@ paths:
       responses:
         "200":
           { description: Human-readable explanation with remediation steps }
+
+  /api/v1/ai/context/rank:
+    post:
+      summary: Retrieval ranking and stale-context detection (P2.5)
+      operationId: apiV1AiContextRankPost
+      tags: [ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string }
+                contexts:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Context entries ranked by relevance and freshness with stale flag.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/ai/quality/drift-detect:
+    post:
+      summary: Contract drift detection — breaking vs non-breaking changes (P2.5 Testing)
+      operationId: apiV1AiQualityDriftDetectPost
+      tags: [testing, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldContract:
+                  type: object
+                  additionalProperties: { type: string }
+                newContract:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        "200":
+          description: Drift report with breaking and non-breaking changes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/operations/anomaly-group:
+    post:
+      summary: Group anomalies by pattern similarity (P2.5 Operations)
+      operationId: apiV1OperationsAnomalyGroupPost
+      tags: [operations, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                anomalies:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Anomaly clusters with suggested root causes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/operations/forecast:
+    post:
+      summary: Capacity forecasting based on utilization metrics (P2.5 Operations)
+      operationId: apiV1OperationsForecastPost
+      tags: [operations, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentMetrics:
+                  type: object
+                history:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Forecasted capacity needs and bottleneck projections.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/ai/next-action:
+    post:
+      summary: Next-best-action surface for operators (P2.5 UI)
+      operationId: apiV1AiNextActionPost
+      tags: [ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pendingAlerts:
+                  type: array
+                  items:
+                    type: object
+                pendingTasks:
+                  type: array
+                  items:
+                    type: object
+                recentFailures:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Suggested next action with urgency and rationale.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/connectors/suggest-mapping:
+    post:
+      summary: AI-assisted connector field mapping suggestion (P2.5 Connectors)
+      operationId: apiV1ConnectorsSuggestMappingPost
+      tags: [connectors, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sourceSchema:
+                  type: object
+                  additionalProperties: { type: string }
+                targetSchema:
+                  type: object
+                  additionalProperties: { type: string }
+      responses:
+        "200":
+          description: Field mapping suggestions with confidence scores.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/connectors/{connectorId}/sync-health:
+    post:
+      summary: Diagnose connector sync health and source reliability (P2.5 Connectors)
+      operationId: apiV1ConnectorsConnectorIdSyncHealthPost
+      tags: [connectors, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: connectorId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                syncHistory:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Sync health diagnosis with reliability score and issue breakdown.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   /api/v1/ai/quality-summary:
     get:
@@ -4040,6 +5233,79 @@ paths:
       responses:
         "200":
           description: Cross-surface AI correlation list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/ai/actions:
+    get:
+      summary: List AI action audit records
+      operationId: apiV1AiActionsGet
+      tags: [ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdHeader"
+        - name: domain
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: AI action records.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/ai/suggestions/{id}/feedback:
+    post:
+      summary: Submit feedback on an AI suggestion (P2.6)
+      operationId: apiV1AiSuggestionsIdFeedbackPost
+      tags: [ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdHeader"
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accepted: { type: boolean }
+                sentiment: { type: string, enum: [positive, negative, neutral] }
+                comment: { type: string }
+                actionType: { type: string }
+      responses:
+        "200":
+          description: Feedback recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/ai/feedback:
+    get:
+      summary: List AI suggestion feedback (P2.6)
+      operationId: apiV1AiFeedbackGet
+      tags: [ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdHeader"
+        - name: sentiment
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: AI feedback records.
           content:
             application/json:
               schema:
@@ -4630,6 +5896,83 @@ paths:
                 $ref: "#/components/schemas/FreeformObject"
         "400": { $ref: "#/components/responses/BadRequest" }
 
+  /api/v1/settings/approval-request:
+    post:
+      summary: Propose a sensitive settings change requiring admin approval (P3.5)
+      operationId: apiV1SettingsApprovalRequestPost
+      tags: [capabilities]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                changeType: { type: string }
+                payload:
+                  type: object
+                requestedBy: { type: string }
+                reason: { type: string }
+      responses:
+        "200":
+          description: Approval request submitted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/settings/approvals:
+    get:
+      summary: List pending admin approval requests (P3.5)
+      operationId: apiV1SettingsApprovalsGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Pending approvals list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/settings/approvals/{id}/approve:
+    post:
+      summary: Approve a pending settings change (P3.5)
+      operationId: apiV1SettingsApprovalsIdApprovePost
+      tags: [capabilities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Settings change approved and applied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/settings/approvals/{id}/reject:
+    post:
+      summary: Reject a pending settings change (P3.5)
+      operationId: apiV1SettingsApprovalsIdRejectPost
+      tags: [capabilities]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Settings change rejected.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/context:
     get:
       summary: Get all tenant context entries
@@ -4710,6 +6053,91 @@ paths:
               schema:
                 $ref: "#/components/schemas/CollectionContextResponse"
         "404": { description: Collection not found. }
+
+  /api/v1/context/{collection}/lineage/trust:
+    get:
+      summary: Surface lineage for Trust Center UI with governance tags and PII classification (P1.5)
+      operationId: apiV1ContextCollectionLineageTrustGet
+      tags: [context, trust-center]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Trust-formatted lineage with upstream/downstream nodes, governance tags, and compliance posture.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/context/{collection}/rag-policy-check:
+    post:
+      summary: Enforce tenant, PII, retention, and sovereignty policies before RAG retrieval (P1.6)
+      operationId: apiV1ContextCollectionRagPolicyCheckPost
+      tags: [context, ai, governance]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Policy verdict including PII detection, redaction requirements, and sovereignty check.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/ai/rag-feedback:
+    post:
+      summary: Capture user corrections for RAG/semantic search results to update confidence scores (P1.6)
+      operationId: apiV1AiRagFeedbackPost
+      tags: [ai, learning]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                queryId: { type: string }
+                resultId: { type: string }
+                relevant: { type: boolean }
+                correctedAnswer: { type: string }
+      responses:
+        "200":
+          description: Saved feedback record with confidence adjustment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/ai/memory/retention:
+    post:
+      summary: Configure agent memory retention policies with TTL and archive rules (P1.6)
+      operationId: apiV1AiMemoryRetentionPost
+      tags: [ai, capabilities]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ttlDays: { type: integer, default: 90 }
+                archiveBeforeDelete: { type: boolean, default: false }
+                exemptCollections:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: Saved retention policy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   /mcp/v1/tools:
     get:
@@ -4834,6 +6262,61 @@ paths:
         "403": { description: Consumer is not allowed to subscribe to this data product }
         "404": { $ref: "#/components/responses/NotFound" }
 
+  /api/v1/data-products/{productId}/sla-monitor:
+    post:
+      summary: Monitor SLA health for a data product and emit alerts on degradation (P1.3)
+      operationId: apiV1DataProductsProductIdSlaMonitorPost
+      tags: [data-products, operations]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SLA status with quality snapshot and breach detection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/data-products/{productId}/contract-check:
+    post:
+      summary: Validate schema and SLA contract compatibility on changes (P1.3)
+      operationId: apiV1DataProductsProductIdContractCheckPost
+      tags: [data-products, testing]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                proposedSchema:
+                  type: object
+                  additionalProperties: { type: string }
+                proposedSla:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Compatibility report with breaking and non-breaking issues.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/autonomy/level:
     get:
       summary: Get the current global autonomy level override
@@ -4883,6 +6366,202 @@ paths:
       tags: [autonomy]
       responses:
         "200": { description: Autonomy audit log. }
+
+  /api/v1/autonomy/plan/{actionType}:
+    get:
+      summary: Get automation plan for an action type (P2.3)
+      operationId: apiV1AutonomyPlanActionTypeGet
+      tags: [autonomy]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: actionType
+          in: path
+          required: true
+          schema: { type: string }
+        - name: traceId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Autonomy plan with impact, confidence, risk, and cost estimates.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/autonomy/feedback-policy:
+    post:
+      summary: Update autonomy policies from operator feedback patterns (P2.6)
+      operationId: apiV1AutonomyFeedbackPolicyPost
+      tags: [autonomy, ai]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                domain: { type: string }
+                feedbackSummary:
+                  type: object
+                  properties:
+                    accepted: { type: integer }
+                    rejected: { type: integer }
+      responses:
+        "200":
+          description: Updated autonomy policy with new confidence threshold and recommended level.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  # ── Connector registry ───────────────────────────────────────────────────
+
+  /api/v1/connectors:
+    get:
+      summary: List registered data source connectors
+      operationId: apiV1ConnectorsGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+      responses:
+        "200": { description: Connector list. }
+    post:
+      summary: Register a new data source connector
+      operationId: apiV1ConnectorsPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectionRegistrationRequest'
+      responses:
+        "201": { description: Connector registered. }
+        "400": { description: Invalid payload. }
+  /api/v1/connectors/{connectionId}:
+    get:
+      summary: Get a connector by ID
+      operationId: apiV1ConnectorsConnectionIdGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector details. }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/connectors/{connectionId}/test:
+    post:
+      summary: Test a connector connection
+      operationId: apiV1ConnectorsConnectionIdTestPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Test result. }
+  /api/v1/connectors/{connectionId}/enable:
+    post:
+      summary: Enable a connector
+      operationId: apiV1ConnectorsConnectionIdEnablePost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector enabled. }
+  /api/v1/connectors/{connectionId}/disable:
+    post:
+      summary: Disable a connector
+      operationId: apiV1ConnectorsConnectionIdDisablePost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector disabled. }
+  /api/v1/connectors/{connectionId}/rotate-credentials:
+    post:
+      summary: Rotate connector credentials
+      operationId: apiV1ConnectorsConnectionIdRotateCredentialsPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Credentials rotated. }
+  /api/v1/connectors/{connectionId}/health:
+    get:
+      summary: Get connector health status
+      operationId: apiV1ConnectorsConnectionIdHealthGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Health status. }
+  /api/v1/connectors/{connectionId}/schema:
+    get:
+      summary: Get inferred schema for a connector
+      operationId: apiV1ConnectorsConnectionIdSchemaGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Schema. }
+  /api/v1/connectors/{connectionId}/sync:
+    post:
+      summary: Trigger a connector sync
+      operationId: apiV1ConnectorsConnectionIdSyncPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Sync status. }
+  /api/v1/connectors/{connectionId}/sync/status:
+    get:
+      summary: Get sync status for a connector
+      operationId: apiV1ConnectorsConnectionIdSyncStatusGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Sync status. }
 
   # ── Agent catalog ────────────────────────────────────────────────────────
 

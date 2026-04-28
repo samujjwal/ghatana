@@ -1,6 +1,7 @@
 package com.ghatana.yappc.plugin;
 
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +121,7 @@ public final class ActiveJPatterns {
             Duration timeout,
             String label) {
 
-        return promise.timeout(timeout.toMillis())
+        return Promises.timeout(timeout, promise)
                 .mapException(e -> {
                     if (e instanceof io.activej.async.exception.AsyncTimeoutException) {
                         return new java.util.concurrent.TimeoutException(

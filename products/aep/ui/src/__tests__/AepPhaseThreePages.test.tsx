@@ -13,8 +13,12 @@ import { AgentMarketplacePage } from '@/pages/AgentMarketplacePage';
 import { CostDashboardPage } from '@/pages/CostDashboardPage';
 import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 import * as aepApi from '@/api/aep.api';
+import { useAuth } from '@/context/AuthContext';
 
 vi.mock('@/api/aep.api');
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: vi.fn(),
+}));
 
 const MARKETPLACE_AGENT: aepApi.MarketplaceAgentListing = {
   id: 'agent-market-1',
@@ -73,6 +77,31 @@ const COST_SUMMARY: aepApi.CostSummary = {
       runCount: 8,
     },
   ],
+  perModel: [
+    {
+      id: 'gpt-4.1-mini',
+      name: 'gpt-4.1-mini',
+      costUsd: 7.4,
+      sharePercent: 59.4,
+      runCount: 6,
+    },
+  ],
+  budget: {
+    daily: {
+      budgetUsd: 10,
+      observedUsd: 12.45,
+      remainingUsd: -2.45,
+      usagePercent: 124.5,
+      status: 'exceeded',
+    },
+    monthly: {
+      budgetUsd: 350,
+      observedUsd: 320.11,
+      remainingUsd: 29.89,
+      usagePercent: 91.46,
+      status: 'warning',
+    },
+  },
   alerts: [
     {
       id: 'alert-1',
@@ -93,6 +122,19 @@ function renderWithQuery(ui: React.ReactElement) {
 
 describe('AgentMarketplacePage', () => {
   beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      authToken: 'jwt-token',
+      sessionToken: 'session-token',
+      isAuthenticated: true,
+      isBootstrappingSession: false,
+      isVerifyingAuth: false,
+      roles: ['operator'],
+      hasRole: (role) => role === 'operator',
+      hasAnyRole: (roles) => roles.includes('operator'),
+      loginWithToken: vi.fn(),
+      loginWithPlatform: vi.fn(),
+      logout: vi.fn(),
+    });
     vi.mocked(aepApi.listMarketplaceAgents).mockResolvedValue([MARKETPLACE_AGENT]);
     vi.mocked(aepApi.getMarketplaceAgent).mockResolvedValue(MARKETPLACE_DETAIL);
     vi.mocked(aepApi.publishMarketplaceAgent).mockResolvedValue(MARKETPLACE_AGENT);
@@ -119,6 +161,9 @@ describe('AgentMarketplacePage', () => {
     await waitFor(() => expect(screen.getByText('Publish Agent')).toBeInTheDocument());
     await user.type(screen.getByLabelText(/agent name/i), 'Tenant Agent');
     await user.click(screen.getByText('Publish Agent'));
+    await user.type(screen.getByLabelText(/reason/i), 'Publishing for operator reuse');
+    await user.type(screen.getByLabelText(/type .*publish.* to confirm/i), 'PUBLISH');
+    await user.click(screen.getByRole('button', { name: /confirm/i }));
 
     await waitFor(() => expect(aepApi.publishMarketplaceAgent).toHaveBeenCalled());
   });
@@ -134,7 +179,10 @@ describe('CostDashboardPage', () => {
 
     await waitFor(() => expect(screen.getByText('Observed Spend')).toBeInTheDocument());
     expect(screen.getByText('Projected Monthly')).toBeInTheDocument();
+    expect(screen.getByText('Budget guardrails')).toBeInTheDocument();
+    expect(screen.getByText('Model Spend Breakdown')).toBeInTheDocument();
     expect(screen.getByText('Daily spend exceeded')).toBeInTheDocument();
     expect(screen.getByText('Fraud Triage')).toBeInTheDocument();
+    expect(screen.getByText('gpt-4.1-mini')).toBeInTheDocument();
   });
 });

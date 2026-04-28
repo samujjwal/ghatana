@@ -13,6 +13,7 @@ import { tenantIdAtom } from '@/stores/tenant.store';
 import {
   cancelRun,
   getRunDetail,
+  type RunAgentVersionReference,
   type PipelineRunDetail,
   type RunDecisionEntry,
   type RunLineageEntry,
@@ -61,6 +62,116 @@ function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="w-32 flex-shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
       <span className="break-all font-mono text-sm text-gray-900 dark:text-gray-100">{value}</span>
     </div>
+  );
+}
+
+function formatProvenanceValue(value: unknown): string {
+  if (typeof value === 'boolean') {
+    return value ? 'Enabled' : 'Disabled';
+  }
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+  return 'Unavailable';
+}
+
+function ProvenanceChip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+      {children}
+    </span>
+  );
+}
+
+function ProvenanceList({
+  title,
+  items,
+  renderItem,
+  emptyLabel,
+}: {
+  title: string;
+  items: string[] | RunAgentVersionReference[];
+  renderItem: (item: string | RunAgentVersionReference) => React.ReactNode;
+  emptyLabel: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">{title}</p>
+      <div className="flex flex-wrap gap-2">
+        {items.length > 0 ? items.map((item) => renderItem(item)) : <ProvenanceChip>{emptyLabel}</ProvenanceChip>}
+      </div>
+    </div>
+  );
+}
+
+function RunProvenanceSummary({ run }: { run: PipelineRunDetail }) {
+  return (
+    <section className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Run lineage summary</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Evidence-backed provenance for the executed pipeline, policies, and safety controls.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Pipeline version</p>
+          <p className="font-mono text-sm text-gray-900 dark:text-gray-100">
+            {run.provenance.pipelineVersion ?? 'Unavailable'}
+          </p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Evaluation gate</p>
+          <p className="font-mono text-sm text-gray-900 dark:text-gray-100">
+            {run.provenance.evaluationGate ?? 'Unavailable'}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <ProvenanceList
+          title="Agent versions"
+          items={run.provenance.agentVersions}
+          emptyLabel="No agent version evidence"
+          renderItem={(item) => {
+            const agent = item as RunAgentVersionReference;
+            return <ProvenanceChip key={`${agent.agentId}-${agent.version}`}>{agent.agentId} v{agent.version}</ProvenanceChip>;
+          }}
+        />
+
+        <ProvenanceList
+          title="Policy bundle"
+          items={run.provenance.policyBundle}
+          emptyLabel="No policy bundle evidence"
+          renderItem={(item) => <ProvenanceChip key={item as string}>{item as string}</ProvenanceChip>}
+        />
+
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Compliance bundle</p>
+          {Object.keys(run.provenance.complianceBundle).length > 0 ? (
+            <div className="grid gap-2 md:grid-cols-2">
+              {Object.entries(run.provenance.complianceBundle).map(([key, value]) => (
+                <div
+                  key={key}
+                  className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-900"
+                >
+                  <p className="font-medium text-gray-600 dark:text-gray-300">{key}</p>
+                  <p className="mt-1 font-mono text-gray-900 dark:text-gray-100">{formatProvenanceValue(value)}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ProvenanceChip>Compliance bundle unavailable</ProvenanceChip>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -280,22 +391,25 @@ export function RunDetailPage() {
 
           <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
             {activeTab === 'lineage' && isFeatureEnabled('EVENT_LINEAGE') ? (
-              <EvidenceList<RunLineageEntry>
-                rows={run.lineage}
-                emptyMessage="No lineage events were recorded for this run."
-                renderRow={(entry, index) => (
-                  <div key={`${entry.eventType}-${entry.timestamp}-${index}`} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.stepType}</p>
-                        <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{entry.eventType}</p>
+              <div className="space-y-4 p-6">
+                <RunProvenanceSummary run={run} />
+                {run.lineage.length > 0 ? (
+                  run.lineage.map((entry, index) => (
+                    <div key={`${entry.eventType}-${entry.timestamp}-${index}`} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{entry.stepType}</p>
+                          <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{entry.eventType}</p>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
+                      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Pipeline {entry.pipelineId} · status {entry.status}</p>
                     </div>
-                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Pipeline {entry.pipelineId} · status {entry.status}</p>
-                  </div>
+                  ))
+                ) : (
+                  <p className="py-10 text-center text-sm text-gray-400">No lineage events were recorded for this run.</p>
                 )}
-              />
+              </div>
             ) : activeTab === 'lineage' ? (
               <BoundaryPanel
                 title="Event lineage not enabled."

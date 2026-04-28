@@ -103,7 +103,7 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
 
             // WHEN - Approve plan
             AiPlan approvedPlan = runPromise( // GH-90000
-                    () -> workflowService.approvePlan(plan.id(), TENANT_ID) // GH-90000
+                    () -> workflowService.approvePlan(plan.id(), TENANT_ID, null) // GH-90000
             );
 
             assertThat(approvedPlan.status()).isEqualTo(AiPlan.PlanStatus.APPROVED); // GH-90000
@@ -147,7 +147,7 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
 
             // WHEN
             AiWorkflowInstance cancelledWorkflow = runPromise( // GH-90000
-                    () -> workflowService.cancelWorkflow(workflow.id(), TENANT_ID) // GH-90000
+                    () -> workflowService.cancelWorkflow(workflow.id(), TENANT_ID, null, null) // GH-90000
             );
 
             // THEN
@@ -211,7 +211,7 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
 
             // WHEN
             AiPlan rejectedPlan = runPromise( // GH-90000
-                    () -> workflowService.rejectPlan(plan.id(), TENANT_ID, "Plan too complex") // GH-90000
+                    () -> workflowService.rejectPlan(plan.id(), TENANT_ID, "Plan too complex", null) // GH-90000
             );
 
             // THEN
@@ -297,7 +297,7 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
         AiPlan plan = runPromise( // GH-90000
                 () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Test objective for " + name) // GH-90000
         );
-        runPromise(() -> workflowService.approvePlan(plan.id(), TENANT_ID)); // GH-90000
+        runPromise(() -> workflowService.approvePlan(plan.id(), TENANT_ID, null)); // GH-90000
         return runPromise(() -> workflowService.startWorkflow(workflow.id(), TENANT_ID)); // GH-90000
     }
 }

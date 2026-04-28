@@ -1,7 +1,8 @@
 package com.ghatana.datacloud;
 
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
+// PENDING: Migrate to com.ghatana.platform.domain.eventstore.EventLogStore when platform module is available
+import com.ghatana.datacloud.spi.EventLogStore;
 import io.activej.promise.Promise;
 
 import java.util.List;

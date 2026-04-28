@@ -23,6 +23,8 @@ public interface WorkflowExecutionCapability extends PluginCapability {
 
     Promise<ExecutionSnapshot> cancelExecution(String tenantId, String executionId);
 
+    Promise<ExecutionSnapshot> retryExecution(String tenantId, String executionId);
+
     Promise<List<ExecutionLogEntry>> getExecutionLogs(String tenantId, String executionId);
 
     record NodeSnapshot(

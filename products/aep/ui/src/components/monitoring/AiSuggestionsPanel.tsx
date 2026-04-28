@@ -10,13 +10,22 @@
  * @doc.pattern AI Component
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, TrendingUp, Zap, X, CheckCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Zap, X, CheckCircle } from 'lucide-react';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { RBACGuard } from '../security/RBACGuard';
 import { Button } from '@ghatana/design-system';
 import { apiClient } from '@/lib/http-client';
+import { ConfidenceExplanation } from '@/components/shared/ConfidenceExplanation';
+import {
+  getAiConfidenceTier,
+  getAiRouting,
+  getAiRoutingDescription,
+  getAiRoutingLabel,
+  normalizeAiSources,
+  type AiAssistSource,
+} from '@/lib/ai-assist';
 
 /**
  * AI suggestion type
@@ -34,10 +43,9 @@ export interface AiSuggestion {
   resourceId?: string;
   resourceType?: 'pipeline' | 'run' | 'agent' | 'policy';
   confidence?: number;
-  /** Human-readable explanation of why this suggestion was generated. */
-  reasoning?: string;
-  /** Evidence or source that supports this suggestion. */
-  evidenceUrl?: string;
+  rationale?: string;
+  evidence?: Array<Record<string, unknown>>;
+  sources?: AiAssistSource[];
 }
 
 /**
@@ -71,11 +79,11 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
   const { data: suggestions, isLoading, error } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],
     queryFn: async (): Promise<AiSuggestion[]> => {
-      const { data } = await apiClient.get<{ suggestions?: AiSuggestion[]; data?: AiSuggestion[] }>(
+      const { data } = await apiClient.get<{ suggestions?: RawAiSuggestion[]; data?: RawAiSuggestion[] }>(
         '/api/v1/ai/suggestions',
         { params: { tenantId } }
       );
-      return data.suggestions ?? data.data ?? [];
+      return (data.suggestions ?? data.data ?? []).map(normalizeAiSuggestion);
     },
     enabled: isFeatureEnabled('AI_SUGGESTIONS'),
     staleTime: 60_000,
@@ -156,6 +164,7 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
       <div className="space-y-2">
         {displaySuggestions.map((suggestion) => {
           const Icon = getTypeIcon(suggestion.type);
+          const routing = getAiRouting(suggestion.confidence);
           return (
             <div
               key={suggestion.id}
@@ -165,15 +174,43 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">{suggestion.message}</p>
                 {suggestion.confidence !== undefined && (
-                  <div className="mt-1">
-                    <ConfidenceBadge
-                      value={suggestion.confidence}
-                      reasoning={suggestion.reasoning}
-                      evidenceUrl={suggestion.evidenceUrl}
+                  <div className="mt-2 space-y-2">
+                    <span className="inline-flex rounded-full border border-current/15 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide">
+                      {getAiRoutingLabel(routing)}
+                    </span>
+                    <ConfidenceExplanation
+                      tier={getAiConfidenceTier(suggestion.confidence)}
+                      score={suggestion.confidence}
+                      reasoning={suggestion.rationale ?? getAiRoutingDescription(routing)}
+                      evidenceUrl={suggestion.sources?.find((source) => source.href)?.href}
                     />
+                    {suggestion.sources && suggestion.sources.length > 0 && (
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        {suggestion.sources.map((source) => (
+                          source.href ? (
+                            <a
+                              key={`${suggestion.id}-${source.label}`}
+                              href={source.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-full border border-current/15 px-2 py-1 hover:underline"
+                            >
+                              {source.label}
+                            </a>
+                          ) : (
+                            <span
+                              key={`${suggestion.id}-${source.label}`}
+                              className="rounded-full border border-current/15 px-2 py-1"
+                            >
+                              {source.label}
+                            </span>
+                          )
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
-                {suggestion.action && (
+                {suggestion.action && routing !== 'advisory' && (
                   <RBACGuard permission="write:pipeline" resource={suggestion.resourceId} action="write">
                     <Button
                       onClick={() => {
@@ -186,6 +223,11 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
                       {suggestion.action.label}
                     </Button>
                   </RBACGuard>
+                )}
+                {suggestion.action && routing === 'advisory' && (
+                  <p className="mt-2 text-xs font-medium">
+                    Advisory only: review the rationale and sources before making a manual change.
+                  </p>
                 )}
               </div>
               {onSuggestionDismiss && (
@@ -206,76 +248,45 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
   );
 };
 
-/**
- * Hook for using AI suggestions
- */
-/**
- * Visual confidence tier badge with reasoning and evidence link.
- */
-function ConfidenceBadge({
-  value,
-  reasoning,
-  evidenceUrl,
-}: {
-  value: number;
-  reasoning?: string;
-  evidenceUrl?: string;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const tier = value >= 0.8 ? 'high' : value >= 0.5 ? 'medium' : 'low';
-  const label = tier === 'high' ? 'High' : tier === 'medium' ? 'Medium' : 'Low';
-  const color =
-    tier === 'high'
-      ? 'text-green-600 dark:text-green-400'
-      : tier === 'medium'
-      ? 'text-amber-600 dark:text-amber-400'
-      : 'text-red-600 dark:text-red-400';
+interface RawAiSuggestion {
+  id?: string;
+  suggestionId?: string;
+  runId?: string;
+  type?: AiSuggestion['type'];
+  severity?: AiSuggestion['severity'];
+  message?: string;
+  rationale?: string;
+  confidence?: number;
+  resourceId?: string;
+  resourceType?: AiSuggestion['resourceType'];
+  evidence?: Array<Record<string, unknown>>;
+}
 
-  return (
-    <div className="text-xs">
-      <span className={['font-medium', color].join(' ')}>{label} confidence</span>
-      <span className="text-gray-500 dark:text-gray-400 ml-1">({(value * 100).toFixed(0)}%)</span>
-      {reasoning && (
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="ml-1.5 inline-flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          aria-label={expanded ? 'Hide reasoning' : 'Show reasoning'}
-        >
-          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
-      )}
-      {expanded && reasoning && (
-        <div className="mt-1.5 rounded bg-white/60 dark:bg-gray-900/40 p-2 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300">
-          <p className="flex items-start gap-1">
-            <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-            <span>{reasoning}</span>
-          </p>
-          {evidenceUrl && (
-            <a
-              href={evidenceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-block text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              View evidence →
-            </a>
-          )}
-        </div>
-      )}
-    </div>
-  );
+function normalizeAiSuggestion(raw: RawAiSuggestion): AiSuggestion {
+  return {
+    id: raw.id ?? raw.suggestionId ?? crypto.randomUUID(),
+    runId: raw.runId ?? '',
+    type: raw.type ?? 'recommendation',
+    severity: raw.severity ?? 'low',
+    message: raw.message ?? 'Suggestion available',
+    confidence: raw.confidence,
+    rationale: raw.rationale,
+    resourceId: raw.resourceId,
+    resourceType: raw.resourceType,
+    evidence: raw.evidence,
+    sources: normalizeAiSources(raw.evidence),
+  };
 }
 
 export function useAiSuggestions(tenantId: string) {
   const { data: suggestions, isLoading, error, refetch } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],
     queryFn: async (): Promise<AiSuggestion[]> => {
-      const { data } = await apiClient.get<{ suggestions?: AiSuggestion[]; data?: AiSuggestion[] }>(
+      const { data } = await apiClient.get<{ suggestions?: RawAiSuggestion[]; data?: RawAiSuggestion[] }>(
         '/api/v1/ai/suggestions',
         { params: { tenantId } }
       );
-      return data.suggestions ?? data.data ?? [];
+      return (data.suggestions ?? data.data ?? []).map(normalizeAiSuggestion);
     },
     enabled: isFeatureEnabled('AI_SUGGESTIONS'),
     staleTime: 60_000,
