@@ -32,7 +32,6 @@
   3. **F-018** — Kill-switch step-up authentication (compliance critical)
   4. **F-014** — Pipeline dry-run before publish (safety critical)
   5. **F-032** — Role-driven UI gating (RBAC enforcement)
-  
 - 2026-04-27: Batch sync completed. Updated task markers based on AEP_IMPLEMENTATION_TASKS.md completion log (T-01 through T-35 all DONE).
 - Marked DONE: F-001 (T-04), F-002 (T-02 + runway truths), F-003 (T-03), F-004 (T-01), F-005 (T-05), F-006 (T-02), F-007 (/audit impl), F-008 (part of session model), F-010 (T-06), F-011 ✅, F-013 ✅, F-012 (T-22), F-025 (T-09), F-037 (T-10), F-016 (T-20 session model), F-017 (governance wiring).
 - Remaining: F-009 (marketplace advanced features), F-014 (dry-run), F-018 (kill-switch auth), F-019 (GDPR), F-020 (sandbox), F-022/F-023 (generated clients), F-024 (capability flags work), F-027 (binding designer), F-028 (cost budgets), F-030 (tenant LC), F-031 (PII block), F-032 (role gating), F-033 (OPS tile), F-034 (SOC2 freshness), F-035 (gRPC Problem), F-036 (E2E tests), F-038/F-039 (accesibility), F-040 (runtime banner), F-041 (lineage), F-042 (auto-promo badge), F-043 (consent dashboard), F-044 (deprecation policy), F-045/F-046/F-047 (consistency), F-048 (correlation IDs), F-049/F-050 (audit chains).
@@ -100,13 +99,18 @@
 - [ ] AI-11 — P2 — Run lineage narrative summary.
 - [ ] AI-12 — P2 — Tenant onboarding pre-fill.
 - [ ] AI-13 — P2 — Anomaly false-positive feedback loop into learning — also F-029.
-- [ ] F-012 — High / Correctness+Trust / AI — Default UI to "advisory only" for low-confidence suggestions; surface click-through to sources. **(T-22 envelope DONE, UI routing pending)**
+      <<<<<<< Updated upstream
+- [ ] # F-012 — High / Correctness+Trust / AI — Default UI to "advisory only" for low-confidence suggestions; surface click-through to sources. **(T-22 envelope DONE, UI routing pending)**
+- [ ] F-012 — High / Correctness+Trust / AI — Default UI to "advisory only" for low-confidence suggestions; surface click-through to sources.
+  > > > > > > > Stashed changes
 - [ ] F-021 — Medium / Simplicity / UI — AI summarisation in memory explorer with citations + faceted filters.
 - [ ] F-029 — Medium / Correctness / AI+Backend — "Mark as not an anomaly" closes the loop into the learning pipeline.
 - [ ] F-042 — High / Correctness+Trust / UI — "Auto-promoted" badge on every auto-promoted policy with one-click rollback.
 - [ ] F-050 — High / Correctness / Backend — Every promoted policy carries a `PolicyProvenanceRecord`; emit chained audit event; cockpit shows policy timeline per skill.
 
 ## Section E — Consistency cleanups
+
+<<<<<<< Updated upstream
 
 - [x] F-011 — Medium / Consistency / API — Add `/api/v1/ai/suggestions/metrics` to `contracts/openapi.yaml`; CI test fails on OpenAPI ↔ route table drift. **(DONE)**
 - [ ] F-016 / K-1 — Medium / Consistency / Product — Canonical taxonomy: pipeline (orchestrated DAG), pattern (runtime detection rule), workflow (HITL routing); migrate UI labels and docs.
@@ -115,7 +119,16 @@
 - [x] F-045 / K-5 — Medium / Consistency / API — Standard error envelope across 20 controllers. **(T-33 DONE)**
 - [ ] F-046 / K-6 — Medium / Consistency / API — Standard cursor pagination (`{ data, nextCursor, prevCursor, total? }`). **(T-25 data-cloud DONE, standardization across endpoints pending)**
 - [ ] F-047 / K-7 — Medium / Consistency / API — Standard sort/filter grammar.
-- [x] F-049 / K-4 — Medium / Consistency / Backend — Canonical run-state enum (`PENDING/RUNNING/SUCCEEDED/FAILED/CANCELLED/TIMED_OUT`); reject anything else at the boundary. **(T-26 DONE)**
+- [x] # F-049 / K-4 — Medium / Consistency / Backend — Canonical run-state enum (`PENDING/RUNNING/SUCCEEDED/FAILED/CANCELLED/TIMED_OUT`); reject anything else at the boundary. **(T-26 DONE)**
+- [ ] F-011 — Medium / Consistency / API — Add `/api/v1/ai/suggestions/metrics` to `contracts/openapi.yaml`; CI test fails on OpenAPI ↔ route table drift.
+- [ ] F-016 / K-1 — Medium / Consistency / Product — Canonical taxonomy: pipeline (orchestrated DAG), pattern (runtime detection rule), workflow (HITL routing); migrate UI labels and docs.
+- [ ] F-017 / K-2 — Low / Consistency / API — Stabilise on `/api/v1/governance/...` and `/api/v1/compliance/...`; deprecate `/governance/...`.
+- [ ] F-035 / K-12 — Medium / Consistency / API — Shared `Problem` envelope across REST and gRPC.
+- [ ] F-045 / K-5 — Medium / Consistency / API — Standard error envelope across 20 controllers.
+- [ ] F-046 / K-6 — Medium / Consistency / API — Standard cursor pagination (`{ data, nextCursor, prevCursor, total? }`).
+- [ ] F-047 / K-7 — Medium / Consistency / API — Standard sort/filter grammar.
+- [ ] F-049 / K-4 — Medium / Consistency / Backend — Canonical run-state enum (`PENDING/RUNNING/SUCCEEDED/FAILED/CANCELLED/TIMED_OUT`); reject anything else at the boundary.
+  > > > > > > > Stashed changes
 - [ ] K-3 — Medium / Consistency / Frontend — Eliminate duplication between `aep.api.ts` and `pipeline.api.ts` (covered by F-022/F-023).
 - [ ] K-8 — Medium / Consistency / Audit — Standard audit event schema across kill-switch, rollback, install, export, GDPR.
 - [ ] K-9 — Medium / Consistency / Auth — Single role claim shape (server vs UI).
@@ -153,12 +166,18 @@
 - [ ] R-ST-1 — F-003 cancellation contract.
 - [ ] R-ST-2 — F-009 marketplace lifecycle.
 - [ ] R-ST-3 — F-010 audit explorer.
-- [x] R-ST-4 — F-014 publish dry-run. **(DONE)**
+      <<<<<<< Updated upstream
+- [x] # R-ST-4 — F-014 publish dry-run. **(DONE)**
+- [ ] R-ST-4 — F-014 publish dry-run.
+  > > > > > > > Stashed changes
 - [ ] R-ST-5 — F-015 rollback chain.
 - [ ] R-ST-6 — F-019 GDPR/CCPA UI.
 - [ ] R-ST-7 — F-020 marketplace direct-execute sandbox.
 - [ ] R-ST-8 — F-022 / F-023 generated clients.
-- [x] R-ST-9 — F-024 capability flags. **(DONE)**
+      <<<<<<< Updated upstream
+- [x] # R-ST-9 — F-024 capability flags. **(DONE)**
+- [ ] R-ST-9 — F-024 capability flags.
+  > > > > > > > Stashed changes
 - [ ] R-ST-10 — F-027 binding designer.
 - [ ] R-ST-11 — F-030 tenant lifecycle.
 - [ ] R-ST-12 — F-031 PII block-by-default.
@@ -179,7 +198,10 @@
 - [ ] R-MT-7 — F-034 SOC2 evidence freshness.
 - [ ] R-MT-8 — F-038 accessibility CI.
 - [ ] R-MT-9 — F-039 responsive evidence.
-- [x] R-MT-10 — F-040 runtime-truth banner. **(DONE)**
+      <<<<<<< Updated upstream
+- [x] # R-MT-10 — F-040 runtime-truth banner. **(DONE)**
+- [ ] R-MT-10 — F-040 runtime-truth banner.
+  > > > > > > > Stashed changes
 - [ ] R-MT-11 — F-044 deprecation policy.
 - [ ] R-MT-12 — F-048 correlation IDs.
 - [ ] R-MT-13 — F-049 run state enum unification.
@@ -217,3 +239,7 @@
 ---
 
 **Total tasks:** 50 findings + 12 simplifications + 13 AI items + 15 consistency items + 8 trust/observability items + 3 quality items + 35 roadmap rollups + 20 correctness one-liners. Nothing dropped.
+<<<<<<< Updated upstream
+=======
+
+> > > > > > > Stashed changes

@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "@ghatana/charts": "workspace:*",
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",

@@ -181,6 +181,17 @@ export const billingRoutes: FastifyPluginAsync<{
   });
 
   /**
+   * GET /capabilities
+   * Returns which billing features are available for the tenant.
+   * Frontend uses this to conditionally render the billing portal CTA (F-016).
+   */
+  app.get("/capabilities", async (_req, reply) => {
+    return reply.send({
+      billingPortalEnabled: process.env["STRIPE_BILLING_PORTAL_ENABLED"] === "true",
+    });
+  });
+
+  /**
    * POST /portal
    * Create a billing portal session for managing subscriptions
    */
@@ -216,8 +227,8 @@ export const billingRoutes: FastifyPluginAsync<{
 
   // ===========================================================================
   // Stripe Webhook Handler
-  // This route is intentionally excluded from the global JWT guard (see setup.ts
-  // exemption list). Authenticity is verified via Stripe-Signature header.
+  // This route is public (no JWT guard). Authenticity is verified via
+  // Stripe-Signature header — see config.public = true below.
   // ===========================================================================
 
   /**
@@ -229,6 +240,7 @@ export const billingRoutes: FastifyPluginAsync<{
     "/webhook",
     {
       config: {
+        public: true,
         rawBody: true,
         // Add rate limiting for webhooks to prevent abuse
         rateLimit: {

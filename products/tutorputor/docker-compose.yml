@@ -72,6 +72,7 @@ services:
         REDIS_URL=redis://redis:6379
         JWT_SECRET=test-secret-do-not-use-in-prod-1234567890
         STRIPE_SECRET_KEY=stripe_test_placeholder_secret
+        TUTORPUTOR_LOCAL_PROFILE=${TUTORPUTOR_LOCAL_PROFILE:-full}
         CONTENT_WORKER_ENABLED=true
         CONTENT_QUEUE_DISABLED=false
         GRPC_SERVER_ADDRESS=content-generation:50051

@@ -24,17 +24,32 @@ import { useAuth } from "../contexts/AuthContext";
 import { createLogger } from '../utils/logger.js';
 const logger = createLogger('OmnipresentAITutor');
 
+/** Citation emitted by the AI tutor per turn. */
+interface TutorCitation {
+  id: string;
+  label: string;
+  type: string;
+  /** Optional deep-link URL into the course content. */
+  anchor?: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  /** 0–1 confidence score returned by the AI backend (F-006). */
+  confidence?: number;
+  /** Per-turn citations emitted by the AI backend (F-007). */
+  citations?: TutorCitation[];
 }
 
 interface TutorResponse {
   response: {
     answer: string;
-    citations?: Array<{ id: string; label: string; type: string }>;
+    /** 0–1 confidence score. Below 0.5 triggers escalation UI. */
+    confidence?: number;
+    citations?: TutorCitation[];
     followUpQuestions?: string[];
     safety?: { blocked: boolean };
   };
@@ -279,6 +294,8 @@ export function OmnipresentAITutor() {
         role: "assistant",
         content: data.response.answer,
         timestamp: new Date(),
+        confidence: data.response.confidence,
+        citations: data.response.citations,
       };
       setMessages((prev) => [...prev, assistantMessage]);
     },
@@ -427,6 +444,59 @@ export function OmnipresentAITutor() {
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+                {/* F-007: Citation chips */}
+                {message.citations && message.citations.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {message.citations.map((cite) => (
+                      <a
+                        key={cite.id}
+                        href={cite.anchor ?? `#cite-${cite.id}`}
+                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors"
+                        title={`Source: ${cite.type}`}
+                      >
+                        <span aria-hidden="true">&#x1F4DA;</span>
+                        {cite.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {/* F-006: Low-confidence escalation CTA */}
+                {message.role === "assistant" &&
+                  typeof message.confidence === "number" &&
+                  message.confidence < 0.5 && (
+                    <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-xs text-amber-800 dark:text-amber-200">
+                      <p className="font-medium mb-1">
+                        I&#39;m not fully certain about this answer.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.dispatchEvent(
+                              new CustomEvent("tutorputor:open-discussion"),
+                            )
+                          }
+                          className="underline text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100"
+                        >
+                          Ask in class discussion
+                        </button>
+                        <span aria-hidden="true">·</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.dispatchEvent(
+                              new CustomEvent("tutorputor:contact-teacher"),
+                            )
+                          }
+                          className="underline text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100"
+                        >
+                          Contact a teacher
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           ))}

@@ -35,10 +35,16 @@ Use those documents over older plan, roadmap, or diagram files when they disagre
 ```
 tutorputor-web (React)    ─┐
 tutorputor-admin (React)   ─┤→  API Gateway (Node)  →  Platform (Node/Fastify)  →  PostgreSQL
-tutorputor-mobile (RN)     ─┤                            ↓                        Redis
+                           │                            ↓                        Redis
                            │                     Content Generation (Java)
                            │                     Simulation Engine
 ```
+
+> **Mobile channel status**: `tutorputor-mobile` is **in development** and is not a
+> production-ready learner channel. It is excluded from the architecture diagram above
+> until it reaches functional parity with `tutorputor-web`. See
+> [apps/tutorputor-mobile/](apps/tutorputor-mobile/) for current implementation status.
+> (F-031)
 
 Supported local validation topology:
 

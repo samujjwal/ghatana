@@ -2,7 +2,7 @@
  * TutorPutor - Authentication Context
  *
  * Provides authentication state and methods across the application.
- * Replaces hardcoded mock authentication with proper auth integration.
+ * Uses shared token utilities from `@tutorputor/ui` (F-030).
  *
  * @doc.type context
  * @doc.purpose Authentication state management
@@ -11,17 +11,19 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
-interface AuthUser {
-  id: string;
-  email: string;
-  displayName: string;
-  role: string;
-  tenantId: string;
-}
+import {
+  AUTH_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+  TENANT_ID_KEY,
+  extractUserFromToken,
+  persistTokens,
+  readAccessToken,
+  clearAuthStorage,
+  type TutorPutorJwtUser,
+} from '@tutorputor/ui';
 
 interface AuthState {
-  user: AuthUser | null;
+  user: TutorPutorJwtUser | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -33,22 +35,8 @@ interface AuthContextValue extends AuthState {
   refreshToken: () => Promise<void>;
 }
 
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-
-    const normalizedPayload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const paddedPayload = normalizedPayload.padEnd(
-      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
-      '=',
-    );
-
-    return JSON.parse(atob(paddedPayload)) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
+// Local alias so the rest of this file uses the product-specific name
+type AuthUser = TutorPutorJwtUser;
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -69,41 +57,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   /**
-   * Parse JWT token to extract user information
+   * Parse JWT token to extract user information.
+   * Delegates to the shared `extractUserFromToken` from `@tutorputor/ui` (F-030).
    */
   const parseToken = useCallback((token: string): AuthUser | null => {
-    const payload = decodeJwtPayload(token);
-    if (!payload) {
-      return null;
-    }
-
-    const id = typeof payload.sub === 'string'
-      ? payload.sub
-      : typeof payload.userId === 'string'
-        ? payload.userId
-        : null;
-    const tenantId = typeof payload.tenantId === 'string'
-      ? payload.tenantId
-      : typeof payload.tenant === 'string'
-        ? payload.tenant
-        : null;
-
-    if (!id || !tenantId) {
-      return null;
-    }
-
-    return {
-      id,
-      email: typeof payload.email === 'string' ? payload.email : 'unknown',
-      displayName:
-        typeof payload.name === 'string'
-          ? payload.name
-          : typeof payload.displayName === 'string'
-            ? payload.displayName
-            : 'User',
-      role: typeof payload.role === 'string' ? payload.role : 'student',
-      tenantId,
-    };
+    return extractUserFromToken(token);
   }, []);
 
   const fetchCurrentUser = useCallback(async (token: string): Promise<AuthUser | null> => {
@@ -130,27 +88,62 @@ export function AuthProvider({ children }: AuthProviderProps) {
    */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const callbackAccessToken = params.get('accessToken');
-    const callbackRefreshToken = params.get('refreshToken');
 
-    if (callbackAccessToken) {
-      localStorage.setItem('auth_token', callbackAccessToken);
-    }
-    if (callbackRefreshToken) {
-      localStorage.setItem('refresh_token', callbackRefreshToken);
-    }
-    if (callbackAccessToken || callbackRefreshToken) {
-      params.delete('accessToken');
-      params.delete('refreshToken');
+    // F-002: SSO callback now delivers an opaque short-lived code, not raw tokens.
+    // Exchange the code server-side to get the actual access + refresh tokens.
+    const ssoCode = params.get("sso_code");
+    if (ssoCode) {
+      params.delete("sso_code");
       const nextSearch = params.toString();
       window.history.replaceState(
         {},
-        '',
-        `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`,
+        "",
+        `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`,
+      );
+
+      void (async () => {
+        try {
+          const response = await fetch("/api/v1/auth/sso/exchange", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ssoCode }),
+          });
+          if (!response.ok) {
+            throw new Error(`SSO exchange failed: HTTP ${response.status}`);
+          }
+          const data = await response.json() as { accessToken: string; refreshToken?: string };
+          persistTokens(data.accessToken, data.refreshToken);
+          await login(data.accessToken);
+        } catch (err) {
+          console.error("[AuthContext] SSO code exchange failed", err);
+        }
+      })();
+      return;
+    }
+
+    // Legacy path: raw tokens in URL (should no longer be emitted by the server
+    // after F-002, but kept for backwards-compatibility during transition).
+    const callbackAccessToken = params.get("accessToken");
+    const callbackRefreshToken = params.get("refreshToken");
+
+    if (callbackAccessToken) {
+      localStorage.setItem(AUTH_TOKEN_KEY, callbackAccessToken);
+    }
+    if (callbackRefreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, callbackRefreshToken);
+    }
+    if (callbackAccessToken ?? callbackRefreshToken) {
+      params.delete("accessToken");
+      params.delete("refreshToken");
+      const nextSearch = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`,
       );
     }
 
-    const token = localStorage.getItem('auth_token');
+    const token = readAccessToken();
     if (token) {
       void (async () => {
         const parsedUser = parseToken(token);
@@ -163,12 +156,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isLoading: false,
             isAuthenticated: true,
           });
-          localStorage.setItem('tenant_id', user.tenantId);
+          localStorage.setItem(TENANT_ID_KEY, user.tenantId);
           return;
         }
 
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
+        clearAuthStorage();
         setState({
           user: null,
           token: null,
@@ -196,8 +188,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error('Invalid token');
     }
 
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('tenant_id', user.tenantId);
+    persistTokens(token);
+    localStorage.setItem(TENANT_ID_KEY, user.tenantId);
     
     setState({
       user,
@@ -211,20 +203,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Logout user
    */
   const logout = useCallback(() => {
-    const refreshTokenValue = localStorage.getItem('refresh_token');
+    const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY);
     if (refreshTokenValue) {
       void fetch('/api/v1/auth/logout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: refreshTokenValue }),
       });
     }
 
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('tenant_id');
-    localStorage.removeItem('refresh_token');
+    clearAuthStorage();
     
     setState({
       user: null,
@@ -238,19 +226,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Refresh token
    */
   const refreshToken = useCallback(async () => {
-    const storedRefreshToken = localStorage.getItem('refresh_token');
+    const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
     if (!storedRefreshToken) {
       throw new Error('No refresh token available');
     }
 
     const response = await fetch('/api/v1/auth/refresh', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        refreshToken: storedRefreshToken,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: storedRefreshToken }),
     });
 
     if (!response.ok) {
@@ -259,10 +243,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const data = await response.json() as { accessToken: string; refreshToken?: string };
     await login(data.accessToken);
-    
-    if (data.refreshToken) {
-      localStorage.setItem('refresh_token', data.refreshToken);
-    }
+    persistTokens(data.accessToken, data.refreshToken);
   }, [login]);
 
   const value: AuthContextValue = {

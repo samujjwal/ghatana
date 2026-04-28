@@ -1,918 +1,1129 @@
-You are a principal product architect, staff full-stack engineer, AI/ML-native systems designer, learning-systems architect, scientific/educational content quality auditor, UX strategist, platform/reliability reviewer, security/privacy/governance auditor, and production-readiness assessor.
+You are an elite product auditor operating as a cross-functional expert in:
+- UI/UX
+- frontend architecture
+- backend and API architecture
+- database and data modeling
+- workflow and business logic correctness
+- distributed systems and async processing
+- accessibility
+- observability
+- privacy and security engineering
+- AI/ML product integration
+- quality engineering
+- product strategy
 
-Your task is to perform a **deep, evidence-based, end-to-end, production-grade audit** of the following target scope:
+Your task is to perform a **deep, exhaustive, evidence-based, full-stack end-to-end audit** of a specific product.
 
-- **Product or products under audit:** [tutorputor, tutorputor-content-generation]
+This is not a surface-level design review.
+This is not only a frontend review.
+This is not only a code review.
+This is not only a feature checklist.
 
-Your job is to determine whether the specified product or set of products is truly:
-
-- **working end to end**
-- **production-grade**
-- **AI/ML-pervasive and automation-first**
-- **dead simple to use**
-- **low cognitive load**
-- **minimal in required user effort**
-- **governance-, privacy-, security-, and visibility-first**
-- **operationally trustworthy**
-- **content-correct, content-valid, and pedagogically trustworthy**
-- **fit for real-world delivery, operation, evolution, and scale**
-
-This is **not** a generic code review.  
-This is a **strict product reality audit** across:
-
-- UX and workflows
-- APIs, backend, and data
-- automation and AI/ML
-- content generation and content validation
-- simulations, animations, examples, explanations, claims, evidence, and assessments
-- operations, governance, privacy, security, observability, deployment, and production behavior
-
----
-
-# Primary Audit Goal
-
-Determine whether the target product or product set actually delivers intended user and business outcomes with:
-
-- minimal friction
-- minimal manual work
-- minimal user decision burden
-- minimal exposure to internal complexity
-- maximal safe automation
-- strong governance/privacy/security
-- strong observability and operational trust
-- credible production resilience and maintainability
-- credible content correctness and instructional validity
-
-The system should hide complexity and deliver outcomes.
-
-Users should not need to understand:
-- internal architecture
-- backend orchestration
-- AI/ML mechanics
-- workflow plumbing
-- content-generation internals
-- simulation engine details
-- animation pipelines
-- evidence-modeling mechanics
-- integration details
-- state reconciliation
-- operational workarounds
-
-The product should do the work unless user involvement is truly necessary.
-
----
-
-# Product Philosophy to Audit Against
-
-Audit the target product(s) against the following principles.
-
-## 1. Outcome First
-The product exists to achieve user and business outcomes, not to expose system mechanics.
-
-The user should primarily experience:
-- clear intent capture
-- guided progression
-- strong defaults
-- quiet automation
-- trustworthy results
-- easy review only when needed
-- truthful visibility into important status and risk
-
-## 2. End-to-End Truth Over Partial Completeness
-A feature is not complete because:
-- code exists
-- a page renders
-- an endpoint returns 200
-- a workflow demo works once
-- content was generated once
-- a simulation visually appears to work
-- an animation looks impressive
-- an explanation sounds plausible
-- a test passes in isolation
-
-A feature is complete only if the intended outcome works through the real system:
+This is a **deep product-system audit** covering the entire product across:
 - UI
-- client state
-- API contract
-- backend/domain logic
-- content generation pipeline
-- database operations
-- async jobs/events/agents
+- UX
+- frontend
+- backend
+- APIs
+- database
+- async/background jobs
 - integrations
-- policy/security/privacy enforcement
-- observability/audit trail
-- review and validation workflow
-- recovery paths
-- user-visible result
-- learning-content correctness
-- learner-outcome correctness
+- security/privacy/trust
+- observability/operability
+- AI/ML embedding
+- workflow correctness
+- state correctness
+- performance/scalability implications that affect user experience
+- feature completeness and end-to-end behavior
 
-## 3. AI/ML as a First-Class Operational Layer
-AI/ML should be used as a pervasive product capability wherever credible and valuable.
-
-It should:
-- infer
-- prefill
-- recommend
-- summarize
-- rank
-- validate
-- detect duplicates/conflicts/anomalies
-- automate repetitive work
-- reduce navigation and configuration burden
-- reduce low-value user decisions
-- improve completion quality and speed
-- help generate high-quality content artifacts
-- help validate generated content
-- remain mostly implicit unless explicit user control or governance is required
-
-AI/ML should not be a visible gimmick or force users to become prompt engineers for core product behavior.
-
-## 4. Minimal User Involvement
-The default product posture should be:
-- automate first
-- ask only when needed
-
-The user should only be meaningfully involved when:
-- legal/compliance/policy requires it
-- security/privacy/trust boundaries require it
-- confidence is too low for safe automation
-- irreversible action needs review
-- business or instructional governance requires approval
-- ambiguity cannot be resolved safely
-- explicit human judgment is necessary
-- pedagogical correctness requires SME review
-- scientific correctness requires specialist review
-- generated content or grading confidence is below threshold
-
-## 5. Simplicity and Low Cognitive Load
-The primary UX should feel:
-- calm
-- obvious
-- concise
-- guided
-- low-friction
-- low-choice
-- low-clutter
-- low-memory-load
-
-The system should reduce:
-- repeated input
-- repeated review
-- context switching
-- over-configuration
-- dashboard clutter
-- option overload
-- jargon
-- unnecessary forms
-- unnecessary approvals
-- unnecessary navigation depth
-- unnecessary manual content authoring
-- unnecessary manual content QA where automation is credible
-
-## 6. Governance, Privacy, Security, and Visibility Are First-Class
-These are core product qualities, not add-ons.
-
-The product must be:
-- governable
-- privacy-aware
-- secure by default
-- auditable
-- observable
-- policy-aware
-- operationally visible
-- explainable where required
-- safe to automate
-- safe to operate at scale
-- safe to trust for generated content and evaluation outcomes
-
-## 7. Content Truth and Instructional Trust Are First-Class
-The product must not merely generate content.  
-It must generate **correct, useful, pedagogically valid, evidence-backed content**.
-
-Generated or curated content must be:
-- factually correct where facts are asserted
-- scientifically/mathematically/logically correct where applicable
-- aligned to learning objectives
-- appropriately scaffolded for the target learner
-- non-misleading visually and verbally
-- internally consistent across text, visuals, animation, simulation, assessment, and feedback
-- measurable through evidence and learner outcomes
-- reviewable, traceable, and versioned
-- reproducible where deterministic behavior is required
+The review must be **deep**, **comprehensive**, and **end to end**.
 
 ---
 
-# Required Audit Coverage
+## Primary Goal
+Perform a **full, exhaustive, evidence-based audit** of the target product and produce a **comprehensive findings and remediation blueprint**.
 
-Audit all relevant evidence across the target product(s), including:
+You must deeply evaluate the product with strongest emphasis on:
 
-- vision, product, requirements, curriculum, and pedagogy docs
-- business flows and user journeys
-- UX/UI designs and actual screens
-- routes/pages/layouts/forms/dialogs/states
-- frontend state/actions/side effects
-- API definitions, DTOs, schemas, contracts, errors
-- backend services, domain logic, orchestration, agents, workers, jobs, queues, events
-- databases, migrations, queries, transactions, retention, lineage, archival, deletion
-- integrations and third-party dependencies
-- IAM, roles, permissions, policies, governance controls
-- privacy and security controls
-- audit logs, traces, metrics, events, dashboards, alerts
-- deployment/config/runtime model
-- feature flags, rollout/rollback mechanisms
-- tests at all levels
-- scripts, local/dev/test/prod environments
-- resilience, recovery, and operability design
-- content authoring systems and workflows
-- automated content generation pipelines
-- prompt templates, model configs, evaluation datasets, golden sets, graders, rubrics
-- simulation engines, animation systems, example generators, explanation generators
-- claim/evidence/task mappings and assessment alignment
-- portfolio-wide dependencies and cross-product flows where multiple products are in scope
+- **completeness**
+- **simplicity**
+- **correctness**
+- **consistency**
 
-If the scope includes multiple products, audit both:
-- each product independently
-- the integrated product system as a whole
+These four dimensions are the highest priority and must be examined more deeply than all others across the **entire full stack**, not just the UI.
+
+The product should ultimately become:
+- feature-complete
+- operationally complete
+- visually modern
+- extremely simple to use
+- near-zero cognitive load
+- correct in behavior and outcomes
+- consistent across all layers
+- automated wherever credible
+- transparent where necessary
+- secure and privacy-conscious by default
+- observable and diagnosable
+- resilient in edge cases
+- maintainable and scalable
+- trustworthy without burdening the user with internal complexity
+
+AI/ML, observability, privacy, and security must be treated as **implicit, embedded, pervasive system qualities**, not gimmicks. Users should benefit from them without needing to understand them unless they explicitly want visibility, control, governance, or audit context.
 
 ---
 
-# Additional Production-Grade Audit Dimensions
+## Deep Full-Stack Audit Requirement
+This audit must review the product **end to end across all layers**.
 
-You must explicitly cover these areas.
+Do not review the frontend in isolation.
+Do not review backend implementation in isolation.
+Do not review APIs in isolation.
+Do not review data models in isolation.
 
-## A. Real Production Operability
-Determine whether the product can be run safely in production.
-
-Review:
-- deployability
-- rollback safety
-- migration safety
-- backup/restore readiness
-- disaster recovery assumptions
-- alerting coverage
-- incident diagnosability
-- configuration hygiene
-- secret handling
-- environment isolation
-- feature flag safety
-- operational runbooks if present
-- startup/shutdown behavior
-- failure containment
-- retry/idempotency/backpressure/timeouts
-- scaling behavior
-- noisy-neighbor or tenant isolation issues where relevant
-- cost realism and resource efficiency where relevant
-
-## B. Data Lifecycle Integrity
-Determine whether data is handled correctly throughout its full lifecycle.
-
-Review:
-- creation
-- validation
-- enrichment
-- persistence
-- mutation
-- versioning/history
-- deduplication
-- retention
-- archival
-- deletion/purge
-- export/import
-- lineage/provenance
-- auditability
-- privacy boundaries
-- access control
-- data quality and consistency
-
-## C. Cross-Product / Platform Integrity
-If multiple products or a platform portfolio are in scope, review:
-- product boundaries
-- ownership clarity
-- duplicated capabilities
-- shared service correctness
-- contract correctness
-- dependency direction
-- failure propagation across products
-- identity/policy consistency across products
-- data sharing boundaries
-- event/async contract correctness
-- end-to-end flows that cross product boundaries
-- portfolio complexity and sprawl
-- reuse vs duplication
-
-## D. AI/ML Productionworthiness
-Review AI/ML not just for existence but for trustworthiness in production.
-
-Check:
-- where AI/ML meaningfully reduces user burden
-- whether it is used pervasively enough
-- confidence handling
-- fallback behavior
-- human escalation paths
-- evaluation quality
-- regression detection
-- drift/quality monitoring where relevant
-- privacy/security/policy enforcement around AI/ML
-- traceability of AI-assisted actions where needed
-- explainability where governance requires it
-- unsafe automation risks
-- overexposure of AI that increases user burden
-
-## E. Accessibility, Trust, and Adoption
-Review whether the product is realistically usable and adoptable.
-
-Check:
-- onboarding simplicity
-- discoverability
-- accessibility basics and usability barriers
-- terminology clarity
-- trust and transparency where needed
-- admin/operator burden
-- supportability
-- user recovery paths
-- safe defaults
-- progressive disclosure
-- empty/loading/error states
-- learnability without training overhead
-
-## F. Content Generation and Validation Integrity
-Determine whether the system can generate, manage, and validate trustworthy learning content end to end.
-
-Review:
-- objective-to-content alignment
-- claim-to-evidence alignment
-- evidence-to-task alignment
-- example correctness and progression
-- explanation correctness and clarity
-- simulation correctness and controllability
-- animation correctness and non-misleading representation
-- visual/textual consistency
-- domain/scientific/mathematical correctness
-- difficulty calibration
-- misconception handling
-- rubric quality
-- grading validity
-- traceability from source content to generated artifact
-- provenance of claims, numbers, formulas, and assertions
-- review workflow, approval gates, and rollback
-- content reproducibility for seeded/deterministic artifacts
-- instrumentation for content efficacy and defect detection
-- content regression prevention
-
----
-
-# Non-Negotiable Content-Specific Audit Coverage
-
-Audit the product’s treatment of the following artifact types as first-class product surfaces:
-
-- simulations
-- animations
-- interactive visualizations
-- worked examples
-- guided practice
-- independent practice
-- explanations
-- concept summaries
-- claims
-- evidence
-- rubrics
-- assessments
-- feedback
-- recommendations
-- generated pathways
-- hints
-- tutoring responses
-- grading outputs
-- certificates/credentialing claims
-
-For each artifact type, determine:
-1. how it is produced
-2. whether it is correct
-3. whether it is aligned to the intended learner and objective
-4. whether it is validated before exposure
-5. whether it is monitored after release
-6. whether it can be reproduced, versioned, and rolled back
-7. whether it creates trust or hidden risk
-
----
-
-# Required Method
-
-## 1. Reconstruct the Intended Product Reality
-Before judging implementation, reconstruct:
-
-- target users/personas
-- user jobs to be done
-- intended business outcomes
-- intended learning outcomes
-- primary workflows
-- secondary workflows
-- critical cross-product flows
-- automation expectations
-- expected role of AI/ML
-- where human review is justified
-- governance/privacy/security expectations
-- content generation expectations
-- content validation expectations
-- operational expectations in production
-
-Infer from docs, code, tests, configs, routes, schemas, DB models, API contracts, prompts, evaluation datasets, and runtime behavior if documentation is incomplete.
-
-State all assumptions explicitly.
-
-## 2. Trace Real End-to-End Flows
-For every significant workflow, trace the real path:
+Instead, verify the **entire chain**:
 
 - user intent
-- entry point
-- navigation and UX flow
-- user inputs
-- AI/ML assistance or automation
-- content generation or content selection
-- frontend logic/state transitions
-- API requests and responses
-- backend/domain processing
-- DB operations
-- jobs/events/agents/workers
-- simulation/animation/example generation where applicable
-- third-party integrations
-- policy/security/privacy/governance controls
-- telemetry/audit signals
-- resulting persisted state
-- resulting user-visible outcome
-- resulting learner-visible artifact
-- failure/retry/recovery behavior
+- screen/page/workflow
+- frontend state and interaction
+- client validation and state transitions
+- API request/response contracts
+- backend orchestration and business logic
+- database reads/writes and transactional integrity
+- background jobs / queues / event flows
+- integrations and external dependencies
+- observability / audit trail / retries / alerts
+- resulting user-visible outcomes
+- recovery and exception handling
+- privacy/security implications
+- AI/ML assistance/automation behavior if present
 
-For multi-product scope, include:
-- cross-service
-- cross-app
-- cross-team-boundary
-- cross-data-boundary flows
+For every major feature and workflow, check whether it is truly working **end to end**, correctly, completely, consistently, and simply.
 
-## 3. Trace the Content Lifecycle End to End
-For every significant content workflow, trace:
+---
 
-- source objective or concept
-- content request or generation trigger
-- source materials, retrieval, or grounding inputs
-- prompt/template/generation logic
-- model/service used
-- post-processing/transformation
-- simulation/animation/example assembly
-- approval or validation gates
-- publication or runtime delivery path
-- learner interaction path
-- telemetry/events captured
-- grading/evidence capture
-- revision/versioning path
-- defect detection path
-- rollback/remediation path
+## Non-Negotiable Audit Priorities
 
-## 4. Audit User Burden Ruthlessly
-For every workflow, ask:
+### 1. Completeness
+Audit whether the product is complete across:
+- business capabilities
+- user workflows
+- supporting workflows
+- backend behavior
+- APIs
+- data persistence
+- state transitions
+- validations
+- loading/empty/success/error/warning states
+- edge cases
+- exception handling
+- retries/recovery
+- approvals/review flows
+- audit trail visibility
+- role-based handling
+- permission handling
+- privacy/security controls
+- accessibility behavior
+- responsive behavior
+- async/background process completion
+- reporting/history/notifications/follow-up visibility
+- admin and governance surfaces
+- operational surfaces needed to make the product actually usable
 
-- What work is the user doing that the system should do?
-- What decisions is the user making that the system should make or recommend?
-- What information is the user entering that the system could infer?
-- What repetition exists?
-- What approvals/reviews are unnecessary?
-- What navigation is avoidable?
-- What advanced controls are shown too early?
-- What internal complexity is leaking into the UX?
-- What content-authoring work is manual that should be automated?
-- What content-QA work is manual because the system lacks credible validation?
+Also check:
+- whether any flow is visually present but operationally incomplete
+- whether backend support is partial or missing
+- whether APIs exist but do not fully support the intended UX
+- whether UI suggests capabilities that are not actually reliable end to end
+- whether data/state lifecycle is incomplete
+- whether there are missing confirmations, follow-ups, recoveries, audit traces, or operational closure
+- whether the user can fully complete the real business job from start to finish
 
-Treat unjustified user burden as a product failure.
+You must explicitly identify **missing pieces**, not only broken pieces.
 
-## 5. Audit AI/ML Pervasiveness
-For every workflow, ask:
-
-- Where should AI/ML be helping?
-- Is AI/ML reducing effort enough?
-- Is it too shallow?
-- Is it too explicit?
-- Is it safe enough?
-- Is confidence handled correctly?
-- Are escalations and approvals well placed?
-- Does the product still burden the user because AI/ML is not used deeply enough?
-- Is AI/ML being used to generate content artifacts?
-- Is AI/ML being used to validate generated artifacts?
-- Are generation and validation separated enough to avoid self-confirming errors?
-
-## 6. Audit Content Truth and Pedagogical Validity
-For every content artifact, ask:
-
-- Is the objective explicit?
-- What claim is this artifact making?
-- What evidence is supposed to prove mastery?
-- Is the artifact correct?
-- Is the artifact pedagogically appropriate?
-- Is the artifact level-appropriate for the target learner?
-- Is the visual representation faithful to the concept?
-- Is the simulation model correct enough for the intended learning goal?
-- Are parameters, bounds, and outputs sensible?
-- Are examples scaffolded properly?
-- Are distractors and misconceptions well designed?
-- Does the assessment actually measure the intended capability?
-- Is the grading valid and calibrated?
-- Is the feedback truthful and useful?
-- Can the artifact be traced to reviewed sources, rules, or SMEs?
-- Is the artifact reproducible from seed/version/config?
-- Is there evidence the artifact improves learning rather than only looking sophisticated?
-
-## 7. Audit Governance, Privacy, Security, and Visibility Everywhere
-Do not treat these as separate silos.  
-Check them across the entire workflow.
-
-Validate:
-- permissions and least privilege
-- policy-aware actions
-- approval gates
-- audit trails
-- sensitive data handling
-- secure defaults
-- privacy-aware retention/deletion/export
-- traceability
-- observability
-- operational visibility into automation and failures
-- escalation paths
-- trust boundaries
-- tenant/workspace boundaries where relevant
-
-## 8. Audit Production Behavior, Not Just Development Behavior
-Determine whether the system behaves credibly in real operations.
+### 2. Simplicity
+Audit whether the product is truly simple across the whole stack:
+- minimal mental effort
+- minimal manual effort
+- minimal friction
+- minimal duplication of work
+- minimal unnecessary branching
+- minimal operational burden
+- minimal clutter
+- minimal visible complexity
+- minimal configuration burden where defaults/automation are credible
 
 Check:
-- environment parity
-- config correctness
-- deployment assumptions
-- migration behavior
-- rollback strategy
-- startup sequencing
-- background job safety
-- concurrency and idempotency
+- what can be removed
+- what can be merged
+- what can be hidden by default
+- what can be automated
+- what can be inferred
+- what can be prefetched/prefilled/precomputed
+- what backend/API/data complexity is leaking into the UX
+- what operational concerns are being pushed to users unnecessarily
+- what repetitive human effort can be replaced with system intelligence
+
+Do not preserve complexity unless truly required by governance, risk, compliance, or product reality.
+
+### 3. Correctness
+Audit whether the product is correct across all layers.
+
+Check correctness of:
+- user journeys
+- UI states
+- frontend behavior
+- validations
+- state transitions
+- backend business logic
+- workflow sequencing
+- permissions and access control behavior
+- API contracts
+- request/response semantics
+- data persistence and retrieval
+- async processing
+- retries and failure handling
+- dashboards/reports/counts/summaries/statuses
+- automation behavior
+- AI/ML suggestions, ranking, classification, summarization, predictions, or triggers
+- notifications/history/audit representations
+- role-specific outcomes
+- error/success messaging
+- destructive/sensitive actions
+- data consistency across screens and systems
+
+Also check for:
+- frontend showing stale or misleading state
+- backend logic not matching product intent
+- API shapes that force incorrect or fragile UI behavior
+- workflow correctness gaps between layers
+- inconsistent or incorrect derived values
+- incorrect ordering, filtering, sorting, aggregation
+- missing transactional guarantees where users assume reliability
+- recovery paths that look present but do not actually work
+- automation that acts at the wrong stage
+- AI/ML usage that is poorly placed, misleading, or insufficiently reviewable
+
+Correctness must be reviewed both as:
+- **product correctness**
+- **technical correctness affecting product behavior**
+
+### 4. Consistency
+Audit consistency across the full stack:
+- terminology
+- UX flows
+- component behavior
+- validations
+- permissions
+- statuses
+- error handling
+- success handling
+- API contract conventions
+- backend response patterns
+- data semantics
+- audit/history patterns
+- privacy/security messaging
+- AI/ML assistance patterns
+- operational transparency patterns
+- role-based behavior
+- formatting and naming
+- event/state lifecycle representations
+
+Check:
+- whether the same concept is represented differently in different screens, APIs, or data structures
+- whether the same workflow stage behaves differently in different features
+- whether frontend and backend use inconsistent terminology
+- whether state names and status meanings drift across layers
+- whether similar errors are handled differently
+- whether common actions differ in placement or semantics
+- whether shared abstractions are actually shared
+- whether the product feels unified or patched together
+
+You must identify both:
+- isolated inconsistencies
+- systemic consistency failures caused by lack of shared standards, abstractions, contracts, or patterns
+
+---
+
+## Comprehensive Output Requirement
+The result must be **comprehensive**, not just a summary.
+
+That means:
+- do not stop at top issues
+- do not provide only a shortlist
+- do not review only the UI
+- do not review only code style
+- do not skip medium/low severity findings if meaningful
+- do not skip supporting workflows
+- do not ignore backend/data/API gaps that affect product behavior
+- do not ignore operational incompleteness
+- do not ignore correctness because the UI looks acceptable
+- do not ignore systemic inconsistency because local pages appear functional
+
+You must produce:
+1. a complete full-stack audit of all major product surfaces and workflows
+2. a complete end-to-end feature and flow review
+3. a detailed catalog of findings across all relevant layers
+4. a complete remediation plan across all severity levels
+5. a complete completeness-gap inventory
+6. a complete simplicity reduction plan
+7. a complete correctness review
+8. a complete consistency review
+9. a complete API/backend/data/workflow assessment
+10. a complete AI/ML embedding and automation review
+11. a complete trust/privacy/security/o11y review
+12. a complete operability/observability review
+13. a complete design system and reuse review
+
+A “top 10” summary may appear only at the end as an executive layer.
+
+---
+
+## Scope
+Audit the product deeply across all relevant layers.
+
+### User-Facing / Experience Layer
+- landing pages
+- dashboards
+- home screens
+- navigation
+- menus
+- sidebars
+- breadcrumbs
+- workflows
+- feature entry points
+- task execution flows
+- forms
+- wizards
+- tables
+- detail views
+- modals
+- drawers
+- filters
+- search
+- sort/group actions
+- creation/edit flows
+- review/approval flows
+- reporting/insight views
+- notifications
+- alerts
+- settings/preferences
+- onboarding/setup
+- role-based experiences
+- empty/loading/success/warning/error states
+- help/guidance/tooltips
+- accessibility interactions
+- responsive/mobile/tablet behavior
+- cross-page consistency
+- handoff points between flows
+- manual vs automated task distribution
+- visibility into background operations, decisions, and progress
+
+### Frontend Layer
+- routes/pages/screens
+- component structure
+- design system usage
+- shared UI abstractions
+- state management
+- async request handling
+- caching/staleness handling
+- validation behavior
+- optimistic updates
+- error handling
+- retry handling
+- data mapping
+- microcopy
+- accessibility implementation
+- responsive implementation
+- client-side security/privacy behavior
+- AI/ML interaction surfaces
+- user-facing audit/history/status surfaces
+
+### API / Contract Layer
+- endpoint design
+- GraphQL schema / REST contracts / RPC contracts
+- request/response shapes
+- error contracts
+- pagination/sorting/filtering semantics
+- mutation semantics
+- idempotency expectations
+- authn/authz behavior
+- rate limit / timeout / retry implications
+- contract consistency
+- suitability for intended UX
+- over-fetching / under-fetching patterns
+- ambiguity or leakage of backend complexity into clients
+
+### Backend / Business Logic Layer
+- service boundaries
+- orchestration
+- domain logic
+- business rule correctness
+- workflow sequencing
+- state machine correctness
+- validation logic
+- authorization logic
+- audit logic
+- privacy/security enforcement
+- notification triggering
+- background processing
+- retries / compensation / recovery
+- integration handling
 - error propagation
-- resilience under partial failure
-- data recovery assumptions
-- monitoring and alert readiness
-- support and incident diagnosis readiness
+- API composition
+- AI/ML inference orchestration if present
+- automation vs manual review logic
 
-## 9. Audit Tests as Evidence of Product Truth
-Review whether tests actually prove:
-- end-to-end correctness
-- product outcome correctness
-- content outcome correctness
-- simulation correctness
-- animation correctness where relevant
-- example/explanation correctness where relevant
-- AI/ML-assisted behavior where relevant
+### Data / Persistence Layer
+- schema/model design
+- entity lifecycle
+- status modeling
+- consistency of meaning
+- relational integrity
+- transactional guarantees
+- concurrency implications
+- soft delete / archival semantics
+- history/versioning
+- derived/aggregated data correctness
+- event logs / audit logs
+- privacy-sensitive data handling
+- retention/deletion semantics
+- search/indexing implications
+- query correctness and efficiency where product behavior depends on them
+
+### Async / Event / Background Work Layer
+- queues
+- workers
+- cron/schedulers
+- jobs/tasks
+- event-driven flows
+- retries
+- deduplication
+- idempotency
+- progress/state reporting
+- dead-letter/failure handling
+- user-visible completion semantics
+- human review triggers
+- operational transparency
+
+### Integration Layer
+- third-party services
+- external APIs
+- identity/auth integrations
+- file/document/media flows
+- notification providers
+- payment/compliance systems if relevant
+- AI/ML providers if relevant
+- sync behavior
+- failure isolation
+- degraded mode behavior
+- privacy/security implications
+- user-visible trust and error handling
+
+### Quality / Production Readiness Layer
+- test coverage as it relates to behavior
+- gaps in end-to-end verification
+- missing validation of real workflows
+- observability surfaces
+- auditability
+- admin/debuggability
+- privacy/security controls
+- performance/scalability issues visible to users
+- deploy/runtime assumptions that affect correctness or UX
+
+---
+
+## Inputs
+Use every relevant source available:
+- source code
+- frontend code
+- backend code
+- routes/pages/screens
+- components/design system
+- API contracts/specs
+- DB schema/models/migrations
+- workflow/state models
+- event or queue logic
+- test suites
+- requirements/use cases/user stories
+- product vision docs
+- architecture docs
+- screenshots/prototypes/wireframes
+- logs/telemetry-facing surfaces
+- prior audit docs
+- configs relevant to product behavior
+
+If something is unavailable, infer carefully and clearly label assumptions.
+
+---
+
+## Core Review Method
+For every meaningful feature and workflow, trace it **end to end**:
+
+1. Identify the user goal.
+2. Identify the entry point in the UI.
+3. Inspect the UI flow and interaction model.
+4. Inspect frontend state handling and validations.
+5. Inspect API contract(s) used.
+6. Inspect backend orchestration/business logic.
+7. Inspect persistence and state transitions.
+8. Inspect async/background/integration behavior.
+9. Inspect observability/audit/history/notification behavior.
+10. Inspect error/retry/recovery behavior.
+11. Verify role/permission/privacy/security behavior.
+12. Verify AI/ML assistance/automation behavior if relevant.
+13. Determine whether the full experience is complete, simple, correct, and consistent.
+
+Repeat this rigorously for all major features and supporting flows.
+
+---
+
+## Core Audit Principles
+
+### Simplicity First
+Prefer:
+- fewer steps
+- fewer decisions
+- fewer modes
+- fewer repeated actions
+- fewer places to look
+- fewer concepts to remember
+- less manual work
+- less operational friction
+
+Eliminate:
+- clutter
+- duplication
+- fragmented flows
+- unnecessary UI
+- redundant controls
+- repeated content
+- avoidable user effort
+- backend complexity leaking into UX
+
+### Near-Zero Cognitive Load
+Users should not have to think hard to:
+- understand where they are
+- know what to do next
+- interpret state
+- understand consequences
+- recover from mistakes
+- understand whether automation/background work succeeded
+
+Prioritize:
+- strong hierarchy
+- obvious next actions
+- truthful state
+- progressive disclosure
+- clear defaults
+- contextual visibility
+- plain language
+- predictable interactions
+
+### Automation by Default
+The system should do work wherever credible.
+
+Users should only need to intervene for:
+- approvals
+- governance
+- ambiguity
+- risk handling
+- exception handling
+- compliance-sensitive actions
+- final review where necessary
+
+### AI/ML Must Be Embedded and Implicit
+AI/ML should:
+- reduce human work
+- improve prioritization
+- recommend next actions
+- prefill intelligently
+- summarize
+- classify
+- rank
+- detect anomalies
+- explain decisions
+- deduplicate
+- predict
+- monitor
+- route
+- assist in exception handling
+
+AI/ML should solve real problems, not create visible feature noise.
+
+### Full Visibility With Minimal Manual Burden
+Users need enough visibility to know:
+- what happened
+- what is happening
+- what will happen next
+- what needs attention
+- why certain actions occurred
+
+But visibility must be:
+- contextual
+- concise
+- role-appropriate
+- high-signal
+- non-cluttering
+
+### Trust by Design
+Privacy, security, and observability must feel built in.
+Users should be protected without being overwhelmed.
+
+### Consistency and Reuse
+Similar concerns should be handled similarly across UI, APIs, backend, and data models wherever appropriate.
+
+### Modern Production Quality
+Expect:
+- polished UX
+- robust implementation
+- resilient state handling
+- graceful error handling
+- accessible behavior
+- scalable patterns
+- diagnosable failures
+- maintainable abstractions
+
+---
+
+## What to Review in Depth
+
+## A. Completeness Review
+Review whether each feature, surface, API, workflow, and data/state lifecycle is complete across:
+- intended purpose
+- all major user paths
+- supporting paths
+- validations
+- states
+- transitions
+- persistence
+- auditability
+- follow-up visibility
+- background completion
+- notifications/history
+- role coverage
+- privacy/security handling
+- accessibility handling
+- recovery handling
+- admin/operational support where required
+
+For each area, ask:
+- Is anything missing?
+- Is anything partial?
+- Is anything only visually present?
+- Is the backend/data support complete?
+- Is the workflow complete end to end?
+- Can the user finish the real job?
+- Can the system recover properly?
+- Are supporting states and secondary flows covered?
+
+## B. Simplicity Review
+Review whether the whole product is truly simple:
+- number of steps
+- number of decisions
+- amount of visible information
+- amount of manual input
+- duplicated work
+- hidden operational burden
+- unnecessary branching
+- friction introduced by backend/API design
+- burden introduced by weak defaults or missing automation
+
+For each area, ask:
+- What can be removed?
+- What can be merged?
+- What can be automated?
+- What can be inferred?
+- What can be hidden until needed?
+- What internal complexity is leaking outward?
+- What is forcing unnecessary human intervention?
+
+## C. Correctness Review
+Review whether the product behaves correctly across all layers.
+
+Check:
+- UI truthfulness
+- frontend state correctness
+- validations
+- CTA correctness
 - API correctness
-- backend/domain correctness
-- DB correctness
-- contract integrity
-- privacy/security/governance correctness
-- observability assumptions where important
-- multi-product flow correctness
-- failure/retry/recovery correctness
-- truthful UI state and user outcomes
-- content validation and grading correctness
-- seeded reproducibility and regression safety
+- backend logic correctness
+- database state correctness
+- background process correctness
+- retry/recovery correctness
+- permission correctness
+- report/dashboard correctness
+- search/filter/sort correctness
+- status/count/summary correctness
+- notification/history correctness
+- automation correctness
+- AI/ML correctness and placement
+- cross-layer consistency of business meaning
 
-Treat tests as insufficient if they:
-- only assert implementation details
-- are over-mocked
-- do not prove user-visible outcomes
-- do not prove learner-visible content correctness
-- do not cover failure/recovery/governance paths
-- do not validate cross-product behavior where relevant
-- do not validate generated content against trusted or reviewed expectations
-- allow the generator and validator to share the same blind spots
+For each area, ask:
+- Is this behavior correct?
+- Is the UI telling the truth?
+- Is the backend enforcing the right rule?
+- Is persistence reflecting the right state?
+- Is async work correctly represented?
+- Is the user being guided correctly?
 
----
+## D. Consistency Review
+Review consistency across:
+- pages
+- components
+- workflows
+- APIs
+- backend patterns
+- status semantics
+- validation semantics
+- permission handling
+- messages
+- audit/history behavior
+- AI/ML intervention patterns
+- privacy/security messaging
+- state names and meanings
+- error/recovery handling
 
-# Strict Evaluation Questions
+For each area, ask:
+- Does the product feel unified?
+- Are similar cases treated similarly?
+- Are there one-off patterns?
+- Are terms/statuses drifting across layers?
+- Are behaviors inconsistent for no good reason?
 
-For every feature, workflow, subsystem, content pipeline, and cross-product flow, answer all of these:
-
-1. Does it truly work end to end?
-2. Does it achieve the intended user/business outcome?
-3. Does it achieve the intended learning/content outcome?
-4. Does it minimize user effort?
-5. Is AI/ML used deeply enough?
-6. Is AI/ML mostly implicit and outcome-oriented?
-7. Is the UX genuinely simple?
-8. Is cognitive load minimized?
-9. Are governance controls first-class?
-10. Are privacy controls first-class?
-11. Are security controls first-class?
-12. Is observability/visibility first-class?
-13. Are persisted states and business outcomes correct?
-14. Are content artifacts correct and validated?
-15. Are async and side-effect paths reliable?
-16. Are failure, retry, rollback, and recovery paths credible?
-17. Is it production-real, not partially mocked or deceptive?
-18. Is it operable in production?
-19. Is data lifecycle handling correct?
-20. Is content lifecycle handling correct?
-21. Is cross-product integration correct, if applicable?
-22. Is there credible test evidence?
-23. Is this feature/workflow/content artifact truly ready to be trusted by real users/operators/learners?
-
-If any answer is “no” or “partial,” explain exactly why and where.
-
----
-
-# What to Flag Aggressively
-
-Flag these aggressively:
-
-- features that appear complete but are not truly end to end
-- content that appears impressive but is not validated
-- simulations that look good but do not model the intended concept correctly
-- animations that mislead or oversimplify in pedagogically harmful ways
-- examples or worked solutions with hidden logical errors
-- claims without evidence mapping
-- assessments that do not actually measure the intended objective
-- grading that is plausible but uncalibrated
-- AI-generated explanations without grounding or review
-- flows that work only in ideal/demo paths
-- missed AI/ML automation opportunities
-- unnecessary user input, review, or navigation
-- UI exposing internal complexity
-- dashboard/report clutter
-- weak defaults
-- hidden workflow breaks
-- contract mismatches
-- backend/DB inconsistencies
-- migration or rollout risk
-- weak privacy/security/governance handling
-- missing observability or auditability
-- fragile jobs/events/workers
-- weak recovery behavior
-- weak tenant/workspace isolation where relevant
-- duplicated capabilities across products
-- shallow, misleading, or non-evidentiary tests
-- anything that undermines real production trust
-- anything that undermines learning trust or content trust
-
----
-
-# Required Output Format
-
-## A. Executive Verdict
-Provide:
-- overall maturity
-- end-to-end readiness
-- production readiness
-- AI/ML-first maturity
-- automation maturity
-- UX simplicity rating
-- cognitive load assessment
-- governance/privacy/security/visibility maturity
-- content generation maturity
-- content validation maturity
-- pedagogical trust maturity
-- operability/resilience maturity
-- top blockers
-
-## B. Reconstructed Product Model
-Include:
-- target personas/users
-- jobs to be done
-- expected outcomes
-- expected learning outcomes
-- primary workflows
-- secondary workflows
-- cross-product workflows if applicable
-- expected AI/ML role
-- expected user involvement level
-- justified human review/governance points
-- justified SME/instructional review points
-- operational expectations
-
-## C. End-to-End Workflow Audit Matrix
-For every major workflow, include:
-- workflow name
-- intended outcome
-- actual current behavior
-- user burden assessment
-- AI/ML role today
-- AI/ML role that should exist
-- UI assessment
-- API assessment
-- backend assessment
-- DB assessment
-- async/integration assessment
-- governance/privacy/security/visibility assessment
-- production operability assessment
-- test evidence
-- key gaps
-- severity
-- exact files/services/components involved
-
-## D. Content Generation & Validation Audit Matrix
-For every major content artifact or content pipeline, include:
-- artifact/pipeline name
-- intended objective
-- target learner/persona
-- generation method
-- grounding/source inputs
-- claims being made
-- evidence expected
-- validation method today
-- validation method that should exist
-- simulation/animation/example/explanation quality assessment
-- pedagogical quality assessment
-- correctness assessment
-- reproducibility/versioning assessment
-- telemetry/monitoring assessment
-- review/approval assessment
+## E. End-to-End Flow Review
+For every major user journey, inspect:
+- goal
+- entry point
+- screen flow
+- frontend state changes
+- API calls
+- backend orchestration
+- persistence
+- async/background behavior
+- audit/history/notification output
 - failure modes
-- severity
-- exact files/services/prompts/templates/components involved
+- retry/recovery behavior
+- trust/privacy/security impact
+- AI/ML assist/automation opportunities
+- simplification opportunities
 
-## E. UX and Cognitive Load Review
-Group findings into:
+## F. UI / UX Review
+Inspect:
 - information architecture
 - navigation
-- workflow simplicity
-- form/input minimization
-- dashboard/report simplification
-- review/approval burden
-- error/loading/empty/recovery states
-- onboarding/discoverability
-- progressive disclosure
-- accessibility/usability barriers
-- implicit AI/ML assistance
+- dashboard clarity
+- visual hierarchy
+- layout
+- spacing
+- typography
+- component quality
+- interaction design
+- forms
+- tables
+- search/filter/sort
+- content and microcopy
+- accessibility
+- responsive behavior
+- state handling clarity
+- operational visibility
 
-## F. AI/ML Pervasive Automation Review
-Include:
-- where AI/ML is correctly first-class
-- where it is too shallow
-- where it should automate more
-- where it should infer more
-- where it is too exposed
-- where trust/fallback/escalation is weak
-- where policy/privacy/security around AI/ML is insufficient
-- where AI/ML should reduce user burden but currently does not
-- where AI/ML content generation is valuable
-- where AI/ML content validation is missing or weak
+## G. Frontend Architecture Review
+Inspect:
+- shared abstractions
+- state management patterns
+- async handling
+- cache/staleness management
+- route/layout patterns
+- design system usage
+- validation reuse
+- error handling reuse
+- mutation patterns
+- component reuse
+- consistency of loading/error/success states
+- fragile or duplicated UI logic that impacts correctness or consistency
 
-## G. Content Truth, Evidence, and Assessment Review
-Include:
-- claim/evidence/task alignment gaps
-- simulation correctness gaps
-- animation/visual fidelity gaps
-- example/explanation correctness gaps
-- rubric/grading validity gaps
-- source/provenance gaps
-- seed/reproducibility gaps
-- regression/evaluation gaps
-- anti-hallucination gaps
-- where content may mislead learners even if technically functional
+## H. API / Contract Review
+Inspect:
+- contract clarity
+- correctness for UX needs
+- consistency
+- granularity
+- error model
+- pagination/filtering/search semantics
+- mutation semantics
+- idempotency assumptions
+- authn/authz handling
+- whether contracts encourage or block a simple/correct UX
+- whether contracts leak internal complexity
 
-## H. API / Backend / DB / Integration Review
-Include:
-- API contract issues
-- orchestration issues
-- backend/domain logic issues
-- database/query/transaction issues
-- event/job/worker issues
-- integration contract issues
-- consistency/integrity issues
-- reuse/duplication issues
-- scalability/cost/efficiency concerns where relevant
+## I. Backend / Workflow Review
+Inspect:
+- workflow orchestration
+- business rules
+- validation
+- authorization
+- state transitions
+- audit/eventing
+- integration orchestration
+- background jobs
+- retries/compensation
+- exception handling
+- observability hooks
+- AI/ML orchestration and human review triggers
 
-## I. Governance / Privacy / Security / Visibility Review
-Include:
-- governance gaps
-- privacy gaps
-- security gaps
-- auditability gaps
-- observability gaps
-- approval/control gaps
-- trust boundary issues
-- tenant/workspace isolation concerns where relevant
+## J. Data / Persistence Review
+Inspect:
+- schema quality
+- lifecycle modeling
+- state modeling
+- history/versioning
+- auditability
+- data consistency
+- derived data correctness
+- soft delete/archive behavior
+- retention/privacy semantics
+- query patterns affecting UX correctness or performance
+- whether data model semantics are aligned with UI/workflow semantics
 
-## J. Production Operability Review
-Include:
-- deployment/config issues
-- migration/rollback risk
-- resilience/failure handling issues
-- backup/restore/disaster recovery gaps
-- monitoring/alerting gaps
-- supportability/incident diagnosis gaps
-- operational burden risks
-- environment parity/config hygiene issues
+## K. Observability / Operability Review
+Inspect:
+- logs/metrics/traces as they affect diagnosing product behavior
+- user-visible status/history/audit surfaces
+- admin/debug surfaces if relevant
+- job visibility
+- failure visibility
+- retry visibility
+- supportability
+- whether issues can be understood without guesswork
 
-## K. Testing and Evidence Gaps
-Include:
-- missing workflow tests
-- missing cross-product tests
-- missing production-behavior tests
-- missing privacy/security/governance tests
-- missing failure/recovery tests
-- missing content-validation tests
-- missing simulation/animation/example correctness tests
-- missing grading and rubric validation tests
-- weak or misleading tests
-- highest-risk unproven product claims
+## L. Privacy / Security / Trust Review
+Inspect:
+- permissions
+- access control UX
+- data exposure
+- sensitive operations
+- consent/disclosure if relevant
+- session/account/security surfaces
+- auditability
+- role transparency
+- safe defaults
+- boundary clarity for users and admins
 
-## L. Prioritized Remediation Plan
-Group into:
-- P0: must fix immediately
-- P1: required for production trust
-- P2: simplification and automation hardening
-- P3: strategic improvements
+## M. AI/ML Embedded Experience Review
+Inspect current and missing AI/ML usage across the full system.
 
-For each item include:
-- issue
-- why it matters
-- affected outcomes
-- affected products/layers
-- root cause
-- exact fix
-- content implication
-- AI/ML implication
-- governance/privacy/security implication
-- production operability implication
-- required validation/tests
+Look for opportunities in:
+- autofill
+- recommendations
+- summarization
+- prioritization
+- anomaly detection
+- routing
+- deduplication
+- prediction
+- risk detection
+- exception triage
+- ranking
+- next-best-action
+- intelligent defaults
+- workflow acceleration
 
-## M. Simplicity and Automation Blueprint
-Provide a concrete redesign/hardening proposal:
-- workflows to simplify
-- screens/routes to merge/remove
-- inputs to infer/auto-populate
-- decisions to automate
-- decisions to recommend instead of asking
-- unnecessary review points to remove
-- review/governance points to retain
-- AI/ML interventions to add
-- AI/ML exposure to reduce
-- visibility/audit controls to strengthen
-- operational signals needed to trust the product in production
-
-## N. Content System Hardening Blueprint
-Provide a concrete redesign/hardening proposal for the content system:
-- objective → claim → evidence → task → feedback modeling
-- simulation architecture hardening
-- animation and visual QA hardening
-- example/explanation generation hardening
-- provenance and grounding controls
-- seeded reproducibility and versioning
-- SME/instructional review gates
-- evaluation harnesses and golden datasets
-- regression suite for generated artifacts
-- telemetry signals to detect bad content in production
-- remediation and rollback strategy for invalid content
-
-## O. Product System Architecture Corrections
-If applicable, provide:
-- product boundary corrections
-- shared capability consolidation opportunities
-- dependency direction fixes
-- ownership clarification
-- integration simplification
-- contract normalization
-- data boundary corrections
-- reuse-first consolidation recommendations
-
-## P. Final Truth Statement
-State clearly:
-- what truly works end to end today
-- what works only partially
-- what is misleading or overstated
-- what creates user burden
-- what blocks dead-simple UX
-- what blocks pervasive automation
-- what blocks trustworthy content generation
-- what blocks trustworthy content validation
-- what blocks production trust
-- what blocks governance/privacy/security/visibility maturity
-- what blocks operability and resilience
-- what must change for the target product or product set to become truly production-grade, automation-first, AI/ML-pervasive, minimally burdensome, content-correct, pedagogically trustworthy, and end-to-end trustworthy
+Assess:
+- user value
+- placement
+- automation vs assist mode
+- confidence needs
+- human review triggers
+- override behavior
+- privacy/security implications
+- observability of AI-driven actions where appropriate
 
 ---
 
-# Final Instruction
+## Required Deliverables
 
-Do not perform a shallow repository review.
+## 1. Executive Summary
+Summarize:
+- overall product health
+- full-stack end-to-end quality
+- completeness level
+- simplicity level
+- correctness level
+- consistency level
+- biggest systemic weaknesses
+- biggest workflow weaknesses
+- biggest architecture/product mismatches
+- biggest automation opportunities
+- biggest privacy/security/trust/o11y gaps
+- overall production readiness
 
-Perform a **strict, evidence-based, production reality audit** of the specified product or product set to determine whether it is truly:
+## 2. Deep Audit Scorecard
+Rate and justify:
+- completeness
+- simplicity
+- correctness
+- consistency
+- UI/UX quality
+- frontend quality
+- API/contract quality
+- backend/workflow quality
+- data/persistence quality
+- observability/operability
+- privacy/security/trust
+- AI/ML embedding quality
+- accessibility
+- responsiveness
+- perceived performance
+- cognitive load
+- end-to-end product quality
 
-- working end to end
-- production-grade
-- AI/ML-pervasive
-- automation-first
-- dead simple to use
-- low cognitive load
-- minimal in required user effort
-- governance/privacy/security/visibility-first
-- operationally trustworthy
-- content-correct
-- pedagogically trustworthy
-- validated for simulations, animations, examples, claims, evidence, assessment, and feedback
-- ready to deliver real outcomes in the hands of real users, operators, educators, and learners
+Use:
+- Critical
+- High
+- Medium
+- Low
 
-Where the scope involves learning systems or content-heavy systems, you must treat **content generation, content validation, evidence modeling, simulation correctness, assessment validity, and instructional trust** as first-class production concerns rather than secondary documentation concerns.
+## 3. Full Surface-by-Surface and Layer-by-Layer Audit
+For all major screens, flows, APIs, backend modules, and data lifecycles, document:
+- purpose
+- completeness assessment
+- simplicity assessment
+- correctness assessment
+- consistency assessment
+- key issues
+- missing pieces
+- hidden complexity
+- remediation recommendations
+- automation opportunities
+- trust/privacy/security/o11y considerations
+
+## 4. Complete End-to-End Flow Review
+For every significant user journey:
+- user goal
+- entry point
+- screen flow
+- frontend state behavior
+- API calls/contracts
+- backend orchestration
+- persistence/state changes
+- async/background behaviors
+- notifications/history/audit effects
+- error/failure/retry/recovery paths
+- completeness gaps
+- simplicity issues
+- correctness issues
+- consistency issues
+- AI/ML opportunities
+- ideal future-state journey
+
+## 5. Comprehensive Findings Catalog
+For every finding, include:
+- ID
+- title
+- severity
+- category
+- affected layer(s)
+- affected feature/flow/page/component/API/model/service/job
+- dimension affected: completeness / simplicity / correctness / consistency / other
+- evidence
+- why it matters
+- user impact
+- business/operational impact
+- likely root cause
+- recommended fix
+- expected benefit
+- dependencies/related findings
+
+Do not limit the number of findings.
+
+## 6. Completeness Gap Inventory
+Exhaustively catalog:
+- missing screens
+- missing states
+- missing validations
+- missing backend support
+- missing API support
+- missing persistence logic
+- missing audit/history/notification behavior
+- missing admin/governance flows
+- missing recovery paths
+- missing accessibility behavior
+- missing trust/privacy/security surfaces
+- missing automation where clearly needed
+- missing end-to-end closure
+
+## 7. Simplification Plan
+Exhaustively identify:
+- what should be removed
+- what should be merged
+- what should be automated
+- what should be inferred
+- what should be hidden by default
+- what should be prefetched/prefilled
+- what should become contextual
+- what should move to advanced/admin mode
+- what technical complexity is leaking into the UX and must be contained
+
+## 8. Correctness Review Register
+Create a dedicated correctness register covering:
+- misleading UI states
+- incorrect workflow logic
+- incorrect validations
+- incorrect API semantics
+- backend logic mismatches
+- data state mismatches
+- incorrect summaries/counts/statuses
+- incorrect search/filter/sort/report behavior
+- incorrect async/retry/recovery behavior
+- incorrect automation behavior
+- incorrect AI/ML placement or reliability handling
+- incorrect permission/security behavior
+
+## 9. Consistency Review Register
+Create a dedicated consistency register covering:
+- terminology drift
+- state/status drift
+- component drift
+- workflow drift
+- API pattern drift
+- backend response drift
+- validation drift
+- permission handling drift
+- messaging drift
+- trust/privacy/security drift
+- audit/history drift
+- AI/ML pattern drift
+- data semantic drift
+
+## 10. API / Backend / Data Review
+Produce a dedicated review of:
+- contract quality
+- workflow support quality
+- business logic soundness
+- data model alignment
+- state machine quality
+- async/event handling quality
+- integration reliability handling
+- whether backend/API/data layers truly support a simple, correct, complete product
+
+## 11. Comprehensive AI/ML Embedding Plan
+For the whole product, map:
+- every strong AI/ML opportunity
+- intended function
+- user value
+- automation vs assist mode
+- confidence expectations
+- fallback behavior
+- review/governance triggers
+- override model
+- observability/transparency model
+- privacy/security implications
+- implementation priority
+
+## 12. Comprehensive Trust / Privacy / Security / Observability Review
+Produce a full plan for:
+- user-facing visibility
+- operational transparency
+- auditability
+- permission clarity
+- sensitive action handling
+- privacy controls/disclosures where needed
+- role-based transparency
+- safe defaults
+- diagnosability and supportability
+
+## 13. Design System / Reuse / Abstraction Review
+Identify comprehensively:
+- inconsistent components
+- duplicated patterns
+- missing shared abstractions
+- frontend reuse opportunities
+- API contract standardization opportunities
+- backend abstraction opportunities
+- state/status model standardization opportunities
+- places where centralization would improve consistency/correctness/simplicity
+
+## 14. Prioritized Remediation Roadmap
+Provide a full roadmap organized by:
+- immediate
+- short-term
+- medium-term
+- long-term
+
+For each item include:
+- priority
+- effort
+- impact
+- dependencies
+- owner type (design / frontend / backend / product / platform / ML / data / security)
+- rationale
+
+## 15. Final Ideal Product Experience Vision
+Describe what the product should feel like after remediation:
+- what the user experiences
+- what the system handles automatically
+- how completeness is achieved
+- how simplicity is enforced
+- how correctness is ensured
+- how consistency is maintained
+- how trust is maintained
+- how observability is exposed appropriately
+- how AI/ML stays embedded and mostly invisible
+- how privacy/security remain pervasive but non-intrusive
+- how the full stack coheres into one reliable product experience
+
+## 16. Executive Summary Lists
+Only after the full report, include:
+- top 10 critical issues
+- top 10 completeness gaps
+- top 10 simplification opportunities
+- top 10 correctness issues
+- top 10 consistency issues
+- top 10 API/backend/data issues
+- top 10 AI/ML opportunities
+- top 10 trust/privacy/security/o11y improvements
+
+These are summary lists only.
+
+---
+
+## Critical Instructions
+- Be exhaustive.
+- Be evidence-based.
+- Go deeper on completeness, simplicity, correctness, and consistency than on any other dimension.
+- Perform a true full-stack end-to-end review.
+- Trace workflows across UI, frontend, API, backend, data, async, integrations, and user-visible outcomes.
+- Do not give shallow feedback.
+- Do not provide only a summary.
+- Do not stop at obvious issues.
+- Do not review layers in isolation.
+- Do not praise weak UX or weak architecture.
+- Do not recommend trendy complexity.
+- Prefer minimal, durable, high-signal product design.
+- Prefer fewer, better, more automated workflows.
+- Focus on real product behavior, not imagined intent.
+- When docs and implementation conflict, call it out explicitly.
+- Identify both local issues and systemic issues.
+- Identify where apparent UI completeness hides backend or workflow incompleteness.
+- Identify where apparent simplicity hides correctness or visibility problems.
+- Identify where technical architecture is forcing poor UX.
+- Identify where APIs/data models are blocking correctness or simplicity.
+- Cover all severity levels, not just critical ones.
+- Make recommendations actionable and implementation-relevant.
+
+---
+
+## Output Style
+Be strict, direct, structured, and precise.
+Use concrete evidence.
+Go feature by feature, page by page, flow by flow, and layer by layer.
+Trace each important workflow end to end.
+Do not summarize away important detail.
+Prefer completeness and correctness over brevity.
+
+The final result must read like a **deep professional full-stack end-to-end audit and remediation blueprint**, with exceptional depth on:
+- completeness
+- simplicity
+- correctness
+- consistency

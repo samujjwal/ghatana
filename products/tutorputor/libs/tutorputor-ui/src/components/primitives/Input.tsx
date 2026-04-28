@@ -1,31 +1,14 @@
-import React from 'react';
-
 /**
- * Input component with label and error states.
- * 
+ * F-034: Input re-exported from @ghatana/design-system.
+ *
+ * The hand-rolled Input implementation has been replaced by the canonical
+ * design-system Input. Callsites retain the same import path — no changes needed.
+ *
  * @doc.type component
- * @doc.purpose Reusable input component for Tutorputor UI
+ * @doc.purpose Re-export of canonical Input from @ghatana/design-system
  * @doc.layer ui
  * @doc.pattern Primitive
  */
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
-}
 
-export function Input({ label, error, className = '', ...props }: InputProps) {
-    return (
-        <div className="w-full">
-            {label && (
-                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">
-                    {label}
-                </label>
-            )}
-            <input
-                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
-                {...props}
-            />
-            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-        </div>
-    );
-}
+export { Input } from "@ghatana/design-system";
+export type { InputProps } from "@ghatana/design-system";

@@ -26,11 +26,11 @@ maestro test --device ios e2e/
 
 ## Test Coverage
 
-| Flow | Screens Covered | Key Assertions |
-|------|-----------------|----------------|
-| `login.yaml` | LoginScreen | Email/password form, sign-in navigation |
-| `navigation.yaml` | All tabs, stack transitions | Tab labels visible, screens render |
-| `dashboard.yaml` | DashboardScreen | Continue Learning, Quick Actions |
-| `ai-tutor.yaml` | AITutorScreen | Chat input, message send, response |
-| `modules.yaml` | ModulesScreen | Browse, filter, open module |
-| `offline.yaml` | OfflineIndicator | Offline banner appears/disappears |
+| Flow              | Screens Covered             | Key Assertions                          |
+| ----------------- | --------------------------- | --------------------------------------- |
+| `login.yaml`      | LoginScreen                 | Email/password form, sign-in navigation |
+| `navigation.yaml` | All tabs, stack transitions | Tab labels visible, screens render      |
+| `dashboard.yaml`  | DashboardScreen             | Continue Learning, Quick Actions        |
+| `ai-tutor.yaml`   | AITutorScreen               | Chat input, message send, response      |
+| `modules.yaml`    | ModulesScreen               | Browse, filter, open module             |
+| `offline.yaml`    | OfflineIndicator            | Offline banner appears/disappears       |

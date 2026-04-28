@@ -66,10 +66,13 @@ export const contentModule: FastifyPluginAsync = async (app) => {
   await registerContentRoutes(app, { contentService });
 
   // Register Content Studio routes
+  // F-023: Serve under both the legacy /api/content-studio/* prefix (one-release alias)
+  // and the canonical /api/v1/content-studio/* prefix.  The content module is mounted at
+  // /api so "/content-studio" → /api/content-studio and "/v1/content-studio" → /api/v1/content-studio.
   registerContentStudioRoutes(app, {
     contentStudioService,
     animationIntegration,
-    prefixes: ["/content-studio"],
+    prefixes: ["/content-studio", "/v1/content-studio"],
   });
 
   // Register CMS routes

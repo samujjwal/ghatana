@@ -14,6 +14,8 @@ export type {
 // Kernel exports
 export * from './kernel';
 export * from './errors';
+// Canonical lifecycle status
+export * from './lifecycle-status';
 export * from './types/prisma-helpers';
 export * from './auth/tenant-access-validator';
 export * from './logger';

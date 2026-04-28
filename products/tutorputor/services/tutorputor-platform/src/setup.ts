@@ -1,180 +1,17 @@
 import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
-import { PrismaClient, createPrismaClient } from "@tutorputor/core/db";
-import Redis from "ioredis";
-import jwt from "@fastify/jwt";
-import helmet from "@fastify/helmet";
-import cors from "@fastify/cors";
-import Stripe from "stripe";
-import type { Logger } from "pino";
-import crypto from "crypto";
+import { PrismaClient } from "@tutorputor/core/db";
 
-import {
-  setupMetrics,
-  setupHealthChecks,
-} from "./core/observability/metrics.js";
-import { setupErrorTracking } from "./core/observability/error-tracking.js";
-import { setupRateLimit } from "./core/middleware/rate-limit.js";
-import { createConsentEnforcement } from "./core/middleware/consent-enforcement.js";
-import {
-  canUseTrustedProxyAuth,
-  hasTrustedProxyIdentityHeaders,
-} from "./core/http/trustedProxyAuth.js";
-import { initializeContentWorker } from "./startup/content-worker-init.js";
+import { assertTrustedProxyNotEnabledInProduction } from "./core/http/trustedProxyAuth.js";
 
-// Core Modules
-import { contentModule } from "./modules/content/index.js";
-import { learningModule } from "./modules/learning/index.js";
-import { startLearnerProfileGrpcRuntime } from "./modules/learning/grpc-runtime.js";
-import { createLearnerProfileGrpcRuntimeState } from "./modules/learning/grpc-runtime-state.js";
-import { collaborationModule } from "./modules/collaboration/index.js";
-import { userModule } from "./modules/user/index.js";
-import { engagementModule } from "./modules/engagement/index.js";
-import { integrationModule } from "./modules/integration/index.js";
-import { tenantModule } from "./modules/tenant/index.js";
-import { authModule } from "./modules/auth/index.js";
-import { aiModule } from "./modules/ai/index.js";
-import { autoRevisionModule } from "./modules/auto-revision/module.js";
-import { contentNeedsModule } from "./modules/content-needs/module.js";
-import { simulationModule } from "./modules/simulation/index.js";
-import { searchModule } from "./modules/search/index.js";
-import { registerKernelRegistryRoutes } from "./modules/kernel-registry/fastify-routes.js";
-import { vrRoutes } from "./modules/vr/vr-routes.js";
-import { notificationRoutes } from "./modules/notifications/index.js";
-import { paymentRoutes } from "./modules/payments/routes.js";
-import { SubscriptionServiceImpl } from "./modules/payments/service.js";
-import { featureFlagsModule } from "./modules/feature-flags/index.js";
-import { registerObservabilityRoutes } from "./modules/observability/routes.js";
+// Composable plugins (F-024)
+import { setupCorePlugins } from "./plugins/core.js";
+import { setupContentModules } from "./plugins/content-modules.js";
+import { setupBusinessModules } from "./plugins/business-modules.js";
+import { setupAdminModules } from "./plugins/admin-modules.js";
+import { setupWorkers } from "./plugins/workers.js";
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const DEFAULT_LOCAL_CORS_ORIGINS = [
-  /^http:\/\/localhost(?::\d+)?$/,
-  /^http:\/\/127\.0\.0\.1(?::\d+)?$/,
-];
-
-let redisClient: Redis | null = null;
-
-export function getRedisClient(): Redis {
-  if (!redisClient) {
-    redisClient = new (Redis as unknown as new (
-      url: string,
-      options: {
-        maxRetriesPerRequest: number;
-        retryStrategy: (times: number) => number | null;
-      },
-    ) => Redis)(REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      retryStrategy: (times: number) => {
-        if (times > 3) {
-          return null;
-        }
-        return Math.min(times * 50, 2000);
-      },
-    });
-  }
-  return redisClient;
-}
-
-export function closeRedisClient(): void {
-  if (redisClient) {
-    const redisWithLifecycle = redisClient as Redis & {
-      disconnect?: () => void;
-      quit?: () => Promise<unknown>;
-    };
-    if (typeof redisWithLifecycle.disconnect === "function") {
-      redisWithLifecycle.disconnect();
-    } else {
-      void redisWithLifecycle.quit?.();
-    }
-    redisClient = null;
-  }
-}
-
-function requireEnv(name: string, fallbackForTest?: string): string {
-  const value = process.env[name];
-  if (value) return value;
-  if (process.env.NODE_ENV === "test" && fallbackForTest !== undefined)
-    return fallbackForTest;
-  throw new Error(
-    `[startup] Required environment variable ${name} is not set.`,
-  );
-}
-
-function validateStripeKey(key: string): void {
-  if (
-    process.env.NODE_ENV !== "production" &&
-    key === "stripe_test_placeholder_secret"
-  ) {
-    return;
-  }
-
-  const stripeKeyPattern = /^sk_(test|live)_[a-zA-Z0-9]{24,}$/;
-  if (!stripeKeyPattern.test(key)) {
-    throw new Error(
-      `[startup] Invalid STRIPE_SECRET_KEY format. Expected sk_test_* or sk_live_* with at least 24 characters.`,
-    );
-  }
-}
-
-function resolveCorsOrigin(): string | string[] | RegExp[] {
-  const configuredOrigin = process.env.CORS_ORIGIN?.trim();
-  const isProduction = process.env.NODE_ENV === "production";
-
-  if (!configuredOrigin) {
-    if (isProduction) {
-      throw new Error(
-        "[startup] CORS_ORIGIN must be explicitly set in production when credentials are enabled.",
-      );
-    }
-
-    return DEFAULT_LOCAL_CORS_ORIGINS;
-  }
-
-  if (configuredOrigin === "*") {
-    if (isProduction) {
-      throw new Error(
-        '[startup] CORS_ORIGIN="*" is not allowed in production when credentials are enabled.',
-      );
-    }
-
-    return DEFAULT_LOCAL_CORS_ORIGINS;
-  }
-
-  const normalizedOrigins = configuredOrigin
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-
-  const firstOrigin = normalizedOrigins[0];
-  if (!firstOrigin) {
-    throw new Error(
-      "[startup] CORS_ORIGIN must contain at least one non-empty origin.",
-    );
-  }
-
-  return normalizedOrigins.length === 1 ? firstOrigin : normalizedOrigins;
-}
-
-function isPublicLtiRoute(method: string, url: string): boolean {
-  const routePath = url.split("?")[0] ?? url;
-
-  if (method === "GET") {
-    return (
-      routePath === "/api/v1/integration/lti/jwks" ||
-      routePath.startsWith("/api/v1/integration/lti/config/")
-    );
-  }
-
-  if (method === "POST") {
-    return (
-      routePath === "/api/v1/integration/lti/launch" ||
-      routePath === "/api/v1/integration/lti/deep-linking" ||
-      routePath === "/api/v1/integration/lti/grade-passback"
-    );
-  }
-
-  return false;
-}
+export { getRedisClient, closeRedisClient } from "./plugins/redis-client.js";
 
 export interface PlatformOptions {
   redisUrl?: string;
@@ -192,378 +29,52 @@ export interface PlatformOptions {
 
 /**
  * Configure the Fastify instance with TutorPutor Platform capabilities.
- * - Database (Prisma)
- * - Cache (Redis)
- * - Security (Helmet, CORS, JWT)
- * - Observability
- * - All Business Modules
+ *
+ * Composes independent plugins (F-024) in a deterministic order:
+ *  1. Core infrastructure (DB, Redis, security, auth guard, error handler)
+ *  2. Content-domain modules (studio, simulation, search, kernel registry)
+ *  3. Business-domain modules (learning, user, auth, AI, …)
+ *  4. Admin / platform-ops modules (VR, notifications, payments, feature-flags)
+ *  5. Background workers (content worker, lifecycle cleanup)
+ *
+ * @doc.type factory
+ * @doc.purpose Configure the Fastify instance with all TutorPutor modules
+ * @doc.layer platform
+ * @doc.pattern Plugin
  */
 export async function setupPlatform(
   app: FastifyInstance,
   options: PlatformOptions = {},
-) {
-  app.addHook("onRequest", async (req, reply) => {
-    const headerValue = req.headers["x-correlation-id"];
-    const correlationId =
-      (Array.isArray(headerValue) ? headerValue[0] : headerValue) ||
-      req.id ||
-      crypto.randomUUID();
+): Promise<FastifyInstance> {
+  // F-025: Non-negotiable security gate — must run before any hook is registered.
+  assertTrustedProxyNotEnabledInProduction();
 
-    req.correlationId = correlationId;
-    reply.header("x-correlation-id", correlationId);
+  // 1. Core infrastructure
+  await app.register(setupCorePlugins, {
+    jwtSecret: options.jwtSecret,
+    redisUrl: options.redisUrl,
+    prisma: options.prisma,
+    redis: options.redis,
   });
 
-  // Security
-  await app.register(helmet as any, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-      },
-    },
+  // 2. Content-domain modules
+  await app.register(setupContentModules);
+
+  // 3. Business-domain modules
+  await app.register(setupBusinessModules, {
+    startLearnerProfileGrpcServer: options.startLearnerProfileGrpcServer,
+    learnerProfileGrpcAddress: options.learnerProfileGrpcAddress,
   });
 
-  // CORS might be handled by gateway if preferred, but safe to default here
-  // If gateway registers it first, this might conflict or be skipped
-  if (!app.hasPlugin("@fastify/cors")) {
-    await app.register(cors as any, {
-      origin: resolveCorsOrigin(),
-      credentials: true,
-    });
-  }
+  // 4. Admin / platform-ops modules
+  await app.register(setupAdminModules);
 
-  if (!app.hasPlugin("@fastify/jwt")) {
-    await app.register(jwt as any, {
-      secret:
-        options.jwtSecret ||
-        requireEnv("JWT_SECRET", "test-secret-do-not-use-in-prod"),
-    });
-  }
-
-  // Database with connection pooling
-  if (process.env.DATABASE_URL) {
-    process.env.TUTORPUTOR_DATABASE_URL = process.env.DATABASE_URL;
-  }
-
-  const prisma: PrismaClient =
-    (options.prisma as PrismaClient | undefined) ?? createPrismaClient();
-  await prisma.$connect();
-  app.decorate("prisma", prisma);
-
-  // Redis
-  const redis =
-    (options.redis as Redis | undefined) ??
-    new (Redis as unknown as new (...args: unknown[]) => Redis)(
-      options.redisUrl || REDIS_URL,
-      {
-        maxRetriesPerRequest: 3,
-        enableReadyCheck: true,
-        lazyConnect: false,
-      },
-    );
-  app.decorate("redis", redis);
-  app.decorate(
-    "learnerProfileGrpcRuntimeState",
-    createLearnerProfileGrpcRuntimeState(),
-  );
-
-  // Observability
-  await setupMetrics(app);
-  await setupHealthChecks(app, prisma, redis);
-  await setupErrorTracking(app);
-
-  // Rate limiting
-  await setupRateLimit(app);
-
-  // -------------------------------------------------------------------------
-  // Global JWT Authentication Guard
-  // Protects all /api/v1/* routes. Verifies the Bearer token and populates
-  // req.user with decoded claims for downstream route handlers.
-  //
-  // Exemptions (public routes):
-  //   - /api/v1/auth/sso/*  — SSO login/callback flows
-  //   - /api/v1/auth/health — module health probe
-  //   - /health, /healthz, /metrics — infrastructure probes
-  //   - Routes outside /api/v1/* (e.g., /api/sim-author/* handled by simulationModule)
-  // -------------------------------------------------------------------------
-  app.addHook("onRequest", async (req, reply) => {
-    const url = req.raw.url ?? req.url;
-    // Guard versioned API routes, content-studio routes, and generation routes.
-    // /api/generation/* routes have preHandler roleGuards that depend on req.user
-    // being populated by JWT verification first.
-    const isGuarded =
-      url.startsWith("/api/v1/") ||
-      url.startsWith("/api/content-studio/") ||
-      url.startsWith("/api/generation/");
-    if (!isGuarded) return;
-    // Public auth sub-routes (only under /api/v1/)
-    if (
-      url.startsWith("/api/v1/auth/sso/") ||
-      url === "/api/v1/auth/health" ||
-      url === "/api/v1/auth/refresh"
-    )
-      return;
-    // Public LTI interoperability routes are invoked by external LMS platforms.
-    // Restrict the public surface to expected method + route pairs.
-    if (isPublicLtiRoute(req.method, url)) {
-      return;
-    }
-    // Stripe webhook endpoint – authentication is via Stripe-Signature header.
-    if (url === "/api/v1/integration/billing/webhook") return;
-    // Content-studio health is public
-    if (url === "/api/content-studio/health") return;
-
-    const authorizationHeader = req.headers.authorization;
-    const trustedTenantId = req.headers["x-tenant-id"];
-    const trustedUserRole = req.headers["x-user-role"];
-    const trustedUserId = req.headers["x-user-id"];
-    const normalizedTrustedTenantId =
-      typeof trustedTenantId === "string" ? trustedTenantId : undefined;
-    const normalizedTrustedUserRole =
-      typeof trustedUserRole === "string" ? trustedUserRole : undefined;
-    const normalizedTrustedUserId =
-      typeof trustedUserId === "string" ? trustedUserId : undefined;
-    const hasTrustedProxyContext =
-      hasTrustedProxyIdentityHeaders(req) &&
-      canUseTrustedProxyAuth(req);
-
-    if (hasTrustedProxyContext) {
-      const trustedUser: {
-        id?: string;
-        sub?: string;
-        userId?: string;
-        tenantId?: string;
-        role?: string;
-      } = {};
-
-      if (normalizedTrustedUserId) {
-        trustedUser.id = normalizedTrustedUserId;
-        trustedUser.sub = normalizedTrustedUserId;
-        trustedUser.userId = normalizedTrustedUserId;
-      }
-      if (normalizedTrustedTenantId) {
-        trustedUser.tenantId = normalizedTrustedTenantId;
-      }
-      if (normalizedTrustedUserRole) {
-        trustedUser.role = normalizedTrustedUserRole;
-      }
-
-      (
-        req as typeof req & {
-          user?: {
-            id?: string;
-            sub?: string;
-            userId?: string;
-            tenantId?: string;
-            role?: string;
-          };
-        }
-      ).user = trustedUser;
-      return;
-    }
-
-    try {
-      await (
-        req as typeof req & { jwtVerify: () => Promise<void> }
-      ).jwtVerify();
-    } catch (err) {
-      req.log.warn({ url, err, correlationId: req.correlationId }, "Authentication failure");
-      reply.code(401).header("x-request-id", req.id).send({
-        error: "Unauthorized",
-        message: "A valid Bearer token is required.",
-      });
-    }
-  });
-
-  const consentEnforcement = createConsentEnforcement({ prisma });
-  app.addHook("preHandler", consentEnforcement.preHandler);
-
-  // Register All Modules
-  // Canonical prefix strategy: all routes exposed under /api/v1/
-  app.log.info("Registering TutorPutor modules...");
-
-  // Content module mounts at /api so its internal /v1/modules routes become /api/v1/modules
-  await app.register(contentModule, { prefix: "/api" });
-
-  // Learning: dashboard, enrollments, pathways, assessments
-  // Routes within module use /learning/dashboard, /enrollments, /pathways etc.
-  await app.register(learningModule as any, { prefix: "/api/v1" });
-
-  const shouldStartLearnerProfileGrpcServer =
-    options.startLearnerProfileGrpcServer ??
-    process.env.LEARNER_PROFILE_GRPC_ENABLED === "true";
-  const learnerProfileGrpcAddress =
-    options.learnerProfileGrpcAddress ||
-    process.env.LEARNER_PROFILE_GRPC_ADDRESS ||
-    "127.0.0.1:50052";
-  let learnerProfileGrpcRuntime: Awaited<
-    ReturnType<typeof startLearnerProfileGrpcRuntime>
-  > | null = null;
-
-  if (shouldStartLearnerProfileGrpcServer) {
-    app.learnerProfileGrpcRuntimeState = {
-      enabled: true,
-      status: "starting",
-      address: learnerProfileGrpcAddress,
-    };
-
-    const learnerProfileService = (
-      app as typeof app & {
-        learnerProfileService?: unknown;
-      }
-    ).learnerProfileService;
-
-    if (!learnerProfileService) {
-      throw new Error(
-        "Learner profile service not found on Fastify instance after learning module registration.",
-      );
-    }
-
-    try {
-      learnerProfileGrpcRuntime = await startLearnerProfileGrpcRuntime({
-        learnerProfileService: learnerProfileService as Parameters<
-          typeof startLearnerProfileGrpcRuntime
-        >[0]["learnerProfileService"],
-        address: learnerProfileGrpcAddress,
-        logger: app.log,
-      });
-
-      app.learnerProfileGrpcRuntimeState = {
-        enabled: true,
-        status: "running",
-        address: learnerProfileGrpcRuntime.address,
-        port: learnerProfileGrpcRuntime.port,
-        startedAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      app.learnerProfileGrpcRuntimeState = {
-        enabled: true,
-        status: "failed",
-        address: learnerProfileGrpcAddress,
-        lastError: error instanceof Error ? error.message : "Unknown error",
-      };
-      throw error;
-    }
-  }
-
-  // User: /api/v1/teacher/... and /api/v1/admin/...
-  await app.register(userModule, { prefix: "/api/v1" });
-
-  // Collaboration: /api/v1/collaboration/threads etc.
-  await app.register(collaborationModule, { prefix: "/api/v1/collaboration" });
-
-  // Engagement: /api/v1/gamification/..., /api/v1/social/..., /api/v1/credentials/...
-  await app.register(engagementModule, { prefix: "/api/v1" });
-
-  // Integration and tenant management
-  await app.register(integrationModule, { prefix: "/api/v1/integration" });
-  await app.register(tenantModule, { prefix: "/api/v1/tenant" });
-
-  // Auth: /api/v1/auth/me, /api/v1/auth/sso/...
-  await app.register(authModule, { prefix: "/api/v1/auth" });
-
-  // AI: /api/v1/ai/tutor/query etc. (already versioned)
-  await app.register(aiModule, { prefix: "/api/v1/ai" });
-
-  // Revision and content needs
-  await app.register(autoRevisionModule, { prefix: "/api/v1/auto-revision" });
-  await app.register(contentNeedsModule, { prefix: "/api/v1/content-needs" });
-
-  // Simulation: /api/sim-author/generate etc.
-  await app.register(simulationModule);
-
-  // Search: /api/v1/search and /api/v1/search/autocomplete
-  await app.register(searchModule, { prefix: "/api/v1/search" });
-
-  // Register consolidated modules
-  await registerKernelRegistryRoutes(app);
-  app.log.info("✅ Kernel Registry routes registered");
-
-  // VR Labs: /api/v1/vr/labs, /api/v1/vr/sessions, /api/v1/vr/labs/:labId/analytics
-  await app.register(vrRoutes, { prefix: "/api/v1/vr" });
-  app.log.info("✅ VR routes registered");
-
-  // Notifications: /api/v1/notifications, /api/v1/notifications/preferences
-  await app.register(notificationRoutes, { prefix: "/api/v1/notifications" });
-  app.log.info("✅ Notification routes registered");
-
-  // Subscription payments: /api/v1/payments/...
-  const stripeKey = requireEnv(
-    "STRIPE_SECRET_KEY",
-    "stripe_test_placeholder_secret",
-  );
-  validateStripeKey(stripeKey);
-  const stripe = new Stripe(stripeKey, {
-    apiVersion: "2026-03-25.dahlia",
-  });
-  const subscriptionService = new SubscriptionServiceImpl(prisma, stripe);
-  await app.register(
-    (fastify, _opts, done) => {
-      paymentRoutes(fastify, { service: subscriptionService }).then(
-        () => done(),
-        done,
-      );
-    },
-    { prefix: "/api/v1" },
-  );
-  app.log.info("✅ Payment/subscription routes registered");
-
-  // Feature flags: /api/v1/admin/feature-flags
-  await app.register(featureFlagsModule, { prefix: "/api/v1/admin" });
-  app.log.info("✅ Feature flags module registered");
-
-  // Observability: /api/v1/admin/observability/metrics, /api/v1/admin/observability/alerts
-  await app.register(
-    async (fastify) => {
-      registerObservabilityRoutes(fastify, { prisma });
-    },
-    { prefix: "/api/v1/admin/observability" },
-  );
-  app.log.info("✅ Observability routes registered");
-
-  const shouldStartContentWorker =
-    options.startContentWorker ??
-    (process.env.CONTENT_WORKER_ENABLED
-      ? process.env.CONTENT_WORKER_ENABLED === "true"
-      : process.env.NODE_ENV !== "test");
-
-  const contentWorker = await initializeContentWorker({
-    shouldStart: shouldStartContentWorker,
-    redisUrl: options.redisUrl || REDIS_URL,
-    grpcServerAddress:
-      options.grpcServerAddress ||
-      process.env.GRPC_SERVER_ADDRESS ||
-      "localhost:50051",
-    grpcUseTls: options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
-    logger: app.log as unknown as Logger,
-    prisma,
-  });
-
-  // Add cleanup hook
-  app.addHook("onClose", async (instance) => {
-    if (contentWorker) {
-      await contentWorker.close();
-    }
-    if (learnerProfileGrpcRuntime) {
-      await learnerProfileGrpcRuntime.stop();
-      instance.learnerProfileGrpcRuntimeState = {
-        ...instance.learnerProfileGrpcRuntimeState,
-        enabled: true,
-        status: "stopped",
-      };
-    }
-    const instanceWithDecorators = instance as typeof instance & {
-      hasDecorator?: (name: string) => boolean;
-      autoRevisionWorkerManager?: { stop: () => Promise<void> };
-    };
-
-    if (instanceWithDecorators.hasDecorator?.("autoRevisionWorkerManager")) {
-      await instanceWithDecorators.autoRevisionWorkerManager?.stop();
-    }
-    await instance.prisma.$disconnect();
-    (instance.redis as any).disconnect();
+  // 5. Background workers + lifecycle cleanup
+  await app.register(setupWorkers, {
+    startContentWorker: options.startContentWorker,
+    grpcServerAddress: options.grpcServerAddress,
+    grpcUseTls: options.grpcUseTls,
+    redisUrl: options.redisUrl,
   });
 
   return app;
@@ -585,3 +96,4 @@ export async function createServer(
   await setupPlatform(app, options);
   return app;
 }
+

@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./services";
 export * from "./plugin-interfaces";
 export * from "./telemetry-events";
+export * from "./api-envelope";
 
 // Canonical exports with broader or overlapping symbol surfaces remain available
 // from explicit subpaths to avoid barrel ambiguities.

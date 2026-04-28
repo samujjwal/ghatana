@@ -43,6 +43,24 @@ declare module "fastify" {
     description?: string;
     tags?: string[];
     summary?: string;
-    security?: any[];
+    security?: unknown[];
+  }
+
+  /**
+   * Route-level config extension.
+   *
+   * Set `config.public = true` on any route that must bypass the global JWT
+   * authentication guard. This is the **single authoritative** mechanism for
+   * declaring a route as public — the hand-maintained allow-list in setup.ts
+   * has been removed (F-014).
+   *
+   * Example usage:
+   * ```ts
+   * fastify.get('/health', { config: { public: true } }, handler)
+   * ```
+   */
+  interface FastifyContextConfig {
+    /** When true, the global JWT guard skips this route. */
+    public?: boolean;
   }
 }

@@ -8,6 +8,35 @@ import {
 } from "../../core/http/requestContext.js";
 import type { SubscriptionServiceImpl } from "./service.js";
 
+const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
+
+/**
+ * F-017: Resolve idempotency for a billing mutation.
+ * Returns the cached response if the key was seen before, otherwise null.
+ * Stores the result for IDEMPOTENCY_TTL_SECONDS after first execution.
+ */
+async function resolveIdempotency(
+  redis: { get: (k: string) => Promise<string | null>; set: (k: string, v: string, ex: string, ttl: number) => Promise<unknown> } | undefined,
+  tenantId: string,
+  operation: string,
+  key: string,
+): Promise<{ cached: true; body: unknown } | { cached: false; storeResult: (result: unknown) => Promise<void> }> {
+  if (!redis || !key) {
+    return { cached: false, storeResult: async () => {} };
+  }
+  const redisKey = `billing:idempotency:${tenantId}:${operation}:${key.slice(0, 128)}`;
+  const existing = await redis.get(redisKey);
+  if (existing !== null) {
+    return { cached: true, body: JSON.parse(existing) as unknown };
+  }
+  return {
+    cached: false,
+    storeResult: async (result: unknown) => {
+      await redis.set(redisKey, JSON.stringify(result), "EX", IDEMPOTENCY_TTL_SECONDS);
+    },
+  };
+}
+
 const CreateSubscriptionSchema = z.object({
   planId: z.string().min(1),
   billingInterval: z.enum(["monthly", "quarterly", "annual"]),
@@ -105,6 +134,7 @@ export async function paymentRoutes(
   /**
    * POST /payments/subscription/cancel
    * Cancel the tenant's active subscription.
+   * F-017: Accepts `Idempotency-Key` header; repeated requests with the same key return cached result.
    */
   fastify.post<{ Body: { atPeriodEnd?: boolean; reason?: string } }>(
     "/payments/subscription/cancel",
@@ -113,6 +143,13 @@ export async function paymentRoutes(
       const parseResult = CancelSubscriptionSchema.safeParse(request.body ?? {});
       if (!parseResult.success) {
         return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+      }
+
+      const idempotencyKey = request.headers["idempotency-key"] as string | undefined ?? "";
+      const redis = (fastify as unknown as { redis?: { get: (k: string) => Promise<string | null>; set: (k: string, v: string, ex: string, ttl: number) => Promise<unknown> } }).redis;
+      const idempotency = await resolveIdempotency(redis, tenantId, "cancel", idempotencyKey);
+      if (idempotency.cached) {
+        return reply.code(200).send(idempotency.body);
       }
 
       const { atPeriodEnd = true, reason } = parseResult.data;
@@ -125,12 +162,16 @@ export async function paymentRoutes(
             code: "NOT_FOUND",
           });
         }
-        return service.cancelSubscription({
+        const result = await service.cancelSubscription({
           tenantId,
           subscriptionId: currentSub.id,
           cancelImmediately: !atPeriodEnd,
           ...(reason ? { reason } : {}),
         });
+        if (idempotencyKey) {
+          await idempotency.storeResult(result);
+        }
+        return result;
       });
     },
   );
@@ -138,6 +179,7 @@ export async function paymentRoutes(
   /**
    * POST /payments/subscription/change
    * Upgrade or downgrade the tenant's plan.
+   * F-017: Accepts `Idempotency-Key` header; repeated requests with the same key return cached result.
    */
   fastify.post<{ Body: { planId: string; billingInterval: string } }>(
     "/payments/subscription/change",
@@ -146,6 +188,13 @@ export async function paymentRoutes(
       const parseResult = ChangeSubscriptionSchema.safeParse(request.body);
       if (!parseResult.success) {
         return reply.code(400).send(createValidationErrorResponse(parseResult.error));
+      }
+
+      const idempotencyKey = request.headers["idempotency-key"] as string | undefined ?? "";
+      const redis = (fastify as unknown as { redis?: { get: (k: string) => Promise<string | null>; set: (k: string, v: string, ex: string, ttl: number) => Promise<unknown> } }).redis;
+      const idempotency = await resolveIdempotency(redis, tenantId, "change", idempotencyKey);
+      if (idempotency.cached) {
+        return reply.code(200).send(idempotency.body);
       }
 
       const { planId, billingInterval } = parseResult.data;
@@ -158,7 +207,7 @@ export async function paymentRoutes(
             code: "NOT_FOUND",
           });
         }
-        return service.changePlan({
+        const result = await service.changePlan({
           tenantId,
           subscriptionId: currentSub.id,
           newPlanId: planId,
@@ -167,6 +216,10 @@ export async function paymentRoutes(
             | "quarterly"
             | "annual",
         });
+        if (idempotencyKey) {
+          await idempotency.storeResult(result);
+        }
+        return result;
       });
     },
   );

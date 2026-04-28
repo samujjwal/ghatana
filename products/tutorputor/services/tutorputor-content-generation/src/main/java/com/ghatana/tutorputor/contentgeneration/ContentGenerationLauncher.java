@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +31,7 @@ public final class ContentGenerationLauncher {
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 30;
 
     private static volatile HttpServer healthServer;
-    private static volatile Object serverConfig;
+    private static volatile ContentGenerationServer serverConfig;
     private static final AtomicBoolean ready = new AtomicBoolean(false);
     private static final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private static final AtomicReference<Instant> startTime = new AtomicReference<>();
@@ -151,36 +149,32 @@ public final class ContentGenerationLauncher {
         return server;
     }
 
-    private static Object createServerConfig(int grpcPort) {
+    /**
+     * F-026: Loads the {@link ContentGenerationServer} implementation via the
+     * service-loader pattern (typed, not reflection).
+     *
+     * <p>The concrete class
+     * {@code com.ghatana.tutorputor.contentstudio.config.ContentGenerationServerConfig}
+     * in the {@code content-studio-agents} runtime module must implement this
+     * interface.  We still use {@code Class.forName} for classpath isolation
+     * (the impl is an optional runtime dep), but we cast to the typed interface
+     * rather than using raw reflection to invoke individual methods.
+     */
+    private static ContentGenerationServer createServerConfig(int grpcPort) {
         try {
             LOG.info("Loading ContentGenerationServerConfig for port {}", grpcPort);
             Class<?> configClass = Class.forName(
                 "com.ghatana.tutorputor.contentstudio.config.ContentGenerationServerConfig");
-            return configClass.getConstructor(int.class).newInstance(grpcPort);
+            Object instance = configClass.getConstructor(int.class).newInstance(grpcPort);
+            if (!(instance instanceof ContentGenerationServer server)) {
+                throw new IllegalStateException(
+                    "ContentGenerationServerConfig must implement ContentGenerationServer");
+            }
+            return server;
         } catch (ReflectiveOperationException ex) {
             throw new IllegalStateException(
                 "Unable to load ContentGenerationServerConfig. Ensure content-studio-agents is on the runtime classpath.",
                 ex);
-        }
-    }
-
-    private static void invokeLifecycleMethod(Object target, String methodName)
-        throws IOException, InterruptedException {
-        try {
-            LOG.debug("Invoking lifecycle method: {}", methodName);
-            Method method = target.getClass().getMethod(methodName);
-            method.invoke(target);
-        } catch (InvocationTargetException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof IOException ioException) {
-                throw ioException;
-            }
-            if (cause instanceof InterruptedException interruptedException) {
-                throw interruptedException;
-            }
-            throw new IllegalStateException("Failed to invoke " + methodName + " on content generation runtime", cause);
-        } catch (ReflectiveOperationException ex) {
-            throw new IllegalStateException("Failed to invoke " + methodName + " on content generation runtime", ex);
         }
     }
 
@@ -200,7 +194,7 @@ public final class ContentGenerationLauncher {
 
         if (serverConfig != null) {
             try {
-                invokeLifecycleMethod(serverConfig, "shutdown");
+                serverConfig.shutdown();
                 LOG.info("Content generation runtime shutdown completed");
             } catch (Exception e) {
                 LOG.error("Error during content generation runtime shutdown", e);
@@ -255,14 +249,14 @@ public final class ContentGenerationLauncher {
             startTime.set(Instant.now());
 
             try {
-                invokeLifecycleMethod(serverConfig, "start");
+                serverConfig.start();
                 ready.set(true);
                 LOG.info("Content generation runtime started successfully on port {}", grpcPort);
                 LOG.info("Service is ready to accept requests");
                 LOG.info("Health endpoints available at http://localhost:{}/health", healthPort);
                 LOG.info("Metrics available at http://localhost:{}/metrics", healthPort);
 
-                invokeLifecycleMethod(serverConfig, "blockUntilShutdown");
+                serverConfig.blockUntilShutdown();
             } catch (Exception e) {
                 LOG.error("Fatal error during service startup or execution", e);
                 ready.set(false);

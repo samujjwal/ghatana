@@ -26,6 +26,90 @@ interface ContentBlock {
   };
 }
 
+// ---------------------------------------------------------------------------
+// F-004: Module Provenance Disclosure
+// ---------------------------------------------------------------------------
+
+/**
+ * Fields surfaced from the module API response that describe how the module
+ * was produced. Absent fields are treated as "not disclosed" rather than errors.
+ */
+interface ModuleProvenance {
+  /** Null when the module was AI-generated (no human author assigned). */
+  authorId: string | null | undefined;
+  /** ISO date string of when the module was published. */
+  publishedAt: string | null | undefined;
+  /** Validator tool version string (e.g. "guardrail-v2.1.0"). */
+  validatorVersion?: string | null;
+  /** ISO date of last validation run. */
+  validatedAt?: string | null;
+}
+
+interface ModuleProvenanceDisclosureProps {
+  provenance: ModuleProvenance;
+}
+
+/**
+ * "How this was made" disclosure panel (F-004).
+ *
+ * Renders only when the module appears to be AI-generated (no authorId).
+ * Shows validation date and tool version so learners can judge freshness.
+ */
+function ModuleProvenanceDisclosure({
+  provenance,
+}: ModuleProvenanceDisclosureProps) {
+  const isAiGenerated = !provenance.authorId;
+  if (!isAiGenerated) return null;
+
+  const publishedDate = provenance.publishedAt
+    ? new Date(provenance.publishedAt).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "date unknown";
+
+  const validatedDate = provenance.validatedAt
+    ? new Date(provenance.validatedAt).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+
+  return (
+    <Card className="mb-6">
+      <div className="p-6 border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+        <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-2">
+          <span aria-hidden="true">🤖</span>
+          How this module was made
+        </h3>
+        <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
+          This module was created with AI-assisted content generation and
+          reviewed by an automated validation pipeline before publication.
+        </p>
+        <ul className="text-xs text-amber-600 dark:text-amber-500 space-y-1">
+          <li>
+            <strong>Published:</strong> {publishedDate}
+          </li>
+          {validatedDate !== null && (
+            <li>
+              <strong>Last validated:</strong> {validatedDate}
+            </li>
+          )}
+          {provenance.validatorVersion !== null &&
+            provenance.validatorVersion !== undefined && (
+              <li>
+                <strong>Validator version:</strong>{" "}
+                {provenance.validatorVersion}
+              </li>
+            )}
+        </ul>
+      </div>
+    </Card>
+  );
+}
+
 export function ModulePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -155,6 +239,16 @@ export function ModulePage() {
           </div>
         </div>
       </Card>
+
+      {/* F-004: AI provenance disclosure */}
+      <ModuleProvenanceDisclosure
+        provenance={{
+          authorId: module.authorId,
+          publishedAt: module.publishedAt,
+          // validatorVersion and validatedAt are included when the API
+          // surfaces them; they are optional and default to not shown.
+        }}
+      />
 
       <Card className="mb-6">
         <div className="p-8">

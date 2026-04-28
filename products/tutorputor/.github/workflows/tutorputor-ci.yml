@@ -51,8 +51,8 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Type check ${{ matrix.module }}
@@ -88,8 +88,8 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Run database migrations
@@ -111,8 +111,8 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Prevent new @ts-nocheck usage
@@ -163,8 +163,8 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.filter.outputs.simulation == 'true'
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Install dependencies
         if: steps.filter.outputs.simulation == 'true'
@@ -213,8 +213,8 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Build ${{ matrix.app }}

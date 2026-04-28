@@ -19,6 +19,7 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useThemeToggle, useIsDarkMode } from "@ghatana/theme";
 import { OmnipresentAITutor } from "./OmnipresentAITutor";
+import { BackgroundWorkChip } from "./BackgroundWorkChip";
 
 // Icons
 const HomeIcon = () => (
@@ -233,7 +234,7 @@ export function AppLayout() {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <SparklesIcon />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold text-gray-900 dark:text-white">
                 TutorPutor
               </h1>
@@ -241,6 +242,10 @@ export function AppLayout() {
                 AI-Powered Learning
               </p>
             </div>
+          </div>
+          {/* F-035: Background work chip — visible on desktop sidebar */}
+          <div className="mt-2">
+            <BackgroundWorkChip />
           </div>
         </div>
 
@@ -301,8 +306,8 @@ export function AppLayout() {
             <span className="font-bold text-gray-900 dark:text-white">
               TutorPutor
             </span>
-          </div>
-          <button
+          </div>          {/* F-035: Background work visibility chip */}
+          <BackgroundWorkChip />          <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
           >

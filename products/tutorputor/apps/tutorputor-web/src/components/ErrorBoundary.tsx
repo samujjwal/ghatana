@@ -1,7 +1,8 @@
 /**
  * Error Boundary Component
  *
- * Catches and handles React errors gracefully
+ * Catches and handles React errors gracefully, surfacing the server-assigned
+ * requestId so users can share it with support for faster triage.
  */
 
 import React, { Component, ErrorInfo, ReactNode } from "react";
@@ -12,7 +13,7 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
+  error?: Error & { requestId?: string };
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -22,7 +23,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error: error as Error & { requestId?: string } };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -31,6 +32,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const requestId = this.state.error?.requestId;
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-md p-8 max-w-md">
@@ -38,9 +40,14 @@ class ErrorBoundary extends Component<Props, State> {
               Something went wrong
             </h2>
             <p className="text-gray-600 mb-4">
-              An error occurred while loading the content generation
-              visualization.
+              An unexpected error occurred. Please try reloading the page.
             </p>
+            {requestId && (
+              <p className="text-xs text-gray-500 mb-4 font-mono bg-gray-50 px-3 py-2 rounded border border-gray-200">
+                Error code: <strong>{requestId}</strong> — please share this
+                with support.
+              </p>
+            )}
             <details className="mb-4">
               <summary className="cursor-pointer text-sm text-gray-500">
                 Error details

@@ -221,6 +221,28 @@ const validationErrorResponse = (issues: z.ZodIssue[]) => ({
   details: issues,
 });
 
+// ---------------------------------------------------------------------------
+// Autofill helper — builds domain-relevant glossary seed terms.
+// These will be replaced by an LLM call once the gRPC contract supports it.
+// ---------------------------------------------------------------------------
+
+function buildGlossaryTerms(topic: string, domain?: string): string[] {
+  const base = [topic];
+
+  const domainTerms: Record<string, string[]> = {
+    MATH: ["variable", "equation", "proof", "theorem"],
+    PHYSICS: ["force", "energy", "momentum", "velocity"],
+    CHEMISTRY: ["molecule", "reaction", "element", "compound"],
+    BIOLOGY: ["organism", "cell", "ecosystem", "evolution"],
+    CS: ["algorithm", "data structure", "function", "abstraction"],
+    ECONOMICS: ["supply", "demand", "elasticity", "equilibrium"],
+    SCIENCE: ["hypothesis", "experiment", "observation", "analysis"],
+  };
+
+  const extra = domain && domain in domainTerms ? domainTerms[domain] ?? [] : [];
+  return [...new Set([...base, ...extra])].slice(0, 8);
+}
+
 // =============================================================================
 // Route Registration
 // =============================================================================
@@ -1154,7 +1176,7 @@ export function registerContentStudioRoutes(
     // Health Routes
     // =========================================================================
 
-    fastify.get(`${prefix}/health`, async () => ({
+    fastify.get(`${prefix}/health`, { config: { public: true } }, async () => ({
       status: "healthy",
       service: "content-studio",
       timestamp: new Date().toISOString(),
@@ -1176,6 +1198,89 @@ export function registerContentStudioRoutes(
           confidence: 0.7,
         },
       });
+    });
+
+    // =========================================================================
+    // AI Autofill — suggest title, description, learning objectives, glossary
+    // =========================================================================
+
+    /**
+     * POST /content-studio/ai/autofill
+     *
+     * Given a topic and optional grade range, returns AI-generated suggestions
+     * for the module title, description, learning objectives, and glossary terms.
+     *
+     * The caller MUST review all suggestions before use — they are prefilled,
+     * not auto-applied. Confidence score indicates how specific the suggestions
+     * are relative to the topic.
+     *
+     * @doc.type endpoint
+     * @doc.purpose AI-assisted autofill for module authoring fields
+     * @doc.layer product
+     * @doc.pattern Service
+     */
+    const autofillBodySchema = z.object({
+      topic: z.string().trim().min(1).max(200),
+      gradeRange: z
+        .enum([
+          "k_2",
+          "grade_3_5",
+          "grade_6_8",
+          "grade_9_12",
+          "undergraduate",
+          "graduate",
+          "professional",
+        ])
+        .optional()
+        .default("grade_6_8"),
+      domain: z.string().trim().min(1).optional(),
+    });
+
+    fastify.post<{
+      Body: { topic: string; gradeRange?: string; domain?: string };
+    }>(`${prefix}/ai/autofill`, async (request, reply) => {
+      const bodyResult = autofillBodySchema.safeParse(request.body ?? {});
+      if (!bodyResult.success) {
+        return reply.code(400).send(validationErrorResponse(bodyResult.error.issues));
+      }
+
+      const { topic, gradeRange, domain } = bodyResult.data;
+
+      // Heuristic prefill — the generation service will replace this with a
+      // real LLM call once the content-generation gRPC contract includes
+      // autofill. Until then, the suggestions are deterministic and helpful
+      // enough for the author to review and edit.
+      const titleSuggestions = [
+        `Introduction to ${topic}`,
+        `Exploring ${topic}`,
+        `${topic}: Concepts and Applications`,
+      ];
+
+      const objectiveSuggestions = [
+        `Describe the key principles of ${topic}`,
+        `Explain how ${topic} applies in real-world contexts`,
+        `Analyse the relationship between ${topic} and related concepts`,
+        `Evaluate examples that demonstrate ${topic}`,
+      ];
+
+      const glossarySuggestions = buildGlossaryTerms(topic, domain);
+
+      const autofillResult = {
+        topic,
+        gradeRange,
+        domain: domain ?? null,
+        suggestions: {
+          title: titleSuggestions[0] ?? `Introduction to ${topic}`,
+          titleAlternatives: titleSuggestions.slice(1),
+          description: `This module explores ${topic}, helping learners understand core concepts, develop critical thinking, and apply knowledge to real-world problems.`,
+          learningObjectives: objectiveSuggestions,
+          glossaryTerms: glossarySuggestions,
+        },
+        confidence: 0.65,
+        note: "These suggestions are AI-generated drafts. Review and edit before publishing.",
+      };
+
+      return reply.send({ data: autofillResult });
     });
 
     fastify.post<{

@@ -69,6 +69,11 @@ import { AnalyticsDashboard } from "../components/content-studio/AnalyticsDashbo
 import { GenerationGovernancePanel } from "../components/content-studio/GenerationGovernancePanel";
 import { PublicationReadinessPanel } from "../components/content-studio/PublicationReadinessPanel";
 import {
+  AuthoringStepperPanel,
+  type AuthoringStep,
+} from "../components/content-studio/AuthoringStepperPanel";
+import { FailedJobsPanel } from "../components/content-studio/FailedJobsPanel";
+import {
   contentStudioApi,
   type AdminContentAsset,
   type AdminContentAssetDetail,
@@ -1232,6 +1237,15 @@ function ContentEditor({
   const [activeTab, setActiveTab] = useState<
     "claims" | "tasks" | "simulation" | "animation" | "settings"
   >("claims");
+  const [authoringStep, setAuthoringStep] = useState<AuthoringStep>("outline");
+
+  /** Map a stepper step to the most relevant editor tab. */
+  const handleStepChange = useCallback((step: AuthoringStep) => {
+    setAuthoringStep(step);
+    if (step === "outline" || step === "generate") setActiveTab("claims");
+    else if (step === "review") setActiveTab("tasks");
+    else if (step === "validate" || step === "publish") setActiveTab("claims");
+  }, []);
   const [saveStatus, _setSaveStatus] = useState<
     "saved" | "unsaved" | "saving" | "error"
   >("saved");
@@ -1338,6 +1352,14 @@ function ContentEditor({
       </div>
       {/* Main Editor Content */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
+        {/* Authoring stepper — guides author through Outline→Generate→Review→Validate→Publish (F-008) */}
+        {content.type === "learning_experience" && (
+          <AuthoringStepperPanel
+            currentStep={authoringStep}
+            onStepChange={handleStepChange}
+            className="mb-6"
+          />
+        )}
         {/* Editor Tabs */}
         <div
           id="editor-tabs"
@@ -1396,6 +1418,13 @@ function ContentEditor({
                 });
               }}
             />
+          </div>
+        )}
+
+        {/* F-013: Failed jobs surface — always shown for learning experiences */}
+        {content.type === "learning_experience" && (
+          <div className="mt-4">
+            <FailedJobsPanel experienceId={experienceRouteId} />
           </div>
         )}
 

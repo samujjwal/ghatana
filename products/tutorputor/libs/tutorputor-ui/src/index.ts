@@ -1,5 +1,8 @@
 // TutorPutor UI - Consolidated Package
-// Merges: ui-shared + charts + assessments + primitives
+// Merges: ui-shared + charts + assessments + primitives + auth utilities (F-030)
+
+// Auth utility exports (shared by tutorputor-web and tutorputor-admin)
+export * from "./auth";
 
 // Components exports (from ui-shared)
 export * from "./components";

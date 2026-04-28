@@ -18,3 +18,16 @@ export type { MinimalThemeProviderProps } from './MinimalThemeProvider';
 
 // Export primitive components
 export * from './primitives';
+
+// Shared domain components
+export { ValidationIssueList } from './ValidationIssueList';
+export type { ValidationIssue, ValidationIssueSeverity, ValidationIssueListProps } from './ValidationIssueList';
+
+export { ProvenanceBadge } from './ProvenanceBadge';
+export type { ContentProvenance, ProvenanceBadgeProps } from './ProvenanceBadge';
+
+export { ConfidenceMeter } from './ConfidenceMeter';
+export type { ConfidenceMeterProps } from './ConfidenceMeter';
+
+export { ConsentGate } from './ConsentGate';
+export type { ConsentCategory, ConsentGateProps } from './ConsentGate';

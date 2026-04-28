@@ -36,6 +36,10 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: true,
+    // F-027: Bundle size budget — report compressed size for CI comparison
+    reportCompressedSize: true,
+    target: "es2020",
+    minify: "esbuild",
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
@@ -44,6 +48,28 @@ export default defineConfig({
       output: {
         entryFileNames: (chunkInfo) => {
           return chunkInfo.name === 'sw' ? '[name].js' : 'assets/[name]-[hash].js';
+        },
+        // F-027: Manual chunk splitting to keep feature modules < 50KB gzipped
+        // and core vendor libs < 100KB gzipped.
+        manualChunks: (id) => {
+          if (!id.includes("node_modules")) {
+            // Route-level code splitting for lazy-loaded pages
+            if (id.includes("/pages/")) {
+              const match = id.match(/\/pages\/([^/]+)\//);
+              if (match) return `page-${match[1]}`;
+            }
+            return undefined;
+          }
+          // Stable, cacheable vendor chunks
+          if (id.includes("react-dom") || id.includes("react/")) return "react-vendor";
+          if (id.includes("@tanstack/react-query")) return "react-query";
+          if (id.includes("react-router")) return "react-router";
+          if (id.includes("@ghatana/design-system") || id.includes("@ghatana/tokens") || id.includes("@ghatana/theme")) return "ghatana-ui";
+          if (id.includes("@ghatana/charts")) return "ghatana-charts";
+          if (id.includes("jotai")) return "jotai-state";
+          if (id.includes("lucide-react")) return "lucide-icons";
+          if (id.includes("zod")) return "zod";
+          return "vendor-other";
         },
       },
     },

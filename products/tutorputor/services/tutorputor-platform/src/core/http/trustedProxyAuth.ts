@@ -44,6 +44,25 @@ function getHeaderValue(
   return Array.isArray(headerValue) ? headerValue[0] ?? null : headerValue;
 }
 
+/**
+ * Asserts that trusted-proxy auth is never active in production.
+ * Call once at startup (before any request is accepted).
+ * Throws if the combination of NODE_ENV=production + TRUST_PROXY_AUTH_HEADERS=true
+ * is detected, since that opens an impersonation surface on the external network.
+ */
+export function assertTrustedProxyNotEnabledInProduction(): void {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.TRUST_PROXY_AUTH_HEADERS === "true"
+  ) {
+    throw new Error(
+      "[security] TRUST_PROXY_AUTH_HEADERS=true is not permitted in production. " +
+        "Remove the environment variable or set NODE_ENV to a non-production value. " +
+        "All production services must authenticate via cryptographic JWT.",
+    );
+  }
+}
+
 export function isTrustedProxyAuthEnabled(): boolean {
   // Trusted proxy auth must be explicitly enabled via configuration
   // This prevents accidental bypass of JWT authentication

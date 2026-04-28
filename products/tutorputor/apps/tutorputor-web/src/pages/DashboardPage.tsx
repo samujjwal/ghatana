@@ -4,6 +4,7 @@ import { useRecommendations } from "../hooks/useRecommendations";
 import { Box, Card, Button } from "@/components/ui";
 import { cardStyles, textStyles, badgeStyles, cn } from "../theme";
 import { StatCard } from "../components/StatCard";
+import { LearnerInsightPanel } from "../components/LearnerInsightPanel";
 import { Sparkles, BookOpen, FlaskConical, FileText, MessageSquare } from "lucide-react";
 
 // Local type definitions for component props
@@ -123,6 +124,9 @@ export function DashboardPage() {
             color="orange"
           />
         </div>
+
+        {/* Engagement Insights Panel */}
+        <LearnerInsightPanel className="mb-8" />
 
         {/* Primary CTA: Continue Learning */}
         {hasActiveEnrollments && topEnrollment && (

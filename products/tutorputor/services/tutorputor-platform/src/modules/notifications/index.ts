@@ -299,4 +299,75 @@ export const notificationRoutes = async (app: FastifyInstance) => {
       });
     },
   );
+
+  // ===========================================================================
+  // Delivery Health (F-019)
+  // ===========================================================================
+
+  /**
+   * GET /delivery-health
+   * Returns per-channel delivery health for the authenticated user.
+   *
+   * Channels reported:
+   *   - email:  enabled when emailEnabled pref is true AND RESEND_API_KEY is set
+   *   - push:   enabled when pushEnabled pref is true AND ≥1 active device token exists
+   *
+   * Status values: "healthy" | "disabled" | "degraded"
+   *   degraded = enabled by preference but a required config/token is missing
+   */
+  app.get("/delivery-health", async (req: FastifyRequest, reply: FastifyReply) => {
+    const tenantId = getTenantId(req);
+    const userId = getUserId(req);
+
+    await respondWithErrors(reply, async () => {
+      const [prefs, activeTokenCount] = await Promise.all([
+        prisma.notificationPreference.findUnique({
+          where: { tenantId_userId: { tenantId, userId } },
+        }),
+        prisma.deviceToken.count({ where: { tenantId, userId, isActive: true } }),
+      ]);
+
+      const emailEnabled = prefs?.emailEnabled ?? true;
+      const pushEnabled = prefs?.pushEnabled ?? true;
+      const resendConfigured = !!process.env.RESEND_API_KEY;
+      const hasDeviceToken = activeTokenCount > 0;
+
+      const channels = [
+        {
+          channel: "email",
+          status: !emailEnabled
+            ? "disabled"
+            : resendConfigured
+              ? "healthy"
+              : "degraded",
+          detail: !emailEnabled
+            ? "Email notifications are turned off in preferences"
+            : resendConfigured
+              ? null
+              : "Email delivery is not configured on this server",
+        },
+        {
+          channel: "push",
+          status: !pushEnabled
+            ? "disabled"
+            : hasDeviceToken
+              ? "healthy"
+              : "degraded",
+          detail: !pushEnabled
+            ? "Push notifications are turned off in preferences"
+            : hasDeviceToken
+              ? null
+              : "No registered push device — re-enable notifications in your browser or app",
+        },
+      ] as const;
+
+      const healthyCount = channels.filter((c) => c.status === "healthy").length;
+      const degradedCount = channels.filter((c) => c.status === "degraded").length;
+
+      return {
+        channels,
+        summary: `${healthyCount} healthy${degradedCount > 0 ? `, ${degradedCount} degraded` : ""}`,
+      };
+    });
+  });
 };

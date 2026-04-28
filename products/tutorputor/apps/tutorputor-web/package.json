@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:analyze": "VITE_BUNDLE_ANALYZE=1 vite build --mode production",
+    "bundle:check": "node scripts/check-bundle-size.mjs",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
     "lint": "../../../../node_modules/.bin/eslint . --ext ts,tsx --max-warnings 0",
@@ -14,6 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:a11y": "playwright test e2e/a11y-learner-pages.spec.ts",
     "test:load": "k6 run ../../k6/load-test.js",
     "test:critical": "k6 run ../../k6/critical-journeys.js",
     "test:stress": "k6 run ../../k6/stress-test.js",
@@ -46,6 +49,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.2.2",
     "@tanstack/react-query-devtools": "^5.99.0",

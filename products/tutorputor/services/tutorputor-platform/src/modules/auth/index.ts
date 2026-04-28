@@ -37,7 +37,11 @@ type RedisLike = {
     mode: 'EX',
     ttlSeconds: number,
   ) => Promise<unknown>;
-  del: (key: string) => Promise<number>;
+  del: (...keys: string[]) => Promise<number>;
+  sadd: (key: string, ...members: string[]) => Promise<number>;
+  srem: (key: string, ...members: string[]) => Promise<number>;
+  smembers: (key: string) => Promise<string[]>;
+  expire: (key: string, seconds: number) => Promise<number>;
 };
 
 type SsoCallbackResultWithRedirect = {
@@ -62,6 +66,12 @@ function getRefreshSessionKey(jti: string): string {
 
 function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+const USER_SESSION_INDEX_PREFIX = "auth:user-sessions:";
+
+function getUserSessionIndexKey(tenantId: string, userId: string): string {
+  return `${USER_SESSION_INDEX_PREFIX}${tenantId}:${userId}`;
 }
 
 /**
@@ -116,12 +126,19 @@ export const authModule: FastifyPluginAsync = async (app) => {
       jti: claims.jti,
     };
 
+    const sessionKey = getRefreshSessionKey(claims.jti);
     await redis.set(
-      getRefreshSessionKey(claims.jti),
+      sessionKey,
       JSON.stringify({ ...record, tokenHash: hashToken(refreshToken) }),
       'EX',
       REFRESH_SESSION_TTL_SECONDS,
     );
+
+    // F-003: maintain a per-user set of active JTIs for bulk revocation
+    const indexKey = getUserSessionIndexKey(claims.tenantId, claims.sub);
+    await redis.sadd(indexKey, claims.jti);
+    // Keep the index alive as long as the longest-lived refresh token could be
+    await redis.expire(indexKey, REFRESH_SESSION_TTL_SECONDS);
   }
 
   async function readRefreshSession(jti: string): Promise<
@@ -139,12 +156,32 @@ export const authModule: FastifyPluginAsync = async (app) => {
     }
   }
 
-  async function deleteRefreshSession(jti: string | undefined): Promise<void> {
+  async function deleteRefreshSession(jti: string | undefined, session?: RefreshSessionRecord): Promise<void> {
     if (!jti) {
       return;
     }
 
     await redis.del(getRefreshSessionKey(jti));
+
+    // F-003: clean up from the user index if we know the owner
+    if (session) {
+      await redis.srem(getUserSessionIndexKey(session.tenantId, session.userId), jti);
+    }
+  }
+
+  /**
+   * F-003: Revoke all active refresh sessions for a user.
+   * Returns the number of sessions that were revoked.
+   */
+  async function revokeAllUserSessions(tenantId: string, userId: string): Promise<number> {
+    const indexKey = getUserSessionIndexKey(tenantId, userId);
+    const jtis = await redis.smembers(indexKey);
+    if (jtis.length === 0) return 0;
+
+    const sessionKeys = jtis.map(getRefreshSessionKey);
+    await redis.del(...sessionKeys);
+    await redis.del(indexKey);
+    return jtis.length;
   }
 
   function signAccessToken(user: SessionUser): string {
@@ -218,7 +255,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
 
   app.log.info("Auth module initialized with SSO support");
 
-  app.get("/health", async () => ({
+  app.get("/health", { config: { public: true } }, async () => ({
     module: "auth",
     status: "active",
   }));
@@ -280,7 +317,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
    * List providers for a tenant (by slug) to render login page.
    * Public endpoint.
    */
-  app.get("/sso/providers", async (req, reply) => {
+  app.get("/sso/providers", { config: { public: true } }, async (req, reply) => {
     const { tenantSlug } = req.query as { tenantSlug?: string };
     if (!tenantSlug)
       return reply.code(400).send({ error: "tenantSlug is required" });
@@ -292,7 +329,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
   /**
    * Initiate SSO Login
    */
-  app.get("/sso/login/:providerId", async (req, reply) => {
+  app.get("/sso/login/:providerId", { config: { public: true } }, async (req, reply) => {
     const { providerId } = req.params as { providerId: string };
     const { redirect_uri, tenantSlug } = req.query as {
       redirect_uri?: string;
@@ -354,9 +391,15 @@ export const authModule: FastifyPluginAsync = async (app) => {
   });
 
   /**
-   * SSO Callback
+   * SSO Callback (F-002)
+   *
+   * After the OAuth provider redirects back, we exchange the code via the SSO
+   * service, store the resulting tokens in Redis under a short-lived (30s) code,
+   * and redirect the browser to the frontend with only that opaque `sso_code`
+   * param — never the raw tokens.  The frontend must call POST /sso/exchange to
+   * retrieve the actual access + refresh tokens.
    */
-  app.get("/sso/callback/:providerId", async (req, reply) => {
+  app.get("/sso/callback/:providerId", { config: { public: true } }, async (req, reply) => {
     const { providerId } = req.params as { providerId: string };
     const { code, state } = req.query as { code: string; state: string };
     const tenantId = (state?.split(":")[0] || "default") as TenantId;
@@ -369,19 +412,27 @@ export const authModule: FastifyPluginAsync = async (app) => {
         state,
       }) as SsoCallbackResultWithRedirect;
 
-      const callbackUser = result.user;
-      if (!result.success || !callbackUser || !result.accessToken || !result.refreshToken) {
-        return reply.code(400).send({ error: 'Login Failed', details: 'SSO callback did not return a complete session' });
+      if (!result.success || !result.accessToken || !result.refreshToken) {
+        return reply.code(400).send({ error: "Login Failed", details: "SSO callback did not return a complete session" });
       }
 
       const refreshClaims = jwt.verify(result.refreshToken) as AuthJwtClaims;
       await storeRefreshSession(result.refreshToken, refreshClaims);
 
+      // Store tokens in Redis under a short-lived opaque code.  The browser
+      // never sees the raw token values in the URL (F-002).
+      const ssoCode = crypto.randomUUID();
+      const SSO_EXCHANGE_TTL = 30; // seconds
+      await redis.set(
+        `auth:sso-exchange:${ssoCode}`,
+        JSON.stringify({ accessToken: result.accessToken, refreshToken: result.refreshToken }),
+        "EX",
+        SSO_EXCHANGE_TTL,
+      );
+
       const target = result.redirectUri || "/dashboard";
       const separator = target.includes("?") ? "&" : "?";
-      return reply.redirect(
-        `${target}${separator}accessToken=${encodeURIComponent(result.accessToken)}&refreshToken=${encodeURIComponent(result.refreshToken)}`,
-      );
+      return reply.redirect(`${target}${separator}sso_code=${encodeURIComponent(ssoCode)}`);
     } catch (e: unknown) {
       return reply
         .code(400)
@@ -389,7 +440,42 @@ export const authModule: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/refresh", async (req, reply) => {
+  /**
+   * POST /sso/exchange (F-002)
+   *
+   * Exchange the short-lived opaque `ssoCode` for an access + refresh token
+   * pair.  The code is single-use and expires in 30 seconds.
+   */
+  app.post("/sso/exchange", { config: { public: true } }, async (req, reply) => {
+    const { z } = await import("zod");
+    const bodyResult = z.object({ ssoCode: z.string().uuid() }).safeParse(req.body);
+    if (!bodyResult.success) {
+      return reply.code(400).send({ error: "ssoCode is required and must be a valid UUID" });
+    }
+
+    const redisKey = `auth:sso-exchange:${bodyResult.data.ssoCode}`;
+    const raw = await redis.get(redisKey);
+    if (!raw) {
+      return reply.code(401).send({ error: "SSO code invalid or expired" });
+    }
+
+    // Delete immediately — single-use
+    await redis.del(redisKey);
+
+    let parsed: { accessToken: string; refreshToken: string };
+    try {
+      parsed = JSON.parse(raw) as { accessToken: string; refreshToken: string };
+    } catch {
+      return reply.code(500).send({ error: "Internal error during SSO exchange" });
+    }
+
+    return reply.send({
+      accessToken: parsed.accessToken,
+      refreshToken: parsed.refreshToken,
+    });
+  });
+
+  app.post("/refresh", { config: { public: true } }, async (req, reply) => {
     const { refreshToken } = (req.body as { refreshToken?: string }) ?? {};
 
     if (!refreshToken) {
@@ -408,7 +494,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
       }
 
       const user = await fetchSessionUser(claims);
-      await deleteRefreshSession(claims.jti);
+      await deleteRefreshSession(claims.jti, session);
 
       const nextAccessToken = signAccessToken(user);
       const nextRefreshToken = signRefreshToken(user);
@@ -431,12 +517,40 @@ export const authModule: FastifyPluginAsync = async (app) => {
     if (refreshToken) {
       try {
         const claims = jwt.verify(refreshToken) as AuthJwtClaims;
-        await deleteRefreshSession(claims.jti);
+        const session = claims.jti ? await readRefreshSession(claims.jti) : null;
+        await deleteRefreshSession(claims.jti, session ?? undefined);
       } catch {
         // Logout stays idempotent.
       }
     }
 
     return reply.send({ success: true });
+  });
+
+  /**
+   * POST /revoke-all-sessions (F-003)
+   *
+   * Revokes all refresh sessions for the authenticated user.
+   * Admin users may specify a different userId via request body to revoke another
+   * user's sessions.  Non-admin callers can only revoke their own sessions.
+   */
+  app.post("/revoke-all-sessions", async (req, reply) => {
+    const caller = (req as typeof req & { user?: AuthJwtClaims }).user;
+    if (!caller?.sub || !caller.tenantId) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
+    const body = (req.body ?? {}) as { userId?: string };
+    const targetUserId = body.userId;
+
+    // Only admin/superadmin can revoke other users' sessions
+    if (targetUserId && targetUserId !== caller.sub && caller.role !== "admin" && caller.role !== "superadmin") {
+      return reply.code(403).send({ error: "Forbidden: insufficient role to revoke another user's sessions" });
+    }
+
+    const userId = targetUserId ?? caller.sub;
+    const revoked = await revokeAllUserSessions(caller.tenantId, userId);
+
+    return reply.send({ revoked });
   });
 };

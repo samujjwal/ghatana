@@ -58,6 +58,15 @@ interface DashboardSummary {
   };
 }
 
+export interface LearnerInsights {
+  engagementScore: number;
+  tier: "high" | "medium" | "low";
+  headline: string;
+  tips: string[];
+  showTeacherCta: boolean;
+  computedAt: string;
+}
+
 interface ModuleSummary {
   id: string;
   title: string;
@@ -305,13 +314,17 @@ export class TutorPutorApiClient {
     });
 
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
+      const errorBody = await response.json().catch(() => ({})) as Record<string, unknown>;
       const error = new Error(
-        errorBody?.error ||
-          errorBody?.message ||
+        (errorBody?.error as string) ||
+          (errorBody?.message as string) ||
           `HTTP ${response.status}: ${response.statusText}`,
-      ) as Error & { statusCode: number };
+      ) as Error & { statusCode: number; requestId?: string };
       error.statusCode = response.status;
+      // Propagate the server-assigned requestId so it can be shown in the UI
+      if (typeof errorBody?.requestId === "string") {
+        error.requestId = errorBody.requestId;
+      }
       throw error;
     }
 
@@ -320,6 +333,10 @@ export class TutorPutorApiClient {
 
   async getDashboard(): Promise<DashboardSummary> {
     return await this.request<DashboardSummary>("/v1/learning/dashboard");
+  }
+
+  async getMyInsights(): Promise<LearnerInsights> {
+    return await this.request<LearnerInsights>("/v1/learning/my-insights");
   }
 
   async listModules(domain?: string): Promise<{

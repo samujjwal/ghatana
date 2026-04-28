@@ -15,7 +15,13 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
-    ignores: ["node_modules/**", "android/**", "ios/**", "e2e/**", ".metro-cache/**"],
+    ignores: [
+      "node_modules/**",
+      "android/**",
+      "ios/**",
+      "e2e/**",
+      ".metro-cache/**",
+    ],
   },
   {
     files: ["src/**/*.{ts,tsx}"],

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyRequest } from 'fastify';
 
 import {
+  assertTrustedProxyNotEnabledInProduction,
   canUseTrustedProxyAuth,
   hasTrustedProxyIdentityHeaders,
   hasTrustedProxySecret,
@@ -24,6 +25,28 @@ describe('trustedProxyAuth', () => {
     process.env.NODE_ENV = originalNodeEnv;
     process.env.TRUST_PROXY_AUTH_HEADERS = originalTrustedHeaders;
     process.env.TRUST_PROXY_AUTH_SHARED_SECRET = originalTrustedSecret;
+  });
+
+  describe('assertTrustedProxyNotEnabledInProduction', () => {
+    it('throws when NODE_ENV=production and TRUST_PROXY_AUTH_HEADERS=true', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.TRUST_PROXY_AUTH_HEADERS = 'true';
+      expect(() => assertTrustedProxyNotEnabledInProduction()).toThrow(
+        /TRUST_PROXY_AUTH_HEADERS=true is not permitted in production/,
+      );
+    });
+
+    it('does not throw when NODE_ENV=production but feature is disabled', () => {
+      process.env.NODE_ENV = 'production';
+      delete process.env.TRUST_PROXY_AUTH_HEADERS;
+      expect(() => assertTrustedProxyNotEnabledInProduction()).not.toThrow();
+    });
+
+    it('does not throw when NODE_ENV=development even if feature is enabled', () => {
+      process.env.NODE_ENV = 'development';
+      process.env.TRUST_PROXY_AUTH_HEADERS = 'true';
+      expect(() => assertTrustedProxyNotEnabledInProduction()).not.toThrow();
+    });
   });
 
   it('requires explicit opt-in configuration', () => {

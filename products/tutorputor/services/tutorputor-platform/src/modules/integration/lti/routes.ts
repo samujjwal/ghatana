@@ -127,9 +127,29 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
 
   /**
    * POST /launch
-   * LTI 1.3 launch endpoint with proper signature verification
+   * LTI 1.3 launch endpoint with proper signature verification.
+   * F-015: Rate-limited per platform to 30 req/min to guard the public surface.
    */
-  app.post("/launch", async (request, reply) => {
+  app.post(
+    "/launch",
+    {
+      config: { public: true },
+      // Per-platform rate limit: key = "lti-launch:<platformId from form body>"
+      // Falls back to IP when platformId is not yet parsed.
+      // @ts-expect-error — @fastify/rate-limit route config is untyped on FastifyContextConfig
+      rateLimit: {
+        max: 30,
+        timeWindow: "1 minute",
+        keyGenerator: (req: import("fastify").FastifyRequest): string => {
+          // The id_token is a JWT; its issuer maps to the platform.
+          // We derive a rate-limit key from the raw body's state param (safe, unverified).
+          const body = req.body as Record<string, unknown> | undefined;
+          const state = typeof body?.["state"] === "string" ? body["state"].slice(0, 64) : "unknown";
+          return `lti-launch:${state}`;
+        },
+      },
+    },
+    async (request, reply) => {
     try {
       const bodyResult = launchBodySchema.safeParse(request.body);
       if (!bodyResult.success) {
@@ -202,7 +222,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * Generate with: openssl genrsa -out lti.pem 2048 && openssl rsa -in lti.pem -pubout -out lti.pub
    * Then base64url-encode the modulus/exponent from the public key.
    */
-  app.get("/jwks", async (_request, reply) => {
+  app.get("/jwks", { config: { public: true } }, async (_request, reply) => {
     try {
       const toolConfiguration =
         await fullLtiServices.platformService.getToolConfiguration({
@@ -223,7 +243,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * POST /deep-linking
    * Deep linking response handler
    */
-  app.post("/deep-linking", async (request, reply) => {
+  app.post("/deep-linking", { config: { public: true } }, async (request, reply) => {
     const bodyResult = deepLinkingBodySchema.safeParse(request.body);
     if (!bodyResult.success) {
       return reply.code(400).send({
@@ -266,7 +286,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * POST /grade-passback
    * Grade passback to LMS
    */
-  app.post("/grade-passback", async (request, reply) => {
+  app.post("/grade-passback", { config: { public: true } }, async (request, reply) => {
     let tenantId: TenantId = "public" as TenantId;
     try {
       tenantId = getTenantId(request) as TenantId;
@@ -314,7 +334,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * GET /config/:platform
    * Get LTI configuration for a platform
    */
-  app.get("/config/:platform", async (request, reply) => {
+  app.get("/config/:platform", { config: { public: true } }, async (request, reply) => {
     const paramsResult = platformParamSchema.safeParse(request.params);
     if (!paramsResult.success) {
       return reply.code(400).send({

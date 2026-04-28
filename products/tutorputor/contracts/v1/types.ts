@@ -1750,3 +1750,130 @@ export interface LtiGradePassbackResult {
   passedAt?: string;
 }
 
+// =============================================================================
+// Soft-Delete / History Convention (F-037)
+// =============================================================================
+
+/**
+ * Base interface for all soft-deletable entities.
+ * All user-mutable entities must implement this interface.
+ *
+ * F-037: Soft-delete convention — entities are marked as deleted
+ * rather than physically removed. This enables:
+ * - Audit trails
+ * - Data recovery
+ * - Referential integrity preservation
+ */
+export interface SoftDeletable {
+  /** ISO 8601 timestamp when the entity was soft-deleted, or null if active */
+  deletedAt: string | null;
+  /** ID of user who performed the soft-delete, or null if not deleted */
+  deletedBy: UserId | null;
+}
+
+/**
+ * History entry for an entity change.
+ * Tracks who made a change and when.
+ */
+export interface HistoryEntry<T> {
+  /** The entity state at this point in history */
+  snapshot: T;
+  /** ISO 8601 timestamp of the change */
+  changedAt: string;
+  /** ID of user who made the change */
+  changedBy: UserId;
+  /** Type of change operation */
+  operation: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE';
+  /** Optional change reason/description */
+  reason?: string;
+}
+
+/**
+ * History wrapper for entities that require full audit trails.
+ * Contains the current state plus historical versions.
+ *
+ * F-037: History pattern for user-mutable entities — enables
+ * point-in-time recovery and compliance auditing.
+ */
+export interface History<T> {
+  /** Current entity state */
+  current: T & SoftDeletable;
+  /** Chronological history of changes (oldest first) */
+  entries: HistoryEntry<T>[];
+  /** Total number of history entries */
+  version: number;
+}
+
+/**
+ * Apply soft-delete to an entity.
+ * Returns a new entity with deletedAt and deletedBy set.
+ */
+export function softDelete<T extends SoftDeletable>(
+  entity: T,
+  deletedBy: UserId,
+  deletedAt: string = new Date().toISOString()
+): T {
+  return {
+    ...entity,
+    deletedAt,
+    deletedBy,
+  };
+}
+
+/**
+ * Restore a soft-deleted entity.
+ * Returns a new entity with deletedAt and deletedBy cleared.
+ */
+export function restore<T extends SoftDeletable>(entity: T): T {
+  const { deletedAt: _, deletedBy: __, ...rest } = entity;
+  return {
+    ...rest,
+    deletedAt: null,
+    deletedBy: null,
+  } as T;
+}
+
+/**
+ * Check if an entity is currently soft-deleted.
+ */
+export function isDeleted(entity: SoftDeletable): boolean {
+  return entity.deletedAt !== null;
+}
+
+/**
+ * Create a history entry for an entity change.
+ */
+export function createHistoryEntry<T extends SoftDeletable>(
+  snapshot: T,
+  changedBy: UserId,
+  operation: HistoryEntry<T>['operation'],
+  reason?: string
+): HistoryEntry<T> {
+  return {
+    snapshot,
+    changedAt: new Date().toISOString(),
+    changedBy,
+    operation,
+    reason,
+  };
+}
+
+/**
+ * Apply a change to an entity and record it in history.
+ * Returns the updated entity with incremented version.
+ */
+export function applyChange<T extends SoftDeletable>(
+  history: History<T>,
+  newState: T,
+  changedBy: UserId,
+  operation: HistoryEntry<T>['operation'],
+  reason?: string
+): History<T> {
+  const entry = createHistoryEntry(newState, changedBy, operation, reason);
+  return {
+    current: newState,
+    entries: [...history.entries, entry],
+    version: history.version + 1,
+  };
+}
+

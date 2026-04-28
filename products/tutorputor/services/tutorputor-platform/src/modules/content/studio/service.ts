@@ -21,6 +21,8 @@ import type {
   ValidationCheck,
 } from "@tutorputor/contracts/v1/content-studio";
 import type { IndependentGeneratedContentValidator } from "../evaluation/independent-validator-service.js";
+import type { ClaimContradictionGrader } from "../evaluation/claim-contradiction-grader.js";
+import type { RubricBackedPillarGrader } from "../evaluation/rubric-backed-pillar-grader.js";
 import {
   getContentGenerationQueue,
   type ContentGenerationQueueLike,
@@ -175,6 +177,10 @@ export interface ContentStudioConfig {
     IndependentGeneratedContentValidator,
     "validateGeneratedContent"
   >;
+  /** F-011: Second-LLM contradiction grader, run async before publish gate */
+  contradictionGrader?: Pick<ClaimContradictionGrader, "check">;
+  /** F-036: Rubric-backed pillar grader replacing heuristic scoring */
+  rubricGrader?: Pick<RubricBackedPillarGrader, "grade">;
 }
 
 type ExtendedExperienceValidationResult = ExperienceValidationResult & {
@@ -870,6 +876,8 @@ export function createContentStudioService(
 ): HealthAwareContentStudioService {
   const queue: ContentGenerationQueueLike = getContentGenerationQueue();
   const independentValidator = _config.independentValidator;
+  const contradictionGrader = _config.contradictionGrader;
+  const rubricGrader = _config.rubricGrader;
 
   function buildIndependentValidationContent(
     experience: {
@@ -1680,6 +1688,79 @@ export function createContentStudioService(
       });
     }
 
+    // =========================================================================
+    // F-011: Second-LLM claim contradiction grader
+    // =========================================================================
+    let contradictionBlocksPublish = false;
+    if (contradictionGrader && claimCount > 1) {
+      try {
+        const claimList = Array.isArray((experience as { claims?: unknown[] }).claims)
+          ? (experience as { claims: Array<{ id?: string; claimRef?: string; text?: string }> }).claims.map((c) => ({
+              id: String(c.id ?? c.claimRef ?? ""),
+              text: String(c.text ?? ""),
+            }))
+          : [];
+        const contradictionResult = await contradictionGrader.check({
+          experienceId: id,
+          tenantId: String(experience.tenantId),
+          actorId: _request?.userId ?? "system",
+          title: String((experience as { title?: string }).title ?? ""),
+          claims: claimList,
+        });
+        contradictionBlocksPublish = contradictionResult.blocksPublish;
+        checks.push({
+          checkId: "claim-contradiction-grader",
+          pillar: "accuracy",
+          name: "Claim Contradiction Check (F-011)",
+          passed: !contradictionResult.blocksPublish,
+          severity: contradictionResult.blocksPublish ? "error" : "info",
+          message: contradictionResult.blocksPublish
+            ? `${contradictionResult.contradictingPairs.length} contradicting claim pair(s) found (coherence ${contradictionResult.coherenceScore}/100). Resolve before publishing.`
+            : `No claim contradictions detected (coherence ${contradictionResult.coherenceScore}/100).`,
+          ...(contradictionResult.blocksPublish
+            ? { suggestion: "Review the flagged claim pairs and remove or reconcile the contradictory statements." }
+            : {}),
+        });
+      } catch (_err) {
+        // Do not block publish if grader itself throws unexpectedly
+      }
+    }
+
+    // =========================================================================
+    // F-036: Rubric-backed pillar grader (augments heuristic scores)
+    // =========================================================================
+    let rubricOverallScore: number | undefined;
+    if (rubricGrader && claimCount > 0) {
+      try {
+        const claimTexts = Array.isArray((experience as { claims?: Array<{ text?: string }> }).claims)
+          ? (experience as { claims: Array<{ text?: string }> }).claims.map((c) => String(c.text ?? ""))
+          : [];
+        const rubricResult = await rubricGrader.grade({
+          experienceId: id,
+          tenantId: String(experience.tenantId),
+          title: String((experience as { title?: string }).title ?? ""),
+          description: String((experience as { description?: string }).description ?? ""),
+          claimTexts,
+        });
+        rubricOverallScore = rubricResult.overallScore;
+        for (const pillarResult of rubricResult.pillarResults) {
+          checks.push({
+            checkId: `rubric-pillar-${pillarResult.pillar}`,
+            pillar: pillarResult.pillar,
+            name: `Rubric: ${pillarResult.pillar.charAt(0).toUpperCase()}${pillarResult.pillar.slice(1)} (F-036)`,
+            passed: !pillarResult.blocksPublish,
+            severity: pillarResult.blocksPublish ? "error" : pillarResult.weightedScore < 60 ? "warning" : "info",
+            message: `Rubric score ${pillarResult.weightedScore}/100${pillarResult.blocksPublish ? " — blocks publish" : ""}.`,
+            ...(pillarResult.blocksPublish
+              ? { suggestion: `Improve ${pillarResult.pillar} quality before publishing (minimum 40/100 required).` }
+              : {}),
+          });
+        }
+      } catch (_err) {
+        // Rubric grader failure must not block publish
+      }
+    }
+
     const canPublish =
       claimCount > 0 &&
       allClaimsMeetBaseline &&
@@ -1687,7 +1768,9 @@ export function createContentStudioService(
       overallScore >= 60 &&
       !requiresManualReview &&
       independentValidation?.status !== "FAIL" &&
-      independentValidation?.requiresHumanReview !== true;
+      independentValidation?.requiresHumanReview !== true &&
+      !contradictionBlocksPublish &&
+      (rubricOverallScore === undefined || rubricOverallScore >= 40);
     const overallStatus = canPublish
       ? "PASS"
       : independentValidation?.status === "FAIL"

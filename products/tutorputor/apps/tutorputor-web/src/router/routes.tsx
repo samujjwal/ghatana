@@ -125,6 +125,11 @@ export const router = createBrowserRouter([
         path: "settings",
         lazy: async () => loadDefaultComponent(() => import("../pages/Settings")),
       },
+      {
+        path: "settings/privacy",
+        lazy: async () =>
+          loadNamedComponent(() => import("../pages/PrivacySettingsPage"), "PrivacySettingsPage"),
+      },
 
       // === LEARNER FLOW ===
       {

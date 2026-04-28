@@ -1166,6 +1166,91 @@ async function learningRoutes(
     },
   );
 
+  // ---------------------------------------------------------------------------
+  // F-032: Canonical role-filtered analytics summary
+  //
+  // Single endpoint consumed by both the teacher dashboard (tutorputor-web)
+  // and the admin panel (tutorputor-admin). Role determines the response scope:
+  //   - learner   : own progress metrics only (no class aggregates)
+  //   - teacher   : classroom/module-level aggregates for the tenant
+  //   - admin     : full tenant aggregates + advanced predictions
+  //   - superadmin: same as admin
+  // ---------------------------------------------------------------------------
+
+  fastify.get<{
+    Querystring: {
+      moduleId?: string;
+      classroomId?: string;
+      period?: string;
+    };
+  }>(
+    "/analytics/summary",
+    {
+      schema: {
+        description:
+          "Canonical role-filtered analytics summary — single endpoint for teacher, admin, and learner dashboards (F-032)",
+        tags: ["Analytics"],
+        querystring: {
+          type: "object",
+          properties: {
+            moduleId: { type: "string" },
+            classroomId: { type: "string" },
+            period: { type: "string", enum: ["daily", "weekly", "monthly"] },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+      // `role` is a string claim inside the JWT; narrow it against known values.
+      const rawRole: unknown = (request.user as Record<string, unknown>).role;
+      const role =
+        rawRole === "learner" ||
+        rawRole === "teacher" ||
+        rawRole === "admin" ||
+        rawRole === "superadmin" ||
+        rawRole === "content_creator" ||
+        rawRole === "service"
+          ? rawRole
+          : "learner";
+
+      const { moduleId, classroomId, period } = request.query;
+
+      if (role === "learner") {
+        // Learner: own progress metrics only — no class-wide aggregates or PII
+        const summary = await analyticsService.getSummary({ tenantId, moduleId: moduleId as ModuleId });
+        return reply.send({
+          role: "learner",
+          userId,
+          moduleCount: summary.moduleCount,
+          totalEvents: summary.totalEvents,
+          averageCompletionRate: summary.averageCompletionRate,
+          averageTimeSpentMinutes: summary.averageTimeSpentMinutes,
+        });
+      }
+
+      if (role === "teacher" || role === "content_creator") {
+        // Teacher: per-tenant/module aggregates, no cross-tenant comparison
+        const summary = await analyticsService.getSummary({ tenantId, moduleId: moduleId as ModuleId });
+        return reply.send({ role, tenantId, moduleId, classroomId, ...summary });
+      }
+
+      // admin / superadmin / service: full aggregates + advanced predictions
+      const resolvedPeriod =
+        (period as "daily" | "weekly" | "monthly" | undefined) ?? "weekly";
+      const [summary, advanced] = await Promise.all([
+        analyticsService.getSummary({ tenantId, moduleId: moduleId as ModuleId }),
+        analyticsService.getAdvancedAnalytics({
+          tenantId,
+          classroomId: classroomId as ClassroomId,
+          period: resolvedPeriod,
+        }),
+      ]);
+      return reply.send({ role, tenantId, summary, advanced });
+    },
+  );
+
   fastify.get<{ Querystring: { classroomId?: string; period?: string } }>(
     "/analytics/advanced",
     {
@@ -1206,6 +1291,141 @@ async function learningRoutes(
         minRiskLevel: (minRiskLevel as RiskLevel | undefined) ?? "low",
       });
       return reply.send(result);
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // Learner Engagement Insights (self-facing — no PII, learner-friendly copy)
+  //
+  // Translates the internal risk score model into an "engagement score" for the
+  // authenticated learner.  The score is inverted (high engagement = high score)
+  // and the copy never mentions "dropout" or "at-risk".
+  // ---------------------------------------------------------------------------
+
+  fastify.get(
+    "/learning/my-insights",
+    {
+      schema: {
+        description:
+          "Return the authenticated learner's engagement score with actionable suggestions",
+        tags: ["Learning"],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              engagementScore: { type: "number", minimum: 0, maximum: 100 },
+              tier: { type: "string", enum: ["high", "medium", "low"] },
+              headline: { type: "string" },
+              tips: { type: "array", items: { type: "string" } },
+              showTeacherCta: { type: "boolean" },
+              computedAt: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
+
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const [recentEventCount, prevWeekEventCount, failedAttemptCount, enrollment] =
+        await Promise.all([
+          fastify.prisma.learningEvent.count({
+            where: { tenantId, userId, timestamp: { gte: sevenDaysAgo } },
+          }),
+          fastify.prisma.learningEvent.count({
+            where: {
+              tenantId,
+              userId,
+              timestamp: {
+                gte: new Date(sevenDaysAgo.getTime() - 7 * 24 * 60 * 60 * 1000),
+                lt: sevenDaysAgo,
+              },
+            },
+          }),
+          fastify.prisma.assessmentAttempt.count({
+            where: {
+              tenantId,
+              userId,
+              startedAt: { gte: thirtyDaysAgo },
+              scorePercent: { lt: 60 },
+            },
+          }),
+          fastify.prisma.enrollment.findFirst({
+            where: { tenantId, userId, status: "IN_PROGRESS" },
+            orderBy: { lastAccessedAt: "desc" },
+          }),
+        ]);
+
+      // Compute a simple risk score (0–100, higher = more at risk)
+      let riskPoints = 0;
+
+      // Inactivity signal
+      if (recentEventCount === 0) riskPoints += 30;
+      else if (recentEventCount < 3) riskPoints += 15;
+
+      // Declining engagement
+      if (prevWeekEventCount > recentEventCount * 2) riskPoints += 25;
+
+      // Failing assessments
+      if (failedAttemptCount >= 5) riskPoints += 30;
+      else if (failedAttemptCount >= 3) riskPoints += 20;
+
+      // Low progress despite time invested
+      if (enrollment && enrollment.progressPercent < 20 && enrollment.timeSpentSeconds > 3600) {
+        riskPoints += 25;
+      }
+
+      // Clamp risk to [0, 100] then invert to engagement score
+      const clampedRisk = Math.min(riskPoints, 100);
+      const engagementScore = Math.max(0, 100 - clampedRisk);
+
+      const tier: "high" | "medium" | "low" =
+        engagementScore >= 70 ? "high" : engagementScore >= 40 ? "medium" : "low";
+
+      const tierCopy: Record<
+        "high" | "medium" | "low",
+        { headline: string; tips: string[] }
+      > = {
+        high: {
+          headline: "You're on a great streak — keep it up!",
+          tips: [
+            "Try a new simulation to challenge yourself.",
+            "Share what you've learned with a classmate.",
+            "See if you can finish your next module this week.",
+          ],
+        },
+        medium: {
+          headline: "You're making progress — a little more goes a long way.",
+          tips: [
+            "Try to complete one more activity this week.",
+            "Review the last section you worked on — it helps things stick.",
+            "Set a 15-minute learning goal for today.",
+          ],
+        },
+        low: {
+          headline: "We've missed you! Let's get back on track together.",
+          tips: [
+            "Start with just 5 minutes — small steps count.",
+            "Pick the topic that interests you most and begin there.",
+            "Your teacher can help you catch up — reach out any time.",
+          ],
+        },
+      };
+
+      const { headline, tips } = tierCopy[tier];
+
+      return reply.send({
+        engagementScore,
+        tier,
+        headline,
+        tips,
+        showTeacherCta: tier === "low",
+        computedAt: new Date().toISOString(),
+      });
     },
   );
 

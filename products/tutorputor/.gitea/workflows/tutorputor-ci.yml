@@ -250,7 +250,8 @@ jobs:
   build-images:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [lint-typecheck, test, content-worker-integration, simulation-correctness]
+    needs:
+      [lint-typecheck, test, content-worker-integration, simulation-correctness]
     if: github.event_name == 'push'
     permissions:
       contents: read

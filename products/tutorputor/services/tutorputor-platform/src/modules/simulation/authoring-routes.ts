@@ -40,6 +40,7 @@ import type {
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 import { getTenantId, getUserId } from "../../core/http/requestContext.js";
 import { SimulationTemplateLibraryService } from "./template-library-service.js";
+import { applyManifestGuardrails } from "./manifest-guardrails.js";
 
 type SimAuthorConfig = {
   providers: Array<{
@@ -1315,24 +1316,35 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const tenantId = getTenantId(request);
       const body = request.body ?? {};
+
+      // ── Parameter guardrails ────────────────────────────────────────────────
+      const guardrail = applyManifestGuardrails(body);
+      if (!guardrail.valid) {
+        return reply.code(400).send({
+          error: "Invalid manifest body",
+          validationErrors: guardrail.validationErrors,
+        });
+      }
+      const safeBody = guardrail.body;
+
       const manifestId =
-        typeof body.id === "string" && body.id.length > 0
-          ? body.id
+        typeof safeBody.id === "string" && safeBody.id.length > 0
+          ? safeBody.id
           : crypto.randomUUID();
       const title =
-        typeof body.title === "string" && body.title.length > 0
-          ? body.title
+        typeof safeBody.title === "string" && safeBody.title.length > 0
+          ? safeBody.title
           : "Untitled Simulation";
       const domain =
-        typeof body.domain === "string" && body.domain.length > 0
-          ? body.domain
+        typeof safeBody.domain === "string" && safeBody.domain.length > 0
+          ? safeBody.domain
           : "PHYSICS";
       const version =
-        typeof body.version === "string" && body.version.length > 0
-          ? body.version
+        typeof safeBody.version === "string" && safeBody.version.length > 0
+          ? safeBody.version
           : "1.0.0";
       const description =
-        typeof body.description === "string" ? body.description : null;
+        typeof safeBody.description === "string" ? safeBody.description : null;
 
       const created = await app.prisma.simulationManifest.create({
         data: {
@@ -1342,7 +1354,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
           description,
           version,
           domain: domain as any,
-          manifest: toInputJsonValue(body),
+          manifest: toInputJsonValue(safeBody),
         },
       });
 
@@ -1350,6 +1362,15 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         id: created.id,
         title: created.title,
         manifest: created.manifest,
+        ...(guardrail.warnings.length > 0
+          ? {
+              warnings: guardrail.warnings.map((w) => ({
+                parameter: w.parameterName,
+                field: w.field,
+                message: w.message,
+              })),
+            }
+          : {}),
       });
     },
   );
@@ -1408,28 +1429,47 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       if (!existing) {
         return reply.code(404).send({ error: "Manifest not found" });
       }
+
+      // ── Parameter guardrails ──────────────────────────────────────────────
+      const guardrail = applyManifestGuardrails(request.body);
+      if (!guardrail.valid) {
+        return reply.code(400).send({
+          error: "Invalid manifest body",
+          validationErrors: guardrail.validationErrors,
+        });
+      }
+      const safeBody = guardrail.body;
+
       await app.prisma.simulationManifest.update({
         where: { id },
         data: {
-          ...(typeof request.body.title === "string" &&
-          request.body.title.length > 0
-            ? { title: request.body.title }
+          ...(typeof safeBody.title === "string" && safeBody.title.length > 0
+            ? { title: safeBody.title }
             : {}),
-          ...(typeof request.body.description === "string"
-            ? { description: request.body.description }
+          ...(typeof safeBody.description === "string"
+            ? { description: safeBody.description }
             : {}),
-          ...(typeof request.body.version === "string" &&
-          request.body.version.length > 0
-            ? { version: request.body.version }
+          ...(typeof safeBody.version === "string" && safeBody.version.length > 0
+            ? { version: safeBody.version }
             : {}),
-          ...(typeof request.body.domain === "string" &&
-          request.body.domain.length > 0
-            ? { domain: request.body.domain as any }
+          ...(typeof safeBody.domain === "string" && safeBody.domain.length > 0
+            ? { domain: safeBody.domain as any }
             : {}),
-          manifest: toInputJsonValue(request.body),
+          manifest: toInputJsonValue(safeBody),
         },
       });
-      return reply.send({ success: true });
+      return reply.send({
+        success: true,
+        ...(guardrail.warnings.length > 0
+          ? {
+              warnings: guardrail.warnings.map((w) => ({
+                parameter: w.parameterName,
+                field: w.field,
+                message: w.message,
+              })),
+            }
+          : {}),
+      });
     },
   );
 
