@@ -24,7 +24,7 @@
     "@ghatana/platform-utils": "workspace:*",
     "@yappc/core": "workspace:*",
     "@yappc/state": "workspace:*",
-    "jotai": "^2.12.5",
+    "jotai": "^2.19.1",
     "zod": "^4.3.6",
     "clsx": "^2.1.1"
   },
