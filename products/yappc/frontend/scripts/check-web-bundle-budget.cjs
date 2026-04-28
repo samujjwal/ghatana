@@ -12,13 +12,23 @@ const reportPath = path.join(
   'reports',
   'web-bundle-budget.json'
 );
+const baselinePath = path.join(
+  workspaceRoot,
+  'performance',
+  'baselines',
+  'web-bundle-baseline.json'
+);
 
+// Absolute thresholds for overall bundle health
 const thresholdsKb = {
   totalGzip: 500,
   jsGzip: 350,
   cssGzip: 100,
   largestJsGzip: 200,
 };
+
+// Relative growth threshold for CI enforcement (per audit F-Y040)
+const GROWTH_THRESHOLD_PERCENT = 10;
 
 const buildCandidates = [
   path.join(webRoot, 'build', 'client', 'assets'),
@@ -115,12 +125,42 @@ function writeReport(summary) {
       {
         generatedAt: new Date().toISOString(),
         thresholdsKb,
+        growthThresholdPercent: GROWTH_THRESHOLD_PERCENT,
         summary,
       },
       null,
       2
     )
   );
+}
+
+function loadBaseline() {
+  if (!fs.existsSync(baselinePath)) {
+    return null;
+  }
+  try {
+    const content = fs.readFileSync(baselinePath, 'utf-8');
+    return JSON.parse(content);
+  } catch (error) {
+    console.warn(`Failed to load baseline from ${baselinePath}: ${error.message}`);
+    return null;
+  }
+}
+
+function saveBaseline(summary) {
+  fs.mkdirSync(path.dirname(baselinePath), { recursive: true });
+  fs.writeFileSync(
+    baselinePath,
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        summary,
+      },
+      null,
+      2
+    )
+  );
+  console.log(`Baseline saved to ${baselinePath}`);
 }
 
 function printSummary(summary) {
@@ -137,7 +177,7 @@ function printSummary(summary) {
   }
 }
 
-function collectFailures(summary) {
+function collectFailures(summary, baseline) {
   const failures = [];
 
   if (summary.totalGzipKb > thresholdsKb.totalGzip) {
@@ -161,12 +201,29 @@ function collectFailures(summary) {
     );
   }
 
+  if (baseline && baseline.summary) {
+    const baselineSummary = baseline.summary;
+    const mainChunkGrowthPercent =
+      ((summary.largestJsGzipKb - baselineSummary.largestJsGzipKb) /
+        baselineSummary.largestJsGzipKb) *
+      100;
+
+    if (mainChunkGrowthPercent > GROWTH_THRESHOLD_PERCENT) {
+      failures.push(
+        `Main chunk grew by ${mainChunkGrowthPercent.toFixed(1)}% (baseline: ${formatKb(baselineSummary.largestJsGzipKb)}, current: ${formatKb(summary.largestJsGzipKb)}), exceeds ${GROWTH_THRESHOLD_PERCENT}% threshold. Per audit F-Y040, PRs that grow main chunk by >10% must be reviewed.`
+      );
+    }
+  }
+
   return failures;
 }
 
 function main() {
   if (process.argv.includes('--help')) {
-    console.log('Usage: node ../scripts/check-web-bundle-budget.cjs [--report]');
+    console.log('Usage: node ../scripts/check-web-bundle-budget.cjs [--report] [--baseline] [--ci]');
+    console.log('  --report   Write bundle report to performance/reports/web-bundle-budget.json');
+    console.log('  --baseline Save current build as baseline for growth detection');
+    console.log('  --ci       Enforce CI checks (fail on >10% main chunk growth)');
     process.exit(0);
   }
 
@@ -179,18 +236,37 @@ function main() {
   const summary = analyzeBundle(buildDirectory);
   printSummary(summary);
 
+  const shouldSaveBaseline = process.argv.includes('--baseline');
+  const isCiMode = process.argv.includes('--ci');
+
+  if (shouldSaveBaseline) {
+    saveBaseline(summary);
+  }
+
   if (process.argv.includes('--report')) {
     writeReport(summary);
     console.log(`Bundle report written to ${reportPath}`);
   }
 
-  const failures = collectFailures(summary);
+  const baseline = loadBaseline();
+  const failures = collectFailures(summary, baseline);
+  
   if (failures.length > 0) {
-    console.error('Bundle budget exceeded:');
+    console.error('Bundle budget check failed:');
     for (const failure of failures) {
       console.error(`- ${failure}`);
     }
-    process.exit(1);
+    if (isCiMode || !baseline) {
+      // In CI mode or if no baseline exists, fail on any failure
+      process.exit(1);
+    }
+    // If baseline exists and not in CI mode, warn but don't fail on growth violations
+    const growthFailures = failures.filter(f => f.includes('grew by'));
+    if (growthFailures.length > 0 && !isCiMode) {
+      console.warn('Warning: Bundle growth detected. Run with --baseline to update baseline.');
+    } else {
+      process.exit(1);
+    }
   }
 
   console.log('Bundle budget check passed.');

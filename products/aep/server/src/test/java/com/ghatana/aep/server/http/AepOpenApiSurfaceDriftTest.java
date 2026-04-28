@@ -241,7 +241,10 @@ class AepOpenApiSurfaceDriftTest {
                     .as("DELETE endpoint %s should have 204 or 200 response", path) // GH-90000
                     .contains("    delete:")
                     .contains("responses:");
-                assertThat(block.contains("'204':") || block.contains("'200':") || block.contains("204:") || block.contains("200:"))
+                // Support all valid YAML response code formats: unquoted (204:), single-quoted ('204':), double-quoted ("204":)
+                assertThat(block.contains("'204':") || block.contains("'200':") || block.contains("204:") || block.contains("200:")
+                    || block.contains("\"204\":") || block.contains("\"200\":"))
+                    .as("DELETE endpoint %s should have 204 or 200 response code in any YAML format", path)
                     .isTrue(); // GH-90000
             }
         }
@@ -262,7 +265,10 @@ class AepOpenApiSurfaceDriftTest {
                     .as("POST endpoint %s should have 201 or 200 response", path) // GH-90000
                     .contains("    post:")
                     .contains("responses:");
-                assertThat(block.contains("'201':") || block.contains("'200':") || block.contains("201:") || block.contains("200:"))
+                // Support all valid YAML response code formats: unquoted (201:), single-quoted ('201':), double-quoted ("201":)
+                assertThat(block.contains("'201':") || block.contains("'200':") || block.contains("201:") || block.contains("200:")
+                    || block.contains("\"201\":") || block.contains("\"200\":"))
+                    .as("POST endpoint %s should have 201 or 200 response code in any YAML format", path)
                     .isTrue(); // GH-90000
             }
         }

@@ -147,6 +147,17 @@ const governanceRules = {
     },
   ],
 
+  // Ban @ts-nocheck and @ts-ignore (allow @ts-expect-error for intentional type assertions)
+  '@typescript-eslint/ban-ts-comment': [
+    'error',
+    {
+      'ts-expect-error': false,
+      'ts-ignore': true,
+      'ts-nocheck': true,
+      'ts-check': false,
+    },
+  ],
+
   // No unused imports
   'import/no-unused-modules': [
     'warn',

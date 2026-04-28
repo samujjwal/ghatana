@@ -1,6 +1,5 @@
 package com.ghatana.yappc.ai.requirements.api.http;
 
-import com.ghatana.yappc.ai.api.http.filter.AuthenticationFilter;
 import com.ghatana.yappc.ai.requirements.api.config.RequirementsConfig;
 import com.ghatana.yappc.ai.requirements.api.http.filter.CorsFilter;
 import com.ghatana.yappc.ai.requirements.api.rest.ExportController;
@@ -56,7 +55,6 @@ public final class RequirementsHttpServer {
   private final ProjectController projectController;
   private final RequirementController requirementController;
   private final ExportController exportController;
-  private final AuthenticationFilter authFilter;
   private final CorsFilter corsFilter;
   private final Eventloop eventloop;
 
@@ -68,7 +66,6 @@ public final class RequirementsHttpServer {
    * @param projectController project endpoints
    * @param requirementController requirement endpoints
    * @param exportController export endpoints
-   * @param authFilter authentication filter
    * @param corsFilter CORS filter
    * @param eventloop the event loop
    */
@@ -78,7 +75,6 @@ public final class RequirementsHttpServer {
       ProjectController projectController,
       RequirementController requirementController,
       ExportController exportController,
-      AuthenticationFilter authFilter,
       CorsFilter corsFilter,
       Eventloop eventloop) {
     this.config = Objects.requireNonNull(config);
@@ -86,7 +82,6 @@ public final class RequirementsHttpServer {
     this.projectController = Objects.requireNonNull(projectController);
     this.requirementController = Objects.requireNonNull(requirementController);
     this.exportController = Objects.requireNonNull(exportController);
-    this.authFilter = Objects.requireNonNull(authFilter);
     this.corsFilter = Objects.requireNonNull(corsFilter);
     this.eventloop = Objects.requireNonNull(eventloop);
   }

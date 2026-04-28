@@ -13,16 +13,79 @@ import java.util.Map;
  * Unit tests for {@link PIIScanner}.
  *
  * P3-18: Verify PII detection patterns work correctly.
+ * F-031: Verify PII enforcement policy defaults to BLOCK (fail-closed).
  */
 class PIIScannerTest {
 
     private final PIIScanner scanner = new PIIScanner(); // GH-90000
 
+    // -------------------------------------------------------------------------
+    // F-031: PiiEnforcementPolicy.resolve() defaults to BLOCK
+    // -------------------------------------------------------------------------
+
+    @Test
+    void resolveDefaultsToBlockWhenEnvVarIsAbsent() {
+        // Calls the testable overload with null (simulates an unset env var).
+        assertEquals(PIIScanner.PiiEnforcementPolicy.BLOCK,
+            PIIScanner.PiiEnforcementPolicy.resolve(null),
+            "BLOCK must be the fail-closed default when AEP_PII_ENFORCEMENT is absent");
+    }
+
+    @Test
+    void resolveDefaultsToBlockWhenEnvVarIsBlank() {
+        assertEquals(PIIScanner.PiiEnforcementPolicy.BLOCK,
+            PIIScanner.PiiEnforcementPolicy.resolve("   "),
+            "BLOCK must be the fail-closed default when AEP_PII_ENFORCEMENT is blank");
+    }
+
+    @Test
+    void resolveReturnsBlockForUnrecognisedValue() {
+        assertEquals(PIIScanner.PiiEnforcementPolicy.BLOCK,
+            PIIScanner.PiiEnforcementPolicy.resolve("UNKNOWN_POLICY"),
+            "Unrecognised values must fall back to BLOCK, not throw");
+    }
+
+    @Test
+    void resolveRecognisesExplicitBlockValue() {
+        assertEquals(PIIScanner.PiiEnforcementPolicy.BLOCK,
+            PIIScanner.PiiEnforcementPolicy.resolve("BLOCK"));
+    }
+
+    @Test
+    void resolveRecognisesExplicitBlockValueCaseInsensitive() {
+        assertEquals(PIIScanner.PiiEnforcementPolicy.BLOCK,
+            PIIScanner.PiiEnforcementPolicy.resolve("block"));
+    }
+
+    @Test
+    void resolveRecognisesExplicitLogValue() {
+        assertEquals(PIIScanner.PiiEnforcementPolicy.LOG,
+            PIIScanner.PiiEnforcementPolicy.resolve("LOG"));
+    }
+
+    @Test
+    void resolveRecognisesExplicitRedactValue() {
+        assertEquals(PIIScanner.PiiEnforcementPolicy.REDACT,
+            PIIScanner.PiiEnforcementPolicy.resolve("REDACT"));
+    }
+
+    @Test
+    void resolveThrowsForUnknownPolicyName() {
+        // valueOf with an unrecognised name should throw IllegalArgumentException —
+        // the resolve() method catches this and falls back to BLOCK.
+        assertThrows(IllegalArgumentException.class,
+            () -> PIIScanner.PiiEnforcementPolicy.valueOf("UNKNOWN_POLICY"));
+    }
+
+    // -------------------------------------------------------------------------
+    // Detection tests
+    // -------------------------------------------------------------------------
+
     @Test
     void shouldDetectEmailAddresses() { // GH-90000
         String text = "Contact us at user@example.com for support";
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         assertEquals(1, result.items().size()); // GH-90000
         assertEquals("email", result.items().get(0).type()); // GH-90000
@@ -33,7 +96,7 @@ class PIIScannerTest {
     void shouldDetectPhoneNumbers() { // GH-90000
         String text = "Call us at 555-123-4567 or (555) 987-6543"; // GH-90000
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         assertTrue(result.items().stream().anyMatch(item -> item.type().equals("phone")));
     }
@@ -42,7 +105,7 @@ class PIIScannerTest {
     void shouldDetectCreditCardNumbers() { // GH-90000
         String text = "Card number: 4111 1111 1111 1111";
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         assertTrue(result.items().stream().anyMatch(item -> item.type().equals("credit_card")));
     }
@@ -51,7 +114,7 @@ class PIIScannerTest {
     void shouldDetectSSN() { // GH-90000
         String text = "SSN: 123-45-6789";
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         assertTrue(result.items().stream().anyMatch(item -> item.type().equals("ssn")));
     }
@@ -60,7 +123,7 @@ class PIIScannerTest {
     void shouldDetectIPAddresses() { // GH-90000
         String text = "Server IP is 192.168.1.1";
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         assertTrue(result.items().stream().anyMatch(item -> item.type().equals("ip_address")));
     }
@@ -69,7 +132,7 @@ class PIIScannerTest {
     void shouldReturnNoPIIForCleanText() { // GH-90000
         String text = "This is a clean message with no sensitive data";
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertFalse(result.hasPII()); // GH-90000
         assertTrue(result.items().isEmpty()); // GH-90000
     }
@@ -77,7 +140,7 @@ class PIIScannerTest {
     @Test
     void shouldHandleEmptyText() { // GH-90000
         PIIScanner.PIIResult result = scanner.scan("");
-        
+
         assertFalse(result.hasPII()); // GH-90000
         assertTrue(result.items().isEmpty()); // GH-90000
     }
@@ -85,7 +148,7 @@ class PIIScannerTest {
     @Test
     void shouldHandleNullText() { // GH-90000
         PIIScanner.PIIResult result = scanner.scan(null); // GH-90000
-        
+
         assertFalse(result.hasPII()); // GH-90000
         assertTrue(result.items().isEmpty()); // GH-90000
     }
@@ -97,9 +160,9 @@ class PIIScannerTest {
             "message", "Call 555-123-4567 for help",
             "safe", "This is safe text"
         );
-        
+
         PIIScanner.PIIResult result = scanner.scanMap(data); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         assertTrue(result.items().stream().anyMatch(item -> item.type().equals("email")));
         assertTrue(result.items().stream().anyMatch(item -> item.type().equals("phone")));
@@ -109,7 +172,7 @@ class PIIScannerTest {
     void shouldDetectMultiplePIITypesInSingleText() { // GH-90000
         String text = "Email: user@example.com, Phone: 555-123-4567, IP: 192.168.1.1";
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
-        
+
         assertTrue(result.hasPII()); // GH-90000
         long distinctTypes = result.items().stream() // GH-90000
             .map(PIIScanner.PIIItem::type) // GH-90000
@@ -118,3 +181,4 @@ class PIIScannerTest {
         assertTrue(distinctTypes >= 3); // GH-90000
     }
 }
+

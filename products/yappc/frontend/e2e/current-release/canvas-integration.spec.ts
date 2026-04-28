@@ -66,8 +66,6 @@ async function mockGraphQL(page: Page): Promise<void> {
 // ---------------------------------------------------------------------------
 
 test.describe('Canvas ↔ Code Editor integration', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('selecting a code node opens the inline code editor panel', async ({ page }) => {
     await mockGraphQL(page);
     await gotoCanvas(page);
@@ -111,8 +109,6 @@ test.describe('Canvas ↔ Code Editor integration', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Canvas ↔ Agent Run Viewer integration', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('selecting an agent node opens the agent run viewer panel', async ({ page }) => {
     await mockGraphQL(page);
     await gotoCanvas(page);
@@ -171,8 +167,6 @@ test.describe('Canvas ↔ Agent Run Viewer integration', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Canvas ↔ Requirements integration', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('selecting a requirement node opens the requirement detail panel', async ({ page }) => {
     await mockGraphQL(page);
     await gotoCanvas(page);
@@ -216,8 +210,6 @@ test.describe('Canvas ↔ Requirements integration', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Canvas diagram state persistence', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('canvas node positions are restored after navigating away and back', async ({ page }) => {
     await mockGraphQL(page);
     await gotoCanvas(page);
@@ -297,8 +289,6 @@ test.describe('Canvas Visual Block Editor mode', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Canvas multi-node selection', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('shift-clicking selects multiple nodes', async ({ page }) => {
     await mockGraphQL(page);
     await gotoCanvas(page);

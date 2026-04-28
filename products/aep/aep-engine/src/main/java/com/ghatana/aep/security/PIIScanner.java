@@ -40,11 +40,17 @@ import java.util.regex.Pattern;
 public final class PIIScanner {
 
     /**
-     * T-14: Controls what happens when PII is detected in an event payload.
+     * T-14 / F-031: Controls what happens when PII is detected in an event payload.
      *
      * <p>The active policy is resolved at startup from the {@code AEP_PII_ENFORCEMENT}
-     * environment variable. Defaults to {@code LOG} so existing behaviour is unchanged
-     * unless the operator explicitly opts in to stricter enforcement.
+     * environment variable. <strong>Defaults to {@link #BLOCK}</strong> (fail-closed) so that
+     * PII never leaks in production unless an operator has explicitly opted into a weaker
+     * policy. Any non-BLOCK policy triggers an audit-level warning at startup so that the
+     * relaxation is observable in logs and telemetry.
+     *
+     * <p>To allow warn-only or redact mode (e.g. during a migration period), set:
+     * <pre>  AEP_PII_ENFORCEMENT=LOG   # detect and log only
+     *   AEP_PII_ENFORCEMENT=REDACT # replace PII values in-place</pre>
      */
     public enum PiiEnforcementPolicy {
         /** Detect and log PII; pass the payload unchanged. */
@@ -56,16 +62,43 @@ public final class PIIScanner {
 
         /**
          * Resolves the active policy from the environment.
-         * Falls back to {@link #LOG} when the variable is absent or unrecognised.
+         * Defaults to {@link #BLOCK} (fail-closed) when the variable is absent or unrecognised.
+         * Emits an audit-level warning when a permissive (non-BLOCK) policy is explicitly chosen.
          */
         public static PiiEnforcementPolicy resolve() {
-            String raw = System.getenv("AEP_PII_ENFORCEMENT");
-            if (raw == null || raw.isBlank()) return LOG;
-            try {
-                return valueOf(raw.trim().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return LOG;
+            return resolve(System.getenv("AEP_PII_ENFORCEMENT"));
+        }
+
+        /**
+         * Resolves the policy from the supplied raw environment-variable value.
+         * Package-private to allow deterministic unit testing without real env-var manipulation.
+         *
+         * @param raw the raw value of {@code AEP_PII_ENFORCEMENT}, or {@code null} when unset
+         * @return the resolved policy; never {@code null}
+         */
+        static PiiEnforcementPolicy resolve(String raw) {
+            Logger resolveLog = LoggerFactory.getLogger(PIIScanner.class);
+            if (raw == null || raw.isBlank()) {
+                resolveLog.info("[F-031] AEP_PII_ENFORCEMENT not set — defaulting to BLOCK (fail-closed).");
+                return BLOCK;
             }
+            PiiEnforcementPolicy policy;
+            try {
+                policy = valueOf(raw.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                resolveLog.warn(
+                    "[F-031] Unrecognised AEP_PII_ENFORCEMENT value '{}' — defaulting to BLOCK.", raw);
+                return BLOCK;
+            }
+            if (policy != BLOCK) {
+                resolveLog.warn(
+                    "[F-031][AUDIT] PII enforcement policy is '{}' — payload blocking is DISABLED. "
+                    + "Ensure this is intentional and approved; set AEP_PII_ENFORCEMENT=BLOCK to re-enable protection.",
+                    policy);
+            } else {
+                resolveLog.info("[F-031] PII enforcement policy resolved to BLOCK (fail-closed).");
+            }
+            return policy;
         }
     }
 

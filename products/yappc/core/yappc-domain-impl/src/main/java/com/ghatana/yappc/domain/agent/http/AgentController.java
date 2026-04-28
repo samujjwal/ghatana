@@ -1156,6 +1156,67 @@ public final class AgentController {
     }
 
     // -------------------------------------------------------------------------
+    // Quality Gate Endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Gets quality gate results for generated code artifacts.
+     * GET /api/v1/agents/generated-code/:generationId/quality-gate
+     */
+    @NotNull
+    public Promise<HttpResponse> getQualityGate(
+        @NotNull HttpRequest request,
+        @NotNull String generationId
+    ) {
+        String tenantId = TenantExtractor.fromHttp(request)
+            .orElseThrow(() -> new IllegalArgumentException("Missing X-Tenant-ID header"));
+
+        LOG.debug("Getting quality gate for generation: {} in tenant: {}", generationId, tenantId);
+
+        // In a real implementation, this would fetch the quality gate results from storage
+        // For now, return a placeholder response indicating the endpoint exists
+        return Promise.of(ResponseBuilder.ok()
+            .json(Map.of(
+                "generationId", generationId,
+                "tenantId", tenantId,
+                "status", "NOT_IMPLEMENTED",
+                "message", "Quality gate endpoint exists but requires storage integration"
+            ))
+            .build());
+    }
+
+    /**
+     * Triggers quality gate checks (compile, lint, test) for generated code.
+     * POST /api/v1/agents/generated-code/:generationId/quality-gate/run
+     */
+    @NotNull
+    public Promise<HttpResponse> runQualityGate(
+        @NotNull HttpRequest request,
+        @NotNull String generationId
+    ) {
+        String tenantId = TenantExtractor.fromHttp(request)
+            .orElseThrow(() -> new IllegalArgumentException("Missing X-Tenant-ID header"));
+
+        LOG.debug("Running quality gate for generation: {} in tenant: {}", generationId, tenantId);
+
+        // In a real implementation, this would:
+        // 1. Fetch the generated code artifacts
+        // 2. Run compilation checks
+        // 3. Run linting checks
+        // 4. Run test execution
+        // 5. Aggregate results and determine if quality gate passed
+        // For now, return a placeholder response
+        return Promise.of(ResponseBuilder.ok()
+            .json(Map.of(
+                "generationId", generationId,
+                "tenantId", tenantId,
+                "status", "NOT_IMPLEMENTED",
+                "message", "Quality gate execution requires integration with build toolchain"
+            ))
+            .build());
+    }
+
+    // -------------------------------------------------------------------------
     // Inner Classes
     // -------------------------------------------------------------------------
 

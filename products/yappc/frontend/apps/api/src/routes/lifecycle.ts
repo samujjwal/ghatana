@@ -658,6 +658,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
   /**
    * POST /lifecycle/projects/:id/transition
    * Transition a project to the next lifecycle phase
+   * Enforces gate requirements before allowing transition
    */
   fastify.post(
     '/projects/:id/transition',
@@ -704,6 +705,35 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      // Enforce gate requirements: check required artifacts for current phase
+      const phaseInfo = LIFECYCLE_PHASES_BY_ID[currentPhase];
+      const requiredArtifacts = phaseInfo.keyArtifacts;
+      const approvedArtifacts = await prisma.lifecycleArtifact.findMany({
+        where: {
+          projectId,
+          phase: currentPhase,
+          status: 'approved',
+        },
+        select: { type: true },
+      });
+
+      const completedArtifactTypes = new Set(approvedArtifacts.map((a) => a.type));
+      const missingArtifacts = requiredArtifacts.filter((artifact) => !completedArtifactTypes.has(artifact));
+
+      // Block transition if required artifacts are missing
+      if (missingArtifacts.length > 0) {
+        return reply.status(403).send({
+          error: 'Phase gate requirements not met',
+          blocked: true,
+          blockReason: 'Missing required artifacts for phase transition',
+          currentPhase,
+          targetPhase,
+          missingArtifacts,
+          requiredArtifacts,
+          message: `Cannot transition from ${currentPhase} to ${targetPhase}. Complete the following required artifacts: ${missingArtifacts.join(', ')}`,
+        });
+      }
+
       const updatedProject = await prisma.project.update({
         where: { id: projectId },
           data: { lifecyclePhase: targetPhase as LifecyclePhase },
@@ -721,6 +751,9 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
             fromStage: currentIndex,
             toStage: targetIndex,
             reason: body.reason ?? 'Manual transition',
+            gateValidated: true,
+            requiredArtifacts,
+            completedArtifacts: approvedArtifacts.length,
           } as Prisma.InputJsonValue,
         },
       });

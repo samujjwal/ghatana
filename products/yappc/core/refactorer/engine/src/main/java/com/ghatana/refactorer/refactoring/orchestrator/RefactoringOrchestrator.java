@@ -76,7 +76,7 @@ public class RefactoringOrchestrator {
     }
 
     /**
- * Performs a rename refactoring across all affected files. */
+     * Performs a rename refactoring across all affected files. */
     public RefactoringResult performRename(RenameRefactoring.Context context) {
         if (context == null) {
             return RefactoringResult.failure("Refactoring context cannot be null");
@@ -170,6 +170,142 @@ public class RefactoringOrchestrator {
             log.error("Error during refactoring", e);
             transactionManager.rollbackTransaction(transactionId);
             return RefactoringResult.failure("Refactoring failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Simulates a refactoring operation without applying changes.
+     * Returns a preview of what would change.
+     */
+    public RefactoringResult simulateRename(RenameRefactoring.Context context) {
+        if (context == null) {
+            return RefactoringResult.failure("Refactoring context cannot be null");
+        }
+
+        try {
+            // Find the appropriate refactoring for the source file
+            RenameRefactoring refactoring = findRefactoringForFile(context.getSourceFile());
+            if (refactoring == null) {
+                return RefactoringResult.failure(
+                        "No refactoring implementation found for file: " + context.getSourceFile());
+            }
+
+            // Create a dry-run context
+            RenameRefactoring.Context dryRunContext = new RenameRefactoring.Context() {
+                private final RenameRefactoring.Context original = context;
+
+                @Override
+                public String getSourceFile() {
+                    return original.getSourceFile();
+                }
+
+                @Override
+                public String getOldName() {
+                    return original.getOldName();
+                }
+
+                @Override
+                public String getNewName() {
+                    return original.getNewName();
+                }
+
+                @Override
+                public String getElementType() {
+                    return original.getElementType();
+                }
+
+                @Override
+                public int getLineNumber() {
+                    return original.getLineNumber();
+                }
+
+                @Override
+                public int getColumnNumber() {
+                    return original.getColumnNumber();
+                }
+
+                @Override
+                public boolean isDryRun() {
+                    return true;
+                }
+
+                @Override
+                public boolean isInteractive() {
+                    return original.isInteractive();
+                }
+
+                @Override
+                public Set<Path> getAffectedFiles() {
+                    return original.getAffectedFiles();
+                }
+
+                @Override
+                public Path getProjectRoot() {
+                    return original.getProjectRoot();
+                }
+
+                @Override
+                public PolyfixProjectContext getPolyfixProjectContext() {
+                    return original.getPolyfixProjectContext();
+                }
+            };
+
+            // Simulate the refactoring
+            RefactoringResult result = refactoring.apply(dryRunContext);
+            log.info("Simulated refactoring: {} changes={}", refactoring.getId(), result.getChangeCount());
+
+            // Store the simulation result for potential apply
+            transactionManager.storeSimulationResult(transactionManager.beginTransaction(), context, result);
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error during refactoring simulation", e);
+            return RefactoringResult.failure("Simulation failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Applies a previously simulated refactoring.
+     * Uses the stored simulation result to apply the changes.
+     */
+    public RefactoringResult applySimulated(String simulationId) {
+        try {
+            // Retrieve the simulation result
+            RefactoringTransactionManager.SimulationResult simulation = 
+                transactionManager.retrieveSimulationResult(simulationId);
+            
+            if (simulation == null) {
+                return RefactoringResult.failure("Simulation not found: " + simulationId);
+            }
+
+            // Apply the refactoring with the stored context
+            return performRename(simulation.context());
+
+        } catch (Exception e) {
+            log.error("Error during refactoring apply", e);
+            return RefactoringResult.failure("Apply failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Undoes a previously applied refactoring.
+     * Uses the transaction manager to rollback the changes.
+     */
+    public RefactoringResult undoRefactoring(String transactionId) {
+        try {
+            boolean success = transactionManager.rollbackTransaction(transactionId);
+            
+            if (success) {
+                log.info("Successfully undid refactoring: {}", transactionId);
+                return RefactoringResult.success(List.of(), 0, "Refactoring undone successfully");
+            } else {
+                return RefactoringResult.failure("Failed to undo refactoring: " + transactionId);
+            }
+
+        } catch (Exception e) {
+            log.error("Error during refactoring undo", e);
+            return RefactoringResult.failure("Undo failed: " + e.getMessage());
         }
     }
 

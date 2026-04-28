@@ -28,6 +28,7 @@ import {
 } from '../../../hooks/useLifecycleData';
 import { useRequirementOrchestration } from '../../../hooks/useRequirementOrchestration';
 import { useAgentRunStream } from '../../../hooks/useAgentRunStream';
+import { useLifecycleTransition } from '../../../hooks/useLifecycleTransition';
 import { FOW_STAGE_LABELS, getFOWStageForPhase } from '../../../types/fow-stages';
 
 type RequirementPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -352,9 +353,8 @@ export default function Component() {
     const resolvedProjectId = projectId ?? '__missing-project__';
     const { hasPermission } = useAuth();
     const isAuthorizedApprover = hasPermission('approvals:decide');
-    const { currentPhase } = usePhaseGates(resolvedProjectId);
+    const { currentPhase, gateStatuses, canTransition } = usePhaseGates(resolvedProjectId);
     const currentStage = getFOWStageForPhase(currentPhase);
-    const [automationFeedback, setAutomationFeedback] = React.useState('');
     const [decisionDetailVisible, setDecisionDetailVisible] = React.useState(false);
     const [clientPanelsReady, setClientPanelsReady] = React.useState(false);
 
@@ -374,6 +374,21 @@ export default function Component() {
     const { data: automationPlan } = useLifecycleAutomationPlan(resolvedProjectId, currentPhase);
     const applyAutomationPlan = useApplyLifecycleAutomationPlan();
     const { submitApproved: submitOrchestration } = useRequirementOrchestration();
+
+    const {
+        handleApprovalTransition,
+        handleOneClickApproval,
+        handleAutomationClick,
+        clearFeedback,
+        automationFeedback,
+        isTransitioning,
+    } = useLifecycleTransition({
+        projectId: resolvedProjectId,
+        submitOrchestration,
+        applyAutomationPlan,
+        executeTask,
+        currentPhase,
+    });
 
     if (!projectId) {
         return createElement(
@@ -524,66 +539,9 @@ export default function Component() {
         });
     }, [activeReadinessAnomalies]);
 
-    const handleApprovalTransition = React.useCallback(
+    const handleApprovalTransitionLocal = React.useCallback(
         (approvalId: string, nextStatus: ApprovalRecord['status']) => {
-            const reviewedAt = new Date().toISOString();
-            let approvedRecord: ApprovalRecord | undefined;
-
-            setApprovalRecords((currentRecords) =>
-                currentRecords.map((approval) => {
-                    if (approval.id !== approvalId) {
-                        return approval;
-                    }
-
-                    const reason =
-                        nextStatus === 'APPROVED'
-                            ? 'Approved from lifecycle review panel.'
-                            : nextStatus === 'REJECTED'
-                              ? 'Rejected from lifecycle review panel.'
-                              : 'Requested changes from lifecycle review panel.';
-
-                    const updated = {
-                        ...approval,
-                        status: nextStatus,
-                        reviewerId: 'reviewer:lifecycle-owner',
-                        reviewedAt,
-                        decisionReason: reason,
-                    };
-
-                    if (nextStatus === 'APPROVED') {
-                        approvedRecord = updated;
-                    }
-
-                    return updated;
-                })
-            );
-
-            // When a requirement is approved, notify the AEP orchestration agent so
-            // it can trigger downstream refinement, versioning, and audit workflows.
-            if (nextStatus === 'APPROVED' && approvedRecord?.requirementId) {
-                submitOrchestration({
-                    projectId: resolvedProjectId,
-                    requirementId: approvedRecord.requirementId,
-                    approvalId,
-                });
-            }
-        },
-        [resolvedProjectId, submitOrchestration]
-    );
-
-    const handleRetryRun = React.useCallback((runId: string) => {
-        setAgentRuns((currentRuns) =>
-            currentRuns.map((run) => {
-                if (run.id !== runId) {
-                    return run;
-                }
-
-                return {
-                    ...run,
-                    status: 'QUEUED',
-                    stage: 'RETRY_QUEUED',
-                    retryCount: run.retryCount + 1,
-                    startedAt: undefined,
+            handleApprovalTransition(approvalRecords, setApprovalRecords, approvalId, nextStatus);
                     completedAt: undefined,
                     errorMessage: undefined,
                 };
@@ -591,71 +549,13 @@ export default function Component() {
         );
     }, []);
 
-    const handleAutomationClick = () => {
+    const handleAutomationClickLocal = () => {
         if (!nextTask) {
             return;
         }
-
-        void (async () => {
-            try {
-                const result = await executeTask.mutateAsync({
-                    taskId: nextTask.id,
-                    input: {
-                        projectId: resolvedProjectId,
-                        source: 'lifecycle-route',
-                        phase: currentPhase,
-                    },
-                });
-
-                // Handle queued status when CI/CD adapter is not connected
-                if (result && typeof result === 'object' && 'status' in result && result.status === 'queued') {
-                    const message = 'message' in result && typeof result.message === 'string'
-                        ? result.message
-                        : 'Task queued for execution. CI/CD adapter not yet connected.';
-                    setAutomationFeedback(message);
-                } else {
-                    setAutomationFeedback(`Suggested task started for ${nextTask.title}.`);
-                }
-            } catch (error) {
-                setAutomationFeedback(
-                    error instanceof Error
-                        ? error.message
-                        : 'Unable to start the suggested task.'
-                );
-            }
-        })();
+        void handleAutomationClick(nextTask.id, nextTask.title);
     };
 
-    const handleOneClickApproval = () => {
-        void (async () => {
-            try {
-                const result = await applyAutomationPlan.mutateAsync({
-                    projectId: resolvedProjectId,
-                    request: {
-                        phase: currentPhase,
-                        oneClickApprove: true,
-                        reason: 'Applied from lifecycle route decision support panel',
-                    },
-                });
-
-                if (result.execution?.transitioned) {
-                    setAutomationFeedback(
-                        `Guided promotion transitioned ${result.execution.previousPhase} to ${result.execution.currentPhase}.`
-                    );
-                } else if (result.canAutoAdvance) {
-                    setAutomationFeedback('Decision support refreshed. The project is eligible for guided promotion.');
-                } else {
-                    setAutomationFeedback('Decision support refreshed. Resolve blockers before guided promotion.');
-                }
-            } catch (error) {
-                setAutomationFeedback(
-                    error instanceof Error
-                        ? error.message
-                        : 'Unable to apply the suggested lifecycle promotion.'
-                );
-            }
-        })();
-    };
 
     const recommendationsContent =
         topRecommendations.length === 0
@@ -958,13 +858,16 @@ export default function Component() {
                                 type: 'button',
                                 className:
                                     'rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50',
-                                disabled: applyAutomationPlan.isPending || !automationPlan.canAutoAdvance,
+                                disabled: isTransitioning || !automationPlan.canAutoAdvance || isGateBlocked,
                                 onClick: handleOneClickApproval,
                                 'data-testid': 'ai-one-click-approval-trigger',
+                                title: gateBlockReason || undefined,
                             },
                             applyAutomationPlan.isPending
                                 ? 'Applying guided promotion…'
-                                : 'Apply guided promotion'
+                                : isGateBlocked
+                                    ? 'Gate blocked: resolve requirements first'
+                                    : 'Apply guided promotion'
                         ),
                         createElement(
                             'span',

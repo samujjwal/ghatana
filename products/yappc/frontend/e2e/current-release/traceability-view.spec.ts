@@ -62,8 +62,6 @@ test.describe('Traceability Panel – graph view', () => {
 });
 
 test.describe('Traceability Panel – artifact selection', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('selecting an artifact opens the detail panel', async ({ page }: { page: Page }) => {
     await gotoTraceabilityPanel(page);
     // Click the first artifact button in the graph
@@ -83,8 +81,6 @@ test.describe('Traceability Panel – artifact selection', () => {
 });
 
 test.describe('Traceability Panel – refresh and AI analyze', () => {
-  test.skip(true, 'Route not yet deployed to CI environment');
-
   test('refresh button is visible and clickable', async ({ page }: { page: Page }) => {
     await gotoTraceabilityPanel(page);
     const refreshButton = page.getByRole('button', { name: /refresh/i });

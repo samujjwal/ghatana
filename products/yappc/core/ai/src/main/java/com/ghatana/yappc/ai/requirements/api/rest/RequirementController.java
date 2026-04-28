@@ -668,7 +668,8 @@ public final class RequirementController {
       }
     }
 
-    return TenantExtractor.fromHttp(request).orElse(null);
+    return TenantExtractor.fromHttp(request)
+            .orElseThrow(() -> new IllegalArgumentException("Missing required X-Tenant-ID header"));
   }
 
   private User extractUser(HttpRequest request) {

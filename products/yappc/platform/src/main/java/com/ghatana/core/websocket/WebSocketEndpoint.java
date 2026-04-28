@@ -74,11 +74,12 @@ public class WebSocketEndpoint {
             request -> request.getQueryParameter("topic");
 
     /**
-     * Extract tenant ID from request
+     * Extract tenant ID from request - fails closed if missing
      */
     @Builder.Default
     private final Function<HttpRequest, String> tenantExtractor =
-            request -> TenantExtractor.fromHttp(request).orElse("");
+            request -> TenantExtractor.fromHttp(request)
+                    .orElseThrow(() -> new IllegalArgumentException("Missing required X-Tenant-ID header"));
 
     /**
      * Connection established callback

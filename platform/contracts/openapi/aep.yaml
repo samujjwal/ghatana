@@ -2046,6 +2046,159 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+  # ========== Auth (F-008, F-032) ==========
+  /api/v1/auth/platform-session:
+    get:
+      summary: Bootstrap a short-lived platform session token
+      description: |
+        F-008: Issues a platform session token for the authenticated user.
+        Requires AEP_SSO_CONFIGURED=true to be set on the server; returns
+        503 otherwise. The token is scoped to the tenant resolved from the JWT.
+      operationId: getPlatformSession
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Session token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [session, expiresInSeconds, issuedAt]
+                properties:
+                  session:
+                    type: string
+                    description: Short-lived opaque session token
+                  expiresInSeconds:
+                    type: integer
+                    format: int64
+                    description: Token lifetime in seconds
+                  issuedAt:
+                    type: string
+                    format: date-time
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          description: SSO not configured on this deployment
+
+  /api/v1/auth/roles:
+    get:
+      summary: Get the authenticated user roles
+      description: |
+        F-032: Returns the set of roles assigned to the current authenticated user,
+        extracted from the verified JWT claims. The UI uses these roles to gate
+        sensitive actions such as kill-switch, pipeline publish, and role management.
+      operationId: getAuthRoles
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [roles, retrievedAt]
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      type: string
+                      enum: [OPERATOR, ADMIN, AUDITOR]
+                    description: Roles assigned to the authenticated user
+                  retrievedAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ========== AI Suggestions Metrics (F-011) ==========
+  /api/v1/ai/suggestions/metrics:
+    get:
+      summary: Get AI suggestion performance metrics
+      description: |
+        F-011: Returns metrics about AI suggestion quality, confidence distribution,
+        and suggestion acceptance rates for observability purposes.
+      operationId: getAiSuggestionsMetrics
+      tags: [AI]
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: string
+          description: Tenant context for metrics
+      responses:
+        '200':
+          description: AI suggestion metrics snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSuggestions:
+                    type: integer
+                    description: Total suggestions generated
+                  acceptedCount:
+                    type: integer
+                    description: Suggestions accepted by operators
+                  rejectedCount:
+                    type: integer
+                    description: Suggestions rejected by operators
+                  averageConfidence:
+                    type: number
+                    format: double
+                    description: Average confidence score (0.0-1.0)
+                  timestamp:
+                    type: string
+                    format: date-time
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/ai/suggestions/stages:
+    post:
+      summary: Get AI stage suggestions for a pipeline
+      description: |
+        AI-2: Returns suggested pipeline stages with confidence scores and sources.
+      operationId: suggestPipelineStages
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId]
+              properties:
+                tenantId:
+                  type: string
+                pipelineId:
+                  type: string
+                context:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Suggested pipeline stages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  tenantId:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 # ========================================================================
 # Components
 # ========================================================================

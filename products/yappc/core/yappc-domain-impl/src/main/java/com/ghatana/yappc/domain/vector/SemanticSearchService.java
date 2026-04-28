@@ -148,22 +148,28 @@ public class SemanticSearchService {
     }
 
     /**
-     * Finds similar items by ID.
+     * Finds similar items by ID with tenant scoping.
      *
      * @param id The source item ID
      * @param limit Maximum results
      * @param threshold Minimum similarity
+     * @param tenantId The tenant ID for scoping
      * @return Promise resolving to similar items
      */
     @NotNull
     public Promise<List<SearchHit>> findSimilar(
         @NotNull String id,
         int limit,
-        double threshold
+        double threshold,
+        @Nullable String tenantId
     ) {
-        LOG.debug("Finding similar items for: {}", id);
+        LOG.debug("Finding similar items for: {} in tenant: {}", id, tenantId);
 
-        return vectorStore.searchById(id, limit, threshold)
+        Map<String, String> filters = tenantId != null
+            ? Map.of("tenantId", tenantId)
+            : Map.of();
+
+        return vectorStore.searchById(id, limit, threshold, filters)
             .map(results -> results.stream()
                 .filter(r -> !r.getId().equals(id)) // Exclude self
                 .map(this::toSearchHit)
@@ -285,18 +291,24 @@ public class SemanticSearchService {
     }
 
     /**
-     * Deletes a document from the index.
+     * Deletes a document from the index with tenant scoping.
      *
      * @param id The document ID
+     * @param tenantId The tenant ID for scoping
      * @return Promise resolving when deletion is complete
      */
     @NotNull
-    public Promise<Boolean> delete(@NotNull String id) {
-        LOG.debug("Deleting document from index: {}", id);
-        return vectorStore.delete(id)
+    public Promise<Boolean> delete(@NotNull String id, @Nullable String tenantId) {
+        LOG.debug("Deleting document from index: {} in tenant: {}", id, tenantId);
+
+        Map<String, String> filters = tenantId != null
+            ? Map.of("tenantId", tenantId)
+            : Map.of();
+
+        return vectorStore.delete(id, filters)
             .map(v -> true)
             .then(Promise::of, e -> {
-                LOG.error("Failed to delete document: {}", id, e);
+                LOG.error("Failed to delete document: {} in tenant: {}", id, tenantId, e);
                 return Promise.of(false);
             });
     }
@@ -341,13 +353,14 @@ public class SemanticSearchService {
     // ==================== REQUEST/RESPONSE TYPES ====================
 
     /**
-     * Semantic search request
+     * Semantic search request with tenant scoping
      */
     public record SemanticSearchRequest(
         @NotNull String query,
         int limit,
         double threshold,
-        @Nullable Map<String, String> filters
+        @Nullable Map<String, String> filters,
+        @Nullable String tenantId
     ) {
         public SemanticSearchRequest {
             if (limit <= 0) limit = 10;
@@ -355,12 +368,12 @@ public class SemanticSearchService {
         }
 
         public static SemanticSearchRequest of(String query) {
-            return new SemanticSearchRequest(query, 10, 0.7, null);
+            return new SemanticSearchRequest(query, 10, 0.7, null, null);
         }
     }
 
     /**
-     * Hybrid search request
+     * Hybrid search request with tenant scoping
      */
     public record HybridSearchRequest(
         @NotNull String query,
@@ -368,7 +381,8 @@ public class SemanticSearchService {
         double threshold,
         @Nullable Map<String, String> filters,
         @Nullable List<String> keywords,
-        double keywordBoost
+        double keywordBoost,
+        @Nullable String tenantId
     ) {
         public HybridSearchRequest {
             if (limit <= 0) limit = 10;
@@ -403,12 +417,13 @@ public class SemanticSearchService {
     ) {}
 
     /**
-     * Index request
+     * Index request with tenant scoping
      */
     public record IndexRequest(
         @NotNull String id,
         @NotNull String content,
-        @Nullable Map<String, String> metadata
+        @Nullable Map<String, String> metadata,
+        @Nullable String tenantId
     ) {}
 
     /**

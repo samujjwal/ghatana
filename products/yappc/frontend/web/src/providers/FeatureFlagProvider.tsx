@@ -44,6 +44,21 @@ export enum FeatureFlag {
   AGENT_ORCHESTRATION = 'agent-orchestration',
   CANVAS_VERSIONING = 'canvas-versioning',
   
+  // Operations Pages (hidden by default until backend wired)
+  OPS_ALERTS = 'ops-alerts',
+  OPS_INCIDENTS = 'ops-incidents',
+  OPS_RUNBOOKS = 'ops-runbooks',
+  OPS_POSTMORTEMS = 'ops-postmortems',
+  OPS_ONCALL = 'ops-oncall',
+  OPS_WARROOM = 'ops-warroom',
+  OPS_SERVICE_MAP = 'ops-service-map',
+  OPS_LOGS = 'ops-logs',
+  OPS_METRICS = 'ops-metrics',
+  OPS_DASHBOARDS = 'ops-dashboards',
+  
+  // Admin Pages (hidden by default until backend wired)
+  ADMIN_BILLING = 'admin-billing',
+  
   // Experimental
   CANVAS_3D_MODE = 'canvas-3d-mode',
   VOICE_COMMANDS = 'voice-commands',
@@ -72,6 +87,21 @@ const DEFAULT_FEATURES: Record<FeatureFlag, boolean> = {
   [FeatureFlag.APPROVAL_WORKFLOWS]: true,
   [FeatureFlag.AGENT_ORCHESTRATION]: ENABLE_DEV_MODE,
   [FeatureFlag.CANVAS_VERSIONING]: false,
+  
+  // Operations Pages - disabled by default until backend wired
+  [FeatureFlag.OPS_ALERTS]: false,
+  [FeatureFlag.OPS_INCIDENTS]: false,
+  [FeatureFlag.OPS_RUNBOOKS]: false,
+  [FeatureFlag.OPS_POSTMORTEMS]: false,
+  [FeatureFlag.OPS_ONCALL]: false,
+  [FeatureFlag.OPS_WARROOM]: false,
+  [FeatureFlag.OPS_SERVICE_MAP]: false,
+  [FeatureFlag.OPS_LOGS]: false,
+  [FeatureFlag.OPS_METRICS]: false,
+  [FeatureFlag.OPS_DASHBOARDS]: false,
+  
+  // Admin Pages - disabled by default until backend wired
+  [FeatureFlag.ADMIN_BILLING]: false,
   
   // Experimental - disabled by default
   [FeatureFlag.CANVAS_3D_MODE]: false,

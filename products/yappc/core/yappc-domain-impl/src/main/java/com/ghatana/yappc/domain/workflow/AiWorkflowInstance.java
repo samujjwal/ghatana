@@ -31,7 +31,12 @@ public record AiWorkflowInstance(
     @NotNull Instant createdAt,
     @NotNull Instant updatedAt,
     @Nullable Instant completedAt,
-    @Nullable String errorMessage
+    @Nullable String errorMessage,
+    @Nullable Instant cancelRequestedAt,
+    @Nullable String cancelRequestedBy,
+    @Nullable String cancelReason,
+    @Nullable Instant cancelCompletedAt,
+    @Nullable String cancelMethod
 ) {
     /**
      * Workflow types supported by the AI workflow engine
@@ -113,6 +118,11 @@ public record AiWorkflowInstance(
             null,
             now,
             now,
+            null,
+            null,
+            null,
+            null,
+            null,
             null,
             null
         );

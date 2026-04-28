@@ -196,16 +196,36 @@ public class WorkflowController {
     }
 
     /**
-     * Cancels a workflow.
+     * Cancels a workflow with durable cancellation contract.
      * POST /api/v1/workflows/:id/cancel
      */
     @NotNull
     public Promise<HttpResponse> cancelWorkflow(@NotNull HttpRequest request, @NotNull String id) {
-        String tenantId = extractTenantId(request);
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    String tenantId = extractTenantId(request);
+                    CancelWorkflowDto dto = objectMapper.readValue(
+                        body.getString(StandardCharsets.UTF_8),
+                        CancelWorkflowDto.class
+                    );
 
-        return workflowService.cancelWorkflow(id, tenantId)
-            .map(workflow -> ResponseBuilder.ok().json(workflow).build())
-            .then(Promise::of, this::handleWorkflowException);
+                    return workflowService.cancelWorkflow(
+                            id,
+                            tenantId,
+                            dto.requestedBy(),
+                            dto.reason()
+                        )
+                        .map(workflow -> ResponseBuilder.ok().json(workflow).build())
+                        .then(Promise::of, this::handleWorkflowException);
+
+                } catch (Exception e) {
+                    LOG.error("Failed to cancel workflow", e);
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "Invalid request: " + e.getMessage()))
+                        .build());
+                }
+            });
     }
 
     // ==================== STEP OPERATIONS ====================
@@ -292,53 +312,6 @@ public class WorkflowController {
                     return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Invalid request: " + e.getMessage()))
                         .build());
-                }
-            });
-    }
-
-    /**
-     * Approves an AI plan.
-     * POST /api/v1/workflows/:workflowId/plans/:planId/approve
-     */
-    @NotNull
-    public Promise<HttpResponse> approvePlan(
-        @NotNull HttpRequest request,
-        @NotNull String workflowId,
-        @NotNull String planId
-    ) {
-        String tenantId = extractTenantId(request);
-
-        return workflowService.approvePlan(planId, tenantId)
-            .map(plan -> ResponseBuilder.ok().json(plan).build())
-            .then(Promise::of, this::handleWorkflowException);
-    }
-
-    /**
-     * Rejects an AI plan.
-     * POST /api/v1/workflows/:workflowId/plans/:planId/reject
-     */
-    @NotNull
-    public Promise<HttpResponse> rejectPlan(
-        @NotNull HttpRequest request,
-        @NotNull String workflowId,
-        @NotNull String planId
-    ) {
-        return request.loadBody()
-            .then(body -> {
-                try {
-                    String tenantId = extractTenantId(request);
-                    RejectPlanDto dto = objectMapper.readValue(
-                        body.getString(StandardCharsets.UTF_8),
-                        RejectPlanDto.class
-                    );
-
-                    return workflowService.rejectPlan(planId, tenantId, dto.reason())
-                        .map(plan -> ResponseBuilder.ok().json(plan).build())
-                        .then(Promise::of, this::handleWorkflowException);
-
-                } catch (Exception e) {
-                    LOG.error("Failed to reject plan", e);
-                    return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Invalid request: " + e.getMessage()))
                         .build());
                 }
@@ -504,5 +477,13 @@ public class WorkflowController {
      */
     public record RouteRequestDto(
         @Nullable String userInput
+    ) {}
+
+    /**
+     * DTO for workflow cancellation
+     */
+    public record CancelWorkflowDto(
+        @Nullable String requestedBy,
+        @Nullable String reason
     ) {}
 }

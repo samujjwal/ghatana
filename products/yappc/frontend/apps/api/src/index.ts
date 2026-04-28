@@ -245,11 +245,19 @@ export async function createApp(
     const correlationId =
       typeof headerValue === 'string' && headerValue.trim().length > 0
         ? headerValue
-        : randomUUID();
+        : null;
 
-    request.correlationId = correlationId;
-    request.log = request.log.child({ correlationId });
-    request.headers['x-correlation-id'] = correlationId;
+    // In production, X-Correlation-ID is mandatory
+    if (process.env.NODE_ENV === 'production' && !correlationId) {
+      throw new Error('X-Correlation-ID header is required in production');
+    }
+
+    // Generate correlation ID if not provided (development only)
+    const finalCorrelationId = correlationId || randomUUID();
+
+    request.correlationId = finalCorrelationId;
+    request.log = request.log.child({ correlationId: finalCorrelationId });
+    request.headers['x-correlation-id'] = finalCorrelationId;
 
     request.startTime = Date.now();
   });
@@ -485,6 +493,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
+          'X-Correlation-ID': request.correlationId,
           Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY}`,
         },
         body:
@@ -523,6 +532,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
+          'X-Correlation-ID': request.correlationId,
           Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY}`,
         },
         body:
@@ -561,6 +571,7 @@ async function readResponseText(response: Response): Promise<string> {
         headers: {
           ...request.headers,
           host: targetUrl.hostname,
+          'X-Correlation-ID': request.correlationId,
           Authorization: `Bearer ${process.env.JAVA_BACKEND_API_KEY}`,
         },
         body:

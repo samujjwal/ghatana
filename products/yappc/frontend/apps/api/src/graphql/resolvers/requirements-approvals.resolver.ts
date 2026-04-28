@@ -63,6 +63,7 @@ interface AiEnrichmentSuggestion {
   storyTrace: string;
   confidence: number;
   rationale: string;
+  source: 'rule' | 'model';
 }
 
 const toISOString = (date: Date | null | undefined): string | null =>
@@ -496,6 +497,7 @@ export const requirementsApprovalsResolvers = {
               storyTrace: suggestion.storyTrace,
               confidence: suggestion.confidence,
               rationale: suggestion.rationale,
+              source: suggestion.source,
               enrichedBy: 'RequirementEnrichmentAgent',
             },
             changedById: userId,

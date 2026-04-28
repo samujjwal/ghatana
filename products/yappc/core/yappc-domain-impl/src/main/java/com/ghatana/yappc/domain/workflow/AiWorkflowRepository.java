@@ -4,6 +4,7 @@ import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -89,6 +90,29 @@ public interface AiWorkflowRepository {
         @NotNull String id,
         @NotNull String tenantId,
         @NotNull AiWorkflowInstance.WorkflowStatus status
+    );
+
+    /**
+     * Updates workflow with cancellation tracking for durable cancellation contract.
+     *
+     * @param id The workflow ID
+     * @param tenantId The tenant ID
+     * @param cancelRequestedAt Timestamp when cancellation was requested
+     * @param cancelRequestedBy User who requested cancellation
+     * @param cancelReason Reason for cancellation
+     * @param cancelCompletedAt Timestamp when cancellation completed
+     * @param cancelMethod Method used for cancellation (cooperative, hard_kill, etc.)
+     * @return Promise resolving to the updated workflow
+     */
+    @NotNull
+    Promise<AiWorkflowInstance> updateWithCancellation(
+        @NotNull String id,
+        @NotNull String tenantId,
+        @NotNull Instant cancelRequestedAt,
+        @Nullable String cancelRequestedBy,
+        @Nullable String cancelReason,
+        @NotNull Instant cancelCompletedAt,
+        @Nullable String cancelMethod
     );
 
     /**

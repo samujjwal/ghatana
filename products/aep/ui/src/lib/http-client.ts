@@ -151,6 +151,11 @@ async function request<T>(
 ): Promise<HttpResponse<T>> {
   const headers = new Headers({
     "Content-Type": "application/json",
+    // F-048: Propagate a per-request correlation ID so every span in the
+    // backend can be correlated back to the originating browser request.
+    "X-Correlation-ID": typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     ...config.headers,
   });
   const token = getAuthToken();

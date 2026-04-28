@@ -116,7 +116,57 @@ public class InMemoryAiWorkflowRepository implements AiWorkflowRepository {
             existing.createdAt(),
             Instant.now(),
             completedAt,
-            existing.errorMessage()
+            existing.errorMessage(),
+            existing.cancelRequestedAt(),
+            existing.cancelRequestedBy(),
+            existing.cancelReason(),
+            existing.cancelCompletedAt(),
+            existing.cancelMethod()
+        );
+
+        getTenantStorage(tenantId).put(id, updated);
+        return Promise.of(updated);
+    }
+
+    @Override
+    @NotNull
+    public Promise<AiWorkflowInstance> updateWithCancellation(
+        @NotNull String id,
+        @NotNull String tenantId,
+        @NotNull Instant cancelRequestedAt,
+        @Nullable String cancelRequestedBy,
+        @Nullable String cancelReason,
+        @NotNull Instant cancelCompletedAt,
+        @Nullable String cancelMethod
+    ) {
+        AiWorkflowInstance existing = getTenantStorage(tenantId).get(id);
+        if (existing == null) {
+            return Promise.ofException(new NoSuchElementException("Workflow not found: " + id));
+        }
+
+        AiWorkflowInstance updated = new AiWorkflowInstance(
+            existing.id(),
+            existing.tenantId(),
+            existing.name(),
+            existing.description(),
+            existing.type(),
+            AiWorkflowInstance.WorkflowStatus.CANCELLED,
+            existing.currentStepId(),
+            existing.currentStepIndex(),
+            existing.totalSteps(),
+            existing.context(),
+            existing.stepResults(),
+            existing.aiPlanId(),
+            existing.createdBy(),
+            existing.createdAt(),
+            Instant.now(),
+            cancelCompletedAt,
+            existing.errorMessage(),
+            cancelRequestedAt,
+            cancelRequestedBy,
+            cancelReason,
+            cancelCompletedAt,
+            cancelMethod
         );
 
         getTenantStorage(tenantId).put(id, updated);
@@ -153,7 +203,12 @@ public class InMemoryAiWorkflowRepository implements AiWorkflowRepository {
             existing.createdAt(),
             Instant.now(),
             existing.completedAt(),
-            existing.errorMessage()
+            existing.errorMessage(),
+            existing.cancelRequestedAt(),
+            existing.cancelRequestedBy(),
+            existing.cancelReason(),
+            existing.cancelCompletedAt(),
+            existing.cancelMethod()
         );
 
         getTenantStorage(tenantId).put(id, updated);
@@ -192,7 +247,12 @@ public class InMemoryAiWorkflowRepository implements AiWorkflowRepository {
             existing.createdAt(),
             Instant.now(),
             existing.completedAt(),
-            existing.errorMessage()
+            existing.errorMessage(),
+            existing.cancelRequestedAt(),
+            existing.cancelRequestedBy(),
+            existing.cancelReason(),
+            existing.cancelCompletedAt(),
+            existing.cancelMethod()
         );
 
         getTenantStorage(tenantId).put(workflowId, updated);

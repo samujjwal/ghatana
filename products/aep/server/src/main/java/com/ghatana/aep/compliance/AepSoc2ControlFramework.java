@@ -47,6 +47,25 @@ public class AepSoc2ControlFramework {
     }
 
     /**
+     * F-034: Returns the timestamp of the most recently collected evidence entry across
+     * all tracked controls, or {@link java.util.Optional#empty()} when no evidence has
+     * been collected at all.
+     *
+     * <p>Callers use this to enforce an evidence-freshness window before rendering the
+     * SOC 2 report; stale evidence renders the report misleading and must be rejected.
+     *
+     * @return newest evidence timestamp, or empty
+     */
+    public java.util.Optional<Instant> newestEvidenceTimestamp() {
+        return evidenceCollector.getAllEvidence()
+            .values()
+            .stream()
+            .flatMap(java.util.List::stream)
+            .map(SOC2EvidenceCollector.EvidenceEntry::timestamp)
+            .max(Instant::compareTo);
+    }
+
+    /**
      * Generates a SOC 2 compliance report for the AEP platform.
      *
      * @return the SOC 2 report

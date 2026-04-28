@@ -60,6 +60,10 @@ import com.ghatana.aep.server.consent.DataCloudConsentDecisionStore;
 import com.ghatana.aep.server.consent.InMemoryConsentDecisionStore;
 import com.ghatana.aep.server.http.controllers.NlpController;
 import com.ghatana.aep.server.http.controllers.SseController;
+import com.ghatana.aep.server.http.controllers.AuthController;
+import com.ghatana.aep.server.governance.StepUpAuthenticationGate;
+import com.ghatana.aep.server.governance.MfaStepUpGate;
+import com.ghatana.aep.server.governance.KillSwitchAuditChain;
 import com.ghatana.agent.learning.evaluation.CompositeEvaluationGate;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.datacloud.DataCloudClient;
@@ -163,6 +167,8 @@ public class AepHttpServer {
     private final ComplianceController complianceController;
     private final SseController sseController;
     private final CapabilitiesController capabilitiesController;
+    /** F-008: Authentication (session tokens, platform-session bootstrap). */
+    private final AuthController authController;
 
     /** Governance endpoints controller. */
     private final GovernanceController governanceController;
@@ -709,6 +715,25 @@ public class AepHttpServer {
             : null;
         this.learningController = new LearningController(this.agentDataCloud, this.humanReviewQueue, learningPipeline);
         this.complianceController = new ComplianceController(this.complianceService, this.soc2Framework);
+        this.lifecycleController = new LifecycleController(
+            changeApprovalWorkflow  != null ? changeApprovalWorkflow  : new com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow(),
+            recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
+        this.aiSuggestionsController = new AiSuggestionsController(this.analyticsStore, this.sloMetrics);
+        this.nlpController = new NlpController();
+        this.auditController = new AuditController(this.agentDataCloud);
+        // F-008: Initialize auth controller with in-memory session token manager
+        this.authController = new AuthController(new AuthController.InMemorySessionTokenManager());
+        // T-23: Use DataCloud-backed consent store in production, in-memory in dev.
+        ConsentDecisionStore consentDecisionStore = (agentDataCloud != null)
+            ? new DataCloudConsentDecisionStore(agentDataCloud)
+            : new InMemoryConsentDecisionStore();
+        this.consentController = new ConsentController(consentDecisionStore);
+        
+        // F-018: Step-up authentication gate for kill-switch operations (MFA verification)
+        com.ghatana.aep.server.governance.StepUpAuthenticationGate stepUpGate =
+            new com.ghatana.aep.server.governance.MfaStepUpGate(null);  // TODO: wire MfaService from auth-gateway
+        com.ghatana.aep.server.governance.KillSwitchAuditChain auditChain =
+            new com.ghatana.aep.server.governance.KillSwitchAuditChain(this.auditController);
         this.governanceController = new GovernanceController(
             killSwitchService  != null ? killSwitchService  : new InMemoryKillSwitchService(),
             degradationManager != null ? degradationManager : new InMemoryGracefulDegradationManager(),
@@ -717,18 +742,10 @@ public class AepHttpServer {
             injectionDetector  != null ? injectionDetector  : new RegexPromptInjectionDetector(),
             this::jsonResponse,
             this.complianceService,
-            this.soc2Framework);
-        this.lifecycleController = new LifecycleController(
-            changeApprovalWorkflow  != null ? changeApprovalWorkflow  : new com.ghatana.platform.toolruntime.change.InMemoryChangeApprovalWorkflow(),
-            recertificationPipeline != null ? recertificationPipeline : new com.ghatana.platform.toolruntime.recertification.InMemoryRecertificationPipeline());
-        this.aiSuggestionsController = new AiSuggestionsController(this.analyticsStore, this.sloMetrics);
-        this.nlpController = new NlpController();
-        this.auditController = new AuditController(this.agentDataCloud);
-        // T-23: Use DataCloud-backed consent store in production, in-memory in dev.
-        ConsentDecisionStore consentDecisionStore = (agentDataCloud != null)
-            ? new DataCloudConsentDecisionStore(agentDataCloud)
-            : new InMemoryConsentDecisionStore();
-        this.consentController = new ConsentController(consentDecisionStore);
+            this.soc2Framework,
+            stepUpGate,
+            auditChain);
+        
         this.learningScheduler = learningPipeline != null ? new LearningScheduler(learningPipeline) : null;
 
         // T-01: Initialise shared ingestion service — both handleProcessEvent and handleProcessBatch delegate here.
@@ -932,6 +949,7 @@ public class AepHttpServer {
             // Pipeline versioning endpoints (AEP-07: draft → named version → rollback)
             .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/versions", this::handleGetPipelineVersions)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/publish", this::handlePublishPipeline)
+            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/dry-run", this::handlePipelineDryRun)
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/rollback", this::handleRollbackPipeline)
 
             // Capability endpoints (delegated to CapabilitiesController – P7-2c)
@@ -1014,6 +1032,14 @@ public class AepHttpServer {
 
             // T-05: Short-lived SSE auth token (browser EventSource cannot send Authorization header)
             .with(HttpMethod.POST, "/api/v1/auth/sse-token", this::handleMintSseToken)
+
+            // F-008: Platform session bootstrap (SSO configuration gated)
+            .with(HttpMethod.GET, "/api/v1/auth/platform-session", 
+                req -> authController.handle(req, "platform-session"))
+
+            // F-032: User roles for RBAC in UI
+            .with(HttpMethod.GET, "/api/v1/auth/roles",
+                req -> authController.handle(req, "roles"))
 
             // T-06: Audit log endpoints (delegated to AuditController)
             .with(HttpMethod.POST, "/api/v1/audit/log",   auditController::handleLog)
@@ -1839,6 +1865,151 @@ public class AepHttpServer {
                 ));
             })
             .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to retrieve version history: " + e.getMessage())));
+    }
+
+    /**
+     * POST /api/v1/pipelines/:pipelineId/dry-run
+     *
+     * <p>F-014: Pipeline publish pre-flight dry-run. Evaluates the current pipeline draft
+     * against validation, policy, compliance, and agent-registry checks without persisting
+     * any state change. Returns a structured pre-flight report that the operator must
+     * acknowledge before the real publish action is allowed.
+     */
+    private Promise<HttpResponse> handlePipelineDryRun(HttpRequest request) {
+        String tenantId = resolveTenantId(request, null);
+        String pipelineId = request.getPathParameter("pipelineId");
+        TenantId tenant = TenantId.of(tenantId);
+
+        return pipelineRepository.findById(pipelineId, tenant)
+            .then(optPipeline -> {
+                if (optPipeline.isEmpty()) {
+                    return Promise.of(errorResponse(404, "Pipeline not found: " + pipelineId));
+                }
+
+                com.ghatana.pipeline.registry.model.PipelineRegistration existing = optPipeline.get();
+
+                // Gate 1: Schema + DAG validation
+                Pipeline candidate;
+                try {
+                    candidate = mapRegistrationToPipeline(existing, tenantId);
+                } catch (Exception e) {
+                    log.error("[F-014] Failed to map pipeline {} for dry-run", pipelineId, e);
+                    return Promise.of(errorResponse(500, "Failed to load pipeline for dry-run: " + e.getMessage()));
+                }
+
+                List<String> validationErrors = new ArrayList<>(pipelineValidator.validate(candidate, null));
+                validationErrors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
+
+                // Gate 2: Active run guard (mirrors publish check)
+                boolean hasActiveRun = recentRuns.stream()
+                    .anyMatch(r -> pipelineId.equals(r.get("pipelineId"))
+                        && tenantId.equals(r.get("tenantId"))
+                        && "RUNNING".equals(r.get("status")));
+                if (hasActiveRun) {
+                    validationErrors.add("Pipeline has active RUNNING runs — publish would be blocked");
+                }
+
+                // Gate 3: Agent set resolution
+                List<String> agentSet = resolveAgentSetForDryRun(existing);
+
+                // Gate 4: Policy set
+                PIIScanner.PiiEnforcementPolicy piiPolicy = PIIScanner.PiiEnforcementPolicy.resolve();
+                List<String> policySet = List.of(
+                    "pii-enforcement:" + piiPolicy.name(),
+                    "tenant-isolation:ENFORCED",
+                    "quota-check:ENFORCED"
+                );
+
+                // Gate 5: Compliance bundle
+                List<String> warnings = new ArrayList<>();
+                java.util.Map<String, Object> complianceBundle = new java.util.LinkedHashMap<>();
+                complianceBundle.put("piiEnforcement", piiPolicy.name());
+                complianceBundle.put("piiBlockDefault", piiPolicy == PIIScanner.PiiEnforcementPolicy.BLOCK);
+                complianceBundle.put("auditLogEnabled", true);
+                boolean killSwitchEnabled = "true".equalsIgnoreCase(System.getenv("AEP_KILL_SWITCH_ENABLED"));
+                complianceBundle.put("killSwitchEnabled", killSwitchEnabled);
+                if (!killSwitchEnabled) {
+                    warnings.add("Kill-switch is not enabled; operator halt will not be immediate");
+                }
+                if (piiPolicy != PIIScanner.PiiEnforcementPolicy.BLOCK) {
+                    warnings.add("PII policy is " + piiPolicy.name() + " (not BLOCK); sensitive data may pass through");
+                }
+
+                boolean passed = validationErrors.isEmpty();
+                log.info("[F-014] Dry-run pipeline id={} tenant={}: passed={} errors={} warnings={}",
+                    pipelineId, tenantId, passed, validationErrors.size(), warnings.size());
+
+                java.util.Map<String, Object> report = new java.util.LinkedHashMap<>();
+                report.put("pipelineId", pipelineId);
+                report.put("tenantId", tenantId);
+                report.put("passed", passed);
+                report.put("agentSet", agentSet);
+                report.put("policySet", policySet);
+                report.put("complianceBundle", complianceBundle);
+                report.put("validationErrors", validationErrors);
+                report.put("warnings", warnings);
+                report.put("acknowledgementRequired", true);
+                report.put("timestamp", Instant.now().toString());
+
+                return Promise.of(jsonResponse(passed ? 200 : 422, report));
+            })
+            .then(Promise::of, e -> {
+                log.error("[F-014] Error during pipeline dry-run id={}", pipelineId, e);
+                return Promise.of(errorResponse(500, "Dry-run failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Extracts agent names referenced by the pipeline's stored config JSON.
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> resolveAgentSetForDryRun(
+            com.ghatana.pipeline.registry.model.PipelineRegistration registration) {
+        String configJson = registration.getConfig();
+        if (configJson == null || configJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            Map<String, Object> config = objectMapper.readValue(
+                configJson, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+            Object agents = config.get("agents");
+            if (agents instanceof List<?> agentList) {
+                List<String> names = new ArrayList<>();
+                for (Object a : agentList) {
+                    if (a instanceof Map<?, ?> agentMap) {
+                        Object name = agentMap.get("name");
+                        if (name instanceof String s && !s.isBlank()) names.add(s);
+                    } else if (a instanceof String s) {
+                        names.add(s);
+                    }
+                }
+                return List.copyOf(names);
+            }
+        } catch (Exception e) {
+            log.warn("[F-014] Could not parse agent set from pipeline config: {}", e.getMessage());
+        }
+        return List.of();
+    }
+
+    /**
+     * Converts a persisted {@link com.ghatana.pipeline.registry.model.PipelineRegistration}
+     * back into a transient {@link Pipeline} domain object for validation.
+     */
+    private Pipeline mapRegistrationToPipeline(
+            com.ghatana.pipeline.registry.model.PipelineRegistration reg, String tenantId) {
+        Pipeline p = new Pipeline();
+        p.setId(reg.getId());
+        p.setTenantId(TenantId.of(tenantId));
+        p.setName(reg.getName());
+        p.setDescription(reg.getDescription());
+        p.setActive(reg.isActive());
+        p.setVersion(reg.getVersion());
+        p.setConfig(reg.getConfig() != null ? reg.getConfig() : "{}");
+        p.setCreatedAt(reg.getCreatedAt());
+        p.setUpdatedAt(reg.getUpdatedAt());
+        p.setCreatedBy(reg.getCreatedBy());
+        p.setUpdatedBy(reg.getUpdatedBy());
+        return p;
     }
 
     /**

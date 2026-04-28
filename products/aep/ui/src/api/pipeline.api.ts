@@ -276,6 +276,38 @@ export async function runPipeline(
   };
 }
 
+// ─── Dry-run (F-014) ─────────────────────────────────────────────────
+
+export interface PipelineDryRunReport {
+  pipelineId: string;
+  tenantId: string;
+  passed: boolean;
+  agentSet: string[];
+  policySet: string[];
+  complianceBundle: Record<string, unknown>;
+  validationErrors: string[];
+  warnings: string[];
+  acknowledgementRequired: boolean;
+  timestamp: string;
+}
+
+/**
+ * Triggers a publish pre-flight dry-run for the given pipeline.
+ * Returns a structured report without persisting any state change.
+ * F-014.
+ */
+export async function dryRunPipeline(
+  pipelineId: string,
+  tenantId = "default",
+): Promise<PipelineDryRunReport> {
+  const { data } = await client.post<PipelineDryRunReport>(
+    `/api/v1/pipelines/${pipelineId}/dry-run`,
+    {},
+    { params: { tenantId } },
+  );
+  return data;
+}
+
 // ─── Export Pipeline as YAML ─────────────────────────────────────────
 
 export function exportPipelineSpec(pipeline: PipelineSpec): string {

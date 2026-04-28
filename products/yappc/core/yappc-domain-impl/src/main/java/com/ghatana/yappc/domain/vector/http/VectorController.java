@@ -2,6 +2,7 @@ package com.ghatana.yappc.domain.vector.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
+import com.ghatana.platform.security.TenantExtractor;
 import com.ghatana.products.yappc.domain.vector.RagService;
 import com.ghatana.products.yappc.domain.vector.SemanticSearchService;
 import io.activej.http.HttpRequest;
@@ -56,11 +57,13 @@ public class VectorController {
     // ==================== SEMANTIC SEARCH ====================
 
     /**
-     * Performs semantic search.
+     * Performs semantic search with tenant scoping.
      * POST /api/v1/vector/search
      */
     @NotNull
     public Promise<HttpResponse> search(@NotNull HttpRequest request) {
+        String tenantId = extractTenantId(request);
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -71,7 +74,8 @@ public class VectorController {
                             dto.query(),
                             dto.limit() > 0 ? dto.limit() : 10,
                             dto.threshold() > 0 ? dto.threshold() : 0.7,
-                            dto.filters()
+                            dto.filters(),
+                            tenantId
                         );
 
                     return searchService.search(searchRequest)
@@ -87,11 +91,13 @@ public class VectorController {
     }
 
     /**
-     * Performs hybrid search (semantic + keyword).
+     * Performs hybrid search (semantic + keyword) with tenant scoping.
      * POST /api/v1/vector/search/hybrid
      */
     @NotNull
     public Promise<HttpResponse> hybridSearch(@NotNull HttpRequest request) {
+        String tenantId = extractTenantId(request);
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -107,7 +113,8 @@ public class VectorController {
                             dto.threshold() > 0 ? dto.threshold() : 0.7,
                             dto.filters(),
                             dto.keywords(),
-                            dto.keywordBoost() > 0 ? dto.keywordBoost() : 0.2
+                            dto.keywordBoost() > 0 ? dto.keywordBoost() : 0.2,
+                            tenantId
                         );
 
                     return searchService.hybridSearch(hybridRequest)
@@ -123,15 +130,16 @@ public class VectorController {
     }
 
     /**
-     * Finds similar items by ID.
+     * Finds similar items by ID with tenant scoping.
      * GET /api/v1/vector/similar/:id
      */
     @NotNull
     public Promise<HttpResponse> findSimilar(@NotNull HttpRequest request, @NotNull String id) {
+        String tenantId = extractTenantId(request);
         int limit = getIntParam(request, "limit", 10);
         double threshold = getDoubleParam(request, "threshold", 0.7);
 
-        return searchService.findSimilar(id, limit, threshold)
+        return searchService.findSimilar(id, limit, threshold, tenantId)
             .map(hits -> ResponseBuilder.ok()
                 .json(Map.of(
                     "sourceId", id,
@@ -144,11 +152,13 @@ public class VectorController {
     // ==================== INDEXING ====================
 
     /**
-     * Indexes a document.
+     * Indexes a document with tenant scoping.
      * POST /api/v1/vector/index
      */
     @NotNull
     public Promise<HttpResponse> indexDocument(@NotNull HttpRequest request) {
+        String tenantId = extractTenantId(request);
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -161,7 +171,8 @@ public class VectorController {
                         new SemanticSearchService.IndexRequest(
                             dto.id(),
                             dto.content(),
-                            dto.metadata()
+                            dto.metadata(),
+                            tenantId
                         );
 
                     return searchService.index(indexRequest)
@@ -181,11 +192,13 @@ public class VectorController {
     }
 
     /**
-     * Batch indexes multiple documents.
+     * Batch indexes multiple documents with tenant scoping.
      * POST /api/v1/vector/index/batch
      */
     @NotNull
     public Promise<HttpResponse> batchIndex(@NotNull HttpRequest request) {
+        String tenantId = extractTenantId(request);
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -198,7 +211,8 @@ public class VectorController {
                         .map(doc -> new SemanticSearchService.IndexRequest(
                             doc.id(),
                             doc.content(),
-                            doc.metadata()
+                            doc.metadata(),
+                            tenantId
                         ))
                         .toList();
 
@@ -229,12 +243,14 @@ public class VectorController {
     }
 
     /**
-     * Deletes a document from the index.
+     * Deletes a document from the index with tenant scoping.
      * DELETE /api/v1/vector/index/:id
      */
     @NotNull
     public Promise<HttpResponse> deleteDocument(@NotNull HttpRequest request, @NotNull String id) {
-        return searchService.delete(id)
+        String tenantId = extractTenantId(request);
+
+        return searchService.delete(id, tenantId)
             .map(deleted -> deleted
                 ? ResponseBuilder.noContent().build()
                 : ResponseBuilder.notFound()
@@ -245,11 +261,13 @@ public class VectorController {
     // ==================== RAG ====================
 
     /**
-     * Generates a RAG response.
+     * Generates a RAG response with tenant scoping.
      * POST /api/v1/vector/rag
      */
     @NotNull
     public Promise<HttpResponse> rag(@NotNull HttpRequest request) {
+        String tenantId = extractTenantId(request);
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -262,7 +280,8 @@ public class VectorController {
                         dto.relevanceThreshold() > 0 ? dto.relevanceThreshold() : 0.7,
                         dto.maxTokens() > 0 ? dto.maxTokens() : 1000,
                         dto.temperature() > 0 ? dto.temperature() : 0.7,
-                        dto.filters()
+                        dto.filters(),
+                        tenantId
                     );
 
                     return ragService.generate(ragRequest)
@@ -282,11 +301,13 @@ public class VectorController {
     }
 
     /**
-     * Generates a conversational RAG response.
+     * Generates a conversational RAG response with tenant scoping.
      * POST /api/v1/vector/rag/chat
      */
     @NotNull
     public Promise<HttpResponse> ragChat(@NotNull HttpRequest request) {
+        String tenantId = extractTenantId(request);
+
         return request.loadBody()
             .then(body -> {
                 try {
@@ -313,7 +334,8 @@ public class VectorController {
                             dto.relevanceThreshold() > 0 ? dto.relevanceThreshold() : 0.7,
                             dto.maxTokens() > 0 ? dto.maxTokens() : 1000,
                             dto.temperature() > 0 ? dto.temperature() : 0.7,
-                            dto.filters()
+                            dto.filters(),
+                            tenantId
                         );
 
                     return ragService.chat(chatRequest)
@@ -333,6 +355,14 @@ public class VectorController {
     }
 
     // ==================== HELPER METHODS ====================
+
+    private String extractTenantId(HttpRequest request) {
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new IllegalArgumentException("Missing required X-Tenant-ID header");
+        }
+        return tenantId;
+    }
 
     private int getIntParam(HttpRequest request, String name, int defaultValue) {
         String value = request.getQueryParameter(name);

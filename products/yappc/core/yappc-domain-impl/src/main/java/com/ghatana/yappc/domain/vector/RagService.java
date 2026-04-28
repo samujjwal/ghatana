@@ -400,7 +400,7 @@ public class RagService {
     // ==================== REQUEST/RESPONSE TYPES ====================
 
     /**
-     * RAG request
+     * RAG request with tenant scoping
      */
     public record RagRequest(
         @NotNull String query,
@@ -409,23 +409,25 @@ public class RagService {
         double relevanceThreshold,
         int maxTokens,
         double temperature,
-        @Nullable Map<String, String> filters
+        @Nullable Map<String, String> filters,
+        @Nullable String tenantId
     ) {
         public static RagRequest of(String query) {
             return new RagRequest(
                 query,
                 null,
-                DEFAULT_CONTEXT_LIMIT,
+                5,
                 0.7,
-                DEFAULT_MAX_TOKENS,
+                1000,
                 0.7,
+                null,
                 null
             );
         }
     }
 
     /**
-     * Conversational RAG request
+     * Conversational RAG request with tenant scoping
      */
     public record ConversationalRagRequest(
         @NotNull String query,
@@ -435,7 +437,8 @@ public class RagService {
         double relevanceThreshold,
         int maxTokens,
         double temperature,
-        @Nullable Map<String, String> filters
+        @Nullable Map<String, String> filters,
+        @Nullable String tenantId
     ) {}
 
     /**

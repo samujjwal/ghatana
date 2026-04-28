@@ -39,6 +39,7 @@ import {
 } from '../state/atoms';
 import { ROUTES } from '../router/paths';
 import { usePhaseNavigation, useBreadcrumbs } from '../router/hooks';
+import { useFeatureFlag, FeatureFlag } from '../providers/FeatureFlagProvider';
 
 // =============================================================================
 // Types
@@ -312,8 +313,32 @@ interface PhaseNavProps {
 const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
   const { projectId } = useParams<{ projectId: string }>();
   const { currentPhase } = usePhaseNavigation();
+  const { isFeatureEnabled } = useFeatureFlag();
 
-  const currentSubItems = currentPhase ? phaseSubNavItems[currentPhase] : [];
+  const currentSubItems = useMemo(() => {
+    if (!currentPhase) return [];
+    const items = phaseSubNavItems[currentPhase];
+    
+    // Filter operations items based on feature flags
+    if (currentPhase === 'operations') {
+      const opsItems = items.filter((item) => {
+        const flagMap: Record<string, FeatureFlag> = {
+          'Incidents': FeatureFlag.OPS_INCIDENTS,
+          'Alerts': FeatureFlag.OPS_ALERTS,
+          'Dashboards': FeatureFlag.OPS_DASHBOARDS,
+          'Logs': FeatureFlag.OPS_LOGS,
+          'Metrics': FeatureFlag.OPS_METRICS,
+          'Runbooks': FeatureFlag.OPS_RUNBOOKS,
+          'On-Call': FeatureFlag.OPS_ONCALL,
+        };
+        const flag = flagMap[item.label];
+        return !flag || isFeatureEnabled(flag);
+      });
+      return opsItems;
+    }
+    
+    return items;
+  }, [currentPhase, isFeatureEnabled]);
 
   return (
     <aside

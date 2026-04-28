@@ -1,25 +1,25 @@
 export const LIFECYCLE_PHASE_ORDER = [
   'INTENT',
-  'CONTEXT',
-  'PLAN',
-  'EXECUTE',
-  'VERIFY',
+  'SHAPE',
+  'VALIDATE',
+  'GENERATE',
+  'RUN',
   'OBSERVE',
   'LEARN',
-  'INSTITUTIONALIZE',
+  'EVOLVE',
 ] as const;
 
 export type LifecyclePhase = (typeof LIFECYCLE_PHASE_ORDER)[number];
 
 export const LIFECYCLE_PHASE_LABELS: Record<LifecyclePhase, string> = {
   INTENT: 'Intent',
-  CONTEXT: 'Context',
-  PLAN: 'Plan',
-  EXECUTE: 'Execute',
-  VERIFY: 'Verify',
+  SHAPE: 'Shape',
+  VALIDATE: 'Validate',
+  GENERATE: 'Generate',
+  RUN: 'Run',
   OBSERVE: 'Observe',
   LEARN: 'Learn',
-  INSTITUTIONALIZE: 'Institutionalize',
+  EVOLVE: 'Evolve',
 };
 
 export function isLifecyclePhase(value: string): value is LifecyclePhase {

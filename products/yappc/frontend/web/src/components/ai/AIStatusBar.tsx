@@ -2,6 +2,7 @@ import React from 'react';
 import { OperationStatus, AILabel } from '@ghatana/design-system';
 import type { OperationState } from '@ghatana/design-system';
 import { cn } from '@/lib/utils';
+import { AITypeChip, type AITypeChipProps } from './AITypeChip';
 
 /**
  * AI Status Bar component.
@@ -40,6 +41,10 @@ export interface AIStatusBarProps {
   nextBestAction?: NextBestAction | null;
   onPhaseChange?: (phase: LifecyclePhase) => void;
   className?: string;
+  aiType?: AITypeChipProps['type'];
+  aiConfidence?: AITypeChipProps['confidence'];
+  aiRationale?: AITypeChipProps['rationale'];
+  aiSources?: AITypeChipProps['sources'];
 }
 
 /** Map product AIStatus values to platform OperationState. */
@@ -83,6 +88,10 @@ export function AIStatusBar({
   nextBestAction,
   onPhaseChange,
   className,
+  aiType,
+  aiConfidence,
+  aiRationale,
+  aiSources,
 }: AIStatusBarProps) {
   const [showPhaseSelector, setShowPhaseSelector] = React.useState(false);
   const { setCurrentPhase } = useAIStatusBar();
@@ -121,6 +130,15 @@ export function AIStatusBar({
           label={`AI Status: ${STATUS_LABEL[status]}`}
           size="sm"
         />
+        {aiType && (
+          <AITypeChip
+            type={aiType}
+            confidence={aiConfidence}
+            rationale={aiRationale}
+            sources={aiSources}
+            size="sm"
+          />
+        )}
       </div>
 
       {/* Phase Progress */}
@@ -196,6 +214,10 @@ export function useAIStatusBar() {
   const [phaseProgress, setPhaseProgress] = React.useState(0);
   const [nextBestAction, setNextBestAction] =
     React.useState<NextBestAction | null>(null);
+  const [aiType, setAIType] = React.useState<AITypeChipProps['type']>();
+  const [aiConfidence, setAIConfidence] = React.useState<AITypeChipProps['confidence']>();
+  const [aiRationale, setAIRationale] = React.useState<AITypeChipProps['rationale']>();
+  const [aiSources, setAISources] = React.useState<AITypeChipProps['sources']>();
 
   return {
     status,
@@ -206,5 +228,13 @@ export function useAIStatusBar() {
     setPhaseProgress,
     nextBestAction,
     setNextBestAction,
+    aiType,
+    setAIType,
+    aiConfidence,
+    setAIConfidence,
+    aiRationale,
+    setAIRationale,
+    aiSources,
+    setAISources,
   };
 }

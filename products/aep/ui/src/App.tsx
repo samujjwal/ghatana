@@ -57,6 +57,7 @@ import { FuzzyFinder } from '@/components/core/FuzzyFinder';
 import { AuthProvider } from '@/context/AuthContext';
 import { useLocation, useNavigate } from 'react-router';
 import { isFeatureEnabled } from '@/lib/feature-flags';
+import { RuntimeTruthBanner } from '@/components/shared/RuntimeTruthBanner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -266,6 +267,9 @@ function PageShell({ children }: { children: React.ReactNode }) {
           </button>
           <span className="ml-2 text-sm font-semibold text-gray-900 dark:text-gray-100">AEP</span>
         </div>
+
+        {/* F-040: Runtime-truth banner — server-driven capability status */}
+        <RuntimeTruthBanner />
 
         {(showBreadcrumbs || showCommandPalette) && (
           <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">

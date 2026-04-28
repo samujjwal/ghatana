@@ -3,6 +3,7 @@ package com.ghatana.products.yappc.domain.agent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,8 @@ public record CodeGeneratorOutput(
         @Nullable String documentation,
         @NotNull CodeQualityScore qualityScore,
         @NotNull List<SecurityIssue> securityIssues,
-        @NotNull GenerationMetadata metadata
+        @NotNull GenerationMetadata metadata,
+        @Nullable QualityGateResult qualityGate
 ) {
     /**
      * A generated file.
@@ -117,6 +119,65 @@ public record CodeGeneratorOutput(
             @NotNull Map<String, Object> parameters
     ) {}
 
+    /**
+     * Quality gate results for generated code artifacts.
+     * Includes compile, lint, and test results.
+     */
+    public record QualityGateResult(
+            @NotNull CompileResult compile,
+            @NotNull LintResult lint,
+            @NotNull TestResult test,
+            @NotNull Instant timestamp,
+            boolean passed
+    ) {
+        public record CompileResult(
+                boolean success,
+                @NotNull String status,
+                @Nullable String errorOutput,
+                long durationMs,
+                @NotNull List<String> compiledFiles
+        ) {}
+
+        public record LintResult(
+                boolean success,
+                @NotNull String status,
+                int errorCount,
+                int warningCount,
+                @Nullable String output,
+                long durationMs,
+                @NotNull List<LintIssue> issues
+        ) {
+            public record LintIssue(
+                    @NotNull String file,
+                    int line,
+                    int column,
+                    @NotNull String severity,
+                    @NotNull String message,
+                    @NotNull String rule
+            ) {}
+        }
+
+        public record TestResult(
+                boolean success,
+                @NotNull String status,
+                int totalTests,
+                int passedTests,
+                int failedTests,
+                int skippedTests,
+                @Nullable String output,
+                long durationMs,
+                @NotNull List<TestCaseResult> testCases
+        ) {
+            public record TestCaseResult(
+                    @NotNull String name,
+                    @NotNull String status,
+                    long durationMs,
+                    @Nullable String failureMessage,
+                    @Nullable String stackTrace
+            ) {}
+        }
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -128,6 +189,7 @@ public record CodeGeneratorOutput(
         private CodeQualityScore qualityScore;
         private List<SecurityIssue> securityIssues = List.of();
         private GenerationMetadata metadata;
+        private QualityGateResult qualityGate;
 
         public Builder files(List<GeneratedFile> files) {
             this.files = files;
@@ -159,6 +221,11 @@ public record CodeGeneratorOutput(
             return this;
         }
 
+        public Builder qualityGate(QualityGateResult qualityGate) {
+            this.qualityGate = qualityGate;
+            return this;
+        }
+
         public CodeGeneratorOutput build() {
             if (qualityScore == null) {
                 qualityScore = new CodeQualityScore(0, 0, 0, 0, 0, List.of());
@@ -167,7 +234,7 @@ public record CodeGeneratorOutput(
                 throw new IllegalStateException("metadata is required");
             }
             return new CodeGeneratorOutput(
-                    files, tests, documentation, qualityScore, securityIssues, metadata
+                    files, tests, documentation, qualityScore, securityIssues, metadata, qualityGate
             );
         }
     }

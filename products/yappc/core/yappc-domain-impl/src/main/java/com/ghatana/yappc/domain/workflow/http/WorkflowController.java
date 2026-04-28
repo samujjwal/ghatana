@@ -14,9 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP Controller for AI Workflow operations.
@@ -35,6 +38,7 @@ public class WorkflowController {
 
     private final AiWorkflowService workflowService;
     private final ObjectMapper objectMapper;
+    private final IdempotencyCache idempotencyCache;
 
     /**
      * Creates a new WorkflowController.
@@ -48,6 +52,7 @@ public class WorkflowController {
     ) {
         this.workflowService = Objects.requireNonNull(workflowService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
+        this.idempotencyCache = new IdempotencyCache();
     }
 
     // ==================== WORKFLOW CRUD ====================
@@ -297,7 +302,7 @@ public class WorkflowController {
     }
 
     /**
-     * Approves an AI plan.
+     * Approves an AI plan with audit chain and idempotency.
      * POST /api/v1/workflows/:workflowId/plans/:planId/approve
      */
     @NotNull
@@ -307,14 +312,35 @@ public class WorkflowController {
         @NotNull String planId
     ) {
         String tenantId = extractTenantId(request);
+        String actor = extractActor(request);
+        String idempotencyKey = request.getHeader("Idempotency-Key");
 
-        return workflowService.approvePlan(planId, tenantId)
-            .map(plan -> ResponseBuilder.ok().json(plan).build())
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(ResponseBuilder.badRequest()
+                .json(Map.of("error", "Missing required Idempotency-Key header"))
+                .build());
+        }
+
+        // Check for existing idempotency response
+        String cacheKey = buildIdempotencyKey("approve", tenantId, planId, idempotencyKey);
+        HttpResponse cachedResponse = idempotencyCache.get(cacheKey);
+        if (cachedResponse != null) {
+            LOG.info("Idempotency cache hit for approve plan: {}", planId);
+            return Promise.of(cachedResponse);
+        }
+
+        return workflowService.approvePlan(planId, tenantId, actor)
+            .map(plan -> {
+                HttpResponse response = ResponseBuilder.ok().json(plan).build();
+                // Cache response for replay window (24 hours)
+                idempotencyCache.put(cacheKey, response, java.time.Duration.ofHours(24));
+                return response;
+            })
             .then(Promise::of, this::handleWorkflowException);
     }
 
     /**
-     * Rejects an AI plan.
+     * Rejects an AI plan with audit chain and idempotency.
      * POST /api/v1/workflows/:workflowId/plans/:planId/reject
      */
     @NotNull
@@ -327,13 +353,35 @@ public class WorkflowController {
             .then(body -> {
                 try {
                     String tenantId = extractTenantId(request);
+                    String actor = extractActor(request);
+                    String idempotencyKey = request.getHeader("Idempotency-Key");
+
+                    if (idempotencyKey == null || idempotencyKey.isBlank()) {
+                        return Promise.of(ResponseBuilder.badRequest()
+                            .json(Map.of("error", "Missing required Idempotency-Key header"))
+                            .build());
+                    }
+
                     RejectPlanDto dto = objectMapper.readValue(
                         body.getString(StandardCharsets.UTF_8),
                         RejectPlanDto.class
                     );
 
-                    return workflowService.rejectPlan(planId, tenantId, dto.reason())
-                        .map(plan -> ResponseBuilder.ok().json(plan).build())
+                    // Check for existing idempotency response
+                    String cacheKey = buildIdempotencyKey("reject", tenantId, planId, idempotencyKey);
+                    HttpResponse cachedResponse = idempotencyCache.get(cacheKey);
+                    if (cachedResponse != null) {
+                        LOG.info("Idempotency cache hit for reject plan: {}", planId);
+                        return Promise.of(cachedResponse);
+                    }
+
+                    return workflowService.rejectPlan(planId, tenantId, dto.reason(), actor)
+                        .map(plan -> {
+                            HttpResponse response = ResponseBuilder.ok().json(plan).build();
+                            // Cache response for replay window (24 hours)
+                            idempotencyCache.put(cacheKey, response, java.time.Duration.ofHours(24));
+                            return response;
+                        })
                         .then(Promise::of, this::handleWorkflowException);
 
                 } catch (Exception e) {
@@ -417,6 +465,16 @@ public class WorkflowController {
         return tenantId;
     }
 
+    private String extractActor(HttpRequest request) {
+        // Extract actor from request - could be from JWT, session, or a dedicated header
+        // For now, extract from X-User-Id header or use a default
+        String actor = request.getHeader("X-User-Id");
+        if (actor == null || actor.isBlank()) {
+            actor = request.getHeader("X-Actor");
+        }
+        return actor != null ? actor : "system";
+    }
+
     private int getIntParam(HttpRequest request, String name, int defaultValue) {
         String value = request.getQueryParameter(name);
         if (value != null && !value.isEmpty()) {
@@ -447,6 +505,45 @@ public class WorkflowController {
             return Promise.of(ResponseBuilder.internalServerError()
                 .json(Map.of("error", "Workflow operation failed: " + e.getMessage()))
                 .build());
+        }
+    }
+
+    private String buildIdempotencyKey(String operation, String tenantId, String planId, String idempotencyKey) {
+        return String.format("%s:%s:%s:%s", operation, tenantId, planId, idempotencyKey);
+    }
+
+    /**
+     * Simple in-memory idempotency cache with TTL support.
+     * In production, this should be replaced with a distributed cache like Redis.
+     */
+    private static class IdempotencyCache {
+        private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
+
+        public HttpResponse get(String key) {
+            CacheEntry entry = cache.get(key);
+            if (entry == null) {
+                return null;
+            }
+            if (entry.expiration.isBefore(Instant.now())) {
+                cache.remove(key);
+                return null;
+            }
+            return entry.response;
+        }
+
+        public void put(String key, HttpResponse response, Duration ttl) {
+            Instant expiration = Instant.now().plus(ttl);
+            cache.put(key, new CacheEntry(response, expiration));
+        }
+
+        private static class CacheEntry {
+            final HttpResponse response;
+            final Instant expiration;
+
+            CacheEntry(HttpResponse response, Instant expiration) {
+                this.response = response;
+                this.expiration = expiration;
+            }
         }
     }
 

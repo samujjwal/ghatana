@@ -25,6 +25,7 @@ import {
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
+import { PipelineDryRunDialog } from '@/components/pipeline/PipelineDryRunDialog';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ export function PipelineListPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [dryRunTarget, setDryRunTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: pipelines = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['aep', 'pipelines', tenantId],
@@ -193,6 +195,15 @@ export function PipelineListPage() {
                   </Button>
                   {pipeline.id && (
                     <Button
+                      onClick={() => setDryRunTarget({ id: pipeline.id!, name: pipeline.name })}
+                      variant="secondary"
+                      className="text-xs font-medium"
+                    >
+                      Dry Run
+                    </Button>
+                  )}
+                  {pipeline.id && (
+                    <Button
                       onClick={() => setConfirmDelete(pipeline.id!)}
                       disabled={deleteMutation.isPending}
                       variant="secondary"
@@ -225,6 +236,17 @@ export function PipelineListPage() {
             if (confirmDelete) deleteMutation.mutate(confirmDelete);
           }}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {/* F-014: Dry-run pre-flight dialog */}
+      {dryRunTarget && (
+        <PipelineDryRunDialog
+          open={!!dryRunTarget}
+          pipelineId={dryRunTarget.id}
+          pipelineName={dryRunTarget.name}
+          tenantId={tenantId}
+          onClose={() => setDryRunTarget(null)}
         />
       )}
     </div>

@@ -6,6 +6,8 @@ package com.ghatana.aep.server.http.controllers;
 
 import com.ghatana.aep.compliance.AepSoc2ControlFramework;
 import com.ghatana.aep.server.compliance.AepComplianceService;
+import com.ghatana.aep.server.governance.KillSwitchAuditChain;
+import com.ghatana.aep.server.governance.StepUpAuthenticationGate;
 import com.ghatana.aep.server.http.HttpHelper;
 import com.ghatana.platform.incident.DegradationMode;
 import com.ghatana.platform.incident.GracefulDegradationManager;
@@ -37,6 +39,9 @@ import java.util.function.Function;
  *   <li>Incident reporting</li>
  * </ul>
  *
+ * <p>F-018: Kill-switch activation requires step-up MFA authentication and produces
+ * tamper-evident chain entries in the audit trail.
+ *
  * @doc.type class
  * @doc.purpose Governance endpoints controller for AEP platform services
  * @doc.layer product
@@ -55,6 +60,10 @@ public final class GovernanceController {
     @Nullable
     private final AepComplianceService complianceService;
     private final AepSoc2ControlFramework soc2Framework;
+    @Nullable
+    private final StepUpAuthenticationGate stepUpGate;
+    @Nullable
+    private final KillSwitchAuditChain auditChain;
 
     /**
      * @param killSwitchService    kill-switch service; never {@code null}
@@ -65,6 +74,8 @@ public final class GovernanceController {
      * @param jsonResponse         JSON response factory from the enclosing server
      * @param complianceService    compliance capability service; nullable when Data Cloud is absent
      * @param soc2Framework        SOC 2 framework summary provider
+     * @param stepUpGate           MFA gate for step-up verification (F-018); nullable if MFA not configured
+     * @param auditChain           audit chain manager for kill-switch operations (F-018); nullable
      */
     public GovernanceController(
             KillSwitchService killSwitchService,
@@ -74,7 +85,9 @@ public final class GovernanceController {
             PromptInjectionDetector injectionDetector,
             Function<Map<String, Object>, HttpResponse> jsonResponse,
             @Nullable AepComplianceService complianceService,
-            AepSoc2ControlFramework soc2Framework) {
+            AepSoc2ControlFramework soc2Framework,
+            @Nullable StepUpAuthenticationGate stepUpGate,
+            @Nullable KillSwitchAuditChain auditChain) {
         this.killSwitchService  = killSwitchService;
         this.degradationManager = degradationManager;
         this.policyEngine       = policyEngine;
@@ -83,6 +96,8 @@ public final class GovernanceController {
         this.jsonResponse       = jsonResponse;
         this.complianceService  = complianceService;
         this.soc2Framework      = soc2Framework;
+        this.stepUpGate         = stepUpGate;
+        this.auditChain         = auditChain;
     }
 
     // ---- Kill-Switch -------------------------------------------------------
@@ -115,10 +130,48 @@ public final class GovernanceController {
                 String tenantId   = (String) body.get("tenantId");
                 String reason     = (String) body.getOrDefault("reason", "manual activation");
                 String incidentId = (String) body.getOrDefault("incidentId", "manual");
+                String mfaCode    = (String) body.get("mfaCode");
+                String userId     = (String) body.getOrDefault("userId", "unknown");
+
                 if (tenantId == null) {
                     return Promise.of(HttpHelper.errorResponse(400, "tenantId is required"));
                 }
-                log.warn("[kill-switch] Activating for tenant='{}' incident='{}' reason='{}'",
+
+                // F-018: Require step-up authentication (MFA code) for kill-switch activation
+                if (stepUpGate != null && mfaCode != null) {
+                    return stepUpGate.verify(userId, tenantId, mfaCode)
+                        .then(verified -> {
+                            if (!verified) {
+                                // Log failed step-up attempt
+                                if (auditChain != null) {
+                                    return auditChain.recordFailedStepUp(tenantId, userId, "kill-switch activation denied")
+                                        .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
+                                            "MFA verification failed; attempt logged")));
+                                }
+                                return Promise.of(HttpHelper.errorResponse(403, "MFA verification failed"));
+                            }
+
+                            // MFA verified; proceed with activation
+                            log.warn("[kill-switch] Activating for tenant='{}' incident='{}' reason='{}' actor='{}'",
+                                tenantId, incidentId, reason, userId);
+                            return killSwitchService.activate(tenantId, reason, incidentId)
+                                .then(v -> {
+                                    // Record in audit chain
+                                    if (auditChain != null) {
+                                        return auditChain.recordActivation(tenantId, userId, reason, incidentId, null)
+                                            .map(auditId -> jsonResponse.apply(Map.of(
+                                                "activated", true, "tenantId", tenantId,
+                                                "incidentId", incidentId, "auditId", auditId)));
+                                    }
+                                    return Promise.of(jsonResponse.apply(Map.of(
+                                        "activated", true, "tenantId", tenantId,
+                                        "incidentId", incidentId)));
+                                });
+                        });
+                }
+
+                // No MFA or step-up gate not configured; allow direct activation
+                log.warn("[kill-switch] Activating for tenant='{}' incident='{}' reason='{}' (no MFA verification)",
                     tenantId, incidentId, reason);
                 return killSwitchService.activate(tenantId, reason, incidentId)
                     .map(v -> jsonResponse.apply(Map.of(
@@ -141,12 +194,25 @@ public final class GovernanceController {
                     buf.getString(java.nio.charset.StandardCharsets.UTF_8), Map.class);
                 String tenantId = (String) body.get("tenantId");
                 String reason   = (String) body.getOrDefault("reason", "manual deactivation");
+                String userId   = (String) body.getOrDefault("userId", "unknown");
+
                 if (tenantId == null) {
                     return Promise.of(HttpHelper.errorResponse(400, "tenantId is required"));
                 }
+
+                log.warn("[kill-switch] Deactivating for tenant='{}' reason='{}' actor='{}'",
+                    tenantId, reason, userId);
                 return killSwitchService.deactivate(tenantId, reason)
-                    .map(v -> jsonResponse.apply(Map.of(
-                        "deactivated", true, "tenantId", tenantId)));
+                    .then(v -> {
+                        // Record in audit chain
+                        if (auditChain != null) {
+                            return auditChain.recordDeactivation(tenantId, userId, reason, null)
+                                .map(auditId -> jsonResponse.apply(Map.of(
+                                    "deactivated", true, "tenantId", tenantId, "auditId", auditId)));
+                        }
+                        return Promise.of(jsonResponse.apply(Map.of(
+                            "deactivated", true, "tenantId", tenantId)));
+                    });
             } catch (Exception e) {
                 return Promise.of(HttpHelper.errorResponse(400, "Invalid request: " + e.getMessage()));
             }

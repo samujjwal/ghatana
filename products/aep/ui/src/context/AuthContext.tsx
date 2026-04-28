@@ -41,8 +41,34 @@ interface PlatformSessionResponse {
   expiresInSeconds?: number;
 }
 
+interface RolesResponse {
+  roles: string[];
+  sub?: string;
+  retrievedAt: string;
+}
+
 /** Known AEP user roles. */
 export type UserRole = 'admin' | 'operator' | 'viewer' | 'auditor';
+
+/**
+ * F-007: Decodes the JWT payload to check whether the token's `exp` claim is
+ * still in the future. Does NOT verify the signature — that is the backend's
+ * responsibility. The check is purely a UI-side freshness guard so stale tokens
+ * do not keep `isAuthenticated` truthy after they have expired.
+ */
+function isJwtTokenFresh(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const payloadJson = atob(parts[1]!.replace(/-/g, '+').replace(/_/g, '/'));
+    const payload = JSON.parse(payloadJson) as Record<string, unknown>;
+    const exp = payload['exp'];
+    if (typeof exp !== 'number') return true; // no exp claim → treat as valid
+    return exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
 
 interface AuthContextValue {
   authToken: string | null;
@@ -115,6 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     attemptedSessionBootstrap.current = authTokenState;
     void bootstrapSession();
+    // F-032: Also sync roles whenever a fresh token is present (page reload case).
+    void fetchAndSetRoles();
   }, [authTokenState, sessionTokenState]);
 
   // ── Session expiry guard ───────────────────────────────────────────
@@ -158,6 +186,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /** F-032: Fetch the verified roles from the backend after a token is set. */
+  const fetchAndSetRoles = async (): Promise<void> => {
+    try {
+      const response = await apiClient.get<RolesResponse>('/api/v1/auth/roles');
+      const rawRoles = response.data.roles ?? [];
+      const knownRoles: UserRole[] = rawRoles
+        .map((r) => r.toLowerCase() as UserRole)
+        .filter((r): r is UserRole =>
+          r === 'admin' || r === 'operator' || r === 'viewer' || r === 'auditor',
+        );
+      setRoles(knownRoles);
+    } catch {
+      // Roles unavailable — keep empty list; gate checks will deny action buttons
+      setRoles([]);
+    }
+  };
+
   useEffect(() => {
     void bootstrapPlatformSession();
   }, []);
@@ -176,7 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       authToken: authTokenState,
       sessionToken: sessionTokenState,
-      isAuthenticated: authTokenState !== null,
+      // F-007: isAuthenticated requires a present AND unexpired JWT, not merely a non-null string.
+      isAuthenticated: authTokenState !== null && isJwtTokenFresh(authTokenState),
       isBootstrappingSession,
       roles,
       hasRole,
@@ -191,9 +237,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthToken(normalizedToken);
         setAuthTokenState(normalizedToken);
         await bootstrapSession();
+        // F-032: Fetch roles immediately after login so gate checks work right away.
+        await fetchAndSetRoles();
       },
       async loginWithPlatform(): Promise<void> {
         await bootstrapPlatformSession();
+        await fetchAndSetRoles();
       },
       logout(): void {
         attemptedSessionBootstrap.current = null;
@@ -205,6 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRoles([]);
       },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [authTokenState, hasAnyRole, hasRole, isBootstrappingSession, roles, sessionTokenState],
   );
 

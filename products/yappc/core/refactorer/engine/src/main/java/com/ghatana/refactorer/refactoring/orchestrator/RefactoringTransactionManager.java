@@ -1,8 +1,12 @@
 package com.ghatana.refactorer.refactoring.orchestrator;
 
+import com.ghatana.refactorer.refactoring.api.RefactoringResult;
+import com.ghatana.refactorer.refactoring.api.RenameRefactoring;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -21,6 +25,17 @@ public class RefactoringTransactionManager {
 
     private final Map<String, List<Path>> transactionFiles = new ConcurrentHashMap<>();
     private final Map<String, Map<Path, Path>> backupFiles = new ConcurrentHashMap<>();
+    private final Map<String, SimulationResult> simulationResults = new ConcurrentHashMap<>();
+
+    /**
+     * Record to store simulation results for later apply.
+     */
+    public record SimulationResult(
+        String simulationId,
+        RenameRefactoring.Context context,
+        RefactoringResult result,
+        Instant timestamp
+    ) {}
 
     /**
  * Starts a new transaction and returns its ID. */
@@ -83,7 +98,7 @@ public class RefactoringTransactionManager {
 
     /**
  * Rolls back a transaction, restoring all files to their original state. */
-    public void rollbackTransaction(String transactionId) {
+    public boolean rollbackTransaction(String transactionId) {
         if (transactionId == null) {
             throw new IllegalArgumentException("Transaction ID cannot be null");
         }
@@ -113,9 +128,39 @@ public class RefactoringTransactionManager {
                     }
                 }
             }
+            return true;
         } finally {
             cleanupTransaction(transactionId);
         }
+    }
+
+    /**
+ * Stores a simulation result for later apply.
+ */
+    public void storeSimulationResult(String simulationId, RenameRefactoring.Context context, RefactoringResult result) {
+        SimulationResult simulation = new SimulationResult(
+            simulationId,
+            context,
+            result,
+            Instant.now()
+        );
+        simulationResults.put(simulationId, simulation);
+        log.debug("Stored simulation result: {}", simulationId);
+    }
+
+    /**
+ * Retrieves a stored simulation result.
+ */
+    public SimulationResult retrieveSimulationResult(String simulationId) {
+        return simulationResults.get(simulationId);
+    }
+
+    /**
+ * Cleans up a simulation result.
+ */
+    public void cleanupSimulationResult(String simulationId) {
+        simulationResults.remove(simulationId);
+        log.debug("Cleaned up simulation result: {}", simulationId);
     }
 
     /**
