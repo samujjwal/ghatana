@@ -85,6 +85,21 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
 
     @Override
     @NotNull
+    public Promise<List<ReviewItem>> listRecent(@Nullable ReviewFilter filter) {
+        var stream = items.values().stream()
+            .map(this::expireIfNeeded)
+            .filter(item -> matchesFilter(item, filter))
+            .sorted((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()));
+
+        if (filter != null && filter.limit() > 0) {
+            stream = stream.limit(filter.limit());
+        }
+
+        return Promise.of(stream.collect(Collectors.toList()));
+    }
+
+    @Override
+    @NotNull
     public Promise<@Nullable ReviewItem> getById(@NotNull String reviewId) {
         ReviewItem item = items.get(reviewId);
         return Promise.of(item != null ? expireIfNeeded(item) : null);
@@ -177,5 +192,21 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
             item.markExpired();
         }
         return item;
+    }
+
+    private boolean matchesFilter(ReviewItem item, @Nullable ReviewFilter filter) {
+        if (filter == null) {
+            return true;
+        }
+        if (filter.tenantId() != null && !filter.tenantId().equals(item.getTenantId())) {
+            return false;
+        }
+        if (filter.itemType() != null && filter.itemType() != item.getItemType()) {
+            return false;
+        }
+        if (filter.maxConfidence() != null && item.getConfidenceScore() > filter.maxConfidence()) {
+            return false;
+        }
+        return filter.assignedTo() == null || filter.assignedTo().equals(item.getAssignedTo());
     }
 }

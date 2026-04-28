@@ -26,6 +26,7 @@ import {
 import {
   getPipelineMetrics,
   getRuntimeDurabilityStatus,
+  markAnomalyFalsePositive,
   type PipelineMetrics,
   type RuntimeDurabilityStatus,
 } from '@/api/aep.api';
@@ -146,6 +147,21 @@ export function MonitoringDashboardPage() {
       if (voiceConsent) {
         speak(`Cancelled ${selectedIds.size} pipeline runs`);
       }
+    },
+  });
+
+  const falsePositiveMutation = useMutation({
+    mutationFn: (input: { anomalyId: string; rationale: string }) =>
+      markAnomalyFalsePositive(
+        input.anomalyId,
+        {
+          reviewer: 'operator',
+          rationale: input.rationale,
+        },
+        tenantId,
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['aep', 'ai-suggestions', tenantId] });
     },
   });
 
@@ -311,6 +327,15 @@ export function MonitoringDashboardPage() {
                 isAllSelected={isAllSelected}
                 isIndeterminate={isIndeterminate}
                 aiSuggestions={aiSuggestions}
+                onMarkFalsePositive={(suggestion) => {
+                  if (!suggestion.anomalyId) {
+                    return;
+                  }
+                  falsePositiveMutation.mutate({
+                    anomalyId: suggestion.anomalyId,
+                    rationale: `Operator marked suggestion "${suggestion.message}" as not an anomaly.`,
+                  });
+                }}
               />
             )}
           </>

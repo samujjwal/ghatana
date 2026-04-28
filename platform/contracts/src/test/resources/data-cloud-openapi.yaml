@@ -2628,13 +2628,12 @@ paths:
                 $ref: "#/components/schemas/WorkflowExecutionSummary"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/pipelines/{pipelineId}/executions/{executionId}/retry:
+  /api/v1/executions/{executionId}/retry:
     post:
       summary: Retry a failed pipeline execution
-      operationId: apiV1PipelinesPipelineIdExecutionsExecutionIdRetryPost
-      tags: [pipelines]
+      operationId: apiV1ExecutionsExecutionIdRetryPost
+      tags: [executions]
       parameters:
-        - $ref: "#/components/parameters/pipelineIdPath"
         - $ref: "#/components/parameters/tenantIdQuery"
         - name: executionId
           in: path
@@ -3198,7 +3197,7 @@ paths:
 
   /api/v1/sovereign/audit:
     get:
-      summary: List sovereign policy audit events
+      summary: Sovereign policy audit events (P3.3)
       operationId: apiV1SovereignAuditGet
       tags: [sovereign]
       parameters:
@@ -3206,12 +3205,109 @@ paths:
         - $ref: "#/components/parameters/limitQuery"
       responses:
         "200":
-          description: Sovereign policy events (policy_change, blocked_call, backup).
+          description: Audit events for sovereign policy changes, blocked calls, and backups.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
-        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/ServerError" }
+
+  /api/v1/sovereign/backup:
+    get:
+      summary: Offline backup status (P3.3)
+      operationId: apiV1SovereignBackupGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns offline backup status with integrity hash, restore points, and encrypted transport flag.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    post:
+      summary: Trigger offline backup (P3.3)
+      operationId: apiV1SovereignBackupPost
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Triggers a backup snapshot with integrity hash and encrypted transport.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/restore:
+    post:
+      summary: Restore from offline backup (P3.3)
+      operationId: apiV1SovereignRestorePost
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - in: query
+          name: snapshotId
+          schema: { type: string }
+          description: Snapshot ID to restore from (defaults to latest)
+      responses:
+        "200":
+          description: Validates and restores from backup snapshot with integrity hash and schema version checks.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/data-subject-controls:
+    get:
+      summary: Data-subject controls (P3.3)
+      operationId: apiV1SovereignDataSubjectControlsGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns data-subject control settings including local-only processing, federated learning opt-in, data export, and retention days.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    put:
+      summary: Update data-subject controls (P3.3)
+      operationId: apiV1SovereignDataSubjectControlsPut
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Updates data-subject controls and returns the updated settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/sovereign/conformance:
+    get:
+      summary: Sovereign conformance tests (P3.3)
+      operationId: apiV1SovereignConformanceGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Runs conformance tests (no-network boot, offline query, audit-only event logging, encryption at rest) and returns PASS/FAIL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   # ── Checkpoints ────────────────────────────────────────────────────────────
 
@@ -3349,6 +3445,120 @@ paths:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
         "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/plugins/{id}/conformance:
+    post:
+      summary: Plugin conformance test (P3.1)
+      operationId: apiV1PluginsIdConformancePost
+      tags: [plugins]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/pluginId"
+      responses:
+        "200":
+          description: Conformance test results including lifecycle init/shutdown, capability contract, audit log, tenant isolation, schema version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/conformance:
+    get:
+      summary: Full provider conformance suite (P3.1)
+      operationId: apiV1ConformanceGet
+      tags: [conformance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Full conformance summary including EntityStore and EventLogStore results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/conformance/entity-store:
+    get:
+      summary: EntityStore conformance tests (P3.1)
+      operationId: apiV1ConformanceEntityStoreGet
+      tags: [conformance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: EntityStore conformance test results (save/get, batch, query, delete, tenant isolation).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/conformance/event-log-store:
+    get:
+      summary: EventLogStore conformance tests (P3.1)
+      operationId: apiV1ConformanceEventLogStoreGet
+      tags: [conformance]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: EventLogStore conformance test results (append/read, batch, by type, by time range, tenant isolation).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/data-residency:
+    get:
+      summary: Data residency audit (P3.2)
+      operationId: apiV1SovereignDataResidencyGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns data store regions and compliance against tenant policy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
+  /api/v1/sovereign/validate-transfer:
+    post:
+      summary: Validate cross-border transfer (P3.2)
+      operationId: apiV1SovereignValidateTransferPost
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      responses:
+        "200":
+          description: Transfer validation result with allowed flag and reason.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/sovereign/region-policy:
+    get:
+      summary: Region policy enforcement config (P3.2)
+      operationId: apiV1SovereignRegionPolicyGet
+      tags: [sovereign]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Returns allowed/blocked regions, geo-fencing, and multi-region replication status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
 
   # ── Agent memory ───────────────────────────────────────────────────────────
 

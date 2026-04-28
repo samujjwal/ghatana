@@ -9,7 +9,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.datacloud.plugins.lineage.LineagePlugin;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.TenantContext;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.security.port.JwtTokenProviders;
 import io.activej.promise.Promise;

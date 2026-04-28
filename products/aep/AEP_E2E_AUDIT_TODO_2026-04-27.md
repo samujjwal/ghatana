@@ -6,6 +6,20 @@
 
 ## Progress Updates
 
+- 2026-04-28 Session 14: Continued implementation. Completed / advanced:
+  - **F-009 / R-ST-2 / C-16** — Marketplace install now has a real preflight flow: version-pinned simulate-install on the backend, compatibility/execution-path truth in the UI, and durable install responses that carry compatibility posture instead of a placeholder toast.
+  - **F-020 / R-ST-7 / F-032** — Marketplace detail now makes the safety boundary explicit: direct execution is sandbox-only, production execution must route through pipeline + HITL, and only operator/admin roles can proceed through the governed install dialog.
+  - **K-13** — Agent registry empty-state navigation now uses canonical `routes.ts` helpers for marketplace/workflow handoff instead of string literals.
+
+- 2026-04-28 Session 13: Continued implementation. Completed / advanced:
+  - **F-015 / R-ST-5 / C-12** — Pipeline list now exposes a role-gated rollback flow with version history, typed confirmation, operator reason capture, and backend rollback responses that carry previous-version context plus linked audit IDs when event storage is available; generalized audit-schema standardization is still pending.
+  - **AI-13 / F-029 / R-MT-5 / C-15** — Monitoring anomaly suggestions now surface a direct "Mark as not an anomaly" operator action, the backend persists false-positive annotations on anomaly records, and a feedback event is emitted for downstream learning when analytics storage is configured.
+
+- 2026-04-28 Session 12: Continued implementation. Completed / advanced:
+  - **AI-5 / F-042 / R-ST-15** — Governance policy review now exposes a hybrid promotion advisor with explicit auto-promotable / auto-promoted badges, provenance detail, gate evidence, rollback target visibility, and per-skill policy timeline context; one-click rollback execution is still pending.
+  - **AI-9 / C-11** — Governance tenancy now includes a kill-switch impact preview assist plus operator controls that submit reason, incident ID, optional MFA step-up code, and audit-chain feedback from the canonical kill-switch endpoints.
+  - **F-050 / R-ST-17 / C-10** — Learning policy listing/approve/reject responses now carry normalized provenance and gate-result detail from review items, backed by queue history reads so the cockpit can render promotion history truthfully; broader chained audit-event enforcement beyond the existing kill-switch flow is still pending.
+
 - 2026-04-28 Session 11: Continued implementation. Completed / advanced:
   - **F-019 / R-ST-6** — Added a new `Privacy Requests` cockpit page with capability-gated GDPR/CCPA intake, explicit fulfilment results, target-window messaging, and truthful disclosure that the dedicated operator verification queue / chained audit timeline are still pending.
   - **AI-8** — Added an AI-assisted privacy triage panel that classifies free-text intake into access / erasure / portability / opt-out, surfaces confidence + rationale, and keeps submission review-required instead of auto-routing.
@@ -83,7 +97,7 @@
 
 ## Section B — Completeness (missing surfaces and lifecycles)
 
-- [x] F-009 — High / Completeness / UI+Backend — Marketplace install lifecycle: version pin, compatibility check, simulate, publish, rollback, audit chain; HITL gate for high-risk installs. **(T-07 basic DONE, advanced features pending)**
+- [x] F-009 — High / Completeness / UI+Backend — Marketplace install lifecycle: version pin, compatibility check, simulate, publish, rollback, audit chain; HITL gate for high-risk installs. **(ADVANCED: marketplace install now runs through simulate-install preflight with pinned version, compatibility posture, and governed install confirmation; rollback/audit-chain standardization still pending)**
 - [x] F-010 — High / Completeness / UI — Audit explorer page; new `/api/v1/audit/events` paginated endpoint with tamper-evident verification. **(T-06 DONE)**
 - [x] F-014 — High / Completeness / UI+Backend — Pipeline publish pre-flight dry-run that returns agent set, policy set, compliance bundle, evaluation gate result; require operator acknowledgement. **(DONE: PipelineDryRunDialog + dryRunPipeline API + tests)**
 - [ ] F-019 — High / Completeness / UI+Backend — End-user GDPR/CCPA request page, operator verification queue, SLA timer, chained audit. **(ADVANCED: cockpit privacy-request workbench now ships capability-gated intake, AI triage, target-window messaging, and live fulfilment results; dedicated verification queue and chained audit remain pending)**
@@ -91,7 +105,7 @@
 - [ ] F-027 — High / Completeness / UI — Bindings/connector designer; require successful `bindings/{id}/simulate` before publish.
 - [ ] F-028 — Medium / Completeness / UI+Backend — Cost budgets per tenant, alerts, breakdown by pipeline+agent+model. **(ADVANCED: dashboard and backend now expose threshold controls, explicit budget state, and per-model breakdown where telemetry exists; persistent budget administration is still pending)**
 - [ ] F-030 — High / Completeness / UI+Backend — Tenant lifecycle (create/suspend/retire) with audit; remove ad-hoc tenant-via-header.
-- [ ] F-032 — High / Completeness+Security / Frontend — Role-driven UI gating; lint blocks action buttons without role checks. **(ADVANCED: key pipeline + marketplace surfaces now gated from `/api/v1/auth/roles`; repo-wide coverage and lint rule still pending)**
+- [ ] F-032 — High / Completeness+Security / Frontend — Role-driven UI gating; lint blocks action buttons without role checks. **(ADVANCED: key pipeline + marketplace surfaces now gated from `/api/v1/auth/roles`, and marketplace installs now stay behind a governed operator/admin-only preflight; repo-wide coverage and lint rule still pending)**
 - [ ] F-033 — Medium / Completeness / UI — Backup/DR/Export ops tile (last DR drill, last backup, export queue). **(ADVANCED: Governance operations panel now surfaces truthful backup/DR/export telemetry from `/api/v1/governance/ops/summary`; export queue depth and persisted drill timestamps are still unavailable)**
 - [ ] F-041 — High / Completeness / UI+Backend — Run-detail lineage block: pipeline version, agent versions, policy bundle, evaluation gate, compliance bundle. **(ADVANCED: run detail now renders a provenance summary block from available lineage evidence; deeper server-side run-ledger provenance still pending)**
 - [x] F-043 — High / Privacy / UI — Tenant-level consent dashboard, change history, export. **(DONE: Governance consent panel with history, filter, and CSV export)**
@@ -120,20 +134,20 @@
 - [x] AI-2 — P0 — Pipeline stage suggestion as Assist with required confidence. **(DONE: builder assist now surfaces confidence, rationale, evidence, and advisory-only gating before apply)**
 - [x] AI-3 — P0 — Run anomaly narrative explanation as Assist. **(DONE: monitoring run suggestions now expand into an explainable assist narrative with rationale and citations)**
 - [x] AI-4 — P0 — HITL pre-decision summary as Assist. **(DONE: review detail now shows an AI summary and confidence routing before approve/reject)**
-- [ ] AI-5 — P0 — Policy promotion advisor as Hybrid (review-required) — also F-050.
+- [ ] AI-5 — P0 — Policy promotion advisor as Hybrid (review-required) — also F-050. **(ADVANCED: governance policy review now surfaces a hybrid promotion advisor with promotion badges, gate evidence, rollback pointer visibility, and per-skill timeline context; durable chained promotion audit is still pending)**
 - [ ] AI-6 — P1 — Cost optimisation (cheaper model substitution) as Assist.
 - [ ] AI-7 — P1 — Capability binding suggestion (schema/encoder) as Assist.
 - [ ] AI-8 — P1 — GDPR triage classification as Hybrid. **(ADVANCED: privacy workbench now classifies intake into access/erasure/portability/opt-out with confidence + rationale and keeps a human in the loop before submission)**
-- [ ] AI-9 — P1 — Kill-switch impact preview as Assist.
+- [x] AI-9 — P1 — Kill-switch impact preview as Assist. **(DONE: governance tenancy now shows an assist-style impact preview with runtime posture guidance before activation/deactivation)**
 - [ ] AI-10 — P1 — SOC2 evidence collection as Automation with operator approval.
 - [ ] AI-11 — P2 — Run lineage narrative summary.
 - [ ] AI-12 — P2 — Tenant onboarding pre-fill.
-- [ ] AI-13 — P2 — Anomaly false-positive feedback loop into learning — also F-029.
+- [ ] AI-13 — P2 — Anomaly false-positive feedback loop into learning — also F-029. **(ADVANCED: monitoring suggestions now expose a false-positive action and the backend records feedback plus emits an audit-linked anomaly feedback event when analytics storage is configured; deeper model-learning consumption is still pending)**
 - [ ] F-012 — High / Correctness+Trust / AI — Default UI to "advisory only" for low-confidence suggestions; surface click-through to sources. **(ADVANCED: builder and monitoring suggestions now route low-confidence responses to advisory-only and expose source click-through; broader assist surfaces still need the same policy)**
 - [ ] F-021 — Medium / Simplicity / UI — AI summarisation in memory explorer with citations + faceted filters. **(ADVANCED: memory explorer now ships faceted filters with citation-backed assist summaries derived from visible records; deeper AI-generated summarisation remains pending)**
-- [ ] F-029 — Medium / Correctness / AI+Backend — "Mark as not an anomaly" closes the loop into the learning pipeline.
-- [ ] F-042 — High / Correctness+Trust / UI — "Auto-promoted" badge on every auto-promoted policy with one-click rollback.
-- [ ] F-050 — High / Correctness / Backend — Every promoted policy carries a `PolicyProvenanceRecord`; emit chained audit event; cockpit shows policy timeline per skill.
+- [ ] F-029 — Medium / Correctness / AI+Backend — "Mark as not an anomaly" closes the loop into the learning pipeline. **(ADVANCED: operator false-positive feedback is now available from monitoring suggestions and persists on anomaly records with event emission; downstream learning-pipeline ingestion still needs to be wired end-to-end)**
+- [ ] F-042 — High / Correctness+Trust / UI — "Auto-promoted" badge on every auto-promoted policy with one-click rollback. **(ADVANCED: governance policies now show auto-promotable / auto-promoted state, rollback pointer, and advisor context; one-click rollback execution is still pending)**
+- [ ] F-050 — High / Correctness / Backend — Every promoted policy carries a `PolicyProvenanceRecord`; emit chained audit event; cockpit shows policy timeline per skill. **(ADVANCED: learning policy responses now expose provenance + gate-result detail and governance renders a per-skill policy timeline; broader chained audit-event emission still pending)**
 
 ## Section E — Consistency cleanups
 
@@ -150,7 +164,7 @@
 - [ ] K-9 — Medium / Consistency / Auth — Single role claim shape (server vs UI).
 - [ ] K-10 — Low / Consistency / Backend — Resolve `AepController` vs `AgentController` naming convention.
 - [x] K-11 — Medium / Consistency / API — Enforce OpenAPI ↔ route-table parity in CI (also F-037). **(T-10 DONE)**
-- [ ] K-13 — Low / Consistency / Frontend — Lint forbids string-literal nav targets; require `routes.ts` helpers. **(ADVANCED: touched nav/finder/privacy links now use canonical helpers; repo-wide lint rule still pending)**
+- [ ] K-13 — Low / Consistency / Frontend — Lint forbids string-literal nav targets; require `routes.ts` helpers. **(ADVANCED: touched nav/finder/privacy/agent-registry links now use canonical helpers; repo-wide lint rule still pending)**
 - [ ] K-14 — High / Consistency / API — Single tenant identity source (verified JWT); header is hint only; mismatches 403. **(Related to F-006/F-007)**
 - [ ] K-15 — Low / Consistency / Audit — Align HITL approve/reject and Learning approve/reject event names and audit envelopes.
 
@@ -162,7 +176,7 @@
 - [ ] F-048 — Medium / Observability / Platform — `X-Correlation-ID` mandatory at gateway; propagated; logged on every span.
 - [ ] F-038 — Medium / Completeness / Frontend — Accessibility evidence (axe-core in CI; keyboard-only smoke) for canvas builder, marketplace cards, governance dialogs. **(T-28 E2E DONE, CI integration pending)**
 - [ ] F-039 — Low / Completeness / Frontend — Responsive evidence for cockpit (Playwright viewport profiles); document desktop-only pages.
-- [ ] F-020 — High / Correctness+Security / UI — Sandbox-only direct execute from registry/marketplace; production execute via pipeline + HITL.
+- [ ] F-020 — High / Correctness+Security / UI — Sandbox-only direct execute from registry/marketplace; production execute via pipeline + HITL. **(ADVANCED: marketplace install preflight now surfaces sandbox-only direct execution and forces production guidance through pipeline + HITL; broader registry/runtime enforcement is still pending)**
 - [x] F-034 — Medium / Correctness / Backend — `/api/v1/compliance/soc2/report` refuses to render if evidence older than configured window. **(DONE: freshness enforcement is active; governance compliance now surfaces report availability and evidence age truthfully)**
 
 ## Section G — Quality engineering
@@ -180,12 +194,12 @@
 ### Short-term (≤6 weeks)
 
 - [ ] R-ST-1 — F-003 cancellation contract.
-- [ ] R-ST-2 — F-009 marketplace lifecycle.
+- [ ] R-ST-2 — F-009 marketplace lifecycle. **(ADVANCED: install preflight, version pinning, and compatibility truth are now live in the marketplace flow; rollback and audit-chain completion still pending)**
 - [ ] R-ST-3 — F-010 audit explorer.
 - [x] R-ST-4 — F-014 publish dry-run. **(DONE)**
-- [ ] R-ST-5 — F-015 rollback chain.
+- [ ] R-ST-5 — F-015 rollback chain. **(ADVANCED: pipeline rollback now has a dedicated UI flow with version selection, typed confirmation, reason capture, and backend audit-link emission; broader rollback-chain standardization is still pending)**
 - [ ] R-ST-6 — F-019 GDPR/CCPA UI. **(ADVANCED: privacy request workbench now available in cockpit; queue/audit completion still pending)**
-- [ ] R-ST-7 — F-020 marketplace direct-execute sandbox.
+- [ ] R-ST-7 — F-020 marketplace direct-execute sandbox. **(ADVANCED: the marketplace cockpit now makes sandbox-only direct execution explicit and shows production pipeline + HITL requirements during install simulation; runtime-wide enforcement is still pending)**
 - [ ] R-ST-8 — F-022 / F-023 generated clients.
 - [x] R-ST-9 — F-024 capability flags. **(DONE)**
 - [ ] R-ST-10 — F-027 binding designer.
@@ -193,9 +207,9 @@
 - [ ] R-ST-12 — F-031 PII block-by-default.
 - [ ] R-ST-13 — F-032 role-driven UI gating.
 - [ ] R-ST-14 — F-041 lineage on run detail. **(ADVANCED: UI lineage summary shipped; backend provenance enrichment pending)**
-- [ ] R-ST-15 — F-042 auto-promotion badge.
+- [ ] R-ST-15 — F-042 auto-promotion badge. **(ADVANCED: promotion badges and rollback-target visibility are now live in governance; rollback execution still pending)**
 - [x] R-ST-16 — F-043 consent dashboard. **(DONE)**
-- [ ] R-ST-17 — F-050 policy provenance enforcement.
+- [ ] R-ST-17 — F-050 policy provenance enforcement. **(ADVANCED: policy provenance and timeline context now flow through learning + governance surfaces; full chained audit enforcement remains pending)**
 
 ### Medium-term (≤12 weeks)
 
@@ -203,7 +217,7 @@
 - [ ] R-MT-2 — F-021 memory explorer summarisation. **(ADVANCED: faceted filters and citation-backed assist summaries are now live in the memory explorer; backend summarisation service still pending)**
 - [x] R-MT-3 — F-026 trusted-proxy alerting. **(DONE)**
 - [ ] R-MT-4 — F-028 cost budgets. **(ADVANCED: threshold inputs + budget state + per-model breakdown now live in the dashboard; durable budget governance still pending)**
-- [ ] R-MT-5 — F-029 anomaly FP feedback.
+- [ ] R-MT-5 — F-029 anomaly FP feedback. **(ADVANCED: operators can now mark anomaly suggestions as false positives and the server persists feedback with an emitted anomaly-feedback event; downstream learning integration remains pending)**
 - [ ] R-MT-6 — F-033 ops tile (backup/DR/export). **(ADVANCED: truthful operations panel now includes trusted-proxy alerting alongside backup/DR/export posture; export queue and drill-history persistence still pending)**
 - [x] R-MT-7 — F-034 SOC2 evidence freshness. **(DONE)**
 - [ ] R-MT-8 — F-038 accessibility CI.
@@ -231,13 +245,13 @@
 - [ ] C-7 — Tenant header vs JWT mismatch returns 403.
 - [ ] C-8 — Empty HITL queue distinguishes empty vs `configured=false`.
 - [ ] C-9 — AI suggestions show confidence/rationale/sources.
-- [ ] C-10 — Policy promotion produces provenance + audit.
-- [ ] C-11 — Kill-switch toggle requires step-up + chain.
-- [ ] C-12 — Rollback writes audit chain entry linking versions.
+- [ ] C-10 — Policy promotion produces provenance + audit. **(ADVANCED: provenance now rides on learning policy payloads and governance surfaces it truthfully; generalized promotion audit chaining is still pending)**
+- [ ] C-11 — Kill-switch toggle requires step-up + chain. **(ADVANCED: backend step-up gate already exists and governance now submits MFA code plus surfaces returned audit IDs; SSE broadcast / broader chain evidence remains pending)**
+- [ ] C-12 — Rollback writes audit chain entry linking versions. **(ADVANCED: pipeline rollback responses now include previous-version context and emit a linked rollback audit event when event storage is available; full cross-surface audit-schema unification is still pending)**
 - [ ] C-13 — Idempotent retry returns prior response, not new side effects.
 - [x] C-14 — Cost view shows budget/alert/threshold. **(DONE: dashboard now surfaces threshold inputs, remaining budget state, and alert comparisons)**
-- [ ] C-15 — Anomaly false-positive feedback into learning.
-- [ ] C-16 — Marketplace install pins version + checks compatibility.
+- [ ] C-15 — Anomaly false-positive feedback into learning. **(ADVANCED: false-positive feedback now persists on anomaly records and emits an audit-linked feedback event; the learning pipeline still needs to consume that signal end-to-end)**
+- [ ] C-16 — Marketplace install pins version + checks compatibility. **(ADVANCED: install now requires `expectedVersion` and runs through a simulate-install compatibility check before registration)**
 - [ ] C-17 — Run detail shows lineage.
 - [x] C-18 — SOC2 report enforces evidence freshness. **(DONE)**
 - [ ] C-19 — gRPC error envelope matches REST.

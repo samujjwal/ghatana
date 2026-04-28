@@ -12,8 +12,12 @@ import userEvent from '@testing-library/user-event';
 import { GovernancePage } from '@/pages/GovernancePage';
 import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
 import * as aepApi from '@/api/aep.api';
+import { useAuth } from '@/context/AuthContext';
 
 vi.mock('@/api/aep.api');
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: vi.fn(),
+}));
 vi.mock('@/lib/feature-flags', () => ({
   isFeatureEnabled: () => true,
   featureFlags: {
@@ -29,7 +33,31 @@ function renderWithQuery(ui: React.ReactElement) {
 
 describe('GovernancePage', () => {
   beforeEach(() => {
+    vi.mocked(useAuth).mockReturnValue({
+      authToken: 'jwt-token',
+      sessionToken: 'session-token',
+      isAuthenticated: true,
+      isBootstrappingSession: false,
+      isVerifyingAuth: false,
+      roles: ['admin'],
+      hasRole: () => true,
+      hasAnyRole: () => true,
+      loginWithToken: vi.fn(),
+      loginWithPlatform: vi.fn(),
+      logout: vi.fn(),
+    });
     vi.mocked(aepApi.listPolicies).mockResolvedValue([]);
+    vi.mocked(aepApi.activateGovernanceKillSwitch).mockResolvedValue({
+      activated: true,
+      tenantId: 'default',
+      incidentId: 'INC-42',
+      auditId: 'audit-1',
+    });
+    vi.mocked(aepApi.deactivateGovernanceKillSwitch).mockResolvedValue({
+      deactivated: true,
+      tenantId: 'default',
+      auditId: 'audit-2',
+    });
     vi.mocked(aepApi.getGovernanceComplianceSummary).mockResolvedValue({
       tenantId: 'default',
       configured: true,
@@ -155,5 +183,105 @@ describe('GovernancePage', () => {
     expect(screen.getByText(/untrusted_proxy: 1/i)).toBeInTheDocument();
     expect(screen.getAllByText('Unavailable').length).toBeGreaterThan(0);
     expect(screen.getByText(/Historical DR drill timestamps are not yet persisted/i)).toBeInTheDocument();
+  });
+
+  it('surfaces policy promotion advisor and timeline details', async () => {
+    const user = userEvent.setup();
+    vi.mocked(aepApi.listPolicies).mockResolvedValue([
+      {
+        id: 'policy-1',
+        tenantId: 'default',
+        skillId: 'email-routing',
+        name: 'Policy proposal for email-routing',
+        description: 'Candidate policy derived from 24 episodes.',
+        status: 'PENDING_REVIEW',
+        confidenceScore: 0.91,
+        episodeCount: 24,
+        version: 2,
+        createdAt: '2026-04-28T09:00:00.000Z',
+        updatedAt: '2026-04-28T09:00:00.000Z',
+        reviewId: 'review-1',
+        autoPromotable: true,
+        autoPromoted: false,
+        provenance: {
+          policyId: 'policy-1',
+          skillId: 'email-routing',
+          version: 2,
+          sourceEpisodeIds: ['ep-1', 'ep-2'],
+          evaluationMetrics: {
+            successRate: 0.92,
+            errorRate: 0.03,
+          },
+          activationMode: 'SHADOW',
+          rollbackPointerId: 'policy-0',
+        },
+        gateResult: {
+          gateName: 'composite-eval',
+          passed: true,
+          score: 0.91,
+          threshold: 0.7,
+          reason: 'Confidence clears the review threshold.',
+        },
+      },
+      {
+        id: 'policy-0',
+        tenantId: 'default',
+        skillId: 'email-routing',
+        name: 'Policy proposal for email-routing',
+        description: 'Previous active policy.',
+        status: 'APPROVED',
+        confidenceScore: 0.84,
+        episodeCount: 18,
+        version: 1,
+        createdAt: '2026-04-20T09:00:00.000Z',
+        updatedAt: '2026-04-20T10:00:00.000Z',
+        autoPromotable: false,
+        autoPromoted: true,
+        decidedAt: '2026-04-20T10:00:00.000Z',
+        reviewerId: 'auto-promote',
+        reviewerRationale: 'Previous high-confidence rollout.',
+        provenance: {
+          policyId: 'policy-0',
+          skillId: 'email-routing',
+          version: 1,
+          sourceEpisodeIds: ['ep-prev'],
+          evaluationMetrics: {
+            successRate: 0.84,
+          },
+          activationMode: 'ACTIVE',
+          approverId: 'auto-promote',
+          promotedAt: '2026-04-20T10:00:00.000Z',
+        },
+      },
+    ]);
+
+    renderWithQuery(<GovernancePage />);
+
+    await waitFor(() => expect(screen.getAllByText('Auto-promotable').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('Hybrid promotion advisor').length).toBeGreaterThan(0);
+    expect(screen.getByText('Policy timeline for email-routing')).toBeInTheDocument();
+    expect(screen.getAllByText('policy-0').length).toBeGreaterThan(0);
+
+    await user.click(screen.getAllByRole('button', { name: /details/i })[0]);
+    expect(screen.getByText('Rollback target')).toBeInTheDocument();
+    expect(screen.getAllByText('policy-0').length).toBeGreaterThan(0);
+    expect(screen.getByText('Confidence clears the review threshold.')).toBeInTheDocument();
+  });
+
+  it('shows kill-switch impact preview and submits activation controls', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<GovernancePage />);
+
+    await user.click(screen.getByRole('button', { name: /tenancy/i }));
+    await waitFor(() => expect(screen.getByText('Kill-switch impact preview')).toBeInTheDocument());
+    expect(screen.getByText(/Activation will pause normal execution for the tenant/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/reason/i), 'Suspected tenant compromise');
+    await user.type(screen.getByLabelText(/incident id/i), 'INC-42');
+    await user.type(screen.getByLabelText(/mfa code/i), '123456');
+    await user.click(screen.getByRole('button', { name: /^Activate kill-switch$/i }));
+
+    await waitFor(() => expect(aepApi.activateGovernanceKillSwitch).toHaveBeenCalled());
+    expect(await screen.findByText(/Kill-switch activated with audit audit-1/i)).toBeInTheDocument();
   });
 });

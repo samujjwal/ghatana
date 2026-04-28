@@ -17,6 +17,7 @@
  *   /learn/episodes       → LearningPage (episodes, reflection)
  *   /learn/memory         → MemoryExplorerPage
  *   /govern               → GovernancePage (policies, compliance, audit)
+ *   /govern/privacy       → PrivacyRequestPage (GDPR/CCPA fulfilment workbench)
  *   /catalog/agents       → AgentRegistryPage
  *   /catalog/agents/:id   → AgentDetailPage
  *   /catalog/marketplace  → AgentMarketplacePage

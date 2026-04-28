@@ -109,6 +109,7 @@ describe('AEP role gating', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /\+ new pipeline/i })).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /dry run/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /rollback/i })).toBeInTheDocument();
   });
 
   it('keeps marketplace publish and install controls unavailable for viewer-only users', async () => {

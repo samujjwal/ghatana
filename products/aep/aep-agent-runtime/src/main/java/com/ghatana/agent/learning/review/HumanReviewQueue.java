@@ -53,6 +53,17 @@ public interface HumanReviewQueue {
     @NotNull Promise<List<ReviewItem>> getPending(@Nullable ReviewFilter filter);
 
     /**
+     * Retrieves recent review items across all statuses, optionally filtered.
+     *
+     * <p>This is used by governance and audit surfaces that need to show policy
+     * promotion timelines rather than only actionable pending work.
+     *
+     * @param filter optional filter criteria (null = all review items)
+     * @return list of matching review items
+     */
+    @NotNull Promise<List<ReviewItem>> listRecent(@Nullable ReviewFilter filter);
+
+    /**
      * Gets a specific review item by ID.
      *
      * @param reviewId the review item ID

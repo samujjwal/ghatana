@@ -6,10 +6,12 @@
  * @doc.layer frontend
  */
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import {
+  activateGovernanceKillSwitch,
+  deactivateGovernanceKillSwitch,
   getGovernanceOpsSummary,
   getGovernanceAuditSummary,
   getGovernanceComplianceSummary,
@@ -19,6 +21,7 @@ import {
   type ConsentDecisionStatus,
   listPolicies,
   type GovernanceAuditEntry,
+  type LearnedPolicy,
   type PolicyStatus,
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
@@ -28,6 +31,7 @@ import { ErrorState } from '@/components/core/ErrorState';
 import { PageState } from '@/components/shared/PageState';
 import { Link } from 'react-router';
 import { getEditPipelineUrl, getRunDetailUrl, getAgentRegistryUrl } from '@/lib/routes';
+import { useAuth } from '@/context/AuthContext';
 
 type GovSection = 'policies' | 'compliance' | 'tenancy' | 'audit' | 'consent' | 'operations';
 
@@ -78,6 +82,64 @@ function formatOptionalTimestamp(value: string | null | undefined): string {
   }
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? 'Unavailable' : parsed.toLocaleString();
+}
+
+function formatPercent(value: number | undefined): string {
+  if (value === undefined || Number.isNaN(value)) {
+    return 'Unavailable';
+  }
+  return `${(value * 100).toFixed(0)}%`;
+}
+
+function getPolicyAdvisor(policy: LearnedPolicy): { title: string; summary: string; tone: string } {
+  if (policy.autoPromoted) {
+    return {
+      title: 'Auto-promoted',
+      summary: 'This policy was promoted automatically. Review provenance and rollback pointer before leaving it fully active.',
+      tone: 'border-green-200 bg-green-50 text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200',
+    };
+  }
+  if (policy.autoPromotable) {
+    return {
+      title: 'Hybrid promotion advisor',
+      summary: 'Confidence is high enough to recommend promotion, but a human should still review lineage and rollback readiness.',
+      tone: 'border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200',
+    };
+  }
+  if (policy.status === 'PENDING_REVIEW') {
+    return {
+      title: 'Manual review required',
+      summary: 'This candidate should stay in human review until confidence, evidence quality, and rollback readiness are confirmed.',
+      tone: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200',
+    };
+  }
+  return {
+    title: 'Historical decision',
+    summary: 'Use the policy timeline and provenance block to understand how this decision was reached and what it replaced.',
+    tone: 'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300',
+  };
+}
+
+function getKillSwitchImpactPreview(active: boolean, globalActive: boolean, mode: string): string[] {
+  const bullets = [
+    active || globalActive
+      ? 'Traffic for this tenant is already constrained; deactivation will resume normal execution paths.'
+      : 'Activation will pause normal execution for the tenant while preserving governance, audit, and review visibility.',
+    `Current degradation mode is ${mode}; kill-switch actions should be coordinated with that runtime posture rather than treated independently.`,
+    'Operators should capture an incident reference and, when step-up auth is configured, provide an MFA code so the backend can attach an audit-chain entry.',
+  ];
+  if (!active && !globalActive) {
+    bullets.push('Prefer pipeline and HITL containment first when the issue is isolated, then use the kill-switch when broad tenant protection is required.');
+  }
+  return bullets;
+}
+
+function PolicyFlagChip({ label, tone }: { label: string; tone: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>
+      {label}
+    </span>
+  );
 }
 
 function downloadCsv(filename: string, rows: string[][]): void {
@@ -136,6 +198,7 @@ function GovernanceBoundaryPanel({
 }
 
 function PoliciesPanel({ tenantId }: { tenantId: string }) {
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const { data: policies, isLoading, isError, refetch } = useQuery({
     queryKey: ['aep', 'policies', tenantId],
     queryFn: () => listPolicies(tenantId),
@@ -144,6 +207,8 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
 
   const activeCount = policies?.filter((policy) => policy.status === 'ACTIVE').length;
   const pendingCount = policies?.filter((policy) => policy.status === 'PENDING_REVIEW').length;
+  const autoPromotableCount = policies?.filter((policy) => policy.autoPromotable).length;
+  const autoPromotedCount = policies?.filter((policy) => policy.autoPromoted).length;
 
   if (isLoading) {
     return <PageState mode="loading" title="Loading policies…" description="Fetching governance policies for this tenant." className="h-full" />;
@@ -155,6 +220,12 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
     return <PageState mode="empty" title="No policies registered" description="Policies will appear once they are configured for this tenant." className="h-full" />;
   }
 
+  const selectedPolicy = policies.find((policy) => policy.id === selectedPolicyId) ?? policies[0];
+  const skillTimeline = policies
+    .filter((policy) => policy.skillId === selectedPolicy.skillId)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+  const advisor = getPolicyAdvisor(selectedPolicy);
+
   return (
     <div className="p-6">
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -162,6 +233,8 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
           { label: 'Total policies', value: policies.length },
           { label: 'Active', value: activeCount },
           { label: 'Pending review', value: pendingCount },
+          { label: 'Auto-promotable', value: autoPromotableCount },
+          { label: 'Auto-promoted', value: autoPromotedCount },
           { label: 'Deprecated', value: policies.filter((policy) => policy.status === 'DEPRECATED').length },
         ].map((item) => (
           <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
@@ -175,7 +248,7 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
         <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              {['Policy ID', 'Skill', 'Version', 'Confidence', 'Status', 'Actions'].map((header) => (
+              {['Policy', 'Skill', 'Version', 'Confidence', 'Status', 'Advisor', 'Actions'].map((header) => (
                 <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {header}
                 </th>
@@ -184,8 +257,23 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-900 dark:bg-gray-950">
             {policies.map((policy) => (
-              <tr key={policy.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-900">
-                <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">{policy.id}</td>
+              <tr
+                key={policy.id}
+                className={[
+                  'transition-colors hover:bg-gray-50 dark:hover:bg-gray-900',
+                  selectedPolicy.id === policy.id ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : '',
+                ].join(' ')}
+              >
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPolicyId(policy.id)}
+                    className="text-left"
+                  >
+                    <p className="font-medium text-gray-900 dark:text-white">{policy.name}</p>
+                    <p className="mt-1 font-mono text-[11px] text-gray-500 dark:text-gray-400">{policy.id}</p>
+                  </button>
+                </td>
                 <td className="px-4 py-3 text-gray-900 dark:text-white">{policy.skillId}</td>
                 <td className="px-4 py-3 font-mono text-xs text-gray-500">v{policy.version}</td>
                 <td className="px-4 py-3 text-gray-900 dark:text-white">
@@ -194,7 +282,24 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <PolicyStatusBadge status={policy.status} />
+                  <div className="flex flex-wrap gap-2">
+                    <PolicyStatusBadge status={policy.status} />
+                    {policy.autoPromotable && (
+                      <PolicyFlagChip
+                        label="Auto-promotable"
+                        tone="bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300"
+                      />
+                    )}
+                    {policy.autoPromoted && (
+                      <PolicyFlagChip
+                        label="Auto-promoted"
+                        tone="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                      />
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                  {getPolicyAdvisor(policy).title}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-2">
@@ -230,12 +335,137 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
                         Agent →
                       </Link>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPolicyId(policy.id)}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                    >
+                      Details →
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+          <div className={`rounded-lg border px-4 py-3 text-sm ${advisor.tone}`}>
+            <p className="font-medium">{advisor.title}</p>
+            <p className="mt-1">{advisor.summary}</p>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Activation mode</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {selectedPolicy.provenance?.activationMode ?? 'Unavailable'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Rollback target</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {selectedPolicy.provenance?.rollbackPointerId ?? 'Unavailable'}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Promoted at</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {formatOptionalTimestamp(selectedPolicy.provenance?.promotedAt ?? selectedPolicy.decidedAt)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Approver</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {selectedPolicy.provenance?.approverId ?? selectedPolicy.reviewerId ?? 'Unavailable'}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Gate evidence</h3>
+            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+              {(selectedPolicy.gateResult?.reason ?? selectedPolicy.description) || 'No evaluation summary available.'}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <PolicyFlagChip
+                label={`Gate ${selectedPolicy.gateResult?.gateName ?? 'unknown'}`}
+                tone="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+              />
+              <PolicyFlagChip
+                label={`Score ${formatPercent(selectedPolicy.gateResult?.score)}`}
+                tone="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              />
+              <PolicyFlagChip
+                label={`Threshold ${formatPercent(selectedPolicy.gateResult?.threshold)}`}
+                tone="bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              />
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Source episodes</h3>
+            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+              {selectedPolicy.provenance?.sourceEpisodeIds.length ?? 0} source episodes contributed to this proposal.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(selectedPolicy.provenance?.sourceEpisodeIds ?? []).slice(0, 6).map((episodeId) => (
+                <span key={episodeId} className="inline-flex rounded-full border border-gray-200 px-3 py-1 text-xs font-mono text-gray-600 dark:border-gray-700 dark:text-gray-300">
+                  {episodeId}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Evaluation metrics</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {Object.entries(selectedPolicy.provenance?.evaluationMetrics ?? {}).map(([metric, value]) => (
+                <div key={metric} className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{metric}</p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                    {metric.toLowerCase().includes('rate') ? formatPercent(value) : value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Policy timeline for {selectedPolicy.skillId}</h3>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Review and promotion history across policy candidates for this skill.
+          </p>
+          <div className="mt-4 space-y-3">
+            {skillTimeline.map((policy) => (
+              <div key={policy.id} className="rounded-lg border border-gray-200 px-4 py-3 dark:border-gray-800">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">v{policy.version} • {policy.name}</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Created {formatOptionalTimestamp(policy.createdAt)} • Decided {formatOptionalTimestamp(policy.decidedAt)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <PolicyStatusBadge status={policy.status} />
+                    {policy.autoPromoted && (
+                      <PolicyFlagChip
+                        label="Auto-promoted"
+                        tone="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                      />
+                    )}
+                  </div>
+                </div>
+                <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                  {policy.reviewerRationale ?? policy.provenance?.approverRationale ?? policy.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -390,10 +620,43 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
 }
 
 function TenancyPanel({ tenantId }: { tenantId: string }) {
-  const { data, isLoading } = useQuery({
+  const { roles } = useAuth();
+  const [reason, setReason] = useState('');
+  const [incidentId, setIncidentId] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['aep', 'governance', 'tenancy', tenantId],
     queryFn: () => getGovernanceTenancySummary(tenantId),
     staleTime: 15_000,
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: () =>
+      activateGovernanceKillSwitch({
+        tenantId,
+        reason: reason.trim() || 'manual activation from governance cockpit',
+        incidentId: incidentId.trim() || 'manual',
+        mfaCode: mfaCode.trim() || undefined,
+        userId: roles[0] ?? 'unknown',
+      }),
+    onSuccess: (result) => {
+      setActionMessage(`Kill-switch activated${result.auditId ? ` with audit ${result.auditId}` : ''}.`);
+      void refetch();
+    },
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: () =>
+      deactivateGovernanceKillSwitch({
+        tenantId,
+        reason: reason.trim() || 'manual deactivation from governance cockpit',
+        userId: roles[0] ?? 'unknown',
+      }),
+    onSuccess: (result) => {
+      setActionMessage(`Kill-switch deactivated${result.auditId ? ` with audit ${result.auditId}` : ''}.`);
+      void refetch();
+    },
   });
 
   if (isLoading) {
@@ -403,6 +666,8 @@ function TenancyPanel({ tenantId }: { tenantId: string }) {
   if (!data) {
     return <PageState mode="degraded" title="No tenancy data" description="Tenant isolation settings could not be loaded. The backend may be unavailable." className="h-full" />;
   }
+
+  const impactPreview = getKillSwitchImpactPreview(data.active, data.globalActive, data.mode);
 
   return (
     <div className="space-y-6 p-6">
@@ -434,6 +699,88 @@ function TenancyPanel({ tenantId }: { tenantId: string }) {
           <li>Degradation mode reflects the current runtime policy, not a UI placeholder.</li>
           <li>Editable tenant grants and per-capability quotas still require dedicated management endpoints before the UI can mutate them.</li>
         </ul>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Kill-switch impact preview</h3>
+          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+            Advisory preview for operators before activation or deactivation. Review remains required.
+          </p>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            {impactPreview.map((bullet) => (
+              <li key={bullet}>{bullet}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Kill-switch controls</h3>
+          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+            When backend step-up verification is enabled, provide the MFA code so the action can be chained to the audit trail.
+          </p>
+
+          <div className="mt-4 grid gap-4">
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Reason</span>
+              <input
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                placeholder="security incident, platform containment, manual recovery"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Incident ID</span>
+              <input
+                value={incidentId}
+                onChange={(event) => setIncidentId(event.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                placeholder="INC-2026-0428"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">MFA code</span>
+              <input
+                value={mfaCode}
+                onChange={(event) => setMfaCode(event.target.value)}
+                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                placeholder="Optional when step-up auth is enforced"
+              />
+            </label>
+          </div>
+
+          {actionMessage && (
+            <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200">
+              {actionMessage}
+            </div>
+          )}
+          {(activateMutation.isError || deactivateMutation.isError) && (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+              {(activateMutation.error instanceof Error ? activateMutation.error.message : null)
+                ?? (deactivateMutation.error instanceof Error ? deactivateMutation.error.message : 'Kill-switch action failed.')}
+            </div>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button
+              onClick={() => activateMutation.mutate()}
+              variant="primary"
+              className="rounded px-4 py-2 text-sm font-medium"
+              disabled={activateMutation.isPending || deactivateMutation.isPending}
+            >
+              {activateMutation.isPending ? 'Activating…' : 'Activate kill-switch'}
+            </Button>
+            <Button
+              onClick={() => deactivateMutation.mutate()}
+              variant="secondary"
+              className="rounded px-4 py-2 text-sm font-medium"
+              disabled={activateMutation.isPending || deactivateMutation.isPending}
+            >
+              {deactivateMutation.isPending ? 'Deactivating…' : 'Deactivate kill-switch'}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

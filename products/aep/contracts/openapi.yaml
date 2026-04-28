@@ -55,6 +55,8 @@ tags:
     description: Governance, audit, and compliance operator surfaces
   - name: Lifecycle
     description: Change approval and recertification workflows
+  - name: Marketplace
+    description: Agent marketplace and installation endpoints
   - name: Costs
     description: Cost tracking and summary endpoints
 
@@ -70,12 +72,12 @@ paths:
       operationId: getHealth
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: Service is healthy
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthResponse"
+                $ref: '#/components/schemas/HealthResponse'
               example:
                 status: UP
                 timestamp: "2026-02-03T12:00:00Z"
@@ -88,12 +90,12 @@ paths:
       operationId: getReady
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: Service is ready to accept traffic
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatusResponse"
+                $ref: '#/components/schemas/StatusResponse'
               example:
                 status: READY
                 timestamp: "2026-02-03T12:00:00Z"
@@ -105,12 +107,12 @@ paths:
       operationId: getLive
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: Service is alive
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatusResponse"
+                $ref: '#/components/schemas/StatusResponse'
               example:
                 status: LIVE
                 timestamp: "2026-02-03T12:00:00Z"
@@ -122,12 +124,12 @@ paths:
       operationId: getInfo
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: Service metadata
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InfoResponse"
+                $ref: '#/components/schemas/InfoResponse'
               example:
                 service: AEP
                 version: 1.0.0-SNAPSHOT
@@ -141,12 +143,12 @@ paths:
       operationId: getMetrics
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: JVM and service metrics
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MetricsResponse"
+                $ref: '#/components/schemas/MetricsResponse'
 
   /health/deep:
     get:
@@ -154,12 +156,12 @@ paths:
       operationId: getDeepHealth
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: Detailed dependency health summary
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeepHealthResponse"
+                $ref: '#/components/schemas/DeepHealthResponse'
 
   /metrics/slo:
     get:
@@ -167,7 +169,7 @@ paths:
       operationId: getSloMetrics
       tags: [Health]
       responses:
-        "200":
+        '200':
           description: Service-level objective counters and gauges
           content:
             application/json:
@@ -186,13 +188,13 @@ paths:
       operationId: processEvent
       tags: [Events]
       parameters:
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EventRequest"
+              $ref: '#/components/schemas/EventRequest'
             example:
               tenantId: acme-corp
               type: user.login
@@ -201,19 +203,19 @@ paths:
                 ip: "10.0.0.1"
                 browser: Chrome
       responses:
-        "200":
+        '200':
           description: Event processed successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EventResult"
+                $ref: '#/components/schemas/EventResult'
               example:
                 eventId: evt-abc-123
                 success: true
                 detections: 2
                 timestamp: "2026-02-03T12:00:00Z"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/v1/events/batch:
     post:
@@ -224,7 +226,7 @@ paths:
       operationId: processEventBatch
       tags: [Events]
       parameters:
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
@@ -238,9 +240,9 @@ paths:
                 events:
                   type: array
                   items:
-                    $ref: "#/components/schemas/EventRequest"
+                    $ref: '#/components/schemas/EventRequest'
       responses:
-        "200":
+        '200':
           description: Batch processed
           content:
             application/json:
@@ -280,7 +282,7 @@ paths:
       operationId: listPatterns
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
         - name: status
           in: query
           description: Filter by pattern status
@@ -288,7 +290,7 @@ paths:
             type: string
             enum: [ACTIVE, INACTIVE, DRAFT]
       responses:
-        "200":
+        '200':
           description: List of patterns
           content:
             application/json:
@@ -298,7 +300,7 @@ paths:
                   patterns:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Pattern"
+                      $ref: '#/components/schemas/Pattern'
                   count:
                     type: integer
                   timestamp:
@@ -313,14 +315,14 @@ paths:
       operationId: registerPattern
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/TenantIdHeader"
-        - $ref: "#/components/parameters/UserIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatternCreateRequest"
+              $ref: '#/components/schemas/PatternCreateRequest'
             example:
               tenantId: acme-corp
               name: Brute Force Login
@@ -331,7 +333,7 @@ paths:
                 threshold: 5
                 windowSeconds: 60
       responses:
-        "201":
+        '201':
           description: Pattern registered
           headers:
             Location:
@@ -344,12 +346,12 @@ paths:
                 type: object
                 properties:
                   pattern:
-                    $ref: "#/components/schemas/Pattern"
+                    $ref: '#/components/schemas/Pattern'
                   timestamp:
                     type: string
                     format: date-time
-        "400":
-          $ref: "#/components/responses/BadRequest"
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/v1/patterns/{patternId}:
     get:
@@ -357,10 +359,10 @@ paths:
       operationId: getPattern
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/PatternId"
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Pattern found
           content:
             application/json:
@@ -368,43 +370,43 @@ paths:
                 type: object
                 properties:
                   pattern:
-                    $ref: "#/components/schemas/Pattern"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                    $ref: '#/components/schemas/Pattern'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     put:
       summary: Update a pattern
       operationId: updatePattern
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/PatternId"
-        - $ref: "#/components/parameters/TenantIdHeader"
-        - $ref: "#/components/parameters/UserIdHeader"
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatternUpdateRequest"
+              $ref: '#/components/schemas/PatternUpdateRequest'
       responses:
-        "200":
+        '200':
           description: Pattern updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Pattern"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/Pattern'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     delete:
       summary: Delete a pattern
       operationId: deletePattern
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/PatternId"
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Pattern deleted
           content:
             application/json:
@@ -418,10 +420,10 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        "204":
+        '204':
           description: Pattern deleted (no content)
-        "404":
-          $ref: "#/components/responses/NotFound"
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/patterns/{patternId}/activate:
     post:
@@ -429,10 +431,10 @@ paths:
       operationId: activatePattern
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/PatternId"
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdHeader'
       responses:
-        "200":
+        '200':
           description: Pattern activated
           content:
             application/json:
@@ -443,8 +445,8 @@ paths:
                     type: string
                   patternId:
                     type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/patterns/{patternId}/deactivate:
     post:
@@ -452,10 +454,10 @@ paths:
       operationId: deactivatePattern
       tags: [Patterns]
       parameters:
-        - $ref: "#/components/parameters/PatternId"
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdHeader'
       responses:
-        "200":
+        '200':
           description: Pattern deactivated
           content:
             application/json:
@@ -466,8 +468,8 @@ paths:
                     type: string
                   patternId:
                     type: string
-        "404":
-          $ref: "#/components/responses/NotFound"
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # ========== Analytics ==========
   /api/v1/analytics/anomalies:
@@ -479,13 +481,13 @@ paths:
       operationId: detectAnomalies
       tags: [Analytics]
       parameters:
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AnomalyDetectionRequest"
+              $ref: '#/components/schemas/AnomalyDetectionRequest'
             example:
               tenantId: acme-corp
               events:
@@ -494,14 +496,57 @@ paths:
                 - type: login.failed
                   payload: { userId: user-123, ip: "10.0.0.2" }
       responses:
-        "200":
+        '200':
           description: Anomaly detection results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AnomalyDetectionResult"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: '#/components/schemas/AnomalyDetectionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/analytics/anomalies/{anomalyId}/false-positive:
+    post:
+      summary: Mark an anomaly as a false positive
+      description: |
+        Records operator feedback that a detected anomaly is not actionable.
+        The anomaly is marked resolved and an audit-linked feedback event is emitted when analytics storage is configured.
+      operationId: markAnomalyFalsePositive
+      tags: [Analytics]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: anomalyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyFalsePositiveRequest'
+            example:
+              reviewer: ops-team
+              rationale: Known deploy spike
+              notes: Matches scheduled release activity
+      responses:
+        '200':
+          description: False-positive feedback recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyFalsePositiveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: Analytics store unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/analytics/forecast:
     post:
@@ -512,13 +557,13 @@ paths:
       operationId: forecast
       tags: [Analytics]
       parameters:
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ForecastRequest"
+              $ref: '#/components/schemas/ForecastRequest'
             example:
               tenantId: acme-corp
               metric: cpu.utilization
@@ -530,14 +575,14 @@ paths:
                 - timestamp: "2026-02-03T11:10:00Z"
                   value: 48.1
       responses:
-        "200":
+        '200':
           description: Forecast results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ForecastResult"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: '#/components/schemas/ForecastResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/v1/analytics/kpis:
     post:
@@ -552,7 +597,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: KPI saved
           content:
             application/json:
@@ -564,7 +609,7 @@ paths:
       operationId: queryKpis
       tags: [Analytics]
       responses:
-        "200":
+        '200':
           description: KPI results
           content:
             application/json:
@@ -585,7 +630,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Analytics query result
           content:
             application/json:
@@ -606,7 +651,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Report created
           content:
             application/json:
@@ -627,7 +672,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Deployment created
           content:
             application/json:
@@ -654,7 +699,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Deployment updated
           content:
             application/json:
@@ -672,7 +717,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Deployment deleted
           content:
             application/json:
@@ -686,33 +731,33 @@ paths:
       operationId: registerAgent
       tags: [Agents]
       parameters:
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: false
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AgentRegistrationRequest"
+              $ref: '#/components/schemas/AgentRegistrationRequest'
       responses:
-        "200":
+        '200':
           description: Agent registration result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentRegistrationResponse"
+                $ref: '#/components/schemas/AgentRegistrationResponse'
     get:
       summary: List registered agents
       operationId: listAgents
       tags: [Agents]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Agent list or truthful unconfigured response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentListResponse"
+                $ref: '#/components/schemas/AgentListResponse'
 
   /api/v1/agents/{agentId}:
     get:
@@ -725,16 +770,16 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Agent details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentDetail"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/AgentDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/agents/{agentId}/execute:
     post:
@@ -752,14 +797,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AgentExecuteRequest"
+              $ref: '#/components/schemas/AgentExecuteRequest'
       responses:
-        "200":
+        '200':
           description: Agent execution result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AgentExecuteResponse"
+                $ref: '#/components/schemas/AgentExecuteResponse'
 
   /api/v1/agents/{agentId}/memory:
     get:
@@ -772,9 +817,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Agent memory view
           content:
             application/json:
@@ -788,9 +833,9 @@ paths:
       operationId: listHitlPending
       tags: [HITL]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Pending review queue or truthful unconfigured response
           content:
             application/json:
@@ -817,7 +862,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Review item approved
           content:
             application/json:
@@ -844,7 +889,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Review item rejected
           content:
             application/json:
@@ -871,7 +916,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Review item escalated
           content:
             application/json:
@@ -885,9 +930,9 @@ paths:
       operationId: listLearningEpisodes
       tags: [Learning]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Learning episodes or truthful unconfigured response
           content:
             application/json:
@@ -901,9 +946,9 @@ paths:
       operationId: listLearningPolicies
       tags: [Learning]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Policy list or truthful unconfigured response
           content:
             application/json:
@@ -930,7 +975,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Policy approved
           content:
             application/json:
@@ -957,7 +1002,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Policy rejected
           content:
             application/json:
@@ -978,14 +1023,14 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Reflection completed synchronously
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-        "202":
+        '202':
           description: Reflection accepted asynchronously
 
   /api/v1/compliance/gdpr/access:
@@ -1001,7 +1046,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Access request result
           content:
             application/json:
@@ -1022,7 +1067,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Erasure result
           content:
             application/json:
@@ -1043,7 +1088,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Portability result
           content:
             application/json:
@@ -1064,7 +1109,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Opt-out result
           content:
             application/json:
@@ -1078,7 +1123,7 @@ paths:
       operationId: getSoc2Report
       tags: [Compliance]
       responses:
-        "200":
+        '200':
           description: SOC 2 report payload
           content:
             application/json:
@@ -1093,7 +1138,7 @@ paths:
       operationId: listSchemaFormats
       tags: [Capabilities]
       responses:
-        "200":
+        '200':
           description: Available schema formats
           content:
             application/json:
@@ -1118,7 +1163,7 @@ paths:
       operationId: listEncodings
       tags: [Capabilities]
       responses:
-        "200":
+        '200':
           description: Available wire encodings
           content:
             application/json:
@@ -1136,7 +1181,7 @@ paths:
       operationId: listConnectors
       tags: [Capabilities]
       responses:
-        "200":
+        '200':
           description: Available connectors
           content:
             application/json:
@@ -1162,7 +1207,7 @@ paths:
       operationId: listTransforms
       tags: [Capabilities]
       responses:
-        "200":
+        '200':
           description: Available transform functions
           content:
             application/json:
@@ -1191,23 +1236,23 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
-        - $ref: "#/components/parameters/UserIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SchemaCreateRequest"
+              $ref: '#/components/schemas/SchemaCreateRequest'
       responses:
-        "201":
+        '201':
           description: Schema created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SchemaDefinition"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: '#/components/schemas/SchemaDefinition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/v1/event-types/{eventTypeId}/schemas/{schemaId}:
     put:
@@ -1225,23 +1270,23 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
-        - $ref: "#/components/parameters/UserIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SchemaUpdateRequest"
+              $ref: '#/components/schemas/SchemaUpdateRequest'
       responses:
-        "200":
+        '200':
           description: Schema updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SchemaDefinition"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/SchemaDefinition'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     delete:
       summary: Delete an event schema
@@ -1258,9 +1303,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       responses:
-        "204":
+        '204':
           description: Schema deleted
 
   # ========== Event Design — Bindings ==========
@@ -1280,22 +1325,22 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BindingCreateRequest"
+              $ref: '#/components/schemas/BindingCreateRequest'
       responses:
-        "201":
+        '201':
           description: Binding created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ConnectorBinding"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: '#/components/schemas/ConnectorBinding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /api/v1/bindings:
     get:
@@ -1317,7 +1362,7 @@ paths:
             type: string
             enum: [INGRESS, EGRESS]
       responses:
-        "200":
+        '200':
           description: Matching bindings
           content:
             application/json:
@@ -1327,7 +1372,7 @@ paths:
                   bindings:
                     type: array
                     items:
-                      $ref: "#/components/schemas/ConnectorBinding"
+                      $ref: '#/components/schemas/ConnectorBinding'
 
   /api/v1/bindings/{bindingId}:
     get:
@@ -1341,14 +1386,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Binding found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ConnectorBinding"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/ConnectorBinding'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     put:
       summary: Update a binding
@@ -1360,22 +1405,22 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BindingUpdateRequest"
+              $ref: '#/components/schemas/BindingUpdateRequest'
       responses:
-        "200":
+        '200':
           description: Binding updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ConnectorBinding"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/ConnectorBinding'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
     delete:
       summary: Delete a binding
@@ -1387,9 +1432,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       responses:
-        "204":
+        '204':
           description: Binding deleted
 
   /api/v1/bindings/{bindingId}/simulate:
@@ -1407,22 +1452,22 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdHeader"
+        - $ref: '#/components/parameters/TenantIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/BindingSimulationRequest"
+              $ref: '#/components/schemas/BindingSimulationRequest'
       responses:
-        "200":
+        '200':
           description: Simulation result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BindingSimulationResult"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: '#/components/schemas/BindingSimulationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # ========== Run Operations ==========
   /api/v1/runs:
@@ -1431,14 +1476,14 @@ paths:
       operationId: listRuns
       tags: [Runs]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Recent runs for the tenant
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RunListResponse"
+                $ref: '#/components/schemas/RunListResponse'
 
   /api/v1/runs/{runId}:
     get:
@@ -1451,16 +1496,16 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Run detail with evidence arrays for lineage, decisions, and policies
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RunDetail"
-        "404":
-          $ref: "#/components/responses/NotFound"
+                $ref: '#/components/schemas/RunDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /api/v1/runs/{runId}/cancel:
     post:
@@ -1473,9 +1518,9 @@ paths:
           required: true
           schema:
             type: string
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "202":
+        '202':
           description: Cancellation accepted
           content:
             application/json:
@@ -1491,45 +1536,78 @@ paths:
                     format: date-time
 
   # ========== Governance ==========
-  /api/v1/governance/compliance/summary:
+  /governance/compliance/summary:
     get:
-      summary: Get governance compliance summary
-      operationId: getComplianceSummaryCanonical
+      summary: Get governance compliance summary (legacy)
+      operationId: getComplianceSummaryLegacy
       tags: [Governance]
+      deprecated: true
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Compliance summary for the tenant
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GovernanceComplianceSummary"
+                $ref: '#/components/schemas/GovernanceComplianceSummary'
 
-  /api/v1/governance/audit/summary:
+  /api/v1/governance/compliance/summary:
     get:
-      summary: Get governance audit summary
-      operationId: getAuditSummaryCanonical
+      summary: Get governance compliance summary
+      operationId: getComplianceSummary
       tags: [Governance]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
+          description: Compliance summary for the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceComplianceSummary'
+
+  /governance/audit/summary:
+    get:
+      summary: Get governance audit summary (legacy)
+      operationId: getAuditSummaryLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
           description: Audit summary backed by the run ledger when configured
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GovernanceAuditSummary"
+                $ref: '#/components/schemas/GovernanceAuditSummary'
 
-  /api/v1/governance/kill-switch:
+  /api/v1/governance/audit/summary:
     get:
-      summary: Get kill-switch state
-      operationId: getKillSwitchStatusCanonical
+      summary: Get governance audit summary
+      operationId: getAuditSummary
       tags: [Governance]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
+          description: Audit summary backed by the run ledger when configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceAuditSummary'
+
+  /governance/kill-switch:
+    get:
+      summary: Get kill-switch state (legacy)
+      operationId: getKillSwitchStatusLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
           description: Kill-switch state for the tenant
           content:
             application/json:
@@ -1537,203 +1615,15 @@ paths:
                 type: object
                 additionalProperties: true
 
-  /api/v1/governance/kill-switch/activate:
-    post:
-      summary: Activate a kill-switch
-      operationId: activateKillSwitchCanonical
-      tags: [Governance]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Kill-switch activated
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /api/v1/governance/kill-switch/deactivate:
-    post:
-      summary: Deactivate a kill-switch
-      operationId: deactivateKillSwitchCanonical
-      tags: [Governance]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Kill-switch deactivated
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /api/v1/governance/degradation:
+  /api/v1/governance/kill-switch:
     get:
-      summary: Get degradation mode
-      operationId: getDegradationModeCanonical
-      tags: [Governance]
-      parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
-      responses:
-        "200":
-          description: Current degradation mode
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-    post:
-      summary: Set degradation mode
-      operationId: setDegradationModeCanonical
-      tags: [Governance]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Degradation mode updated
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /api/v1/governance/policy/evaluate:
-    post:
-      summary: Evaluate a policy request
-      operationId: evaluatePolicyCanonical
-      tags: [Governance]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Policy evaluation result
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /api/v1/governance/security/egress:
-    get:
-      summary: Get egress accounting summary
-      operationId: getEgressSummaryCanonical
-      tags: [Governance]
-      parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
-        - name: agentId
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Egress usage summary
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /api/v1/governance/security/scan:
-    post:
-      summary: Scan text for injection attempts
-      operationId: scanForInjectionCanonical
-      tags: [Governance]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Injection scan result
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: true
-
-  /api/v1/governance/ops/summary:
-    get:
-      summary: Get governance operations summary
-      operationId: getGovernanceOpsSummary
-      tags: [Governance]
-      parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
-      responses:
-        "200":
-          description: Backup, disaster recovery, and export telemetry summary
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GovernanceOpsSummary"
-
-  /governance/compliance/summary:
-    get:
-      deprecated: true
-      summary: Get governance compliance summary
-      operationId: getComplianceSummary
-      tags: [Governance]
-      parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
-      responses:
-        "200":
-          description: Compliance summary for the tenant
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GovernanceComplianceSummary"
-
-  /governance/audit/summary:
-    get:
-      deprecated: true
-      summary: Get governance audit summary
-      operationId: getAuditSummary
-      tags: [Governance]
-      parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
-      responses:
-        "200":
-          description: Audit summary backed by the run ledger when configured
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/GovernanceAuditSummary"
-
-  /governance/kill-switch:
-    get:
-      deprecated: true
       summary: Get kill-switch state
       operationId: getKillSwitchStatus
       tags: [Governance]
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Kill-switch state for the tenant
           content:
             application/json:
@@ -1743,7 +1633,28 @@ paths:
 
   /governance/kill-switch/activate:
     post:
+      summary: Activate a kill-switch (legacy)
+      operationId: activateKillSwitchLegacy
+      tags: [Governance]
       deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Kill-switch activated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/kill-switch/activate:
+    post:
       summary: Activate a kill-switch
       operationId: activateKillSwitch
       tags: [Governance]
@@ -1755,7 +1666,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Kill-switch activated
           content:
             application/json:
@@ -1765,7 +1676,28 @@ paths:
 
   /governance/kill-switch/deactivate:
     post:
+      summary: Deactivate a kill-switch (legacy)
+      operationId: deactivateKillSwitchLegacy
+      tags: [Governance]
       deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Kill-switch deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/kill-switch/deactivate:
+    post:
       summary: Deactivate a kill-switch
       operationId: deactivateKillSwitch
       tags: [Governance]
@@ -1777,7 +1709,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Kill-switch deactivated
           content:
             application/json:
@@ -1787,14 +1719,14 @@ paths:
 
   /governance/degradation:
     get:
-      deprecated: true
-      summary: Get degradation mode
-      operationId: getDegradationMode
+      summary: Get degradation mode (legacy)
+      operationId: getDegradationModeLegacy
       tags: [Governance]
+      deprecated: true
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
       responses:
-        "200":
+        '200':
           description: Current degradation mode
           content:
             application/json:
@@ -1802,7 +1734,42 @@ paths:
                 type: object
                 additionalProperties: true
     post:
+      summary: Set degradation mode (legacy)
+      operationId: setDegradationModeLegacy
+      tags: [Governance]
       deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Degradation mode updated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/degradation:
+    get:
+      summary: Get degradation mode
+      operationId: getDegradationMode
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Current degradation mode
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    post:
       summary: Set degradation mode
       operationId: setDegradationMode
       tags: [Governance]
@@ -1814,7 +1781,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Degradation mode updated
           content:
             application/json:
@@ -1824,7 +1791,28 @@ paths:
 
   /governance/policy/evaluate:
     post:
+      summary: Evaluate a policy request (legacy)
+      operationId: evaluatePolicyLegacy
+      tags: [Governance]
       deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/policy/evaluate:
+    post:
       summary: Evaluate a policy request
       operationId: evaluatePolicy
       tags: [Governance]
@@ -1836,7 +1824,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Policy evaluation result
           content:
             application/json:
@@ -1846,19 +1834,40 @@ paths:
 
   /governance/security/egress:
     get:
-      deprecated: true
-      summary: Get egress accounting summary
-      operationId: getEgressSummary
+      summary: Get egress accounting summary (legacy)
+      operationId: getEgressSummaryLegacy
       tags: [Governance]
+      deprecated: true
       parameters:
-        - $ref: "#/components/parameters/TenantIdQuery"
+        - $ref: '#/components/parameters/TenantIdQuery'
         - name: agentId
           in: query
           required: true
           schema:
             type: string
       responses:
-        "200":
+        '200':
+          description: Egress usage summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/security/egress:
+    get:
+      summary: Get egress accounting summary
+      operationId: getEgressSummary
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
           description: Egress usage summary
           content:
             application/json:
@@ -1868,7 +1877,28 @@ paths:
 
   /governance/security/scan:
     post:
+      summary: Scan text for injection attempts (legacy)
+      operationId: scanForInjectionLegacy
+      tags: [Governance]
       deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Injection scan result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/security/scan:
+    post:
       summary: Scan text for injection attempts
       operationId: scanForInjection
       tags: [Governance]
@@ -1880,8 +1910,41 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Injection scan result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/ops/summary:
+    get:
+      summary: Get ops summary (legacy)
+      operationId: getOpsSummaryLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Ops summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/ops/summary:
+    get:
+      summary: Get ops summary
+      operationId: getOpsSummary
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Ops summary
           content:
             application/json:
               schema:
@@ -1894,7 +1957,7 @@ paths:
       operationId: createSession
       tags: [Sessions]
       responses:
-        "200":
+        '200':
           description: Session issued
           content:
             application/json:
@@ -1909,19 +1972,19 @@ paths:
       operationId: getCurrentSession
       tags: [Sessions]
       responses:
-        "200":
+        '200':
           description: Current session details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Session"
+                $ref: '#/components/schemas/Session'
 
     delete:
       summary: Invalidate the current session
       operationId: invalidateSession
       tags: [Sessions]
       responses:
-        "200":
+        '200':
           description: Session invalidated
           content:
             application/json:
@@ -1948,7 +2011,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Matching sessions
           content:
             application/json:
@@ -1958,7 +2021,7 @@ paths:
                   sessions:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Session"
+                      $ref: '#/components/schemas/Session'
 
   /api/v1/sessions/cleanup:
     post:
@@ -1966,7 +2029,7 @@ paths:
       operationId: cleanupSessions
       tags: [Sessions]
       responses:
-        "200":
+        '200':
           description: Cleanup complete
           content:
             application/json:
@@ -1990,15 +2053,15 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Change submitted for approval
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-        "400":
-          $ref: "#/components/responses/BadRequest"
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /lifecycle/changes/{changeId}:
     get:
@@ -2012,15 +2075,15 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Change approval status
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
-        "404":
-          $ref: "#/components/responses/NotFound"
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /lifecycle/changes/{changeId}/approve:
     post:
@@ -2041,7 +2104,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Change approved
           content:
             application/json:
@@ -2068,7 +2131,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Change rejected
           content:
             application/json:
@@ -2089,7 +2152,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Recertification initiated
           content:
             application/json:
@@ -2109,13 +2172,233 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Recertification status
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties: true
+
+  # ========== Marketplace ==========
+  /api/v1/catalog/marketplace/agents:
+    get:
+      summary: List marketplace agents
+      operationId: listMarketplaceAgents
+      tags: [Marketplace]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: capability
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marketplace listings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketplaceAgentListing'
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+    post:
+      summary: Publish marketplace agent
+      operationId: publishMarketplaceAgent
+      tags: [Marketplace]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishMarketplaceAgentInput'
+      responses:
+        '200':
+          description: Published marketplace agent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent:
+                    $ref: '#/components/schemas/MarketplaceAgentListing'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/catalog/marketplace/agents/{agentId}:
+    get:
+      summary: Get marketplace agent detail
+      operationId: getMarketplaceAgent
+      tags: [Marketplace]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marketplace agent detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listing:
+                    $ref: '#/components/schemas/MarketplaceAgentListing'
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketplaceReview'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/catalog/marketplace/agents/{agentId}/simulate-install:
+    post:
+      summary: Simulate marketplace install
+      operationId: simulateMarketplaceInstall
+      tags: [Marketplace]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketplaceInstallInput'
+      responses:
+        '200':
+          description: Marketplace install preflight
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  simulation:
+                    $ref: '#/components/schemas/MarketplaceInstallSimulation'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/catalog/marketplace/agents/{agentId}/install:
+    post:
+      summary: Install marketplace agent
+      operationId: installMarketplaceAgent
+      tags: [Marketplace]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketplaceInstallInput'
+      responses:
+        '200':
+          description: Marketplace install registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketplaceInstallResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Marketplace install blocked by compatibility checks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/catalog/marketplace/agents/{agentId}/reviews:
+    get:
+      summary: List marketplace reviews
+      operationId: listMarketplaceReviews
+      tags: [Marketplace]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marketplace reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketplaceReview'
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+    post:
+      summary: Create marketplace review
+      operationId: createMarketplaceReview
+      tags: [Marketplace]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMarketplaceReviewInput'
+      responses:
+        '200':
+          description: Marketplace review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  review:
+                    $ref: '#/components/schemas/MarketplaceReview'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # ========== Costs ========== (P1-6: Added missing endpoint)
   /api/v1/costs/summary:
@@ -2141,78 +2424,33 @@ paths:
             type: string
             format: date-time
           description: End date for cost aggregation
-        - name: dailyBudgetUsd
-          in: query
-          schema:
-            type: number
-            format: double
-          description: Daily budget threshold used for alert and remaining-budget calculations
-        - name: monthlyBudgetUsd
-          in: query
-          schema:
-            type: number
-            format: double
-          description: Monthly budget threshold used for projection alerts and remaining-budget calculations
       responses:
-        "200":
+        '200':
           description: Cost summary
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  summary:
+                  tenantId:
+                    type: string
+                  totalCost:
+                    type: number
+                    format: double
+                  currency:
+                    type: string
+                  breakdown:
                     type: object
-                    properties:
-                      tenantId:
-                        type: string
-                      windowStart:
-                        type: string
-                        format: date-time
-                      windowEnd:
-                        type: string
-                        format: date-time
-                      totalCostUsd:
-                        type: number
-                        format: double
-                      projectedMonthlyCostUsd:
-                        type: number
-                        format: double
-                      averageCostPerRunUsd:
-                        type: number
-                        format: double
-                      perPipeline:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/CostBreakdown"
-                      perAgent:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/CostBreakdown"
-                      perModel:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/CostBreakdown"
-                      budget:
-                        type: object
-                        properties:
-                          daily:
-                            $ref: "#/components/schemas/CostBudgetWindow"
-                          monthly:
-                            $ref: "#/components/schemas/CostBudgetWindow"
-                      alerts:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/CostAlert"
-                      dataSource:
-                        type: string
-                      allocationModel:
-                        type: string
-                  timestamp:
+                    additionalProperties:
+                      type: number
+                  startDate:
                     type: string
                     format: date-time
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                  endDate:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # ========== AI Suggestions ==========
   /api/v1/ai/suggestions:
@@ -2233,7 +2471,7 @@ paths:
             default: 10
           description: Maximum number of suggestions to return
       responses:
-        "200":
+        '200':
           description: Scored suggestion list
           content:
             application/json:
@@ -2252,8 +2490,8 @@ paths:
                   generatedAt:
                     type: string
                     format: date-time
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # ========== NLQ ==========
   /api/v1/nlp/parse:
@@ -2275,7 +2513,7 @@ paths:
                 tenantId:
                   type: string
       responses:
-        "200":
+        '200':
           description: Parsed intent and entities
           content:
             application/json:
@@ -2299,8 +2537,8 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        "400":
-          $ref: "#/components/responses/BadRequest"
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # ========== Auth (F-008, F-032) ==========
   /api/v1/auth/platform-session:
@@ -2315,7 +2553,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Session token issued
           content:
             application/json:
@@ -2333,9 +2571,9 @@ paths:
                   issuedAt:
                     type: string
                     format: date-time
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "503":
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
           description: SSO not configured on this deployment
 
   /api/v1/auth/roles:
@@ -2350,7 +2588,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: User roles
           content:
             application/json:
@@ -2367,8 +2605,8 @@ paths:
                   retrievedAt:
                     type: string
                     format: date-time
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # ========== AI Suggestions Metrics (F-011) ==========
   /api/v1/ai/suggestions/metrics:
@@ -2386,7 +2624,7 @@ paths:
             type: string
           description: Tenant context for metrics
       responses:
-        "200":
+        '200':
           description: AI suggestion metrics snapshot
           content:
             application/json:
@@ -2409,8 +2647,8 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
-        "500":
-          $ref: "#/components/responses/InternalServerError"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/ai/suggestions/stages:
     post:
@@ -2435,7 +2673,7 @@ paths:
                   type: object
                   additionalProperties: true
       responses:
-        "200":
+        '200':
           description: Suggested pipeline stages
           content:
             application/json:
@@ -2452,8 +2690,8 @@ paths:
                   generatedAt:
                     type: string
                     format: date-time
-        "400":
-          $ref: "#/components/responses/BadRequest"
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
 # ========================================================================
 # Components
@@ -2503,14 +2741,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
 
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
     # ---------- Health ----------
@@ -2529,7 +2767,7 @@ components:
           type: string
           format: date-time
         durability:
-          $ref: "#/components/schemas/RuntimeDurabilitySummary"
+          $ref: '#/components/schemas/RuntimeDurabilitySummary'
         components:
           type: object
           additionalProperties:
@@ -2574,7 +2812,7 @@ components:
         agents:
           type: array
           items:
-            $ref: "#/components/schemas/AgentSummary"
+            $ref: '#/components/schemas/AgentSummary'
         count:
           type: integer
         configured:
@@ -2647,7 +2885,7 @@ components:
 
     AgentDetail:
       allOf:
-        - $ref: "#/components/schemas/AgentSummary"
+        - $ref: '#/components/schemas/AgentSummary'
         - type: object
           properties:
             config:
@@ -2891,7 +3129,7 @@ components:
         events:
           type: array
           items:
-            $ref: "#/components/schemas/EventRequest"
+            $ref: '#/components/schemas/EventRequest'
 
     AnomalyDetectionResult:
       type: object
@@ -2934,7 +3172,7 @@ components:
         points:
           type: array
           items:
-            $ref: "#/components/schemas/DataPoint"
+            $ref: '#/components/schemas/DataPoint'
 
     DataPoint:
       type: object
@@ -2955,7 +3193,7 @@ components:
         predictions:
           type: array
           items:
-            $ref: "#/components/schemas/DataPoint"
+            $ref: '#/components/schemas/DataPoint'
         confidence:
           type: number
           format: double
@@ -3032,9 +3270,9 @@ components:
         headerMappings:
           type: array
           items:
-            $ref: "#/components/schemas/HeaderMapping"
+            $ref: '#/components/schemas/HeaderMapping'
         payloadMapping:
-          $ref: "#/components/schemas/PayloadMapping"
+          $ref: '#/components/schemas/PayloadMapping'
 
     BindingUpdateRequest:
       type: object
@@ -3047,9 +3285,9 @@ components:
         headerMappings:
           type: array
           items:
-            $ref: "#/components/schemas/HeaderMapping"
+            $ref: '#/components/schemas/HeaderMapping'
         payloadMapping:
-          $ref: "#/components/schemas/PayloadMapping"
+          $ref: '#/components/schemas/PayloadMapping'
         enabled:
           type: boolean
 
@@ -3097,9 +3335,9 @@ components:
         headerMappings:
           type: array
           items:
-            $ref: "#/components/schemas/HeaderMapping"
+            $ref: '#/components/schemas/HeaderMapping'
         payloadMapping:
-          $ref: "#/components/schemas/PayloadMapping"
+          $ref: '#/components/schemas/PayloadMapping'
         createdAt:
           type: string
           format: date-time
@@ -3194,7 +3432,7 @@ components:
         runs:
           type: array
           items:
-            $ref: "#/components/schemas/RunSummary"
+            $ref: '#/components/schemas/RunSummary'
         timestamp:
           type: string
           format: date-time
@@ -3240,23 +3478,49 @@ components:
           type: string
           format: date-time
 
+    AnomalyFalsePositiveRequest:
+      type: object
+      properties:
+        reviewer:
+          type: string
+        rationale:
+          type: string
+        notes:
+          type: string
+
+    AnomalyFalsePositiveResponse:
+      type: object
+      required: [anomalyId, tenantId, markedFalsePositive, timestamp]
+      properties:
+        anomalyId:
+          type: string
+        tenantId:
+          type: string
+        markedFalsePositive:
+          type: boolean
+        auditId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
     RunDetail:
       allOf:
-        - $ref: "#/components/schemas/RunSummary"
+        - $ref: '#/components/schemas/RunSummary'
         - type: object
           properties:
             lineage:
               type: array
               items:
-                $ref: "#/components/schemas/RunLineageEntry"
+                $ref: '#/components/schemas/RunLineageEntry'
             decisions:
               type: array
               items:
-                $ref: "#/components/schemas/RunDecisionEntry"
+                $ref: '#/components/schemas/RunDecisionEntry'
             policies:
               type: array
               items:
-                $ref: "#/components/schemas/RunPolicyEntry"
+                $ref: '#/components/schemas/RunPolicyEntry'
 
     # ---------- Governance ----------
     GovernanceSoc2Control:
@@ -3264,34 +3528,12 @@ components:
       properties:
         controlId:
           type: string
-        description:
+        title:
           type: string
         status:
           type: string
-        evidenceUrl:
-          type: string
-        auditEntryId:
-          type: string
-
-    GovernanceSoc2Freshness:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [FRESH, STALE, MISSING]
-        reportAvailable:
-          type: boolean
-        newestEvidenceAt:
-          type: string
-          format: date-time
-          nullable: true
-        evidenceAgeDays:
+        evidenceCount:
           type: integer
-          nullable: true
-        maxAgeDays:
-          type: integer
-        message:
-          type: string
 
     GovernanceComplianceSummary:
       type: object
@@ -3320,60 +3562,10 @@ components:
               type: string
             controlCount:
               type: integer
-            freshness:
-              $ref: "#/components/schemas/GovernanceSoc2Freshness"
             controls:
               type: array
               items:
-                $ref: "#/components/schemas/GovernanceSoc2Control"
-        timestamp:
-          type: string
-          format: date-time
-
-    GovernanceOpsSummary:
-      type: object
-      properties:
-        tenantId:
-          type: string
-        backupConfigured:
-          type: boolean
-        backupCount:
-          type: integer
-        lastBackupAt:
-          type: string
-          format: date-time
-          nullable: true
-        latestBackupStatus:
-          type: string
-        drReadiness:
-          type: string
-          enum: [PASS, FAIL, UNAVAILABLE]
-        lastDrDrillAt:
-          type: string
-          format: date-time
-          nullable: true
-        exportQueueConfigured:
-          type: boolean
-        exportQueueDepth:
-          type: integer
-          nullable: true
-        automatedBackupsScheduled:
-          type: boolean
-        trustedProxyForwardedAcceptedCount:
-          type: integer
-        trustedProxyForwardedRejectedCount:
-          type: integer
-        trustedProxyAlertState:
-          type: string
-          enum: [OK, ALERT, UNAVAILABLE]
-        trustedProxyRejectionReasons:
-          type: object
-          additionalProperties:
-            type: integer
-        notes:
-          type: array
-          items:
-            type: string
+                $ref: '#/components/schemas/GovernanceSoc2Control'
         timestamp:
           type: string
           format: date-time
@@ -3405,68 +3597,196 @@ components:
         entries:
           type: array
           items:
-            $ref: "#/components/schemas/GovernanceAuditEntry"
+            $ref: '#/components/schemas/GovernanceAuditEntry'
         timestamp:
           type: string
           format: date-time
 
-    CostBreakdown:
+    MarketplaceAgentListing:
       type: object
+      required: [id, name, description, version, domain, level, capabilities, tags, source, owner, averageRating, reviewCount]
       properties:
         id:
           type: string
         name:
           type: string
-        costUsd:
-          type: number
-          format: double
-        sharePercent:
-          type: number
-          format: double
-        runCount:
-          type: integer
-        lastSeenAt:
+        description:
+          type: string
+        version:
+          type: string
+        domain:
+          type: string
+        level:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        source:
+          type: string
+        owner:
+          type: string
+        publishedAt:
           type: string
           format: date-time
           nullable: true
-
-    CostBudgetWindow:
-      type: object
-      properties:
-        budgetUsd:
-          type: number
-          format: double
-        observedUsd:
-          type: number
-          format: double
-        remainingUsd:
-          type: number
-          format: double
-        usagePercent:
-          type: number
-          format: double
-        status:
+        updatedAt:
           type: string
-          enum: [healthy, warning, exceeded]
+          format: date-time
+          nullable: true
+        averageRating:
+          type: number
+          format: double
+        reviewCount:
+          type: integer
 
-    CostAlert:
+    MarketplaceReview:
       type: object
+      required: [id, agentId, tenantId, reviewer, rating, title, comment, createdAt]
       properties:
         id:
           type: string
-        severity:
+        agentId:
           type: string
-          enum: [info, warning, critical]
+        tenantId:
+          type: string
+        reviewer:
+          type: string
+        rating:
+          type: integer
         title:
+          type: string
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PublishMarketplaceAgentInput:
+      type: object
+      required: [name]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
           type: string
         description:
           type: string
-        currentValue:
-          type: number
-          format: double
-        thresholdValue:
-          type: number
-          format: double
+        version:
+          type: string
+        domain:
+          type: string
+        level:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        owner:
+          type: string
+
+    CreateMarketplaceReviewInput:
+      type: object
+      required: [rating]
+      properties:
+        tenantId:
+          type: string
+        reviewer:
+          type: string
+        rating:
+          type: integer
+        title:
+          type: string
+        comment:
+          type: string
+
+    MarketplaceInstallInput:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        targetEnvironment:
+          type: string
+          enum: [sandbox, staging, production]
+        expectedVersion:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    MarketplaceInstallSimulation:
+      type: object
+      required: [agentId, agentName, requestedVersion, availableVersion, targetEnvironment, versionPinned, compatibilityStatus, compatibilityNotes, directExecutionMode, productionExecutionMode, requiresHitl, recommendedPath, allowedToInstall]
+      properties:
+        agentId:
+          type: string
+        agentName:
+          type: string
+        requestedVersion:
+          type: string
+        availableVersion:
+          type: string
+        targetEnvironment:
+          type: string
+        versionPinned:
+          type: boolean
+        compatibilityStatus:
+          type: string
+          enum: [COMPATIBLE, REVIEW_REQUIRED, BLOCKED]
+        compatibilityNotes:
+          type: array
+          items:
+            type: string
+        directExecutionMode:
+          type: string
+        productionExecutionMode:
+          type: string
+        requiresHitl:
+          type: boolean
+        recommendedPath:
+          type: string
+        allowedToInstall:
+          type: boolean
+
+    MarketplaceInstallResult:
+      type: object
+      required: [installId, agentId, agentName, agentVersion, tenantId, compatibilityStatus, recommendedPath, directExecutionMode, productionExecutionMode, targetEnvironment, installedAt, status]
+      properties:
+        installId:
+          type: string
+        agentId:
+          type: string
+        agentName:
+          type: string
+        agentVersion:
+          type: string
+        tenantId:
+          type: string
+        compatibilityStatus:
+          type: string
+        recommendedPath:
+          type: string
+        directExecutionMode:
+          type: string
+        productionExecutionMode:
+          type: string
+        targetEnvironment:
+          type: string
+        installedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
 
     # ---------- Errors ----------
     ErrorResponse:

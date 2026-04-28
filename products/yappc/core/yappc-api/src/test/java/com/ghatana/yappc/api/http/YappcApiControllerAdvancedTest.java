@@ -192,12 +192,13 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
             // GIVEN: Plan can be approved
             AiPlan approvedPlan = new AiPlan("plan-1", "wf-1", "tenant-001", "objective", // GH-90000
                 List.of(), AiPlan.PlanStatus.APPROVED, null, "gpt-4", 0.9, null, null); // GH-90000
-            when(workflowService.approvePlan(any(), any())) // GH-90000
+            when(workflowService.approvePlan(any(), any(), any())) // GH-90000
                 .thenReturn(Promise.of(approvedPlan)); // GH-90000
 
             // WHEN: Approve plan
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/plans/plan-1/approve")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
+                .withBody("{\"actor\": \"user-123\"}".getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> controller.approvePlan(request, "wf-1", "plan-1")); // GH-90000
 
@@ -212,7 +213,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
             // GIVEN: Plan can be rejected
             AiPlan rejectedPlan = new AiPlan("plan-1", "wf-1", "tenant-001", "objective", // GH-90000
                 List.of(), AiPlan.PlanStatus.REJECTED, null, "gpt-4", 0.0, null, null); // GH-90000
-            when(workflowService.rejectPlan(any(), any(), any())) // GH-90000
+            when(workflowService.rejectPlan(any(), any(), any(), any())) // GH-90000
                 .thenReturn(Promise.of(rejectedPlan)); // GH-90000
 
             // WHEN: Reject plan
@@ -356,7 +357,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
                 new SemanticSearchService.SearchHit("doc-2", "", 0.92, null), // GH-90000
                 new SemanticSearchService.SearchHit("doc-3", "", 0.85, null) // GH-90000
             );
-            when(searchService.findSimilar(any(), anyInt(), anyDouble())) // GH-90000
+            when(searchService.findSimilar(any(), anyInt(), anyDouble(), any())) // GH-90000
                 .thenReturn(Promise.of(similar)); // GH-90000
 
             // WHEN: Find similar
@@ -376,7 +377,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("findSimilar returns empty array when no similar documents")
         void findSimilarNoMatches() { // GH-90000
             // GIVEN: No similar documents
-            when(searchService.findSimilar(any(), anyInt(), anyDouble())) // GH-90000
+            when(searchService.findSimilar(any(), anyInt(), anyDouble(), any())) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             // WHEN: Find similar
@@ -478,24 +479,25 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("deleteDocument returns 204 when successful")
         void deleteDocumentSuccess() { // GH-90000
             // GIVEN: Document can be deleted
-            when(searchService.delete(any())) // GH-90000
+            when(searchService.delete(any(), any())) // GH-90000
                 .thenReturn(Promise.of(true)); // GH-90000
 
             // WHEN: Delete document
             HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/vector/index/doc-1") // GH-90000
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> controller.deleteDocument(request, "doc-1")); // GH-90000
 
             // THEN: Returns 204 No Content
             assertThat(response.getCode()).isEqualTo(204); // GH-90000
-            verify(searchService).delete("doc-1");
+            verify(searchService).delete("doc-1", "test-tenant");
         }
 
         @Test
         @DisplayName("deleteDocument returns 404 when document not found")
         void deleteDocumentNotFound() { // GH-90000
             // GIVEN: Document doesn't exist
-            when(searchService.delete(any())) // GH-90000
+            when(searchService.delete(any(), any())) // GH-90000
                 .thenReturn(Promise.of(false)); // GH-90000
 
             // WHEN: Delete non-existent document
@@ -703,6 +705,11 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
             "user-123",
             Instant.now(), // GH-90000
             Instant.now(), // GH-90000
+            null,
+            null,
+            null,
+            null,
+            null,
             null,
             null
         );

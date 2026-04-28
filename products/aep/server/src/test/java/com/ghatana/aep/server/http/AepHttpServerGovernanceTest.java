@@ -505,7 +505,7 @@ class AepHttpServerGovernanceTest {
             assertThat(body.get("backupConfigured")).isEqualTo(false);
             assertThat(body.get("drReadiness")).isEqualTo("UNAVAILABLE");
             assertThat(body.get("exportQueueConfigured")).isEqualTo(false);
-            assertThat(body.get("trustedProxyAlertState")).isEqualTo("OK");
+            assertThat(body.get("trustedProxyAlertState")).isEqualTo("UNAVAILABLE");
             assertThat(body.get("trustedProxyForwardedRejectedCount")).isEqualTo(0);
         }
 

@@ -1157,17 +1157,22 @@ public class DataCloudHttpServer {
 
         // P3.1: Tenant-scoped runtime context layer — in-memory key-value store
         contextLayerHandler = new ContextLayerHandler(httpSupport, objectMapper, knowledgeGraphPlugin);
-        collectionContextHandler = new CollectionContextHandler(
-            client,
-            httpSupport,
-            objectMapper,
-            lineagePlugin,
-            knowledgeGraphPlugin);
-        mcpToolsHandler = new McpToolsHandler(
-            client,
-            httpSupport,
-            objectMapper,
-            collectionContextHandler::getCollectionContextDocument);
+        if (client != null) {
+            collectionContextHandler = new CollectionContextHandler(
+                client,
+                httpSupport,
+                objectMapper,
+                lineagePlugin,
+                knowledgeGraphPlugin);
+            mcpToolsHandler = new McpToolsHandler(
+                client,
+                httpSupport,
+                objectMapper,
+                collectionContextHandler::getCollectionContextDocument);
+        } else {
+            collectionContextHandler = null;
+            mcpToolsHandler = null;
+        }
 
         // P3.9.1: Entity lineage tracking and visualization
         lineageHandler = new LineageHandler(httpSupport, objectMapper, lineagePlugin);
@@ -1197,17 +1202,37 @@ public class DataCloudHttpServer {
         settingsHandler = new SettingsHandler(httpSupport, resolvedStore);
 
         // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
-        DataSourceRegistryHandler dataSourceRegistryHandler = new DataSourceRegistryHandler(
-            client, httpSupport, null /* no DataFabricConnector implementation yet */);
+        DataSourceRegistryHandler dataSourceRegistryHandler;
+        if (client != null) {
+            dataSourceRegistryHandler = new DataSourceRegistryHandler(
+                client, httpSupport, null /* no DataFabricConnector implementation yet */);
+        } else {
+            dataSourceRegistryHandler = null;
+        }
 
         // P3.6: Compliance handler for legal holds and evidence packages
-        ComplianceHandler complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
+        ComplianceHandler complianceHandler;
+        if (client != null) {
+            complianceHandler = new ComplianceHandler(client, httpSupport, objectMapper);
+        } else {
+            complianceHandler = null;
+        }
 
         // P3.3: Sovereign profile handler for air-gapped, model routing, and policy enforcement
-        SovereignProfileHandler sovereignProfileHandler = new SovereignProfileHandler(client, httpSupport, objectMapper);
+        SovereignProfileHandler sovereignProfileHandler;
+        if (client != null) {
+            sovereignProfileHandler = new SovereignProfileHandler(client, httpSupport, objectMapper);
+        } else {
+            sovereignProfileHandler = null;
+        }
 
         // P3.1: Provider conformance suite handler for EntityStore and EventLogStore validation
-        ProviderConformanceHandler conformanceHandler = new ProviderConformanceHandler(httpSupport, client);
+        ProviderConformanceHandler conformanceHandler;
+        if (client != null) {
+            conformanceHandler = new ProviderConformanceHandler(httpSupport, client);
+        } else {
+            conformanceHandler = null;
+        }
 
         log.info("[DC-CAP] Runtime capability summary {}", buildCapabilitySummaryLog());
 

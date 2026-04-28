@@ -582,6 +582,11 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
             Instant.now(), // GH-90000
             Instant.now(), // GH-90000
             null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null
         );
     }

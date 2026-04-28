@@ -368,6 +368,46 @@ public final class DataCloudAnalyticsStore {
                         anomalyId, e.getMessage(), e));
     }
 
+    /**
+     * Marks an anomaly as a false positive and stores reviewer feedback.
+     *
+     * @param tenantId tenant identifier
+     * @param anomalyId anomaly record ID
+     * @param reviewer identity of the reviewer
+     * @param rationale explanation for the feedback
+     * @param notes optional extra notes
+     * @return promise of the updated anomaly record
+     */
+    public Promise<AnomalyRecord> markFalsePositive(
+            String tenantId,
+            String anomalyId,
+            String reviewer,
+            String rationale,
+            String notes) {
+        Objects.requireNonNull(tenantId, "tenantId");
+        Objects.requireNonNull(anomalyId, "anomalyId");
+        return client.findById(tenantId, ANOMALY_COLLECTION, anomalyId)
+                .then(optEntity -> {
+                    if (optEntity.isEmpty()) {
+                        return Promise.ofException(
+                                new IllegalArgumentException("Anomaly not found: " + anomalyId));
+                    }
+                    Map<String, Object> updated = new HashMap<>(optEntity.get().data());
+                    updated.put("resolved", true);
+                    updated.put("resolvedBy", reviewer != null ? reviewer : "system");
+                    updated.put("resolvedAt", Instant.now().toString());
+                    updated.put("falsePositive", true);
+                    updated.put("falsePositiveBy", reviewer != null ? reviewer : "system");
+                    updated.put("falsePositiveReason", rationale != null ? rationale : "");
+                    updated.put("falsePositiveNotes", notes != null ? notes : "");
+                    updated.put("feedbackRecordedAt", Instant.now().toString());
+                    return client.save(tenantId, ANOMALY_COLLECTION, updated)
+                            .map(this::toAnomalyRecord);
+                })
+                .whenException(e -> log.error("[analytics-store] markFalsePositive failed id={}: {}",
+                        anomalyId, e.getMessage(), e));
+    }
+
     // =========================================================================
     // Metrics Data Points
     // =========================================================================

@@ -14,7 +14,11 @@ import { useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
-import { listPipelines, deletePipeline } from '@/api/pipeline.api';
+import {
+  listPipelines,
+  deletePipeline,
+  type PipelineRollbackResult,
+} from '@/api/pipeline.api';
 import type { PipelineStatus } from '@/types/pipeline.types';
 import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
@@ -26,6 +30,7 @@ import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 import { PipelineDryRunDialog } from '@/components/pipeline/PipelineDryRunDialog';
+import { PipelineRollbackDialog } from '@/components/pipeline/PipelineRollbackDialog';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Status badge ────────────────────────────────────────────────────
@@ -65,6 +70,8 @@ export function PipelineListPage() {
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [dryRunTarget, setDryRunTarget] = useState<{ id: string; name: string } | null>(null);
+  const [rollbackTarget, setRollbackTarget] = useState<{ id: string; name: string; version?: number } | null>(null);
+  const [rollbackMessage, setRollbackMessage] = useState<string | null>(null);
   const canManagePipelines = hasAnyRole(['admin', 'operator']);
   const canDeletePipelines = hasRole('admin');
 
@@ -98,6 +105,16 @@ export function PipelineListPage() {
     void navigate(getNewPipelineUrl());
   }
 
+  function handleRollbackComplete(result: PipelineRollbackResult) {
+    setRollbackTarget(null);
+    setRollbackMessage(
+      `Pipeline rolled back to version ${result.restoredVersion}${
+        result.auditId ? ` with audit ${result.auditId}` : ''
+      }.`,
+    );
+    void queryClient.invalidateQueries({ queryKey: ['aep', 'pipelines', tenantId] });
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -124,6 +141,12 @@ export function PipelineListPage() {
           Read-only access: pipeline creation, edits, dry runs, and deletes are limited to operator or admin roles.
         </div>
       )}
+
+      {rollbackMessage ? (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200">
+          {rollbackMessage}
+        </div>
+      ) : null}
 
       {/* Search */}
       <div className="mb-4">
@@ -216,6 +239,15 @@ export function PipelineListPage() {
                       Dry Run
                     </Button>
                   )}
+                  {canManagePipelines && pipeline.id && (
+                    <Button
+                      onClick={() => setRollbackTarget({ id: pipeline.id!, name: pipeline.name, version: pipeline.version })}
+                      variant="secondary"
+                      className="text-xs font-medium"
+                    >
+                      Rollback
+                    </Button>
+                  )}
                   {canDeletePipelines && pipeline.id && (
                     <Button
                       onClick={() => setConfirmDelete(pipeline.id!)}
@@ -261,6 +293,19 @@ export function PipelineListPage() {
           pipelineName={dryRunTarget.name}
           tenantId={tenantId}
           onClose={() => setDryRunTarget(null)}
+        />
+      )}
+
+      {rollbackTarget && (
+        <PipelineRollbackDialog
+          open={!!rollbackTarget}
+          tenantId={tenantId}
+          pipelineId={rollbackTarget.id}
+          pipelineName={rollbackTarget.name}
+          currentVersion={rollbackTarget.version}
+          actor={hasRole('admin') ? 'admin' : 'operator'}
+          onClose={() => setRollbackTarget(null)}
+          onRolledBack={handleRollbackComplete}
         />
       )}
     </div>

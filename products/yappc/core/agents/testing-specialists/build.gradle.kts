@@ -8,8 +8,6 @@ description = "YAPPC Testing Specialists - Test generation, validation, and cove
 dependencies {
     api(project(":products:yappc:core:agents:runtime"))
     api(project(":products:yappc:core:agents:common"))
-    api(project(":products:yappc:core:agents:code-specialists"))
-    api(project(":products:yappc:core:agents:architecture-specialists"))
     api(project(":products:yappc:core:ai"))
     api(project(":products:yappc:core:yappc-domain-impl"))
     api(project(":platform:java:agent-core"))
@@ -21,6 +19,8 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
+    testImplementation(project(":products:yappc:core:agents:code-specialists"))
+    testImplementation(project(":products:yappc:core:agents:architecture-specialists"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
     testImplementation(libs.assertj.core)

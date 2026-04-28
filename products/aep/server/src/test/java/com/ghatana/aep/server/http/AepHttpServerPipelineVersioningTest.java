@@ -245,6 +245,36 @@ class AepHttpServerPipelineVersioningTest {
         }
 
         @Test
+        @DisplayName("rollback response includes previousVersion and supplied reason")
+        void rollbackResponseIncludesAuditContext() throws Exception { // GH-90000
+            String pipelineId = createPipelineAndGetId("rollback-audit-context");
+
+            HttpResponse<String> created = get("/api/v1/pipelines/" + pipelineId); // GH-90000
+            int originalVersion = ((Number) parseBody(created).get("version")).intValue();
+
+            post("/api/v1/pipelines/" + pipelineId + "/publish", // GH-90000
+                mapper.writeValueAsString(Map.of("versionLabel", "stable-v1"))); // GH-90000
+
+            HttpResponse<String> published = get("/api/v1/pipelines/" + pipelineId); // GH-90000
+            int publishedVersion = ((Number) parseBody(published).get("version")).intValue();
+
+            HttpResponse<String> rollbackResp = post( // GH-90000
+                "/api/v1/pipelines/" + pipelineId + "/rollback?toVersion=" + originalVersion,
+                mapper.writeValueAsString(Map.of(
+                    "actor", "operator",
+                    "reason", "Restore known-good pipeline"
+                )));
+
+            assertThat(rollbackResp.statusCode()).isEqualTo(200); // GH-90000
+            Map<String, Object> body = parseBody(rollbackResp); // GH-90000
+            assertThat(body.get("rolledBack")).isEqualTo(true);
+            assertThat(((Number) body.get("restoredVersion")).intValue()).isEqualTo(originalVersion);
+            assertThat(((Number) body.get("previousVersion")).intValue()).isEqualTo(publishedVersion);
+            assertThat(body.get("reason")).isEqualTo("Restore known-good pipeline");
+            assertThat(body.get("status")).isEqualTo("DRAFT");
+        }
+
+        @Test
         @DisplayName("rolled-back pipeline has DRAFT status")
         void rolledBackPipelineIsDraft() throws Exception { // GH-90000
             String pipelineId = createPipelineAndGetId("rollback-draft-status");

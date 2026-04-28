@@ -92,6 +92,17 @@ public final class DataCloudHumanReviewQueue implements HumanReviewQueue {
     }
 
     @Override
+    public @NotNull Promise<List<ReviewItem>> listRecent(@Nullable ReviewFilter filter) {
+        return queryAll()
+            .then(this::normalizeExpiredItems)
+            .map(items -> items.stream()
+                .filter(item -> matchesFilter(item, filter))
+                .sorted((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()))
+                .limit(filter != null && filter.limit() > 0 ? filter.limit() : QUERY_LIMIT)
+                .toList());
+    }
+
+    @Override
     public @NotNull Promise<@Nullable ReviewItem> getById(@NotNull String reviewId) {
         Objects.requireNonNull(reviewId, "reviewId");
         return dataCloudClient.findById(STORAGE_TENANT, COLLECTION, reviewId)

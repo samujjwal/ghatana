@@ -113,6 +113,7 @@ public final class AgentMarketplaceController {
                     : HttpHelper.mapper().readValue(body, java.util.Map.class);
 
                 String targetEnv = asNullableString(payload.get("targetEnvironment"));
+                String expectedVersion = asNullableString(payload.get("expectedVersion"));
                 Object rawConfig = payload.get("config");
                 java.util.Map<String, Object> config = rawConfig instanceof java.util.Map<?, ?> m
                     ? m.entrySet().stream().collect(
@@ -123,21 +124,34 @@ public final class AgentMarketplaceController {
 
                 com.ghatana.aep.server.marketplace.AgentMarketplaceService.InstallAgentRequest installRequest =
                     new com.ghatana.aep.server.marketplace.AgentMarketplaceService.InstallAgentRequest(
-                        targetEnv, config);
+                        targetEnv, config, expectedVersion);
+
+                if (expectedVersion == null || expectedVersion.isBlank()) {
+                    return Promise.of(HttpHelper.errorResponse(400, "expectedVersion is required to pin marketplace installs"));
+                }
 
                 return marketplaceService.installAgent(tenantId, agentId, installRequest)
-                    .map(record -> HttpHelper.jsonResponse(java.util.Map.of(
-                        "installId",     record.installId(),
-                        "agentId",       record.agentId(),
-                        "agentName",     record.agentName(),
-                        "agentVersion",  record.agentVersion(),
-                        "tenantId",      record.tenantId(),
-                        "installedAt",   record.installedAt().toString(),
-                        "status",        "INSTALLED"
+                    .map(record -> HttpHelper.jsonResponse(java.util.Map.ofEntries(
+                        java.util.Map.entry("installId", record.installId()),
+                        java.util.Map.entry("agentId", record.agentId()),
+                        java.util.Map.entry("agentName", record.agentName()),
+                        java.util.Map.entry("agentVersion", record.agentVersion()),
+                        java.util.Map.entry("tenantId", record.tenantId()),
+                        java.util.Map.entry("compatibilityStatus", record.compatibilityStatus()),
+                        java.util.Map.entry("recommendedPath", record.recommendedPath()),
+                        java.util.Map.entry("directExecutionMode", record.directExecutionMode()),
+                        java.util.Map.entry("productionExecutionMode", record.productionExecutionMode()),
+                        java.util.Map.entry("installedAt", record.installedAt().toString()),
+                        java.util.Map.entry("targetEnvironment", record.targetEnvironment() != null ? record.targetEnvironment() : "sandbox"),
+                        java.util.Map.entry("status", "INSTALLED")
                     )))
                     .then(Promise::of, err -> {
                         if (err instanceof IllegalArgumentException) {
-                            return Promise.of(HttpHelper.errorResponse(404, err.getMessage()));
+                            String message = err.getMessage();
+                            int code = message != null && message.startsWith("Marketplace install blocked:")
+                                ? 409
+                                : 404;
+                            return Promise.of(HttpHelper.errorResponse(code, message));
                         }
                         log.error("[marketplace] install failed agentId={}", agentId, err);
                         return Promise.of(HttpHelper.errorResponse(500,
@@ -149,6 +163,58 @@ public final class AgentMarketplaceController {
             }
         }, error -> {
             log.error("[marketplace] failed to read install request body", error);
+            return Promise.of(HttpHelper.errorResponse(400, "Failed to read request body"));
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleSimulateInstallAgent(HttpRequest request) {
+        return request.loadBody().then(buffer -> {
+            try {
+                String tenantId = HttpHelper.resolveTenantId(request);
+                String agentId = request.getPathParameter("agentId");
+                if (agentId == null || agentId.isBlank()) {
+                    return Promise.of(HttpHelper.errorResponse(400, "agentId path parameter is required"));
+                }
+
+                String body = buffer.getString(StandardCharsets.UTF_8);
+                java.util.Map<String, Object> payload = body.isBlank()
+                    ? java.util.Map.of()
+                    : HttpHelper.mapper().readValue(body, java.util.Map.class);
+
+                String targetEnv = asNullableString(payload.get("targetEnvironment"));
+                String expectedVersion = asNullableString(payload.get("expectedVersion"));
+                Object rawConfig = payload.get("config");
+                java.util.Map<String, Object> config = rawConfig instanceof java.util.Map<?, ?> m
+                    ? m.entrySet().stream().collect(
+                        java.util.stream.Collectors.toMap(
+                            e -> e.getKey().toString(),
+                            java.util.Map.Entry::getValue))
+                    : java.util.Map.of();
+
+                com.ghatana.aep.server.marketplace.AgentMarketplaceService.InstallAgentRequest installRequest =
+                    new com.ghatana.aep.server.marketplace.AgentMarketplaceService.InstallAgentRequest(
+                        targetEnv, config, expectedVersion);
+
+                return marketplaceService.simulateInstallAgent(tenantId, agentId, installRequest)
+                    .map(simulation -> HttpHelper.jsonResponse(java.util.Map.of(
+                        "simulation", simulation,
+                        "timestamp", Instant.now().toString()
+                    )))
+                    .then(Promise::of, err -> {
+                        if (err instanceof IllegalArgumentException) {
+                            return Promise.of(HttpHelper.errorResponse(404, err.getMessage()));
+                        }
+                        log.error("[marketplace] simulate install failed agentId={}", agentId, err);
+                        return Promise.of(HttpHelper.errorResponse(500,
+                            "Failed to simulate install: " + err.getMessage()));
+                    });
+            } catch (Exception error) {
+                log.error("[marketplace] failed to parse simulate-install request", error);
+                return Promise.of(HttpHelper.errorResponse(400, "Invalid install simulation request: " + error.getMessage()));
+            }
+        }, error -> {
+            log.error("[marketplace] failed to read simulate-install request body", error);
             return Promise.of(HttpHelper.errorResponse(400, "Failed to read request body"));
         });
     }

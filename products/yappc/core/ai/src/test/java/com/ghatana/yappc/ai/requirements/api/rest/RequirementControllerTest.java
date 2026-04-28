@@ -104,6 +104,7 @@ class RequirementControllerTest extends EventloopTestBase {
     HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
         .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json") // GH-90000
+        .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
         .build(); // GH-90000
 
     HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest)); // GH-90000
@@ -143,6 +144,7 @@ class RequirementControllerTest extends EventloopTestBase {
                 controller.createRequirement( // GH-90000
                     HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
                         .withBody(objectMapper.writeValueAsBytes(create)) // GH-90000
+                        .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
                         .build())); // GH-90000
     JsonNode created = objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
     String requirementId = created.get("id").asText();
@@ -184,6 +186,7 @@ class RequirementControllerTest extends EventloopTestBase {
     HttpRequest httpRequest =
                 HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements")) // GH-90000
             .withBody(new byte[0]) // GH-90000
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
             .build(); // GH-90000
 
     HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest)); // GH-90000
@@ -204,6 +207,7 @@ class RequirementControllerTest extends EventloopTestBase {
                         .withBody( // GH-90000
                             objectMapper.writeValueAsBytes( // GH-90000
                                 new CreateRequirementRequest("Req text", "HIGH"))) // GH-90000
+                        .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
                         .build())); // GH-90000
     String requirementId =
         objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)) // GH-90000
@@ -240,6 +244,7 @@ class RequirementControllerTest extends EventloopTestBase {
                         .withBody( // GH-90000
                             objectMapper.writeValueAsBytes( // GH-90000
                                 new CreateRequirementRequest("Req text", "HIGH"))) // GH-90000
+                        .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
                         .build())); // GH-90000
     String requirementId =
         objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)) // GH-90000
@@ -263,6 +268,7 @@ class RequirementControllerTest extends EventloopTestBase {
                   "limit": 1
                 }
                 """.getBytes(StandardCharsets.UTF_8)) // GH-90000
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
             .build(); // GH-90000
 
     HttpResponse suggestionsResponse =
@@ -279,6 +285,7 @@ class RequirementControllerTest extends EventloopTestBase {
                 controller.recordFeedback( // GH-90000
                     HttpRequest.post(url("/api/v1/suggestions/" + suggestionId + "/feedback")) // GH-90000
                         .withBody(objectMapper.writeValueAsBytes(feedback)) // GH-90000
+                        .withHeader(HttpHeaders.of("X-Tenant-ID"), "test-tenant") // GH-90000
                         .build())); // GH-90000
 
     assertThat(feedbackResponse.getCode()).isEqualTo(204); // GH-90000

@@ -34,6 +34,17 @@ class JdbcSettingsStoreTest {
         ((com.zaxxer.hikari.HikariDataSource) dataSource).setPassword("");
         ObjectMapper objectMapper = new ObjectMapper();
         store = new JdbcSettingsStore(dataSource, objectMapper);
+        
+        // Clean up any existing data from previous tests
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            // Delete from the actual table used by JdbcSettingsStore
+            try {
+                stmt.execute("DELETE FROM dc_settings");
+            } catch (Exception e) {
+                // Table doesn't exist yet, ignore
+            }
+        }
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.ghatana.yappc.api.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.products.yappc.domain.vector.RagService;
 import com.ghatana.products.yappc.domain.vector.SemanticSearchService;
@@ -66,12 +67,14 @@ public class VectorController {
                 try {
                     SearchDto dto = objectMapper.readValue(body.getString(StandardCharsets.UTF_8), SearchDto.class);
 
+                    String tenantId = extractTenantId(request);
                     SemanticSearchService.SemanticSearchRequest searchRequest =
                         new SemanticSearchService.SemanticSearchRequest(
                             dto.query(),
                             dto.limit() > 0 ? dto.limit() : 10,
                             dto.threshold() > 0 ? dto.threshold() : 0.7,
-                            dto.filters()
+                            dto.filters(),
+                            tenantId
                         );
 
                     return searchService.search(searchRequest)
@@ -100,6 +103,7 @@ public class VectorController {
                         HybridSearchDto.class
                     );
 
+                    String tenantId = extractTenantId(request);
                     SemanticSearchService.HybridSearchRequest hybridRequest =
                         new SemanticSearchService.HybridSearchRequest(
                             dto.query(),
@@ -107,7 +111,8 @@ public class VectorController {
                             dto.threshold() > 0 ? dto.threshold() : 0.7,
                             dto.filters(),
                             dto.keywords(),
-                            dto.keywordBoost() > 0 ? dto.keywordBoost() : 0.2
+                            dto.keywordBoost() > 0 ? dto.keywordBoost() : 0.2,
+                            tenantId
                         );
 
                     return searchService.hybridSearch(hybridRequest)
@@ -130,8 +135,9 @@ public class VectorController {
     public Promise<HttpResponse> findSimilar(@NotNull HttpRequest request, @NotNull String id) {
         int limit = getIntParam(request, "limit", 10);
         double threshold = getDoubleParam(request, "threshold", 0.7);
+        String tenantId = extractTenantId(request);
 
-        return searchService.findSimilar(id, limit, threshold)
+        return searchService.findSimilar(id, limit, threshold, tenantId)
             .map(hits -> ResponseBuilder.ok()
                 .json(Map.of(
                     "sourceId", id,
@@ -157,11 +163,13 @@ public class VectorController {
                         IndexDocumentDto.class
                     );
 
+                    String tenantId = extractTenantId(request);
                     SemanticSearchService.IndexRequest indexRequest =
                         new SemanticSearchService.IndexRequest(
                             dto.id(),
                             dto.content(),
-                            dto.metadata()
+                            dto.metadata(),
+                            tenantId
                         );
 
                     return searchService.index(indexRequest)
@@ -194,11 +202,13 @@ public class VectorController {
                         BatchIndexDto.class
                     );
 
+                    String tenantId = extractTenantId(request);
                     List<SemanticSearchService.IndexRequest> requests = dto.documents().stream()
                         .map(doc -> new SemanticSearchService.IndexRequest(
                             doc.id(),
                             doc.content(),
-                            doc.metadata()
+                            doc.metadata(),
+                            tenantId
                         ))
                         .toList();
 
@@ -234,7 +244,8 @@ public class VectorController {
      */
     @NotNull
     public Promise<HttpResponse> deleteDocument(@NotNull HttpRequest request, @NotNull String id) {
-        return searchService.delete(id)
+        String tenantId = extractTenantId(request);
+        return searchService.delete(id, tenantId)
             .map(deleted -> deleted
                 ? ResponseBuilder.noContent().build()
                 : ResponseBuilder.notFound()
@@ -255,6 +266,7 @@ public class VectorController {
                 try {
                     RagDto dto = objectMapper.readValue(body.getString(StandardCharsets.UTF_8), RagDto.class);
 
+                    String tenantId = extractTenantId(request);
                     RagService.RagRequest ragRequest = new RagService.RagRequest(
                         dto.query(),
                         dto.systemPrompt(),
@@ -262,7 +274,8 @@ public class VectorController {
                         dto.relevanceThreshold() > 0 ? dto.relevanceThreshold() : 0.7,
                         dto.maxTokens() > 0 ? dto.maxTokens() : 1000,
                         dto.temperature() > 0 ? dto.temperature() : 0.7,
-                        dto.filters()
+                        dto.filters(),
+                        tenantId
                     );
 
                     return ragService.generate(ragRequest)
@@ -304,6 +317,7 @@ public class VectorController {
                             .toList()
                         : List.of();
 
+                    String tenantId = extractTenantId(request);
                     RagService.ConversationalRagRequest chatRequest =
                         new RagService.ConversationalRagRequest(
                             dto.query(),
@@ -313,7 +327,8 @@ public class VectorController {
                             dto.relevanceThreshold() > 0 ? dto.relevanceThreshold() : 0.7,
                             dto.maxTokens() > 0 ? dto.maxTokens() : 1000,
                             dto.temperature() > 0 ? dto.temperature() : 0.7,
-                            dto.filters()
+                            dto.filters(),
+                            tenantId
                         );
 
                     return ragService.chat(chatRequest)
@@ -356,6 +371,15 @@ public class VectorController {
             }
         }
         return defaultValue;
+    }
+
+    private String extractTenantId(HttpRequest request) {
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
+        if (tenantId == null || tenantId.isBlank()) {
+            LOG.warn("No tenant ID provided in request, using default");
+            return "default";
+        }
+        return tenantId;
     }
 
     // ==================== DTOs ====================

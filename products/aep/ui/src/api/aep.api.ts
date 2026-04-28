@@ -153,6 +153,29 @@ export interface GovernanceTenancySummary {
   mode: string;
 }
 
+export interface GovernanceKillSwitchSummary {
+  tenantId: string;
+  active: boolean;
+  globalActive: boolean;
+  timestamp: string;
+}
+
+export interface GovernanceKillSwitchMutationResult {
+  activated?: boolean;
+  deactivated?: boolean;
+  tenantId: string;
+  incidentId?: string;
+  auditId?: string;
+}
+
+export interface MarkAnomalyFalsePositiveResult {
+  anomalyId: string;
+  tenantId: string;
+  markedFalsePositive: boolean;
+  auditId?: string;
+  timestamp: string;
+}
+
 export type ConsentDecisionStatus = "granted" | "denied" | "withdrawn";
 
 export interface ConsentDecisionRecord {
@@ -444,6 +467,31 @@ export interface LearnedPolicy {
   updatedAt: string;
   /** Related review queue item for pending policies. */
   reviewId?: string;
+  decidedAt?: string;
+  reviewerId?: string;
+  reviewerRationale?: string;
+  autoPromotable: boolean;
+  autoPromoted: boolean;
+  provenance?: {
+    policyId?: string;
+    skillId?: string;
+    version?: number;
+    sourceEpisodeIds: string[];
+    evaluationMetrics: Record<string, number>;
+    activationMode?: string;
+    approverId?: string;
+    approverRationale?: string;
+    promotedAt?: string;
+    rollbackPointerId?: string;
+    canaryFraction?: number;
+  };
+  gateResult?: {
+    gateName?: string;
+    passed?: boolean;
+    score?: number;
+    threshold?: number;
+    reason?: string;
+  };
   /** Pipeline this policy was derived from. */
   relatedPipelineId?: string;
   /** Run that produced this policy. */
@@ -485,6 +533,22 @@ export interface MarketplaceAgentDetail {
   reviews: MarketplaceReview[];
 }
 
+export interface MarketplaceInstallSimulation {
+  agentId: string;
+  agentName: string;
+  requestedVersion: string;
+  availableVersion: string;
+  targetEnvironment: string;
+  versionPinned: boolean;
+  compatibilityStatus: "COMPATIBLE" | "REVIEW_REQUIRED" | "BLOCKED";
+  compatibilityNotes: string[];
+  directExecutionMode: string;
+  productionExecutionMode: string;
+  requiresHitl: boolean;
+  recommendedPath: string;
+  allowedToInstall: boolean;
+}
+
 export interface PublishMarketplaceAgentInput {
   id?: string;
   name: string;
@@ -502,6 +566,115 @@ export interface CreateMarketplaceReviewInput {
   rating: number;
   title?: string;
   comment?: string;
+}
+
+export interface MarketplaceInstallInput {
+  targetEnvironment: "sandbox" | "staging" | "production";
+  expectedVersion: string;
+  config?: Record<string, unknown>;
+}
+
+export interface MarketplaceInstallResult {
+  installId: string;
+  agentId: string;
+  agentName: string;
+  agentVersion: string;
+  tenantId: string;
+  compatibilityStatus: string;
+  recommendedPath: string;
+  directExecutionMode: string;
+  productionExecutionMode: string;
+  targetEnvironment: string;
+  installedAt: string;
+  status: string;
+}
+
+function asNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function normalizeLearnedPolicy(raw: Partial<LearnedPolicy> | Record<string, unknown>, tenantId: string): LearnedPolicy {
+  const rawRecord = raw as Partial<LearnedPolicy> & Record<string, unknown>;
+  const provenanceRecord = asRecord(rawRecord.provenance);
+  const gateResultRecord = asRecord(rawRecord.gateResult);
+  const sourceEpisodeIds = asStringArray(provenanceRecord?.sourceEpisodeIds);
+  const evaluationMetrics = asRecord(provenanceRecord?.evaluationMetrics);
+  const typedMetrics = Object.fromEntries(
+    Object.entries(evaluationMetrics ?? {}).flatMap(([key, value]) => {
+      const numeric = asNumber(value);
+      return numeric === undefined ? [] : [[key, numeric] as const];
+    }),
+  );
+  const autoPromoted =
+    rawRecord.autoPromoted === true ||
+    asString(rawRecord.reviewerId)?.toLowerCase() === "auto-promote" ||
+    asString(provenanceRecord?.approverId)?.toLowerCase() === "auto-promote";
+
+  return {
+    id: asString(rawRecord.id) ?? asString(rawRecord.reviewId) ?? "policy",
+    tenantId: asString(rawRecord.tenantId) ?? tenantId,
+    skillId: asString(rawRecord.skillId) ?? asString(rawRecord.agentId) ?? "unknown-skill",
+    name: asString(rawRecord.name) ?? `Policy proposal for ${asString(rawRecord.skillId) ?? "unknown skill"}`,
+    description: asString(rawRecord.description) ?? asString(rawRecord.summary) ?? "",
+    status: (asString(rawRecord.status) as PolicyStatus | undefined) ?? "PENDING_REVIEW",
+    confidenceScore: asNumber(rawRecord.confidenceScore) ?? asNumber(rawRecord.confidence) ?? 0,
+    episodeCount: asNumber(rawRecord.episodeCount) ?? sourceEpisodeIds.length,
+    version: asNumber(rawRecord.version) ?? 1,
+    createdAt: asString(rawRecord.createdAt) ?? new Date(0).toISOString(),
+    updatedAt: asString(rawRecord.updatedAt) ?? asString(rawRecord.decidedAt) ?? asString(rawRecord.createdAt) ?? new Date(0).toISOString(),
+    autoPromotable: rawRecord.autoPromotable === true,
+    autoPromoted,
+    ...(asString(rawRecord.reviewId) ? { reviewId: asString(rawRecord.reviewId) } : {}),
+    ...(asString(rawRecord.decidedAt) ? { decidedAt: asString(rawRecord.decidedAt) } : {}),
+    ...(asString(rawRecord.reviewerId) ? { reviewerId: asString(rawRecord.reviewerId) } : {}),
+    ...(asString(rawRecord.reviewerRationale) ? { reviewerRationale: asString(rawRecord.reviewerRationale) } : {}),
+    ...(provenanceRecord
+      ? {
+          provenance: {
+            sourceEpisodeIds,
+            evaluationMetrics: typedMetrics,
+            ...(asString(provenanceRecord.policyId) ? { policyId: asString(provenanceRecord.policyId) } : {}),
+            ...(asString(provenanceRecord.skillId) ? { skillId: asString(provenanceRecord.skillId) } : {}),
+            ...(asNumber(provenanceRecord.version) !== undefined ? { version: asNumber(provenanceRecord.version) } : {}),
+            ...(asString(provenanceRecord.activationMode) ? { activationMode: asString(provenanceRecord.activationMode) } : {}),
+            ...(asString(provenanceRecord.approverId) ? { approverId: asString(provenanceRecord.approverId) } : {}),
+            ...(asString(provenanceRecord.approverRationale)
+              ? { approverRationale: asString(provenanceRecord.approverRationale) }
+              : {}),
+            ...(asString(provenanceRecord.promotedAt) ? { promotedAt: asString(provenanceRecord.promotedAt) } : {}),
+            ...(asString(provenanceRecord.rollbackPointerId)
+              ? { rollbackPointerId: asString(provenanceRecord.rollbackPointerId) }
+              : {}),
+            ...(asNumber(provenanceRecord.canaryFraction) !== undefined
+              ? { canaryFraction: asNumber(provenanceRecord.canaryFraction) }
+              : {}),
+          },
+        }
+      : {}),
+    ...(gateResultRecord
+      ? {
+          gateResult: {
+            ...(asString(gateResultRecord.gateName) ? { gateName: asString(gateResultRecord.gateName) } : {}),
+            ...(typeof gateResultRecord.passed === "boolean" ? { passed: gateResultRecord.passed } : {}),
+            ...(asNumber(gateResultRecord.score) !== undefined ? { score: asNumber(gateResultRecord.score) } : {}),
+            ...(asNumber(gateResultRecord.threshold) !== undefined
+              ? { threshold: asNumber(gateResultRecord.threshold) }
+              : {}),
+            ...(asString(gateResultRecord.reason) ? { reason: asString(gateResultRecord.reason) } : {}),
+          },
+        }
+      : {}),
+    ...(asString(rawRecord.relatedPipelineId) ? { relatedPipelineId: asString(rawRecord.relatedPipelineId) } : {}),
+    ...(asString(rawRecord.relatedRunId) ? { relatedRunId: asString(rawRecord.relatedRunId) } : {}),
+    ...(asString(rawRecord.relatedAgentId) ? { relatedAgentId: asString(rawRecord.relatedAgentId) } : {}),
+  };
 }
 
 export interface CostBreakdown {
@@ -749,7 +922,7 @@ interface EpisodesResponse {
 }
 
 interface PoliciesResponse {
-  policies?: LearnedPolicy[];
+  policies?: Array<Partial<LearnedPolicy> & Record<string, unknown>>;
 }
 
 interface ReflectionResponse {
@@ -763,6 +936,10 @@ interface MarketplaceAgentsResponse {
 interface MarketplaceAgentResponse {
   listing: MarketplaceAgentListing;
   reviews?: MarketplaceReview[];
+}
+
+interface MarketplaceInstallSimulationResponse {
+  simulation: MarketplaceInstallSimulation;
 }
 
 interface MarketplaceReviewsResponse {
@@ -958,6 +1135,23 @@ export async function cancelRun(
   });
 }
 
+export async function markAnomalyFalsePositive(
+  anomalyId: string,
+  input: {
+    reviewer?: string;
+    rationale: string;
+    notes?: string;
+  },
+  tenantId = "default",
+): Promise<MarkAnomalyFalsePositiveResult> {
+  const { data } = await client.post<MarkAnomalyFalsePositiveResult>(
+    `/api/v1/analytics/anomalies/${anomalyId}/false-positive`,
+    input,
+    { params: { tenantId } },
+  );
+  return data;
+}
+
 export async function getRunDetail(
   runId: string,
   tenantId = "default",
@@ -1019,6 +1213,45 @@ export async function getGovernanceTenancySummary(
     globalActive: killSwitch.globalActive,
     mode: degradation.mode,
   };
+}
+
+export async function getGovernanceKillSwitch(
+  tenantId = "default",
+): Promise<GovernanceKillSwitchSummary> {
+  const { data } = await client.get<GovernanceKillSwitchResponse>("/api/v1/governance/kill-switch", {
+    params: { tenantId },
+  });
+  return data;
+}
+
+export async function activateGovernanceKillSwitch(
+  input: {
+    tenantId: string;
+    reason: string;
+    incidentId: string;
+    mfaCode?: string;
+    userId?: string;
+  },
+): Promise<GovernanceKillSwitchMutationResult> {
+  const { data } = await client.post<GovernanceKillSwitchMutationResult>(
+    "/api/v1/governance/kill-switch/activate",
+    input,
+  );
+  return data;
+}
+
+export async function deactivateGovernanceKillSwitch(
+  input: {
+    tenantId: string;
+    reason: string;
+    userId?: string;
+  },
+): Promise<GovernanceKillSwitchMutationResult> {
+  const { data } = await client.post<GovernanceKillSwitchMutationResult>(
+    "/api/v1/governance/kill-switch/deactivate",
+    input,
+  );
+  return data;
 }
 
 export async function listConsentDecisions(
@@ -1115,6 +1348,36 @@ export async function createMarketplaceReview(
     },
   );
   return data.review;
+}
+
+export async function simulateMarketplaceInstall(
+  agentId: string,
+  input: MarketplaceInstallInput,
+  tenantId = "default",
+): Promise<MarketplaceInstallSimulation> {
+  const { data } = await client.post<MarketplaceInstallSimulationResponse>(
+    `/api/v1/catalog/marketplace/agents/${agentId}/simulate-install`,
+    {
+      ...input,
+      tenantId,
+    },
+  );
+  return data.simulation;
+}
+
+export async function installMarketplaceAgent(
+  agentId: string,
+  input: MarketplaceInstallInput,
+  tenantId = "default",
+): Promise<MarketplaceInstallResult> {
+  const { data } = await client.post<MarketplaceInstallResult>(
+    `/api/v1/catalog/marketplace/agents/${agentId}/install`,
+    {
+      ...input,
+      tenantId,
+    },
+  );
+  return data;
 }
 
 export async function getCostSummary(
@@ -1240,7 +1503,7 @@ export async function listPolicies(
       params: { tenantId },
     },
   );
-  return data.policies ?? [];
+  return (data.policies ?? []).map((policy) => normalizeLearnedPolicy(policy, tenantId));
 }
 
 export async function approvePolicy(
@@ -1254,7 +1517,7 @@ export async function approvePolicy(
       params: { tenantId },
     },
   );
-  return data;
+  return normalizeLearnedPolicy(data, tenantId);
 }
 
 export async function rejectPolicy(
@@ -1267,7 +1530,7 @@ export async function rejectPolicy(
     { reason },
     { params: { tenantId } },
   );
-  return data;
+  return normalizeLearnedPolicy(data, tenantId);
 }
 
 export async function triggerReflection(

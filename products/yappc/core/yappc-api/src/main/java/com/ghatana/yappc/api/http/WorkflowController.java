@@ -312,8 +312,6 @@ public class WorkflowController {
                     return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Invalid request: " + e.getMessage()))
                         .build());
-                        .json(Map.of("error", "Invalid request: " + e.getMessage()))
-                        .build());
                 }
             });
     }
@@ -343,6 +341,70 @@ public class WorkflowController {
 
                 } catch (Exception e) {
                     LOG.error("Failed to modify plan steps", e);
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "Invalid request: " + e.getMessage()))
+                        .build());
+                }
+            });
+    }
+
+    /**
+     * Approves an AI plan.
+     * POST /api/v1/workflows/:workflowId/plans/:planId/approve
+     */
+    @NotNull
+    public Promise<HttpResponse> approvePlan(
+        @NotNull HttpRequest request,
+        @NotNull String workflowId,
+        @NotNull String planId
+    ) {
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    String tenantId = extractTenantId(request);
+                    ApprovePlanDto dto = objectMapper.readValue(
+                        body.getString(StandardCharsets.UTF_8),
+                        ApprovePlanDto.class
+                    );
+
+                    return workflowService.approvePlan(planId, tenantId, dto.actor())
+                        .map(plan -> ResponseBuilder.ok().json(plan).build())
+                        .then(Promise::of, this::handleWorkflowException);
+
+                } catch (Exception e) {
+                    LOG.error("Failed to approve plan", e);
+                    return Promise.of(ResponseBuilder.badRequest()
+                        .json(Map.of("error", "Invalid request: " + e.getMessage()))
+                        .build());
+                }
+            });
+    }
+
+    /**
+     * Rejects an AI plan.
+     * POST /api/v1/workflows/:workflowId/plans/:planId/reject
+     */
+    @NotNull
+    public Promise<HttpResponse> rejectPlan(
+        @NotNull HttpRequest request,
+        @NotNull String workflowId,
+        @NotNull String planId
+    ) {
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    String tenantId = extractTenantId(request);
+                    RejectPlanDto dto = objectMapper.readValue(
+                        body.getString(StandardCharsets.UTF_8),
+                        RejectPlanDto.class
+                    );
+
+                    return workflowService.rejectPlan(planId, tenantId, dto.reason(), dto.actor())
+                        .map(plan -> ResponseBuilder.ok().json(plan).build())
+                        .then(Promise::of, this::handleWorkflowException);
+
+                } catch (Exception e) {
+                    LOG.error("Failed to reject plan", e);
                     return Promise.of(ResponseBuilder.badRequest()
                         .json(Map.of("error", "Invalid request: " + e.getMessage()))
                         .build());
@@ -459,10 +521,18 @@ public class WorkflowController {
     ) {}
 
     /**
+     * DTO for approving plan
+     */
+    public record ApprovePlanDto(
+        @Nullable String actor
+    ) {}
+
+    /**
      * DTO for plan rejection
      */
     public record RejectPlanDto(
-        @Nullable String reason
+        @Nullable String reason,
+        @Nullable String actor
     ) {}
 
     /**
@@ -483,7 +553,7 @@ public class WorkflowController {
      * DTO for workflow cancellation
      */
     public record CancelWorkflowDto(
-        @Nullable String requestedBy,
+        @NotNull String requestedBy,
         @Nullable String reason
     ) {}
 }

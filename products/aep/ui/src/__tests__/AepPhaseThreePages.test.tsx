@@ -139,6 +139,35 @@ describe('AgentMarketplacePage', () => {
     vi.mocked(aepApi.getMarketplaceAgent).mockResolvedValue(MARKETPLACE_DETAIL);
     vi.mocked(aepApi.publishMarketplaceAgent).mockResolvedValue(MARKETPLACE_AGENT);
     vi.mocked(aepApi.createMarketplaceReview).mockResolvedValue(MARKETPLACE_DETAIL.reviews[0]);
+    vi.mocked(aepApi.simulateMarketplaceInstall).mockResolvedValue({
+      agentId: MARKETPLACE_AGENT.id,
+      agentName: MARKETPLACE_AGENT.name,
+      requestedVersion: MARKETPLACE_AGENT.version,
+      availableVersion: MARKETPLACE_AGENT.version,
+      targetEnvironment: 'sandbox',
+      versionPinned: true,
+      compatibilityStatus: 'COMPATIBLE',
+      compatibilityNotes: ['Direct execution remains limited to sandbox or lower-risk validation environments.'],
+      directExecutionMode: 'SANDBOX_ONLY',
+      productionExecutionMode: 'PIPELINE_HITL_REQUIRED',
+      requiresHitl: false,
+      recommendedPath: 'sandbox_direct',
+      allowedToInstall: true,
+    });
+    vi.mocked(aepApi.installMarketplaceAgent).mockResolvedValue({
+      installId: 'install-1',
+      agentId: MARKETPLACE_AGENT.id,
+      agentName: MARKETPLACE_AGENT.name,
+      agentVersion: MARKETPLACE_AGENT.version,
+      tenantId: 'default',
+      compatibilityStatus: 'COMPATIBLE',
+      recommendedPath: 'sandbox_direct',
+      directExecutionMode: 'SANDBOX_ONLY',
+      productionExecutionMode: 'PIPELINE_HITL_REQUIRED',
+      targetEnvironment: 'sandbox',
+      installedAt: new Date().toISOString(),
+      status: 'INSTALLED',
+    });
   });
 
   it('renders marketplace agents and opens detail on click', async () => {
@@ -166,6 +195,32 @@ describe('AgentMarketplacePage', () => {
     await user.click(screen.getByRole('button', { name: /confirm/i }));
 
     await waitFor(() => expect(aepApi.publishMarketplaceAgent).toHaveBeenCalled());
+  });
+
+  it('simulates and installs a marketplace agent with version pinning', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<AgentMarketplacePage />);
+
+    await waitFor(() => expect(screen.getByText('Marketplace Agent')).toBeInTheDocument());
+    await user.click(screen.getByText('Marketplace Agent'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /install to tenant/i })).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: /install to tenant/i }));
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    expect(await screen.findByText(/pipeline_hitl_required/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/reason/i), 'Register for sandbox validation');
+    await user.type(screen.getByLabelText(/type install to confirm/i), 'INSTALL');
+    await user.click(screen.getByRole('button', { name: /confirm install/i }));
+
+    await waitFor(() => expect(aepApi.installMarketplaceAgent).toHaveBeenCalledWith(
+      MARKETPLACE_AGENT.id,
+      expect.objectContaining({
+        targetEnvironment: 'sandbox',
+        expectedVersion: MARKETPLACE_AGENT.version,
+      }),
+      'default',
+    ));
   });
 });
 

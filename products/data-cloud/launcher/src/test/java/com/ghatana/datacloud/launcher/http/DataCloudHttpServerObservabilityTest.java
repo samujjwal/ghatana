@@ -9,8 +9,9 @@ import com.ghatana.datacloud.application.observability.TraceExportService;
 import com.ghatana.datacloud.entity.observability.Span;
 import com.ghatana.datacloud.entity.observability.TraceExporter;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.observability.NoopMetricsCollector;
 import io.activej.promise.Promise;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
@@ -56,11 +57,14 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
 
     @Override
     protected void startServer() throws Exception { // GH-90000
+        AuditService mockAuditService = mock(AuditService.class);
+        when(mockAuditService.record(any())).thenReturn(Promise.of(null)); // GH-90000
         server = new DataCloudHttpServer(mockClient, port) // GH-90000
                 .withTraceExportService(new TraceExportService(traceExporter, new NoopMetricsCollector())) // GH-90000
                 .withTraceSamplingRate(1.0) // GH-90000
                 .withMetricsCollector(MetricsCollectorFactory.create( // GH-90000
-                        new PrometheusMeterRegistry(PrometheusConfig.DEFAULT))); // GH-90000
+                        new PrometheusMeterRegistry(PrometheusConfig.DEFAULT))) // GH-90000
+                .withAuditService(mockAuditService); // GH-90000
         server.start(); // GH-90000
         waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS); // GH-90000
     }

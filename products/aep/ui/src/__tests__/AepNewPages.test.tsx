@@ -112,6 +112,8 @@ const POLICY: aepApi.LearnedPolicy = {
   version: 1,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  autoPromotable: false,
+  autoPromoted: false,
 };
 
 const PATTERN: pipelineApi.PatternSummary = {

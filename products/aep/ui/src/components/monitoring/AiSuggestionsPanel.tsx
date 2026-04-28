@@ -33,6 +33,7 @@ import {
 export interface AiSuggestion {
   id: string;
   runId: string;
+  anomalyId?: string;
   type: 'anomaly' | 'optimization' | 'warning' | 'recommendation';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
@@ -252,6 +253,7 @@ interface RawAiSuggestion {
   id?: string;
   suggestionId?: string;
   runId?: string;
+  anomalyId?: string;
   type?: AiSuggestion['type'];
   severity?: AiSuggestion['severity'];
   message?: string;
@@ -266,6 +268,7 @@ function normalizeAiSuggestion(raw: RawAiSuggestion): AiSuggestion {
   return {
     id: raw.id ?? raw.suggestionId ?? crypto.randomUUID(),
     runId: raw.runId ?? '',
+    anomalyId: raw.anomalyId,
     type: raw.type ?? 'recommendation',
     severity: raw.severity ?? 'low',
     message: raw.message ?? 'Suggestion available',

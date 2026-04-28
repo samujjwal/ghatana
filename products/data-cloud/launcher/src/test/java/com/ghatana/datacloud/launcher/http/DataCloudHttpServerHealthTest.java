@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -239,6 +240,7 @@ class DataCloudHttpServerHealthTest {
     private void startServer() throws Exception { // GH-90000
         server = new DataCloudHttpServer(mockClient, port); // GH-90000
         server.start(); // GH-90000
+        waitForServerReady(port); // GH-90000
     }
 
     private HttpResponse<String> get(String path) throws Exception { // GH-90000
@@ -247,6 +249,19 @@ class DataCloudHttpServerHealthTest {
             .GET() // GH-90000
             .build(); // GH-90000
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    }
+
+    private static void waitForServerReady(int port) throws Exception { // GH-90000
+        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
+        while (System.currentTimeMillis() < deadline) { // GH-90000
+            try {
+                new Socket("127.0.0.1", port).close(); // GH-90000
+                return;
+            } catch (IOException ignored) { // GH-90000
+                Thread.sleep(50); // GH-90000
+            }
+        }
+        throw new IllegalStateException("Server did not start within 5 seconds on port " + port); // GH-90000
     }
 
     private int findFreePort() throws IOException { // GH-90000

@@ -279,7 +279,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
 
             // WHEN
             AiWorkflowInstance cancelled = runPromise(() -> // GH-90000
-                service.cancelWorkflow(created.id(), TENANT_ID) // GH-90000
+                service.cancelWorkflow(created.id(), TENANT_ID, "test-user", "test reason") // GH-90000
             );
 
             // THEN
@@ -342,6 +342,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                 null,
                 java.time.Instant.now(), // GH-90000
                 java.time.Instant.now(), // GH-90000
+                null,
+                null,
+                null,
+                null,
+                null,
                 null,
                 null
             );

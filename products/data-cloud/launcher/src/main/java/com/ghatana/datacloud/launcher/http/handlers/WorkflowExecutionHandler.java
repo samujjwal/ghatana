@@ -454,8 +454,8 @@ public final class WorkflowExecutionHandler {
 
         return client.query(tenantId, "dc_execution_checkpoints",
                 DataCloudClient.Query.builder()
-                    .filter("executionId", executionId)
-                    .sort(DataCloudClient.Sort.asc("stepIndex"))
+                    .filter(DataCloudClient.Filter.eq("executionId", executionId))
+                    .sorts(List.of(DataCloudClient.Sort.asc("stepIndex")))
                     .build())
             .map(entities -> {
                 List<Map<String, Object>> checkpoints = entities.stream()
@@ -504,9 +504,11 @@ public final class WorkflowExecutionHandler {
 
         return client.query(tenantId, "dc_execution_checkpoints",
                 DataCloudClient.Query.builder()
-                    .filter("executionId", executionId)
-                    .filter("status", "completed")
-                    .sort(DataCloudClient.Sort.desc("stepIndex"))
+                    .filters(List.of(
+                        DataCloudClient.Filter.eq("executionId", executionId),
+                        DataCloudClient.Filter.eq("status", "completed")
+                    ))
+                    .sorts(List.of(DataCloudClient.Sort.desc("stepIndex")))
                     .limit(1)
                     .build())
             .map(entities -> {

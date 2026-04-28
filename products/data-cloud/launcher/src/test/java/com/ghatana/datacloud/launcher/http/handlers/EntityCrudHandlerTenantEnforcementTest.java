@@ -16,6 +16,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -56,13 +60,14 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
         handler = new EntityCrudHandler(client, http, wsBroadcaster) // GH-90000
             .withTraceSupport(TraceSpanSupport.disabled()) // GH-90000
             .withOpenSearchConnector(openSearchConnector); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
     @DisplayName("save rejects missing tenant before loading body")
     void saveRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+        when(request.getPathParameter("collection")).thenReturn("test_collection"); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request)); // GH-90000
 

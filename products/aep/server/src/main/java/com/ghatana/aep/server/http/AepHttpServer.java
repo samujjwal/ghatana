@@ -68,6 +68,7 @@ import com.ghatana.aep.server.governance.KillSwitchAuditChain;
 import com.ghatana.agent.learning.evaluation.CompositeEvaluationGate;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.orchestrator.deployment.http.DeploymentHttpAdapter;
 import com.ghatana.orchestrator.deployment.service.DeploymentOrchestrator;
 import com.ghatana.orchestrator.deployment.service.EventCloudDeploymentEventPublisher;
@@ -614,7 +615,7 @@ public class AepHttpServer {
         this.reportingService = agentDataCloud != null ? new AepReportingService(agentDataCloud, integrationMeterRegistry) : null;
         this.sloMetrics = new AepSloMetrics(this.metricsCollector);
         EventCloudRunLedger runLedger = (agentDataCloud != null && agentDataCloud.eventLogStore() != null)
-            ? new EventCloudRunLedger(agentDataCloud.eventLogStore())
+            ? new EventCloudRunLedger(EventLogStoreAdapters.toPlatformStore(agentDataCloud.eventLogStore()))
             : null;
         this.runLedger = runLedger;
         this.runLedgerService = runLedger != null
@@ -965,6 +966,7 @@ public class AepHttpServer {
             // Analytics endpoints (delegated to AnalyticsController)
             .with(HttpMethod.POST, "/api/v1/analytics/anomalies", analyticsController::handleDetectAnomalies)
             .with(HttpMethod.GET, "/api/v1/analytics/anomalies", analyticsController::handleQueryAnomalies)
+            .with(HttpMethod.POST, "/api/v1/analytics/anomalies/:anomalyId/false-positive", analyticsController::handleMarkFalsePositive)
             .with(HttpMethod.POST, "/api/v1/analytics/forecast", analyticsController::handleForecast)
             .with(HttpMethod.POST, "/api/v1/analytics/kpis", analyticsController::handleSaveKpi)
             .with(HttpMethod.GET, "/api/v1/analytics/kpis", analyticsController::handleQueryKpis)
@@ -989,6 +991,7 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents", marketplaceController::handleListAgents)
             .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents", marketplaceController::handlePublishAgent)
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents/:agentId", marketplaceController::handleGetAgent)
+            .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents/:agentId/simulate-install", marketplaceController::handleSimulateInstallAgent)
             .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents/:agentId/install", marketplaceController::handleInstallAgent)
             .with(HttpMethod.GET, "/api/v1/catalog/marketplace/agents/:agentId/reviews", marketplaceController::handleListReviews)
             .with(HttpMethod.POST, "/api/v1/catalog/marketplace/agents/:agentId/reviews", marketplaceController::handleCreateReview)
@@ -2177,37 +2180,101 @@ public class AepHttpServer {
                 "Wait for active runs to complete or cancel them first."));
         }
 
-        final int targetVersion = toVersion;
-        return pipelineRepository.findVersionSnapshot(pipelineId, targetVersion, tenantId)
-            .then(optSnapshot -> {
-                if (optSnapshot.isEmpty()) {
-                    return Promise.of(errorResponse(404,
-                        "No version snapshot found for pipeline " + pipelineId + " at version " + targetVersion));
-                }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = body.isBlank()
+                    ? Map.of()
+                    : objectMapper.readValue(
+                        body,
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                String reason = asString(data.get("reason"));
+                String actor = asString(data.get("actor"));
+                final int targetVersion = toVersion;
 
-                com.ghatana.pipeline.registry.model.PipelineRegistration snapshot = optSnapshot.get();
+                return pipelineRepository.findById(pipelineId, TenantId.of(tenantId))
+                    .then(optCurrent -> pipelineRepository.findVersionSnapshot(pipelineId, targetVersion, tenantId)
+                        .then(optSnapshot -> {
+                            if (optSnapshot.isEmpty()) {
+                                return Promise.of(errorResponse(404,
+                                    "No version snapshot found for pipeline " + pipelineId + " at version " + targetVersion));
+                            }
 
-                // Restore the snapshot as the current live pipeline in DRAFT status
-                com.ghatana.pipeline.registry.model.PipelineRegistration restored = snapshot.newVersion();
-                restored.setId(pipelineId);
-                restored.setVersion(snapshot.getVersion());
-                restored.setVersionLabel(null);
-                restored.setVersionStatus(com.ghatana.pipeline.registry.model.PipelineVersionStatus.DRAFT);
-                restored.setUpdatedAt(Instant.now());
+                            com.ghatana.pipeline.registry.model.PipelineRegistration snapshot = optSnapshot.get();
+                            Integer previousVersion = optCurrent.isPresent() ? optCurrent.get().getVersion() : null;
 
-                return pipelineRepository.save(restored)
-                    .map(saved -> {
-                        log.info("Rolled back pipeline id={} to version {}", pipelineId, targetVersion);
-                        return jsonResponse(Map.of(
-                            "rolledBack", true,
-                            "pipelineId", pipelineId,
-                            "restoredVersion", targetVersion,
-                            "status", com.ghatana.pipeline.registry.model.PipelineVersionStatus.DRAFT.name(),
-                            "timestamp", Instant.now().toString()
-                        ));
-                    });
-            })
-            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to rollback pipeline: " + e.getMessage())));
+                            // Restore the snapshot as the current live pipeline in DRAFT status
+                            com.ghatana.pipeline.registry.model.PipelineRegistration restored = snapshot.newVersion();
+                            restored.setId(pipelineId);
+                            restored.setVersion(snapshot.getVersion());
+                            restored.setVersionLabel(null);
+                            restored.setVersionStatus(com.ghatana.pipeline.registry.model.PipelineVersionStatus.DRAFT);
+                            restored.setUpdatedAt(Instant.now());
+
+                            return pipelineRepository.save(restored)
+                                .then(saved -> recordPipelineRollbackAudit(
+                                        tenantId,
+                                        pipelineId,
+                                        previousVersion,
+                                        targetVersion,
+                                        actor,
+                                        reason)
+                                    .map(auditId -> {
+                                        log.info("Rolled back pipeline id={} to version {}", pipelineId, targetVersion);
+                                        Map<String, Object> response = new LinkedHashMap<>();
+                                        response.put("rolledBack", true);
+                                        response.put("pipelineId", pipelineId);
+                                        response.put("restoredVersion", targetVersion);
+                                        if (previousVersion != null) {
+                                            response.put("previousVersion", previousVersion);
+                                        }
+                                        response.put("status", com.ghatana.pipeline.registry.model.PipelineVersionStatus.DRAFT.name());
+                                        response.put("timestamp", Instant.now().toString());
+                                        if (auditId != null) {
+                                            response.put("auditId", auditId);
+                                        }
+                                        if (reason != null && !reason.isBlank()) {
+                                            response.put("reason", reason);
+                                        }
+                                        return jsonResponse(response);
+                                    }));
+                        }))
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to rollback pipeline: " + e.getMessage())));
+            } catch (Exception e) {
+                log.error("Error reading rollback pipeline body", e);
+                return Promise.of(errorResponse(400, "Invalid rollback request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    private Promise<@Nullable String> recordPipelineRollbackAudit(
+            String tenantId,
+            String pipelineId,
+            @Nullable Integer previousVersion,
+            int restoredVersion,
+            @Nullable String actor,
+            @Nullable String reason) {
+        if (agentDataCloud == null || agentDataCloud.eventLogStore() == null) {
+            return Promise.of(null);
+        }
+        String auditId = UUID.randomUUID().toString();
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("auditId", auditId);
+        payload.put("pipelineId", pipelineId);
+        payload.put("previousVersion", previousVersion != null ? previousVersion : -1);
+        payload.put("restoredVersion", restoredVersion);
+        payload.put("actor", actor != null && !actor.isBlank() ? actor : "unknown");
+        payload.put("reason", reason != null ? reason : "");
+        payload.put("recordedAt", Instant.now().toString());
+        payload.put("stepType", "pipeline.rollback");
+        payload.put("linkedVersions", List.of(previousVersion != null ? previousVersion : -1, restoredVersion));
+
+        return agentDataCloud.appendEvent(tenantId, DataCloudClient.Event.of("aep.pipeline.rollback", payload))
+            .map(offset -> auditId)
+            .then(Promise::of, e -> {
+                log.warn("Failed to record pipeline rollback audit for pipelineId={}: {}", pipelineId, e.getMessage());
+                return Promise.of(null);
+            });
     }
 
     private Map<String, Object> toPipelineVersionResponse(com.ghatana.pipeline.registry.model.PipelineRegistration snapshot) {
@@ -2592,7 +2659,7 @@ public class AepHttpServer {
             .filter(meter -> AepSecurityFilter.FORWARDED_HEADER_REJECTED.equals(meter.getId().getName()))
             .collect(java.util.stream.Collectors.toMap(
                 meter -> meter.getId().getTag("reason") != null ? meter.getId().getTag("reason") : "unknown",
-                meter -> Math.round(meter.measure().stream()
+                meter -> Math.round(java.util.stream.StreamSupport.stream(meter.measure().spliterator(), false)
                     .filter(measurement -> measurement.getStatistic() == Statistic.COUNT)
                     .mapToDouble(measurement -> measurement.getValue())
                     .sum()),
@@ -2606,7 +2673,7 @@ public class AepHttpServer {
     private double sumMetricCount(MeterRegistry registry, String meterName) {
         return registry.getMeters().stream()
             .filter(meter -> meterName.equals(meter.getId().getName()))
-            .mapToDouble(meter -> meter.measure().stream()
+            .mapToDouble(meter -> java.util.stream.StreamSupport.stream(meter.measure().spliterator(), false)
                 .filter(measurement -> measurement.getStatistic() == Statistic.COUNT)
                 .mapToDouble(measurement -> measurement.getValue())
                 .sum())

@@ -74,8 +74,10 @@ public final class ConsentController implements AepController {
                 .then(body -> {
                     Map<String, Object> payload;
                     try {
-                        payload = HttpHelper.mapper().readValue(
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> temp = HttpHelper.mapper().readValue(
                                 body.asString(StandardCharsets.UTF_8), Map.class);
+                        payload = temp;
                     } catch (Exception e) {
                         return Promise.of(HttpHelper.errorResponse(400, "Invalid JSON body"));
                     }

@@ -976,6 +976,9 @@ paths:
           schema:
             type: string
           description: Opaque cursor returned by prior page; takes precedence over offset when supplied.
+      responses:
+        '200':
+          description: Workflow list retrieved successfully
           content:
             application/json:
               schema:
@@ -1446,6 +1449,7 @@ paths:
           schema:
             type: string
           description: Opaque cursor for keyset pagination.
+      responses:
         '200':
           description: List of agents
           content:
@@ -2340,15 +2344,6 @@ paths:
                 $ref: '#/components/schemas/RefactoringUndoResult'
         '404':
           description: Suggestion or undo token not found
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-                properties:
-                  suggestions:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/RefactoringSuggestion'
-        '404':
-          description: Design not found
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 

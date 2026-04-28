@@ -113,25 +113,10 @@ public class LearningController {
             )));
         }
         ReviewFilter filter = new ReviewFilter(tenantId, ReviewItemType.POLICY, null, null, 200);
-        return humanReviewQueue.getPending(filter)
+        return humanReviewQueue.listRecent(filter)
             .map(items -> {
                 List<Map<String, Object>> policies = items.stream()
-                    .map(item -> {
-                        Map<String, Object> p = new java.util.HashMap<>();
-                        p.put("id", item.getReviewId());
-                        p.put("agentId", item.getSkillId());
-                        p.put("version", item.getProposedVersion());
-                        p.put("status", item.getStatus().name());
-                        p.put("confidence", item.getConfidenceScore());
-                        p.put("summary", item.getEvaluationSummary() != null
-                            ? item.getEvaluationSummary() : "");
-                        p.put("context", item.getContext());
-                        p.put("createdAt", item.getCreatedAt().toString());
-                        if (item.getDecidedAt() != null) {
-                            p.put("decidedAt", item.getDecidedAt().toString());
-                        }
-                        return p;
-                    })
+                    .map(this::toPolicyMap)
                     .toList();
                 return HttpHelper.jsonResponse(Map.of(
                     "policies", policies,
@@ -170,11 +155,7 @@ public class LearningController {
                 ReviewDecision decision = new ReviewDecision(
                     reviewer, rationale, Instant.now(), notes);
                 return humanReviewQueue.approve(policyId, decision)
-                    .map(item -> HttpHelper.jsonResponse(Map.of(
-                        "id", item.getReviewId(),
-                        "status", item.getStatus().name(),
-                        "decidedAt", Instant.now().toString()
-                    )))
+                    .map(item -> HttpHelper.jsonResponse(toPolicyMap(item)))
                     .then(Promise::of, e -> {
                         log.warn("[learning] approve policy failed policyId={}: {}",
                             policyId, e.getMessage());
@@ -210,11 +191,7 @@ public class LearningController {
                 ReviewDecision decision = new ReviewDecision(
                     reviewer, rationale, Instant.now(), notes);
                 return humanReviewQueue.reject(policyId, decision)
-                    .map(item -> HttpHelper.jsonResponse(Map.of(
-                        "id", item.getReviewId(),
-                        "status", item.getStatus().name(),
-                        "decidedAt", Instant.now().toString()
-                    )))
+                    .map(item -> HttpHelper.jsonResponse(toPolicyMap(item)))
                     .then(Promise::of, e -> {
                         log.warn("[learning] reject policy failed policyId={}: {}",
                             policyId, e.getMessage());
@@ -269,5 +246,62 @@ public class LearningController {
                 return Promise.of(HttpHelper.errorResponse(500,
                     "Reflection pipeline failed: " + e.getMessage()));
             });
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> toPolicyMap(com.ghatana.agent.learning.review.ReviewItem item) {
+        Map<String, Object> policy = new java.util.LinkedHashMap<>();
+        Map<String, Object> context = item.getContext();
+        Map<String, Object> provenance = context.get("provenance") instanceof Map<?, ?> rawProvenance
+            ? new java.util.LinkedHashMap<>((Map<String, Object>) rawProvenance)
+            : new java.util.LinkedHashMap<>();
+        Map<String, Object> gateResult = context.get("gateResult") instanceof Map<?, ?> rawGateResult
+            ? new java.util.LinkedHashMap<>((Map<String, Object>) rawGateResult)
+            : Map.of();
+
+        boolean autoPromotable = Boolean.TRUE.equals(context.get("autoPromotable"));
+        String reviewerId = item.getDecision() != null ? item.getDecision().reviewer() : null;
+        boolean autoPromoted = reviewerId != null && "auto-promote".equalsIgnoreCase(reviewerId);
+
+        policy.put("id", provenance.getOrDefault("policyId", item.getReviewId()));
+        policy.put("reviewId", item.getReviewId());
+        policy.put("tenantId", item.getTenantId());
+        policy.put("skillId", item.getSkillId());
+        policy.put("name", "Policy proposal for " + item.getSkillId());
+        policy.put("description", item.getEvaluationSummary() != null ? item.getEvaluationSummary() : "");
+        policy.put("status", item.getStatus().name());
+        policy.put("confidenceScore", item.getConfidenceScore());
+        policy.put("episodeCount", provenance.get("sourceEpisodeIds") instanceof List<?> sourceEpisodes
+            ? sourceEpisodes.size()
+            : 0);
+        policy.put("version", parsePolicyVersion(provenance.get("version"), item.getProposedVersion()));
+        policy.put("createdAt", item.getCreatedAt().toString());
+        policy.put("updatedAt", item.getDecidedAt() != null ? item.getDecidedAt().toString() : item.getCreatedAt().toString());
+        policy.put("decidedAt", item.getDecidedAt() != null ? item.getDecidedAt().toString() : null);
+        policy.put("reviewerId", reviewerId);
+        policy.put("reviewerRationale", item.getDecision() != null ? item.getDecision().rationale() : null);
+        policy.put("autoPromotable", autoPromotable);
+        policy.put("autoPromoted", autoPromoted);
+        policy.put("provenance", provenance);
+        policy.put("gateResult", gateResult);
+        return policy;
+    }
+
+    private int parsePolicyVersion(Object rawVersion, String fallback) {
+        if (rawVersion instanceof Number number) {
+            return number.intValue();
+        }
+        if (rawVersion != null) {
+            try {
+                return Integer.parseInt(rawVersion.toString());
+            } catch (NumberFormatException ignored) {
+                // fall through to parse proposed version
+            }
+        }
+        try {
+            return Integer.parseInt(fallback);
+        } catch (NumberFormatException ignored) {
+            return 1;
+        }
     }
 }

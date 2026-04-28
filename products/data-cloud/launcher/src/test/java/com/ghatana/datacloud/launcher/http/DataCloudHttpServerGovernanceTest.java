@@ -163,7 +163,8 @@ class DataCloudHttpServerGovernanceTest {
         @DisplayName("returns 200 and classifies a collection with valid tier")
         @SuppressWarnings("unchecked")
         void validTier_classifiesCollection() throws Exception { // GH-90000
-            server = new DataCloudHttpServer(mockClient, port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) // GH-90000
+                .withAuditService(mockAuditService); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
@@ -227,7 +228,8 @@ class DataCloudHttpServerGovernanceTest {
         @DisplayName("permanent tier has null expiresAt in response")
         @SuppressWarnings("unchecked")
         void permanentTier_hasNullExpiry() throws Exception { // GH-90000
-            server = new DataCloudHttpServer(mockClient, port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) // GH-90000
+                .withAuditService(mockAuditService); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
@@ -327,7 +329,8 @@ class DataCloudHttpServerGovernanceTest {
             storeEntity(entity("exp-1", "expired_sessions", Map.of("expiresAt", Instant.now().minusSeconds(60).toString()))); // GH-90000
             storeEntity(entity("live-1", "expired_sessions", Map.of("expiresAt", Instant.now().plusSeconds(3600).toString()))); // GH-90000
 
-            server = new DataCloudHttpServer(mockClient, port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) // GH-90000
+                .withAuditService(mockAuditService); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
@@ -460,7 +463,8 @@ class DataCloudHttpServerGovernanceTest {
         @DisplayName("invalid confirmationToken returns 403 with INVALID_CONFIRMATION_TOKEN")
         @SuppressWarnings("unchecked")
         void invalidToken_returnsForbidden() throws Exception { // GH-90000
-            server = new DataCloudHttpServer(mockClient, port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) // GH-90000
+                .withAuditService(mockAuditService); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
@@ -532,11 +536,28 @@ class DataCloudHttpServerGovernanceTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
+            // Perform dry-run first to get confirmation token
+            String dryRunBody = mapper.writeValueAsString(Map.of( // GH-90000
+                "collection", "user_profiles",
+                "entityId",   "ent-abc123",
+                "fields",     List.of("email", "phone"), // GH-90000
+                "reason",     "GDPR erasure request",
+                "dryRun", true
+            ));
+            HttpResponse<String> dryRunResp = post("/api/v1/governance/privacy/redact", dryRunBody); // GH-90000
+            assertThat(dryRunResp.statusCode()).isEqualTo(200);
+            Map<String, Object> dryRunRespBody = mapper.readValue(dryRunResp.body(), Map.class);
+            Map<String, Object> dryRunData = (Map<String, Object>) dryRunRespBody.get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
+            assertThat(confirmationToken).isNotNull();
+
+            // Use the token to perform actual redaction
             String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "collection", "user_profiles",
                 "entityId",   "ent-abc123",
                 "fields",     List.of("email", "phone"), // GH-90000
-                "reason",     "GDPR erasure request"
+                "reason",     "GDPR erasure request",
+                "confirmationToken", confirmationToken
             ));
             HttpResponse<String> resp = post("/api/v1/governance/privacy/redact", body); // GH-90000
 
@@ -589,14 +610,31 @@ class DataCloudHttpServerGovernanceTest {
             );
             storeEntity(existingEntity); // GH-90000
 
-            server = new DataCloudHttpServer(mockClient, port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) // GH-90000
+                .withAuditService(mockAuditService); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
+            // Perform dry-run first to get confirmation token
+            String dryRunBody = mapper.writeValueAsString(Map.of( // GH-90000
+                "collection", "customers",
+                "entityId",   "ent-xyz789",
+                "reason",     "Platform-initiated GDPR sweep",
+                "dryRun", true
+            ));
+            HttpResponse<String> dryRunResp = post("/api/v1/governance/privacy/redact", dryRunBody); // GH-90000
+            assertThat(dryRunResp.statusCode()).isEqualTo(200);
+            Map<String, Object> dryRunRespBody = mapper.readValue(dryRunResp.body(), Map.class);
+            Map<String, Object> dryRunData = (Map<String, Object>) dryRunRespBody.get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
+            assertThat(confirmationToken).isNotNull();
+
+            // Use the token to perform actual redaction
             String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "collection", "customers",
                 "entityId",   "ent-xyz789",
-                "reason",     "Platform-initiated GDPR sweep"
+                "reason",     "Platform-initiated GDPR sweep",
+                "confirmationToken", confirmationToken
             ));
             HttpResponse<String> resp = post("/api/v1/governance/privacy/redact", body); // GH-90000
 
@@ -662,7 +700,8 @@ class DataCloudHttpServerGovernanceTest {
         storeEntity(existingEntity); // GH-90000
         storeEntity(entity("expired-1", "user_profiles", Map.of("expiresAt", Instant.now().minusSeconds(180).toString()))); // GH-90000
 
-        server = new DataCloudHttpServer(mockClient, port); // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withAuditService(mockAuditService); // GH-90000
         server.start(); // GH-90000
         waitForServerReady(port); // GH-90000
 
@@ -681,14 +720,38 @@ class DataCloudHttpServerGovernanceTest {
         Map<String, Object> policyData = (Map<String, Object>) policyBody.get("data");
         assertThat(policyData.get("tier")).isEqualTo("compliance");
 
+        // Perform dry-run first to get confirmation token
+        HttpResponse<String> redactDryRunResponse = post( // GH-90000
+            "/api/v1/governance/privacy/redact",
+            mapper.writeValueAsString(Map.of( // GH-90000
+                "collection", "user_profiles",
+                "entityId", "ent-lifecycle",
+                "fields", List.of("email", "phone"), // GH-90000
+                "reason", "customer-erasure",
+                "dryRun", true
+            )));
+        assertThat(redactDryRunResponse.statusCode()).isEqualTo(200);
+        Map<String, Object> redactDryRunBody = mapper.readValue(redactDryRunResponse.body(), Map.class);
+        Map<String, Object> redactDryRunData = (Map<String, Object>) redactDryRunBody.get("data");
+        String redactConfirmationToken = (String) redactDryRunData.get("confirmationToken");
+        if (redactConfirmationToken == null) {
+            System.out.println("Redact dry-run response body: " + redactDryRunResponse.body());
+        }
+        assertThat(redactConfirmationToken).isNotNull();
+
+        // Use the token to perform actual redaction
         HttpResponse<String> redactResponse = post( // GH-90000
             "/api/v1/governance/privacy/redact",
             mapper.writeValueAsString(Map.of( // GH-90000
                 "collection", "user_profiles",
                 "entityId", "ent-lifecycle",
                 "fields", List.of("email", "phone"), // GH-90000
-                "reason", "customer-erasure"
+                "reason", "customer-erasure",
+                "confirmationToken", redactConfirmationToken
             )));
+        if (redactResponse.statusCode() != 200) {
+            System.out.println("Redact response body: " + redactResponse.body());
+        }
         assertThat(redactResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> redactBody = mapper.readValue(redactResponse.body(), Map.class); // GH-90000
         Map<String, Object> redactData = (Map<String, Object>) redactBody.get("data");

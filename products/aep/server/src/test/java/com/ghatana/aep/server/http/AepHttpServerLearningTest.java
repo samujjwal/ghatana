@@ -3,7 +3,9 @@ package com.ghatana.aep.server.http;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.agent.learning.review.InMemoryHumanReviewQueue;
+import com.ghatana.agent.learning.review.ReviewItem;
 import com.ghatana.agent.learning.review.ReviewNotificationSpi;
+import com.ghatana.agent.learning.review.ReviewItemType;
 import com.ghatana.datacloud.DataCloudClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
@@ -21,6 +23,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -148,6 +151,35 @@ class AepHttpServerLearningTest {
         void listPolicies_withQueue_returns200() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue =
                 new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
+            queue.enqueue(ReviewItem.builder()
+                .reviewId("review-1")
+                .tenantId("default")
+                .skillId("email-routing")
+                .proposedVersion("policy-1")
+                .itemType(ReviewItemType.POLICY)
+                .confidenceScore(0.91)
+                .evaluationSummary("Candidate policy derived from 24 episodes")
+                .context(Map.of(
+                    "autoPromotable", true,
+                    "provenance", Map.of(
+                        "policyId", "policy-1",
+                        "skillId", "email-routing",
+                        "version", 2,
+                        "sourceEpisodeIds", List.of("ep-1", "ep-2"),
+                        "evaluationMetrics", Map.of("successRate", 0.92),
+                        "activationMode", "SHADOW",
+                        "rollbackPointerId", "policy-0"
+                    ),
+                    "gateResult", Map.of(
+                        "gateName", "composite-eval",
+                        "passed", true,
+                        "score", 0.91,
+                        "threshold", 0.7,
+                        "reason", "Confidence clears the review threshold."
+                    )
+                ))
+                .createdAt(Instant.parse("2026-04-28T09:00:00Z"))
+                .build()).getResult(); // GH-90000
             server = new AepHttpServer(engine, port, queue, null); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
@@ -157,6 +189,11 @@ class AepHttpServerLearningTest {
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKey("policies");
+            @SuppressWarnings("unchecked") List<Map<String, Object>> policies = (List<Map<String, Object>>) body.get("policies");
+            assertThat(policies).hasSize(1);
+            assertThat(policies.getFirst()).containsEntry("autoPromotable", true);
+            assertThat(policies.getFirst()).containsEntry("reviewId", "review-1");
+            assertThat(policies.getFirst()).containsKey("provenance");
         }
     }
 

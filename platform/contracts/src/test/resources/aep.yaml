@@ -55,6 +55,8 @@ tags:
     description: Governance, audit, and compliance operator surfaces
   - name: Lifecycle
     description: Change approval and recertification workflows
+  - name: Marketplace
+    description: Agent marketplace and installation endpoints
   - name: Costs
     description: Cost tracking and summary endpoints
 
@@ -502,6 +504,49 @@ paths:
                 $ref: '#/components/schemas/AnomalyDetectionResult'
         '400':
           $ref: '#/components/responses/BadRequest'
+
+  /api/v1/analytics/anomalies/{anomalyId}/false-positive:
+    post:
+      summary: Mark an anomaly as a false positive
+      description: |
+        Records operator feedback that a detected anomaly is not actionable.
+        The anomaly is marked resolved and an audit-linked feedback event is emitted when analytics storage is configured.
+      operationId: markAnomalyFalsePositive
+      tags: [Analytics]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: anomalyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyFalsePositiveRequest'
+            example:
+              reviewer: ops-team
+              rationale: Known deploy spike
+              notes: Matches scheduled release activity
+      responses:
+        '200':
+          description: False-positive feedback recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyFalsePositiveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: Analytics store unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/analytics/forecast:
     post:
@@ -1493,6 +1538,22 @@ paths:
   # ========== Governance ==========
   /governance/compliance/summary:
     get:
+      summary: Get governance compliance summary (legacy)
+      operationId: getComplianceSummaryLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Compliance summary for the tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceComplianceSummary'
+
+  /api/v1/governance/compliance/summary:
+    get:
       summary: Get governance compliance summary
       operationId: getComplianceSummary
       tags: [Governance]
@@ -1507,6 +1568,22 @@ paths:
                 $ref: '#/components/schemas/GovernanceComplianceSummary'
 
   /governance/audit/summary:
+    get:
+      summary: Get governance audit summary (legacy)
+      operationId: getAuditSummaryLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Audit summary backed by the run ledger when configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceAuditSummary'
+
+  /api/v1/governance/audit/summary:
     get:
       summary: Get governance audit summary
       operationId: getAuditSummary
@@ -1523,6 +1600,23 @@ paths:
 
   /governance/kill-switch:
     get:
+      summary: Get kill-switch state (legacy)
+      operationId: getKillSwitchStatusLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Kill-switch state for the tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/kill-switch:
+    get:
       summary: Get kill-switch state
       operationId: getKillSwitchStatus
       tags: [Governance]
@@ -1538,6 +1632,28 @@ paths:
                 additionalProperties: true
 
   /governance/kill-switch/activate:
+    post:
+      summary: Activate a kill-switch (legacy)
+      operationId: activateKillSwitchLegacy
+      tags: [Governance]
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Kill-switch activated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/kill-switch/activate:
     post:
       summary: Activate a kill-switch
       operationId: activateKillSwitch
@@ -1560,6 +1676,28 @@ paths:
 
   /governance/kill-switch/deactivate:
     post:
+      summary: Deactivate a kill-switch (legacy)
+      operationId: deactivateKillSwitchLegacy
+      tags: [Governance]
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Kill-switch deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/kill-switch/deactivate:
+    post:
       summary: Deactivate a kill-switch
       operationId: deactivateKillSwitch
       tags: [Governance]
@@ -1580,6 +1718,43 @@ paths:
                 additionalProperties: true
 
   /governance/degradation:
+    get:
+      summary: Get degradation mode (legacy)
+      operationId: getDegradationModeLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Current degradation mode
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    post:
+      summary: Set degradation mode (legacy)
+      operationId: setDegradationModeLegacy
+      tags: [Governance]
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Degradation mode updated
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/degradation:
     get:
       summary: Get degradation mode
       operationId: getDegradationMode
@@ -1616,6 +1791,28 @@ paths:
 
   /governance/policy/evaluate:
     post:
+      summary: Evaluate a policy request (legacy)
+      operationId: evaluatePolicyLegacy
+      tags: [Governance]
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/policy/evaluate:
+    post:
       summary: Evaluate a policy request
       operationId: evaluatePolicy
       tags: [Governance]
@@ -1636,6 +1833,28 @@ paths:
                 additionalProperties: true
 
   /governance/security/egress:
+    get:
+      summary: Get egress accounting summary (legacy)
+      operationId: getEgressSummaryLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Egress usage summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/security/egress:
     get:
       summary: Get egress accounting summary
       operationId: getEgressSummary
@@ -1658,6 +1877,28 @@ paths:
 
   /governance/security/scan:
     post:
+      summary: Scan text for injection attempts (legacy)
+      operationId: scanForInjectionLegacy
+      tags: [Governance]
+      deprecated: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Injection scan result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/security/scan:
+    post:
       summary: Scan text for injection attempts
       operationId: scanForInjection
       tags: [Governance]
@@ -1671,6 +1912,39 @@ paths:
       responses:
         '200':
           description: Injection scan result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /governance/ops/summary:
+    get:
+      summary: Get ops summary (legacy)
+      operationId: getOpsSummaryLegacy
+      tags: [Governance]
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Ops summary
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/v1/governance/ops/summary:
+    get:
+      summary: Get ops summary
+      operationId: getOpsSummary
+      tags: [Governance]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Ops summary
           content:
             application/json:
               schema:
@@ -1905,6 +2179,226 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+
+  # ========== Marketplace ==========
+  /api/v1/catalog/marketplace/agents:
+    get:
+      summary: List marketplace agents
+      operationId: listMarketplaceAgents
+      tags: [Marketplace]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: capability
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marketplace listings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketplaceAgentListing'
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+    post:
+      summary: Publish marketplace agent
+      operationId: publishMarketplaceAgent
+      tags: [Marketplace]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishMarketplaceAgentInput'
+      responses:
+        '200':
+          description: Published marketplace agent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent:
+                    $ref: '#/components/schemas/MarketplaceAgentListing'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/catalog/marketplace/agents/{agentId}:
+    get:
+      summary: Get marketplace agent detail
+      operationId: getMarketplaceAgent
+      tags: [Marketplace]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marketplace agent detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listing:
+                    $ref: '#/components/schemas/MarketplaceAgentListing'
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketplaceReview'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/catalog/marketplace/agents/{agentId}/simulate-install:
+    post:
+      summary: Simulate marketplace install
+      operationId: simulateMarketplaceInstall
+      tags: [Marketplace]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketplaceInstallInput'
+      responses:
+        '200':
+          description: Marketplace install preflight
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  simulation:
+                    $ref: '#/components/schemas/MarketplaceInstallSimulation'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/catalog/marketplace/agents/{agentId}/install:
+    post:
+      summary: Install marketplace agent
+      operationId: installMarketplaceAgent
+      tags: [Marketplace]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketplaceInstallInput'
+      responses:
+        '200':
+          description: Marketplace install registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketplaceInstallResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Marketplace install blocked by compatibility checks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/catalog/marketplace/agents/{agentId}/reviews:
+    get:
+      summary: List marketplace reviews
+      operationId: listMarketplaceReviews
+      tags: [Marketplace]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marketplace reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketplaceReview'
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+    post:
+      summary: Create marketplace review
+      operationId: createMarketplaceReview
+      tags: [Marketplace]
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMarketplaceReviewInput'
+      responses:
+        '200':
+          description: Marketplace review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  review:
+                    $ref: '#/components/schemas/MarketplaceReview'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # ========== Costs ========== (P1-6: Added missing endpoint)
   /api/v1/costs/summary:
@@ -2984,6 +3478,32 @@ components:
           type: string
           format: date-time
 
+    AnomalyFalsePositiveRequest:
+      type: object
+      properties:
+        reviewer:
+          type: string
+        rationale:
+          type: string
+        notes:
+          type: string
+
+    AnomalyFalsePositiveResponse:
+      type: object
+      required: [anomalyId, tenantId, markedFalsePositive, timestamp]
+      properties:
+        anomalyId:
+          type: string
+        tenantId:
+          type: string
+        markedFalsePositive:
+          type: boolean
+        auditId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
     RunDetail:
       allOf:
         - $ref: '#/components/schemas/RunSummary'
@@ -3081,6 +3601,192 @@ components:
         timestamp:
           type: string
           format: date-time
+
+    MarketplaceAgentListing:
+      type: object
+      required: [id, name, description, version, domain, level, capabilities, tags, source, owner, averageRating, reviewCount]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        domain:
+          type: string
+        level:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        source:
+          type: string
+        owner:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        averageRating:
+          type: number
+          format: double
+        reviewCount:
+          type: integer
+
+    MarketplaceReview:
+      type: object
+      required: [id, agentId, tenantId, reviewer, rating, title, comment, createdAt]
+      properties:
+        id:
+          type: string
+        agentId:
+          type: string
+        tenantId:
+          type: string
+        reviewer:
+          type: string
+        rating:
+          type: integer
+        title:
+          type: string
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PublishMarketplaceAgentInput:
+      type: object
+      required: [name]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        domain:
+          type: string
+        level:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        owner:
+          type: string
+
+    CreateMarketplaceReviewInput:
+      type: object
+      required: [rating]
+      properties:
+        tenantId:
+          type: string
+        reviewer:
+          type: string
+        rating:
+          type: integer
+        title:
+          type: string
+        comment:
+          type: string
+
+    MarketplaceInstallInput:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        targetEnvironment:
+          type: string
+          enum: [sandbox, staging, production]
+        expectedVersion:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    MarketplaceInstallSimulation:
+      type: object
+      required: [agentId, agentName, requestedVersion, availableVersion, targetEnvironment, versionPinned, compatibilityStatus, compatibilityNotes, directExecutionMode, productionExecutionMode, requiresHitl, recommendedPath, allowedToInstall]
+      properties:
+        agentId:
+          type: string
+        agentName:
+          type: string
+        requestedVersion:
+          type: string
+        availableVersion:
+          type: string
+        targetEnvironment:
+          type: string
+        versionPinned:
+          type: boolean
+        compatibilityStatus:
+          type: string
+          enum: [COMPATIBLE, REVIEW_REQUIRED, BLOCKED]
+        compatibilityNotes:
+          type: array
+          items:
+            type: string
+        directExecutionMode:
+          type: string
+        productionExecutionMode:
+          type: string
+        requiresHitl:
+          type: boolean
+        recommendedPath:
+          type: string
+        allowedToInstall:
+          type: boolean
+
+    MarketplaceInstallResult:
+      type: object
+      required: [installId, agentId, agentName, agentVersion, tenantId, compatibilityStatus, recommendedPath, directExecutionMode, productionExecutionMode, targetEnvironment, installedAt, status]
+      properties:
+        installId:
+          type: string
+        agentId:
+          type: string
+        agentName:
+          type: string
+        agentVersion:
+          type: string
+        tenantId:
+          type: string
+        compatibilityStatus:
+          type: string
+        recommendedPath:
+          type: string
+        directExecutionMode:
+          type: string
+        productionExecutionMode:
+          type: string
+        targetEnvironment:
+          type: string
+        installedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
 
     # ---------- Errors ----------
     ErrorResponse:

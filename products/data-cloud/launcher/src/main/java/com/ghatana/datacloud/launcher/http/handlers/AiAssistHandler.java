@@ -1424,7 +1424,7 @@ public class AiAssistHandler {
             // Default to true when no profile is stored (open-tenant mode).
             boolean allowed = client.query(tenantId, "dc_tenant_settings",
                     DataCloudClient.Query.builder()
-                        .filter("key", "sovereignProfile")
+                        .filter(DataCloudClient.Filter.eq("key", "sovereignProfile"))
                         .build())
                 .then(entities -> {
                     if (entities.isEmpty()) return Promise.of(true);
@@ -1467,7 +1467,7 @@ public class AiAssistHandler {
             return Promise.ofException(new IllegalStateException("CompletionService not available"));
         }
         CompletionRequest request = CompletionRequest.builder()
-            .messages(List.of(new ChatMessage("user", prompt)))
+            .messages(List.of(ChatMessage.user(prompt)))
             .build();
         return completionService.complete(request);
     }
@@ -2744,38 +2744,38 @@ public class AiAssistHandler {
                     List<Map<String, Object>> changes = new ArrayList<>();
 
                     // Removed fields
-                    for (String key : oldContract.keySet()) {
-                        if (!newContract.containsKey(key)) {
+                    for (var entry : oldContract.entrySet()) {
+                        if (!newContract.containsKey(entry.getKey())) {
                             changes.add(Map.of(
-                                "field", key,
+                                "field", entry.getKey(),
                                 "changeType", "removed",
                                 "breaking", true,
-                                "oldType", oldContract.get(key)
+                                "oldType", entry.getValue()
                             ));
                         }
                     }
 
                     // Added fields
-                    for (String key : newContract.keySet()) {
-                        if (!oldContract.containsKey(key)) {
+                    for (var entry : newContract.entrySet()) {
+                        if (!oldContract.containsKey(entry.getKey())) {
                             changes.add(Map.of(
-                                "field", key,
+                                "field", entry.getKey(),
                                 "changeType", "added",
                                 "breaking", false,
-                                "newType", newContract.get(key)
+                                "newType", entry.getValue()
                             ));
                         }
                     }
 
                     // Modified fields
-                    for (String key : oldContract.keySet()) {
-                        if (newContract.containsKey(key)) {
-                            String oldType = oldContract.get(key);
-                            String newType = newContract.get(key);
+                    for (var entry : oldContract.entrySet()) {
+                        if (newContract.containsKey(entry.getKey())) {
+                            String oldType = entry.getValue();
+                            String newType = newContract.get(entry.getKey());
                             if (!Objects.equals(oldType, newType)) {
                                 boolean breaking = isTypeWidening(oldType, newType);
                                 changes.add(Map.of(
-                                    "field", key,
+                                    "field", entry.getKey(),
                                     "changeType", "modified",
                                     "breaking", breaking,
                                     "oldType", oldType,

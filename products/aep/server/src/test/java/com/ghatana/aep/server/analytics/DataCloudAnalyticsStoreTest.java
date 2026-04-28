@@ -281,6 +281,33 @@ class DataCloudAnalyticsStoreTest {
 
             verify(client, never()).save(anyString(), anyString(), anyMap()); // GH-90000
         }
+
+        @Test
+        @DisplayName("markFalsePositive: writes false-positive metadata and resolves anomaly")
+        void markFalsePositive_updatesEntity() { // GH-90000
+            String anomalyId = "anomaly-42";
+            when(client.findById(TENANT, DataCloudAnalyticsStore.ANOMALY_COLLECTION, anomalyId)) // GH-90000
+                    .thenReturn(Promise.of(Optional.of(
+                            entity(anomalyId, anomalyData(anomalyId, "DRIFT", "HIGH", false)) // GH-90000
+                    )));
+            when(client.save(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), anyMap())) // GH-90000
+                    .thenReturn(Promise.of(entity(anomalyId, anomalyData(anomalyId, "DRIFT", "HIGH", true)))); // GH-90000
+
+            AnomalyRecord result = store.markFalsePositive( // GH-90000
+                    TENANT,
+                    anomalyId,
+                    "ops-team",
+                    "Known deploy spike",
+                    "Reviewed against release calendar").getResult();
+
+            assertThat(result.resolved()).isTrue(); // GH-90000
+            ArgumentCaptor<Map<String, Object>> cap = mapCaptor(); // GH-90000
+            verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), cap.capture()); // GH-90000
+            assertThat(cap.getValue()).containsEntry("falsePositive", true); // GH-90000
+            assertThat(cap.getValue()).containsEntry("falsePositiveBy", "ops-team"); // GH-90000
+            assertThat(cap.getValue()).containsEntry("falsePositiveReason", "Known deploy spike"); // GH-90000
+            assertThat(cap.getValue()).containsEntry("resolved", true); // GH-90000
+        }
     }
 
     // =========================================================================

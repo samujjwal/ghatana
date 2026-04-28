@@ -176,6 +176,9 @@ public final class AiSuggestionsController {
 
         // 1. Anomaly-backed suggestions (highest priority)
         for (DataCloudAnalyticsStore.AnomalyRecord anomaly : anomalies) {
+            if (anomaly.resolved()) {
+                continue;
+            }
             if (suggestions.size() >= limit) break;
             suggestions.add(anomalyToSuggestion(tenantId, anomaly));
         }
@@ -224,6 +227,7 @@ public final class AiSuggestionsController {
         }
         Map<String, Object> result = new java.util.LinkedHashMap<>(builder.build().toMap());
         result.put("resourceType", "pipeline");
+        result.put("anomalyId", anomaly.id());
         if (anomaly.entityId() != null) {
             result.put("resourceId", anomaly.entityId());
         }

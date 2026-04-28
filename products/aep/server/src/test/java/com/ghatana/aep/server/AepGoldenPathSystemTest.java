@@ -86,7 +86,7 @@ class AepGoldenPathSystemTest {
     @DisplayName("POST /api/v1/events returns 200 with eventId and success=true")
     void ingestEvent_returns200WithEventId() throws Exception { // GH-90000
         HttpResponse<String> resp = postEvent("tenant-acme", "user.signup", // GH-90000
-                Map.of("userId", "u001", "email", "alice@example.com")); // GH-90000
+                Map.of("userId", "u001", "username", "alice")); // GH-90000
 
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         @SuppressWarnings("unchecked")

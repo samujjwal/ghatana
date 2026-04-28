@@ -31,6 +31,7 @@ interface RunTableProps {
   isAllSelected?: boolean;
   isIndeterminate?: boolean;
   aiSuggestions?: AiSuggestion[];
+  onMarkFalsePositive?: (suggestion: AiSuggestion) => void;
   className?: string;
 }
 
@@ -85,6 +86,7 @@ export function RunTable({
   isAllSelected,
   isIndeterminate,
   aiSuggestions,
+  onMarkFalsePositive,
   className,
 }: RunTableProps) {
   const [rejectTarget, setRejectTarget] = useState<{ runId: string; pipelineName: string } | null>(null);
@@ -233,6 +235,17 @@ export function RunTable({
                                   ))}
                                 </div>
                               )}
+                              {suggestion.type === 'anomaly' && suggestion.anomalyId && onMarkFalsePositive ? (
+                                <div className="mt-3">
+                                  <Button
+                                    onClick={() => onMarkFalsePositive(suggestion)}
+                                    variant="text"
+                                    className="text-xs font-medium underline hover:opacity-75"
+                                  >
+                                    Mark as not an anomaly
+                                  </Button>
+                                </div>
+                              ) : null}
                             </div>
                           );
                         })}

@@ -17,6 +17,7 @@ import { useNavigate, useParams } from 'react-router';
 import type { AgentRegistration } from '@/api/aep.api';
 import { useAgents, useDeregisterAgent } from '@/hooks/useAgents';
 import { PageState } from '@/components/shared/PageState';
+import { getMarketplaceUrl, getWorkflowCatalogUrl } from '@/lib/routes';
 import { AgentTable } from '@/components/agents/AgentTable';
 import { AgentStatusBadge } from '@/components/agents/AgentStatusBadge';
 import { Button } from '@ghatana/design-system';
@@ -223,14 +224,14 @@ export function AgentRegistryPage() {
               </p>
               <div className="flex gap-3">
                 <Button
-                  onClick={() => void navigate('/catalog/marketplace')}
+                  onClick={() => void navigate(getMarketplaceUrl())}
                   variant="primary"
                   className="px-4 py-2 text-sm font-medium"
                 >
                   Register first agent
                 </Button>
                 <Button
-                  onClick={() => void navigate('/catalog/workflows')}
+                  onClick={() => void navigate(getWorkflowCatalogUrl())}
                   variant="secondary"
                   className="px-4 py-2 text-sm font-medium"
                 >

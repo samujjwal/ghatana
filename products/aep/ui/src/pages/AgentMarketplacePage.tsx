@@ -13,9 +13,12 @@ import { toast } from 'sonner';
 import {
   createMarketplaceReview,
   getMarketplaceAgent,
+  installMarketplaceAgent,
   listMarketplaceAgents,
   publishMarketplaceAgent,
+  simulateMarketplaceInstall,
   type MarketplaceAgentListing,
+  type MarketplaceInstallInput,
   type PublishMarketplaceAgentInput,
 } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
@@ -23,6 +26,7 @@ import { TextField } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 import { useAuth } from '@/context/AuthContext';
+import { MarketplaceInstallDialog } from '@/components/marketplace/MarketplaceInstallDialog';
 
 interface PublishFormState {
   name: string;
@@ -159,6 +163,7 @@ export function AgentMarketplacePage() {
   });
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [installTarget, setInstallTarget] = useState<MarketplaceAgentListing | null>(null);
+  const [installEnvironment, setInstallEnvironment] = useState<'sandbox' | 'staging' | 'production'>('sandbox');
   const canManageMarketplace = hasAnyRole(['admin', 'operator']);
 
   const { data: listings, isLoading, isError, error } = useQuery({
@@ -232,6 +237,39 @@ export function AgentMarketplacePage() {
       queryClient.invalidateQueries({ queryKey: ['marketplace-agents', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-agent', tenantId, agentId] });
       setReviewForm({ reviewer: '', rating: '5', title: '', comment: '' });
+    },
+  });
+
+  const installSimulationInput = useMemo<MarketplaceInstallInput | null>(() => {
+    if (!installTarget) {
+      return null;
+    }
+    return {
+      targetEnvironment: installEnvironment,
+      expectedVersion: installTarget.version,
+    };
+  }, [installEnvironment, installTarget]);
+
+  const { data: installSimulation, isLoading: isSimulatingInstall, error: installSimulationError } = useQuery({
+    queryKey: ['marketplace-install-simulation', tenantId, installTarget?.id, installEnvironment, installTarget?.version],
+    queryFn: () => simulateMarketplaceInstall(installTarget?.id ?? '', installSimulationInput!, tenantId),
+    enabled: installTarget !== null && installSimulationInput !== null,
+  });
+
+  const installMutation = useMutation({
+    mutationFn: ({ agentId, input }: { agentId: string; input: MarketplaceInstallInput }) =>
+      installMarketplaceAgent(agentId, input, tenantId),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['marketplace-agents', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace-agent', tenantId, result.agentId] });
+      toast.success(
+        `Agent "${result.agentName}" installed for ${result.targetEnvironment}. Production execution remains ${result.productionExecutionMode.toLowerCase().replaceAll('_', ' ')}.`,
+      );
+      setInstallTarget(null);
+      setInstallEnvironment('sandbox');
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError instanceof Error ? mutationError.message : 'Failed to install marketplace agent.');
     },
   });
 
@@ -496,6 +534,7 @@ export function AgentMarketplacePage() {
                   className="flex-1 rounded-lg px-4 py-2 text-sm font-medium"
                   onClick={() => {
                     if (selectedAgent) {
+                      setInstallEnvironment('sandbox');
                       setInstallTarget(selectedAgent.listing);
                     }
                   }}
@@ -601,28 +640,29 @@ export function AgentMarketplacePage() {
         onCancel={() => setPublishConfirmOpen(false)}
       />
 
-      {/* Install confirmation dialog */}
       {installTarget && (
-        <SensitiveActionDialog
-          open={!!installTarget}
-          title="Install marketplace agent"
-          description={`This will register "${installTarget.name}" (${installTarget.id}) into your tenant registry. The agent will be executable for pipelines in tenant "${tenantId}".`}
-          confirmKeyword="INSTALL"
-          impactItems={[
-            { label: 'Agent', value: installTarget.name, severity: 'high' },
-            { label: 'ID', value: installTarget.id, severity: 'medium' },
-            { label: 'Tenant', value: tenantId, severity: 'medium' },
-            { label: 'Capabilities', value: installTarget.capabilities.join(', ') || 'none', severity: 'medium' },
-            { label: 'Owner', value: installTarget.owner, severity: 'low' },
-          ]}
-          auditMessage={`Marketplace agent ${installTarget.id} installed into tenant ${tenantId}`}
-          reasonRequired
-          onConfirm={(reason) => {
-            // TODO: wire to install API when endpoint is available
-            toast.success(`Agent "${installTarget.name}" installation requested for tenant ${tenantId}.`);
-            setInstallTarget(null);
+        <MarketplaceInstallDialog
+          listing={installTarget}
+          tenantId={tenantId}
+          environment={installEnvironment}
+          onEnvironmentChange={setInstallEnvironment}
+          simulation={installSimulation}
+          isSimulating={isSimulatingInstall}
+          isInstalling={installMutation.isPending}
+          errorMessage={installSimulationError instanceof Error ? installSimulationError.message : null}
+          onConfirm={(_reason) => {
+            installMutation.mutate({
+              agentId: installTarget.id,
+              input: {
+                targetEnvironment: installEnvironment,
+                expectedVersion: installTarget.version,
+              },
+            });
           }}
-          onCancel={() => setInstallTarget(null)}
+          onCancel={() => {
+            setInstallTarget(null);
+            setInstallEnvironment('sandbox');
+          }}
         />
       )}
     </div>

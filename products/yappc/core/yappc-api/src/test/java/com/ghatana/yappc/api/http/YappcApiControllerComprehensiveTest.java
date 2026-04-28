@@ -561,18 +561,19 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
         void cancelWorkflowTransitionsToCancelled() { // GH-90000
             // GIVEN: ACTIVE or PAUSED workflow can be cancelled
             AiWorkflowInstance cancelled = createWorkflow("wf-1", "Test"); // GH-90000
-            when(workflowService.cancelWorkflow("wf-1", "tenant-001")) // GH-90000
+            when(workflowService.cancelWorkflow("wf-1", "tenant-001", "user-123", "test reason")) // GH-90000
                 .thenReturn(Promise.of(cancelled)); // GH-90000
 
             // WHEN: Cancel workflow
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/cancel")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
+                .withBody("{\"requestedBy\": \"user-123\", \"reason\": \"test reason\"}".getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> controller.cancelWorkflow(request, "wf-1")); // GH-90000
 
             // THEN: Returns 200
             assertThat(response.getCode()).isEqualTo(200); // GH-90000
-            verify(workflowService).cancelWorkflow("wf-1", "tenant-001"); // GH-90000
+            verify(workflowService).cancelWorkflow("wf-1", "tenant-001", "user-123", "test reason"); // GH-90000
         }
     }
 
@@ -870,6 +871,11 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
             Instant.now(), // GH-90000
             Instant.now(), // GH-90000
             null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null
         );
     }
@@ -891,6 +897,11 @@ class YappcApiControllerComprehensiveTest extends EventloopTestBase {
             "user-123",
             Instant.now(), // GH-90000
             Instant.now(), // GH-90000
+            null,
+            null,
+            null,
+            null,
+            null,
             null,
             null
         );

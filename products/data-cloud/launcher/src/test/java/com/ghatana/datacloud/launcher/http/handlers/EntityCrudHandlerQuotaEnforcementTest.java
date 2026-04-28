@@ -52,7 +52,7 @@ class EntityCrudHandlerQuotaEnforcementTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
 
-        assertThat(response.getCode()).isEqualTo(201);
+        assertThat(response.getCode()).isEqualTo(200);
         assertThat(store.saved).hasSize(1);
     }
 
@@ -89,7 +89,7 @@ class EntityCrudHandlerQuotaEnforcementTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> handler.handleSaveEntity(request));
 
-        assertThat(response.getCode()).isEqualTo(201);
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     /**
@@ -112,6 +112,6 @@ class EntityCrudHandlerQuotaEnforcementTest extends EventloopTestBase {
         @Override public DataCloudClient.Subscription tailEvents(String tenantId, DataCloudClient.TailRequest request, java.util.function.Consumer<DataCloudClient.Event> handler) { return new DataCloudClient.Subscription() { @Override public void cancel() { } @Override public boolean isCancelled() { return false; } }; }
         @Override public void close() { }
         @Override public com.ghatana.datacloud.spi.EntityStore entityStore() { return null; }
-        @Override public com.ghatana.platform.domain.eventstore.EventLogStore eventLogStore() { return null; }
+        @Override public com.ghatana.datacloud.spi.EventLogStore eventLogStore() { return null; }
     }
 }

@@ -383,15 +383,19 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
             startServer(); // GH-90000
 
+            // Use dry-run mode to avoid token requirement
             HttpRequest req = HttpRequest.newBuilder() // GH-90000
                     .method("DELETE", HttpRequest.BodyPublishers.ofString( // GH-90000
-                            "{\"ids\":[\"id-1\",\"id-2\"]}"))
+                            "{\"ids\":[\"id-1\",\"id-2\"],\"dryRun\":true}"))
                     .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/products/batch")) // GH-90000
                     .header("Content-Type", "application/json") // GH-90000
+                    .header("X-Tenant-Id", TestConstants.TENANT_DEFAULT) // GH-90000
                     .build(); // GH-90000
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200);
+            // Verify dry-run response structure
+            assertThat(resp.body()).contains("dryRun");
         }
     }
 

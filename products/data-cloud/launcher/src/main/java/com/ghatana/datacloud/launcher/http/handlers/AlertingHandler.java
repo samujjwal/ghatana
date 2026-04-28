@@ -570,7 +570,7 @@ public final class AlertingHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, MISSING_TENANT_MESSAGE));
         }
-        String alertId = request.getPathParameter("alertId");
+        String alertId = request.getPathParameter("id");
         if (alertId == null || alertId.isBlank()) {
             return Promise.of(http.errorResponse(400, "alertId path parameter is required"));
         }

@@ -60,7 +60,11 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
             List.of(), // GH-90000
             List.of(), // GH-90000
             -5,
-            10
+            10,
+            null,
+            List.of(),
+            EntityStore.ConsistencyLevel.EVENTUAL,
+            null
         );
 
         assertThat(spec.offset()).isZero(); // GH-90000
@@ -75,7 +79,11 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
             List.of(), // GH-90000
             List.of(), // GH-90000
             0,
-            0
+            0,
+            null,
+            List.of(),
+            EntityStore.ConsistencyLevel.EVENTUAL,
+            null
         );
 
         assertThat(spec.limit()).isEqualTo(100); // GH-90000
@@ -85,7 +93,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     @DisplayName("[QuerySpec]: limit_above_max_throws_exception")
     void limitAboveMaxThrowsException() { // GH-90000
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> // GH-90000
-            new EntityStore.QuerySpec("products", List.of(), List.of(), 0, 10001) // GH-90000
+            new EntityStore.QuerySpec("products", List.of(), List.of(), 0, 10001, null, List.of(), EntityStore.ConsistencyLevel.EVENTUAL, null) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
             .hasMessageContaining("exceeds maximum allowed value");
     }
@@ -98,7 +106,11 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
             List.of(), // GH-90000
             List.of(), // GH-90000
             0,
-            10000
+            10000,
+            null,
+            List.of(),
+            EntityStore.ConsistencyLevel.EVENTUAL,
+            null
         );
 
         assertThat(spec.limit()).isEqualTo(10000); // GH-90000

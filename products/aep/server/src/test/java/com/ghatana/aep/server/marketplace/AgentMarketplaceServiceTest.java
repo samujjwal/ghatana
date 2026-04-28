@@ -92,4 +92,56 @@ class AgentMarketplaceServiceTest {
         assertThat(detail.listing().averageRating()).isEqualTo(4.0); // GH-90000
         assertThat(detail.listing().reviewCount()).isEqualTo(2); // GH-90000
     }
+
+    @Test
+    void shouldSimulatePinnedInstallWithSandboxExecutionTruth() { // GH-90000
+        AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
+                null,
+                List.of(CatalogAgentEntry.builder() // GH-90000
+                        .id("ops-agent")
+                        .name("Ops Agent")
+                        .version("2.4.0")
+                        .catalogId("platform")
+                        .metadata(Map.of("level", "worker", "domain", "operations"))
+                        .capabilities(Set.of("triage", "explain"))
+                        .build())); // GH-90000
+
+        AgentMarketplaceService.MarketplaceInstallSimulation simulation = service
+                .simulateInstallAgent(
+                        TENANT_ID,
+                        "ops-agent",
+                        new AgentMarketplaceService.InstallAgentRequest("sandbox", Map.of(), "2.4.0"))
+                .getResult(); // GH-90000
+
+        assertThat(simulation.versionPinned()).isTrue(); // GH-90000
+        assertThat(simulation.compatibilityStatus()).isEqualTo("COMPATIBLE");
+        assertThat(simulation.directExecutionMode()).isEqualTo("SANDBOX_ONLY");
+        assertThat(simulation.productionExecutionMode()).isEqualTo("PIPELINE_HITL_REQUIRED");
+        assertThat(simulation.allowedToInstall()).isTrue();
+    }
+
+    @Test
+    void shouldBlockInstallWhenRequestedVersionDoesNotMatchPublishedVersion() { // GH-90000
+        AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
+                null,
+                List.of(CatalogAgentEntry.builder() // GH-90000
+                        .id("ops-agent")
+                        .name("Ops Agent")
+                        .version("2.4.0")
+                        .catalogId("platform")
+                        .metadata(Map.of("level", "worker", "domain", "operations"))
+                        .capabilities(Set.of("triage"))
+                        .build())); // GH-90000
+
+        AgentMarketplaceService.MarketplaceInstallSimulation simulation = service
+                .simulateInstallAgent(
+                        TENANT_ID,
+                        "ops-agent",
+                        new AgentMarketplaceService.InstallAgentRequest("production", Map.of(), "1.9.0"))
+                .getResult(); // GH-90000
+
+        assertThat(simulation.compatibilityStatus()).isEqualTo("BLOCKED");
+        assertThat(simulation.allowedToInstall()).isFalse();
+        assertThat(simulation.compatibilityNotes()).anyMatch(note -> note.contains("does not match published version"));
+    }
 }

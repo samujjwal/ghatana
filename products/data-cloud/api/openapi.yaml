@@ -2628,13 +2628,12 @@ paths:
                 $ref: "#/components/schemas/WorkflowExecutionSummary"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/pipelines/{pipelineId}/executions/{executionId}/retry:
+  /api/v1/executions/{executionId}/retry:
     post:
       summary: Retry a failed pipeline execution
-      operationId: apiV1PipelinesPipelineIdExecutionsExecutionIdRetryPost
-      tags: [pipelines]
+      operationId: apiV1ExecutionsExecutionIdRetryPost
+      tags: [executions]
       parameters:
-        - $ref: "#/components/parameters/pipelineIdPath"
         - $ref: "#/components/parameters/tenantIdQuery"
         - name: executionId
           in: path

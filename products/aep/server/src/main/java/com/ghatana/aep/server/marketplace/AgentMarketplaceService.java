@@ -116,6 +116,23 @@ public final class AgentMarketplaceService {
     }
 
     /**
+     * Simulates marketplace installation so the UI can truthfully show version pinning,
+     * compatibility posture, and the allowed execution path before registration.
+     */
+    public Promise<MarketplaceInstallSimulation> simulateInstallAgent(
+            String tenantId,
+            String agentId,
+            InstallAgentRequest request) {
+        return getAgent(tenantId, agentId).then(detail -> {
+            if (detail.isEmpty()) {
+                return Promise.ofException(new IllegalArgumentException(
+                    "Marketplace agent not found: " + agentId));
+            }
+            return Promise.of(simulateInstall(detail.get().listing(), request));
+        });
+    }
+
+    /**
      * T-07: Records a marketplace agent installation for a tenant.
      *
      * <p>Validates that the requested agent exists in the marketplace, then persists an
@@ -136,7 +153,12 @@ public final class AgentMarketplaceService {
                     "Marketplace agent not found: " + agentId));
             }
             MarketplaceAgentListing listing = detail.get().listing();
-            MarketplaceInstallRecord record = MarketplaceInstallRecord.create(tenantId, listing, request);
+            MarketplaceInstallSimulation simulation = simulateInstall(listing, request);
+            if (!simulation.allowedToInstall()) {
+                return Promise.ofException(new IllegalArgumentException(
+                    "Marketplace install blocked: " + String.join("; ", simulation.compatibilityNotes())));
+            }
+            MarketplaceInstallRecord record = MarketplaceInstallRecord.create(tenantId, listing, request, simulation);
 
             if (dataCloudClient == null) {
                 log.info("[marketplace] install recorded in-memory tenantId={}, agentId={}", tenantId, agentId);
@@ -161,6 +183,86 @@ public final class AgentMarketplaceService {
 
         return dataCloudClient.save(tenantId, MARKETPLACE_REVIEW_COLLECTION, review.toData())
                 .map(saved -> toMarketplaceReview(saved.data()));
+    }
+
+    private static MarketplaceInstallSimulation simulateInstall(
+            MarketplaceAgentListing listing,
+            InstallAgentRequest request) {
+        String requestedVersion = defaultString(request.expectedVersion(), listing.version());
+        String targetEnvironment = normalizeTargetEnvironment(request.targetEnvironment());
+        boolean versionPinned = requestedVersion.equals(listing.version());
+        boolean productionTarget = "production".equals(targetEnvironment);
+        boolean unsupportedEnvironment = "unknown".equals(targetEnvironment);
+        boolean elevatedRisk = isElevatedRisk(listing);
+
+        List<String> notes = new ArrayList<>();
+        if (!versionPinned) {
+            notes.add("Requested version " + requestedVersion + " does not match published version " + listing.version() + ".");
+        }
+        if (unsupportedEnvironment) {
+            notes.add("Target environment must be one of sandbox, staging, or production.");
+        }
+        if (productionTarget) {
+            notes.add("Production execution must go through a pipeline with HITL review; direct marketplace execution is sandbox-only.");
+        } else {
+            notes.add("Direct execution remains limited to sandbox or lower-risk validation environments.");
+        }
+        if (elevatedRisk) {
+            notes.add("This agent exposes elevated-risk capabilities or level and should be promoted through governed pipeline rollout.");
+        }
+        if ("catalog".equalsIgnoreCase(listing.source()) || "catalog+tenant".equalsIgnoreCase(listing.source())) {
+            notes.add("Catalog provenance is available for compatibility review.");
+        } else {
+            notes.add("Tenant-published listing should be reviewed against local governance policy before broad rollout.");
+        }
+
+        String compatibilityStatus;
+        if (!versionPinned || unsupportedEnvironment) {
+            compatibilityStatus = "BLOCKED";
+        } else if (productionTarget || elevatedRisk) {
+            compatibilityStatus = "REVIEW_REQUIRED";
+        } else {
+            compatibilityStatus = "COMPATIBLE";
+        }
+
+        return new MarketplaceInstallSimulation(
+                listing.id(),
+                listing.name(),
+                requestedVersion,
+                listing.version(),
+                targetEnvironment,
+                versionPinned,
+                compatibilityStatus,
+                List.copyOf(notes),
+                "SANDBOX_ONLY",
+                "PIPELINE_HITL_REQUIRED",
+                productionTarget || elevatedRisk,
+                productionTarget || elevatedRisk ? "pipeline_hitl" : "sandbox_direct",
+                versionPinned && !unsupportedEnvironment);
+    }
+
+    private static String normalizeTargetEnvironment(@Nullable String targetEnvironment) {
+        if (targetEnvironment == null || targetEnvironment.isBlank()) {
+            return "sandbox";
+        }
+        String normalized = targetEnvironment.trim().toLowerCase();
+        return switch (normalized) {
+            case "sandbox", "staging", "production" -> normalized;
+            default -> "unknown";
+        };
+    }
+
+    private static boolean isElevatedRisk(MarketplaceAgentListing listing) {
+        if ("strategic".equalsIgnoreCase(listing.level())) {
+            return true;
+        }
+        return listing.capabilities().stream()
+                .map(value -> value.toLowerCase())
+                .anyMatch(value -> value.contains("deploy")
+                        || value.contains("write")
+                        || value.contains("delete")
+                        || value.contains("execute")
+                        || value.contains("provision"));
     }
 
     private Promise<MarketplaceAgentListing> resolvePublishedListing(String tenantId, String agentId) {
@@ -528,7 +630,30 @@ public final class AgentMarketplaceService {
      */
     public record InstallAgentRequest(
             @Nullable String targetEnvironment,
-            @Nullable Map<String, Object> config) {
+            @Nullable Map<String, Object> config,
+            @Nullable String expectedVersion) {
+    }
+
+    /**
+     * @doc.type record
+     * @doc.purpose Marketplace install simulation payload for governed preflight review
+     * @doc.layer product
+     * @doc.pattern DTO
+     */
+    public record MarketplaceInstallSimulation(
+            String agentId,
+            String agentName,
+            String requestedVersion,
+            String availableVersion,
+            String targetEnvironment,
+            boolean versionPinned,
+            String compatibilityStatus,
+            List<String> compatibilityNotes,
+            String directExecutionMode,
+            String productionExecutionMode,
+            boolean requiresHitl,
+            String recommendedPath,
+            boolean allowedToInstall) {
     }
 
     /**
@@ -543,19 +668,28 @@ public final class AgentMarketplaceService {
             String agentName,
             String agentVersion,
             String tenantId,
+            String compatibilityStatus,
+            String recommendedPath,
+            String directExecutionMode,
+            String productionExecutionMode,
             @Nullable String targetEnvironment,
             Instant installedAt) {
 
         static MarketplaceInstallRecord create(
                 String tenantId,
                 MarketplaceAgentListing listing,
-                InstallAgentRequest request) {
+                InstallAgentRequest request,
+                MarketplaceInstallSimulation simulation) {
             return new MarketplaceInstallRecord(
                     java.util.UUID.randomUUID().toString(),
                     listing.id(),
                     listing.name(),
                     listing.version(),
                     tenantId,
+                    simulation.compatibilityStatus(),
+                    simulation.recommendedPath(),
+                    simulation.directExecutionMode(),
+                    simulation.productionExecutionMode(),
                     request.targetEnvironment(),
                     Instant.now());
         }
@@ -567,6 +701,10 @@ public final class AgentMarketplaceService {
             data.put("agentName", agentName);
             data.put("agentVersion", agentVersion);
             data.put("tenantId", tenantId);
+            data.put("compatibilityStatus", compatibilityStatus);
+            data.put("recommendedPath", recommendedPath);
+            data.put("directExecutionMode", directExecutionMode);
+            data.put("productionExecutionMode", productionExecutionMode);
             data.put("installedAt", installedAt.toString());
             if (targetEnvironment != null) {
                 data.put("targetEnvironment", targetEnvironment);

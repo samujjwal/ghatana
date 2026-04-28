@@ -318,6 +318,8 @@ public class DataCloudRouterBuilder {
     public DataCloudRouterBuilder withAiAssistRoutes(AiAssistHandler aiAssistHandler) {
         builder
             .with(HttpMethod.POST, "/api/v1/entities/:collection/suggest", aiAssistHandler::handleEntitySuggest)
+            .with(HttpMethod.POST, "/api/v1/analytics/suggest", aiAssistHandler::handleAnalyticsSuggest)
+            .with(HttpMethod.POST, "/api/v1/pipelines/draft", aiAssistHandler::handlePipelineDraft)
             // TODO: handleInferSchema method not found in AiAssistHandler - temporarily disabled
             // .with(HttpMethod.POST, "/api/v1/entities/:collection/infer-schema", aiAssistHandler::handleInferSchema)
             .with(HttpMethod.POST, "/api/v1/analytics/automate", aiAssistHandler::handleAnalyticsAutomate)

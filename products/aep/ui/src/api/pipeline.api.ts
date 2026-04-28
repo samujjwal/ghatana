@@ -46,6 +46,21 @@ interface RunPipelineResponse {
   success?: boolean;
 }
 
+interface PipelineVersionsResponse {
+  versions: PipelineVersionSummary[];
+}
+
+interface PipelineRollbackResponse {
+  rolledBack: boolean;
+  pipelineId: string;
+  restoredVersion: number;
+  previousVersion?: number;
+  status: string;
+  timestamp: string;
+  auditId?: string;
+  reason?: string;
+}
+
 // ─── Pipeline CRUD ───────────────────────────────────────────────────
 
 export async function listPipelines(
@@ -306,6 +321,59 @@ export async function dryRunPipeline(
     `/api/v1/pipelines/${pipelineId}/dry-run`,
     {},
     { params: { tenantId } },
+  );
+  return data;
+}
+
+// ─── Version history + rollback ─────────────────────────────────────
+
+export interface PipelineVersionSummary {
+  version: number;
+  versionLabel: string;
+  versionStatus: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface PipelineRollbackResult {
+  rolledBack: boolean;
+  pipelineId: string;
+  restoredVersion: number;
+  previousVersion?: number;
+  status: string;
+  timestamp: string;
+  auditId?: string;
+  reason?: string;
+}
+
+export async function listPipelineVersions(
+  pipelineId: string,
+  tenantId = "default",
+): Promise<PipelineVersionSummary[]> {
+  const { data } = await client.get<PipelineVersionsResponse>(
+    `/api/v1/pipelines/${pipelineId}/versions`,
+    { params: { tenantId } },
+  );
+  return data.versions ?? [];
+}
+
+export async function rollbackPipeline(
+  pipelineId: string,
+  toVersion: number,
+  input: {
+    reason?: string;
+    actor?: string;
+  },
+  tenantId = "default",
+): Promise<PipelineRollbackResult> {
+  const { data } = await client.post<PipelineRollbackResponse>(
+    `/api/v1/pipelines/${pipelineId}/rollback`,
+    input,
+    {
+      params: { tenantId, toVersion },
+    },
   );
   return data;
 }

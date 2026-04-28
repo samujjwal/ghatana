@@ -2,7 +2,7 @@ package com.ghatana.datacloud.launcher.http.plugins;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
+import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;

@@ -113,6 +113,29 @@ class AepHttpServerAnalyticsDeploymentTest {
         }
     }
 
+    @Nested
+    @DisplayName("POST /api/v1/analytics/anomalies/:anomalyId/false-positive")
+    class MarkFalsePositiveTests {
+
+        @Test
+        @DisplayName("returns 503 when analytics store is not configured")
+        void markFalsePositive_withoutAnalyticsStore_returns503() throws Exception { // GH-90000
+            server = new AepHttpServer(engine, port); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
+
+            String body = mapper.writeValueAsString(Map.of( // GH-90000
+                "reviewer", "ops-team",
+                "rationale", "Known deploy spike"
+            ));
+            HttpResponse<String> resp = post("/api/v1/analytics/anomalies/anomaly-1/false-positive", body); // GH-90000
+
+            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody.get("message").toString()).contains("Analytics store not configured");
+        }
+    }
+
     // ==================== POST /api/v1/analytics/forecast ====================
 
     @Nested

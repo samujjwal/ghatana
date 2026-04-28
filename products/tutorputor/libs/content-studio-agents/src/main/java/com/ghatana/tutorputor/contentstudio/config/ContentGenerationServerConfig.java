@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  * @doc.layer infrastructure
  * @doc.pattern Configuration
  */
-public class ContentGenerationServerConfig {
+public class ContentGenerationServerConfig implements ContentGenerationServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(ContentGenerationServerConfig.class);
 
@@ -118,6 +118,16 @@ public class ContentGenerationServerConfig {
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             LOG.info("gRPC server stopped");
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            stop();
+        } catch (InterruptedException e) {
+            LOG.error("Shutdown interrupted", e);
+            Thread.currentThread().interrupt();
         }
     }
 

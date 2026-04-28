@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Controller for analytics endpoints (anomaly detection, forecasting).
@@ -37,6 +38,7 @@ public class AnalyticsController {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsController.class);
     private static final String ANOMALY_EVENT_TYPE = "aep.anomaly";
+    private static final String ANOMALY_FEEDBACK_EVENT_TYPE = "aep.anomaly.feedback";
     private static final String KPI_EVENT_TYPE = "aep.kpi";
 
     private final AepEngine engine;
@@ -196,6 +198,47 @@ public class AnalyticsController {
                 "count", anomalies.size(),
                 "timestamp", Instant.now().toString()
             )));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleMarkFalsePositive(HttpRequest request) {
+        if (analyticsStore == null) {
+            return Promise.of(HttpHelper.errorResponse(503, "Analytics store not configured"));
+        }
+        String tenantId = HttpHelper.resolveTenantId(request);
+        String anomalyId = request.getPathParameter("anomalyId");
+        if (anomalyId == null || anomalyId.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400, "anomalyId path parameter is required"));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = body.isBlank()
+                    ? Map.of()
+                    : HttpHelper.mapper().readValue(body, Map.class);
+                String reviewer = String.valueOf(data.getOrDefault("reviewer", "unknown"));
+                String rationale = String.valueOf(data.getOrDefault("rationale", "Marked as not an anomaly via API"));
+                String notes = data.get("notes") != null ? String.valueOf(data.get("notes")) : null;
+
+                return analyticsStore.markFalsePositive(tenantId, anomalyId, reviewer, rationale, notes)
+                    .then(saved -> emitAnomalyFeedbackEvent(tenantId, saved, reviewer, rationale, notes)
+                        .map(auditId -> HttpHelper.jsonResponse(Map.of(
+                            "anomalyId", anomalyId,
+                            "tenantId", tenantId,
+                            "markedFalsePositive", true,
+                            "auditId", auditId,
+                            "timestamp", Instant.now().toString()
+                        ))))
+                    .then(Promise::of, e -> {
+                        log.warn("[analytics] false-positive feedback failed anomalyId={}: {}", anomalyId, e.getMessage());
+                        return Promise.of(HttpHelper.errorResponse(404, "Anomaly not found: " + anomalyId));
+                    });
+            } catch (Exception e) {
+                log.error("Error marking anomaly as false positive", e);
+                return Promise.of(HttpHelper.errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(HttpHelper.errorResponse(400, "Failed to read request body")));
     }
 
     public Promise<HttpResponse> handleQueryKpis(HttpRequest request) {
@@ -437,6 +480,35 @@ public class AnalyticsController {
                 analyticsEventPublisher.publish(tenantId, "analytics.kpi", payload);
             }
             return null;
+        });
+    }
+
+    private Promise<String> emitAnomalyFeedbackEvent(
+            String tenantId,
+            DataCloudAnalyticsStore.AnomalyRecord anomaly,
+            String reviewer,
+            String rationale,
+            @Nullable String notes) {
+        String auditId = UUID.randomUUID().toString();
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("auditId", auditId);
+        payload.put("anomalyId", anomaly.id());
+        payload.put("anomalyType", anomaly.anomalyType());
+        payload.put("severity", anomaly.severity());
+        payload.put("reviewer", reviewer);
+        payload.put("rationale", rationale);
+        payload.put("notes", notes != null ? notes : "");
+        payload.put("feedbackType", "FALSE_POSITIVE");
+        payload.put("recordedAt", Instant.now().toString());
+
+        Promise<Void> eventWrite = dataCloud != null
+            ? dataCloud.appendEvent(tenantId, DataCloudClient.Event.of(ANOMALY_FEEDBACK_EVENT_TYPE, payload)).map(offset -> (Void) null)
+            : Promise.complete();
+        return eventWrite.map(v -> {
+            if (analyticsEventPublisher != null) {
+                analyticsEventPublisher.publish(tenantId, "analytics.anomaly.feedback", payload);
+            }
+            return auditId;
         });
     }
 

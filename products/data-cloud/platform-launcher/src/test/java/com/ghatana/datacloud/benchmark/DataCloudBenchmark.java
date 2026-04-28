@@ -72,12 +72,12 @@ public class DataCloudBenchmark {
 
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            client.logEvent(tenant, DataCloudClient.Event.of("benchmark.test", Map.of("i", i))).getResult();
+            client.appendEvent(tenant, DataCloudClient.Event.of("benchmark.test", Map.of("i", i))).getResult();
         }
 
         long start = System.nanoTime();
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            client.logEvent(tenant, DataCloudClient.Event.of("benchmark.test", Map.of("i", i))).getResult();
+            client.appendEvent(tenant, DataCloudClient.Event.of("benchmark.test", Map.of("i", i))).getResult();
         }
         long durationMs = (System.nanoTime() - start) / 1_000_000;
         double opsPerSec = (BENCHMARK_ITERATIONS * 1000.0) / durationMs;

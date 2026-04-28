@@ -5,7 +5,7 @@
  *   - Operate  : runs, alerts, review queue
  *   - Build    : pipelines, pipeline builder, patterns
  *   - Learn    : learning episodes, agent memory
- *   - Govern   : policies, compliance, audit
+ *   - Govern   : policies, compliance, audit, privacy fulfilment
  *   - Catalog  : agents, workflows
  *
  * Contains:

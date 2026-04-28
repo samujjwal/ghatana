@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RunTable } from '@/components/monitoring/RunTable';
@@ -44,5 +44,27 @@ describe('RunTable', () => {
     expect(screen.getByText(/review before apply/i)).toBeInTheDocument();
     expect(screen.getByText(/validation errors increased/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /validation anomaly sample/i })).toBeInTheDocument();
+  });
+
+  it('exposes a false-positive feedback action for anomaly suggestions', async () => {
+    const user = userEvent.setup();
+    const onMarkFalsePositive = vi.fn();
+
+    render(
+      <RunTable
+        runs={[RUN]}
+        aiSuggestions={[{ ...SUGGESTION, anomalyId: 'anomaly-001' }]}
+        onMarkFalsePositive={onMarkFalsePositive}
+      />,
+      { wrapper: createAepTestWrapper() },
+    );
+
+    await user.click(screen.getByRole('button', { name: /anomaly suggestion/i }));
+    await user.click(screen.getByRole('button', { name: /show reasoning/i }));
+    await user.click(screen.getByRole('button', { name: /mark as not an anomaly/i }));
+
+    expect(onMarkFalsePositive).toHaveBeenCalledWith(
+      expect.objectContaining({ anomalyId: 'anomaly-001' }),
+    );
   });
 });
