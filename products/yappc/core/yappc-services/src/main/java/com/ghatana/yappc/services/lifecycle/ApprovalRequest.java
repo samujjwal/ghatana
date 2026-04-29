@@ -76,17 +76,37 @@ public record ApprovalRequest(
      * @param blockReason      human-readable description of the blocking concern
      * @param unmetCriteria    list of unmet gate criteria (may be empty)
      * @param missingArtifacts artifact IDs that are absent (may be empty)
+     * @param workflowId       workflow ID associated with this gate (may be {@code null})
+     * @param planId           current AI plan ID at the time of the gate (may be {@code null})
+     * @param priorPlanId      plan ID superseded by this approval decision (may be {@code null})
      */
     public record ApprovalContext(
             String fromPhase,
             String toPhase,
             String blockReason,
             List<String> unmetCriteria,
-            List<String> missingArtifacts
+            List<String> missingArtifacts,
+            String workflowId,
+            String planId,
+            String priorPlanId
     ) {
         public ApprovalContext {
             unmetCriteria    = unmetCriteria    != null ? List.copyOf(unmetCriteria)    : List.of();
             missingArtifacts = missingArtifacts != null ? List.copyOf(missingArtifacts) : List.of();
+        }
+
+        /**
+         * Convenience constructor for callers that do not yet have workflow / plan context.
+         * Equivalent to calling the canonical constructor with {@code null} for the last
+         * three fields.
+         */
+        public ApprovalContext(
+                String fromPhase,
+                String toPhase,
+                String blockReason,
+                List<String> unmetCriteria,
+                List<String> missingArtifacts) {
+            this(fromPhase, toPhase, blockReason, unmetCriteria, missingArtifacts, null, null, null);
         }
     }
 

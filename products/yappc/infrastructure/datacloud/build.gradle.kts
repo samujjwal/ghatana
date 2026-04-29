@@ -17,6 +17,7 @@ dependencies {
 
     // Platform libs
     implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:cache"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:database"))

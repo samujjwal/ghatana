@@ -160,6 +160,132 @@ class YappcDependencyGovernanceTest {
     }
 
     @Nested
+    @DisplayName("Agents / Scaffold / Refactorer Cluster Boundaries")
+    class AgentsScaffoldRefactorerBoundaries {
+
+        /**
+         * Agents are execution-layer concerns. They must not couple to scaffold (code generation /
+         * CLI) or refactorer (polyfix / AST rewriting) because those are separate capabilities
+         * that happen to live in the same product monorepo.
+         *
+         * <p>Section 21 of copilot-instructions.md: "Agent modules must NOT import from scaffold
+         * or refactorer".
+         */
+        @Test
+        @DisplayName("Agents must not depend on scaffold packages")
+        void agentsMustNotDependOnScaffold() {
+            ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.yappc.agent..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage(
+                    "com.ghatana.yappc.cli..",
+                    "com.ghatana.yappc.scaffold..",
+                    "com.ghatana.yappc.packs..")
+                .because("Agent execution modules must not depend on scaffold/CLI/packs — they are separate concerns")
+                .allowEmptyShould(true);
+
+            rule.check(yappcClasses);
+        }
+
+        @Test
+        @DisplayName("Agents must not depend on refactorer packages")
+        void agentsMustNotDependOnRefactorer() {
+            // refactorer lives under com.ghatana.refactorer, outside com.ghatana.yappc —
+            // import both scopes to detect accidental coupling.
+            JavaClasses broadClasses = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages("com.ghatana.yappc", "com.ghatana.refactorer");
+
+            ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.yappc.agent..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.ghatana.refactorer..")
+                .because("Agent modules must not depend on the refactorer (polyfix/AST) subsystem")
+                .allowEmptyShould(true);
+
+            rule.check(broadClasses);
+        }
+
+        @Test
+        @DisplayName("Scaffold must not depend on agent packages")
+        void scaffoldMustNotDependOnAgents() {
+            ArchRule rule = noClasses()
+                .that().resideInAnyPackage(
+                    "com.ghatana.yappc.cli..",
+                    "com.ghatana.yappc.scaffold..",
+                    "com.ghatana.yappc.packs..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.ghatana.yappc.agent..")
+                .because("Scaffold must not depend on agent internals — dependency must flow the other way")
+                .allowEmptyShould(true);
+
+            rule.check(yappcClasses);
+        }
+    }
+
+    @Nested
+    @DisplayName("Persistence Ownership Boundaries")
+    class PersistenceOwnershipBoundaries {
+
+        /**
+         * Domain and agent packages must interact with persistence exclusively through
+         * repository interfaces (e.g. {@code AiWorkflowRepository}). They must not
+         * depend on concrete JDBC implementations such as {@code JdbcHumanApprovalService}
+         * or {@code JdbcAuditLogger} directly, which would tightly couple the domain to
+         * infrastructure.
+         *
+         * <p>See {@code products/yappc/docs/PERSISTENCE_OWNERSHIP.md} for the full
+         * JDBC-vs-Prisma ownership matrix (F-Y008).
+         */
+        @Test
+        @DisplayName("Domain layer must not directly use JDBC implementation classes")
+        void domainLayerMustNotUseJdbcImplementations() {
+            ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.yappc.domain..")
+                .should().dependOnClassesThat()
+                .haveSimpleNameContaining("Jdbc")
+                .because("Domain layer must use repository interfaces, not JDBC implementations directly "
+                    + "(see products/yappc/docs/PERSISTENCE_OWNERSHIP.md)")
+                .allowEmptyShould(true);
+
+            rule.check(yappcClasses);
+        }
+
+        @Test
+        @DisplayName("Agent packages must not bypass the repository pattern with raw JDBC")
+        void agentsMustNotUseRawJdbc() {
+            ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.yappc.agent..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage("javax.sql..", "java.sql..")
+                .because("Agents must access persistence only through repository interfaces, "
+                    + "not raw JDBC (DataSource / Connection)")
+                .allowEmptyShould(true);
+
+            rule.check(yappcClasses);
+        }
+
+        @Test
+        @DisplayName("JDBC repository implementations must reside in designated packages")
+        void jdbcImplementationsMustResideInDesignatedPackages() {
+            // JDBC implementations may live in service, domain-impl, or infrastructure packages.
+            // They must not be scattered into agent or plugin packages.
+            ArchRule rule = noClasses()
+                .that().haveSimpleNameContaining("Jdbc")
+                .and().haveSimpleNameEndingWith("Repository")
+                .and().resideInAPackage("com.ghatana.yappc..")
+                .should().resideInAnyPackage(
+                    "com.ghatana.yappc.agent..",
+                    "com.ghatana.yappc.plugin..")
+                .because("Jdbc repository implementations must live in their domain/service/infrastructure "
+                    + "package, never inside agent or plugin layers")
+                .allowEmptyShould(true);
+
+            rule.check(yappcClasses);
+        }
+    }
+
+    @Nested
     @DisplayName("Deprecation Enforcement")
     class DeprecationEnforcement {
 

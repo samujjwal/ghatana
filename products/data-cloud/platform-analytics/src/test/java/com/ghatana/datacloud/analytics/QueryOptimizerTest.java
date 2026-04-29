@@ -179,4 +179,159 @@ class QueryOptimizerTest {
             assertThat(opt).isNotNull(); // GH-90000
         }
     }
+
+    @Nested
+    @DisplayName("Limit Pushdown")
+    class LimitPushdownTests {
+
+        @Test
+        @DisplayName("pushes LIMIT into plain subquery with no WHERE, GROUP BY, or DISTINCT")
+        void pushesLimitIntoSubquery() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT id, name FROM products) sub LIMIT 10";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isTrue();
+            assertThat(result.appliedOptimizations()).contains("Limit pushdown");
+            assertThat(result.optimizedQuery()).containsIgnoringCase("LIMIT 10");
+        }
+
+        @Test
+        @DisplayName("does not push LIMIT when outer has WHERE clause")
+        void doesNotPushLimitWhenOuterHasWhere() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT id, name FROM products) sub WHERE id > 5 LIMIT 10";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+            assertThat(result.appliedOptimizations()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("does not push LIMIT when inner subquery has GROUP BY")
+        void doesNotPushLimitWhenInnerHasGroupBy() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT category, COUNT(*) AS cnt FROM products GROUP BY category) sub LIMIT 5";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+        }
+
+        @Test
+        @DisplayName("does not push LIMIT when inner subquery already has LIMIT")
+        void doesNotPushLimitWhenInnerAlreadyHasLimit() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT id FROM products LIMIT 20) sub LIMIT 10";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+        }
+
+        @Test
+        @DisplayName("does not push LIMIT for simple table scan (no subquery)")
+        void doesNotPushLimitForTableScan() throws JSQLParserException {
+            String query = "SELECT * FROM products LIMIT 10";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+        }
+
+        @Test
+        @DisplayName("limit pushdown disabled flag prevents optimization")
+        void limitPushdownFlagDisablesOptimization() throws JSQLParserException {
+            QueryOptimizer noLimitOpt = new QueryOptimizer(true, true, false);
+            String query = "SELECT * FROM (SELECT id FROM products) sub LIMIT 10";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = noLimitOpt.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+        }
+
+        @Test
+        @DisplayName("does not push LIMIT when inner subquery has DISTINCT")
+        void doesNotPushLimitWhenInnerHasDistinct() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT DISTINCT category FROM products) sub LIMIT 5";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+        }
+
+        @Test
+        @DisplayName("does not push LIMIT when outer FROM has joins")
+        void doesNotPushLimitWhenOuterHasJoins() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT id FROM products) sub JOIN categories c ON sub.id = c.id LIMIT 10";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+
+            assertThat(result.optimized()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Optimization Throughput")
+    class OptimizationThroughputTests {
+
+        /**
+         * Throughput guard: the optimizer must process at least 500 queries per second
+         * for pushdown-eligible subquery patterns. This validates that jsqlparser AST
+         * rewriting does not regress to an unacceptable latency for high-frequency
+         * query optimization paths.
+         */
+        @Test
+        @DisplayName("processes at least 500 limit-pushdown queries per second")
+        void limitPushdownThroughputIsAcceptable() throws JSQLParserException {
+            String query = "SELECT * FROM (SELECT id, name, price FROM products) sub LIMIT 50";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            int iterations = 1000;
+            // Warm up
+            for (int i = 0; i < 50; i++) {
+                optimizer.optimize(query, stmt);
+            }
+
+            long start = System.nanoTime();
+            for (int i = 0; i < iterations; i++) {
+                QueryOptimizer.OptimizationResult result = optimizer.optimize(query, stmt);
+                assertThat(result.optimized()).isTrue();
+            }
+            long elapsedNs = System.nanoTime() - start;
+
+            double queriesPerSecond = (iterations * 1_000_000_000.0) / elapsedNs;
+            assertThat(queriesPerSecond)
+                    .as("Optimizer throughput must exceed 500 queries/sec, got %.1f", queriesPerSecond)
+                    .isGreaterThan(500.0);
+        }
+
+        @Test
+        @DisplayName("non-optimizable queries complete in under 5ms each")
+        void nonOptimizableQueryLatencyIsAcceptable() throws JSQLParserException {
+            String query = "SELECT category, COUNT(*) FROM products WHERE price > 100 GROUP BY category";
+            Statement stmt = CCJSqlParserUtil.parse(query);
+
+            int iterations = 100;
+            // Warm up
+            for (int i = 0; i < 10; i++) {
+                optimizer.optimize(query, stmt);
+            }
+
+            for (int i = 0; i < iterations; i++) {
+                long start = System.nanoTime();
+                optimizer.optimize(query, stmt);
+                long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+                assertThat(elapsedMs)
+                        .as("Single non-optimizable query must complete in under 5ms")
+                        .isLessThan(5L);
+            }
+        }
+    }
 }

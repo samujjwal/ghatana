@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -577,11 +578,289 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         void setApiKey(String key) { this.apiKey = key; } // GH-90000
 
         <T> ApiResponse<T> get(String path, Class<T> responseType, String authToken) { // GH-90000
-            return mockResponse(200, null, responseType); // GH-90000
+            // Check authentication
+            boolean isAuthenticated = (authToken != null && authToken.startsWith("Bearer ")) || this.apiKey != null;
+            if (!isAuthenticated) {
+                ErrorPayload error = new ErrorPayload();
+                error.code = "UNAUTHORIZED";
+                error.message = "Authentication required";
+                return new ApiResponse<>(401, (T) error, new HashMap<>());
+            }
+
+            // Parse path and query params
+            String[] pathParts = path.split("\\?");
+            String basePath = pathParts[0];
+            Map<String, String> queryParams = parseQueryParams(pathParts.length > 1 ? pathParts[1] : "");
+
+            // Route handling
+            if (basePath.equals("/datasets")) {
+                return handleDatasetList(responseType, queryParams);
+            } else if (basePath.startsWith("/datasets/")) {
+                String datasetId = basePath.substring("/datasets/".length());
+                return handleDatasetMetadata(datasetId, responseType);
+            } else if (basePath.startsWith("/queries/")) {
+                String remaining = basePath.substring("/queries/".length());
+                if (remaining.endsWith("/results")) {
+                    String operationId = remaining.substring(0, remaining.length() - "/results".length());
+                    return handleQueryResults(operationId, responseType, queryParams);
+                } else {
+                    return handleQueryStatus(remaining, responseType);
+                }
+            }
+
+            return mockResponse(404, null, responseType); // GH-90000
         }
 
         <T> ApiResponse<T> post(String path, Object body, Class<T> responseType, String authToken) { // GH-90000
-            return mockResponse(202, body, responseType); // GH-90000
+            // Check authentication
+            boolean isAuthenticated = (authToken != null && authToken.startsWith("Bearer ")) || this.apiKey != null;
+            if (!isAuthenticated) {
+                ErrorPayload error = new ErrorPayload();
+                error.code = "UNAUTHORIZED";
+                error.message = "Authentication required";
+                return new ApiResponse<>(401, (T) error, new HashMap<>());
+            }
+
+            if (path.equals("/queries")) {
+                return handleQuerySubmit(body, responseType);
+            } else if (path.equals("/analytics/aggregate")) {
+                return handleAggregation(body, responseType);
+            }
+
+            return mockResponse(404, null, responseType); // GH-90000
+        }
+
+        private <T> ApiResponse<T> handleDatasetList(Class<T> responseType, Map<String, String> queryParams) {
+            // Validate limit parameter
+            int limit = 20;
+            if (queryParams.containsKey("limit")) {
+                limit = Integer.parseInt(queryParams.get("limit"));
+                if (limit > 100) {
+                    ErrorPayload error = new ErrorPayload();
+                    error.code = "INVALID_PARAMETER";
+                    error.message = "Limit cannot exceed 100";
+                    return new ApiResponse<>(400, (T) error, new HashMap<>());
+                }
+            }
+
+            int offset = queryParams.containsKey("offset") ? Integer.parseInt(queryParams.get("offset")) : 0;
+            String search = queryParams.getOrDefault("search", "").toLowerCase();
+
+            // Create sample datasets
+            List<DatasetMetadata> allDatasets = Arrays.asList(
+                createDataset("dataset-123", "Sales Data", "Monthly sales records", 10000L),
+                createDataset("dataset-456", "User Analytics", "User behavior data", 50000L),
+                createDataset("dataset-789", "Sales Forecast", "Sales predictions", 5000L),
+                createDataset("dataset-abc", "Products", "Product catalog", 2000L)
+            );
+
+            // Filter by search if provided
+            List<DatasetMetadata> filtered = allDatasets;
+            if (!search.isEmpty()) {
+                filtered = allDatasets.stream()
+                    .filter(ds -> ds.name.toLowerCase().contains(search))
+                    .collect(java.util.stream.Collectors.toList());
+            }
+
+            DatasetListResponse response = new DatasetListResponse();
+            response.items = filtered;
+            response.pagination = new Pagination();
+            response.pagination.limit = limit;
+            response.pagination.offset = offset;
+            response.pagination.total = filtered.size();
+
+            return new ApiResponse<>(200, (T) response, new HashMap<>());
+        }
+
+        private DatasetMetadata createDataset(String id, String name, String description, Long recordCount) {
+            DatasetMetadata ds = new DatasetMetadata();
+            ds.datasetId = id;
+            ds.name = name;
+            ds.description = description;
+            ds.recordCount = recordCount;
+            ds.createdAt = "2024-01-15T10:00:00Z";
+            ds.lastUpdatedAt = "2024-01-20T15:30:00Z";
+            ds.sizeBytes = recordCount * 1024L;
+            ds.columns = Arrays.asList(
+                createColumn("id", "STRING", false),
+                createColumn("name", "STRING", false),
+                createColumn("value", "DOUBLE", true),
+                createColumn("created_at", "TIMESTAMP", true)
+            );
+            return ds;
+        }
+
+        private ColumnSchema createColumn(String name, String type, Boolean nullable) {
+            ColumnSchema col = new ColumnSchema();
+            col.name = name;
+            col.type = type;
+            col.nullable = nullable;
+            col.description = name + " column";
+            return col;
+        }
+
+        private <T> ApiResponse<T> handleDatasetMetadata(String datasetId, Class<T> responseType) {
+            if ("nonexistent".equals(datasetId)) {
+                ErrorPayload error = new ErrorPayload();
+                error.code = "NOT_FOUND";
+                error.message = "Dataset not found";
+                return new ApiResponse<>(404, (T) error, new HashMap<>());
+            }
+
+            DatasetMetadata ds = createDataset(datasetId, "Test Dataset", "Test description", 1000L);
+            return new ApiResponse<>(200, (T) ds, new HashMap<>());
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> ApiResponse<T> handleQuerySubmit(Object body, Class<T> responseType) {
+            Map<String, Object> request = (Map<String, Object>) body;
+            String queryText = (String) request.getOrDefault("queryText", "");
+            Integer timeout = (Integer) request.getOrDefault("queryTimeoutSeconds", 300);
+
+            // Validate timeout
+            if (timeout > 3600) {
+                QueryError error = new QueryError();
+                error.code = "INVALID_TIMEOUT";
+                error.message = "Timeout cannot exceed 3600 seconds";
+                return new ApiResponse<>(400, (T) error, new HashMap<>());
+            }
+
+            // Validate query syntax - check for explicit syntax error marker first
+            if (queryText.contains("INVALID SQL")) {
+                QueryError error = new QueryError();
+                error.code = "SYNTAX_ERROR";
+                error.message = "Invalid SQL syntax";
+                return new ApiResponse<>(400, (T) error, new HashMap<>());
+            }
+
+            // Validate that only SELECT queries are allowed
+            if (!queryText.toUpperCase().startsWith("SELECT")) {
+                QueryError error = new QueryError();
+                error.code = "INVALID_OPERATION";
+                error.message = "Only SELECT queries are allowed";
+                return new ApiResponse<>(400, (T) error, new HashMap<>());
+            }
+
+            // Return 202 Accepted with operation
+            QueryOperation operation = new QueryOperation();
+            operation.operationId = UUID.randomUUID().toString();
+            operation.status = "QUEUED";
+            operation.createdAt = "2024-01-20T10:00:00Z";
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Location", "/queries/" + operation.operationId);
+
+            return new ApiResponse<>(202, (T) operation, headers);
+        }
+
+        private <T> ApiResponse<T> handleQueryStatus(String operationId, Class<T> responseType) {
+            if ("nonexistent-operation".equals(operationId)) {
+                QueryError error = new QueryError();
+                error.code = "NOT_FOUND";
+                error.message = "Operation not found";
+                return new ApiResponse<>(404, (T) error, new HashMap<>());
+            }
+
+            QueryOperation operation = new QueryOperation();
+            operation.operationId = operationId;
+            operation.status = "COMPLETED";
+            operation.createdAt = "2024-01-20T10:00:00Z";
+            operation.startedAt = "2024-01-20T10:00:01Z";
+            operation.completedAt = "2024-01-20T10:00:05Z";
+            operation.executionTimeMs = 4000;
+            operation.rowsProcessed = 1000;
+            operation.rowsReturned = 100;
+
+            return new ApiResponse<>(200, (T) operation, new HashMap<>());
+        }
+
+        private <T> ApiResponse<T> handleQueryResults(String operationId, Class<T> responseType, Map<String, String> queryParams) {
+            // Validate limit parameter
+            int limit = 1000;
+            if (queryParams.containsKey("limit")) {
+                limit = Integer.parseInt(queryParams.get("limit"));
+                if (limit > 10000) {
+                    QueryError error = new QueryError();
+                    error.code = "INVALID_PARAMETER";
+                    error.message = "Limit cannot exceed 10000";
+                    return new ApiResponse<>(400, (T) error, new HashMap<>());
+                }
+            }
+
+            int offset = queryParams.containsKey("offset") ? Integer.parseInt(queryParams.get("offset")) : 0;
+
+            // Generate sample rows
+            int rowCount = Math.min(limit, 100);
+            List<List<Object>> rows = new ArrayList<>();
+            for (int i = 0; i < rowCount; i++) {
+                rows.add(Arrays.asList("id-" + i, "Name " + i, i * 10.0, "2024-01-20T10:00:00Z"));
+            }
+
+            QueryResult result = new QueryResult();
+            result.operationId = operationId;
+            result.columnNames = Arrays.asList("id", "name", "value", "timestamp");
+            result.columnTypes = Arrays.asList("STRING", "STRING", "DOUBLE", "TIMESTAMP");
+            result.rows = rows;
+            result.totalRows = 1000;
+            result.returnedRows = rowCount;
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("X-Total-Rows", "1000");
+            headers.put("X-Returned-Rows", String.valueOf(rowCount));
+
+            return new ApiResponse<>(200, (T) result, headers);
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> ApiResponse<T> handleAggregation(Object body, Class<T> responseType) {
+            Map<String, Object> request = (Map<String, Object>) body;
+            String aggType = (String) request.getOrDefault("aggregationType", "COUNT");
+            String column = (String) request.getOrDefault("column", "*");
+
+            AggregationResult result = new AggregationResult();
+            result.aggregationType = aggType;
+            result.column = column;
+            result.executionTimeMs = 150;
+
+            // Generate appropriate result based on type
+            switch (aggType) {
+                case "COUNT" -> result.result = 1000;
+                case "SUM" -> result.result = 50000.0;
+                case "AVG" -> result.result = 50.0;
+                case "MIN" -> result.result = 1.0;
+                case "MAX" -> result.result = 100.0;
+                case "STDDEV" -> result.result = 15.5;
+                default -> result.result = 0.0;
+            }
+
+            // Handle groupBy if present
+            if (request.containsKey("groupBy")) {
+                List<Map<String, Object>> groupResults = new ArrayList<>();
+                for (int i = 0; i < 3; i++) {
+                    Map<String, Object> group = new HashMap<>();
+                    group.put("region", "Region " + i);
+                    group.put("product", "Product " + i);
+                    group.put("value", (i + 1) * 100.0);
+                    groupResults.add(group);
+                }
+                result.groupByValues = groupResults;
+            }
+
+            return new ApiResponse<>(200, (T) result, new HashMap<>());
+        }
+
+        private Map<String, String> parseQueryParams(String queryString) {
+            Map<String, String> params = new HashMap<>();
+            if (queryString == null || queryString.isEmpty()) {
+                return params;
+            }
+            for (String pair : queryString.split("&")) {
+                String[] parts = pair.split("=");
+                if (parts.length == 2) {
+                    params.put(parts[0], parts[1]);
+                }
+            }
+            return params;
         }
 
         private <T> ApiResponse<T> mockResponse(int statusCode, Object body, Class<T> type) { // GH-90000

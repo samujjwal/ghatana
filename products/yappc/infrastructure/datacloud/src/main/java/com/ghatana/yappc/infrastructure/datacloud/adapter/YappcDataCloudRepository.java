@@ -156,7 +156,7 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
 
         // Check Redis cache first if available
         if (redisCache != null) {
-            Optional<T> cached = redisCache.get(id.toString());
+            Optional<T> cached = redisCache.get(id.toString(), entityClass);
             if (cached.isPresent()) {
                 LOG.debug("Redis cache hit for {}:{}", collectionName, id);
                 return Promise.of(cached);

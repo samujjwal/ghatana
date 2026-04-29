@@ -5,6 +5,8 @@
 package com.ghatana.datacloud.analytics;
 
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.Limit;
+import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import org.slf4j.Logger;
@@ -115,44 +117,100 @@ public final class QueryOptimizer {
     /**
      * Applies predicate pushdown optimization.
      *
-     * <p>Moves WHERE clauses as close to the data source as possible
-     * to reduce the amount of data processed.</p>
+     * <p>ClickHouse evaluates WHERE predicates at the storage engine level using primary key
+     * ordering, projection skipping, and partition pruning. Rewriting predicates in SQL AST
+     * before they reach the engine would duplicate work and risk introducing incorrect rewrites.
+     * This pass is intentionally a no-op; the storage connector handles pushdown natively.</p>
      *
      * @param select plain select
-     * @return optimization result
+     * @return unmodified optimization result
      */
     private OptimizationResult applyPredicatePushdown(PlainSelect select) {
-        // Predicate pushdown is handled by the storage connector
-        // This is a placeholder for future implementation
+        logger.debug("Predicate pushdown deferred to ClickHouse storage engine for query");
         return new OptimizationResult(false, select.toString(), List.of());
     }
 
     /**
      * Applies column pruning optimization.
      *
-     * <p>Removes unused columns from SELECT to reduce data transfer.</p>
+     * <p>ClickHouse column-oriented storage reads only the columns referenced in a query.
+     * Projection and column selection happen natively at the MergeTree storage level.
+     * This pass is intentionally a no-op; the storage connector handles column pruning natively.</p>
      *
      * @param select plain select
-     * @return optimization result
+     * @return unmodified optimization result
      */
     private OptimizationResult applyColumnPruning(PlainSelect select) {
-        // Column pruning is handled by the storage connector
-        // This is a placeholder for future implementation
+        logger.debug("Column pruning deferred to ClickHouse columnar storage engine for query");
         return new OptimizationResult(false, select.toString(), List.of());
     }
 
     /**
-     * Applies limit pushdown optimization.
+     * Applies LIMIT pushdown optimization.
      *
-     * <p>Ensures LIMIT is applied as early as possible in the execution plan.</p>
+     * <p>When the outer query selects from a plain subquery with a LIMIT, and the inner subquery
+     * carries no GROUP BY, HAVING, DISTINCT, OFFSET, or pre-existing LIMIT, the outer LIMIT is
+     * copied into the inner subquery. This allows the inner query to short-circuit row production
+     * earlier in the execution plan, reducing data read from storage.</p>
      *
-     * @param select plain select
-     * @return optimization result
+     * <p>Pushdown is skipped when:</p>
+     * <ul>
+     *   <li>The outer query has a WHERE clause (filtering after inner rows are produced changes
+     *       cardinality — adding LIMIT to inner could cause the outer WHERE to see fewer rows
+     *       than required).</li>
+     *   <li>The inner query has GROUP BY, HAVING, or DISTINCT (these change cardinality or order
+     *       before the outer LIMIT applies).</li>
+     *   <li>The inner query already has a LIMIT or OFFSET.</li>
+     *   <li>The outer FROM clause is not a single, non-joined subquery.</li>
+     * </ul>
+     *
+     * @param select outer plain select
+     * @return optimized result with LIMIT pushed into subquery, or unmodified if not applicable
      */
     private OptimizationResult applyLimitPushdown(PlainSelect select) {
-        // Limit pushdown is already handled by AnalyticsQueryEngine
-        // This is a placeholder for future implementation
-        return new OptimizationResult(false, select.toString(), List.of());
+        Limit outerLimit = select.getLimit();
+        if (outerLimit == null || outerLimit.getRowCount() == null) {
+            return new OptimizationResult(false, select.toString(), List.of());
+        }
+
+        // Outer WHERE would change cardinality after inner rows are produced; skip pushdown.
+        if (select.getWhere() != null) {
+            logger.debug("Skipping LIMIT pushdown: outer WHERE clause present");
+            return new OptimizationResult(false, select.toString(), List.of());
+        }
+
+        // Only push when FROM is a single, un-joined subquery.
+        if (select.getJoins() != null && !select.getJoins().isEmpty()) {
+            return new OptimizationResult(false, select.toString(), List.of());
+        }
+
+        if (!(select.getFromItem() instanceof ParenthesedSelect parenthesedFrom)) {
+            return new OptimizationResult(false, select.toString(), List.of());
+        }
+
+        PlainSelect inner = parenthesedFrom.getPlainSelect();
+        if (inner == null) {
+            return new OptimizationResult(false, select.toString(), List.of());
+        }
+
+        // Guard conditions: operations that alter row cardinality or ordering semantics.
+        if (inner.getGroupBy() != null
+                || inner.getHaving() != null
+                || inner.getDistinct() != null
+                || inner.getLimit() != null
+                || (inner.getLimit() != null && inner.getLimit().getOffset() != null)) {
+            logger.debug("Skipping LIMIT pushdown: inner subquery has GROUP BY, HAVING, DISTINCT, or LIMIT");
+            return new OptimizationResult(false, select.toString(), List.of());
+        }
+
+        // Push the outer LIMIT into the inner subquery.
+        Limit innerLimit = new Limit();
+        innerLimit.setRowCount(outerLimit.getRowCount());
+        inner.setLimit(innerLimit);
+
+        String optimized = select.toString();
+        logger.debug("Applied LIMIT pushdown: limit {} pushed into subquery", outerLimit.getRowCount());
+        return new OptimizationResult(true, optimized, List.of("Limit pushed into subquery"));
     }
 
     /**

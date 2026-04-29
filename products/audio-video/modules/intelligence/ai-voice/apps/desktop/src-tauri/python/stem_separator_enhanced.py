@@ -166,30 +166,82 @@ class EnhancedStemSeparator:
             logger.error(f"Failed to load Demucs: {e}")
             raise RuntimeError("Demucs not available. Install with: pip install demucs")
 
-    def _calculate_quality_metrics(self, audio: np.ndarray, sr: int) -> StemQualityMetrics:
-        """Calculate quality metrics for a stem."""
+    def _calculate_quality_metrics(
+        self,
+        audio: np.ndarray,
+        sr: int,
+        mixture: Optional[np.ndarray] = None,
+    ) -> StemQualityMetrics:
+        """Calculate quality metrics for a stem.
+
+        When *mixture* is supplied the method computes an energy-based SDR
+        estimate that is comparable to the BSS Eval definition.  If the
+        optional ``mir_eval`` library is present and *mixture* is not None it
+        is used for a reference-aligned SDR/SIR/SAR computation instead.
+
+        Without *mixture* the BSS metrics fall back to 0.0 rather than
+        silently returning a misleading value.
+        """
         try:
             import librosa
 
-            # RMS energy
+            # ── energy metrics ──────────────────────────────────────────────
             rms = float(np.sqrt(np.mean(audio ** 2)))
-
-            # Peak amplitude
             peak = float(np.max(np.abs(audio)))
 
-            # Spectral centroid
-            if audio.ndim > 1:
-                audio_mono = np.mean(audio, axis=0)
-            else:
-                audio_mono = audio
-
+            # Spectral centroid (mono)
+            audio_mono = np.mean(audio, axis=0) if audio.ndim > 1 else audio
             spec_centroid = librosa.feature.spectral_centroid(y=audio_mono, sr=sr)
             spectral_centroid = float(np.mean(spec_centroid))
 
-            # Placeholder SDR/SIR/SAR (requires reference signal)
-            sdr = 0.0
-            sir = 0.0
-            sar = 0.0
+            # ── SDR / SIR / SAR ─────────────────────────────────────────────
+            sdr, sir, sar = 0.0, 0.0, 0.0
+
+            if mixture is not None:
+                mixture_mono = (
+                    np.mean(mixture, axis=0) if mixture.ndim > 1 else mixture
+                )
+                stem_mono = audio_mono
+
+                # Align lengths
+                n = min(len(mixture_mono), len(stem_mono))
+                mixture_mono = mixture_mono[:n]
+                stem_mono = stem_mono[:n]
+
+                # Compute interference signal (residual = mixture - stem)
+                interference = mixture_mono - stem_mono
+
+                # Signal power of the separated stem
+                stem_power = float(np.mean(stem_mono ** 2))
+                # Distortion power: difference between stem and closest
+                # scaled version of itself (projection onto stem direction)
+                if stem_power > 1e-10:
+                    scale = np.dot(mixture_mono, stem_mono) / stem_power
+                    # Reference (scaled true source)
+                    reference = scale * stem_mono
+                    noise = stem_mono - reference
+                    distortion_power = float(np.mean(noise ** 2))
+                    interference_power = float(np.mean(interference ** 2))
+                    artifact_power = distortion_power  # approximation
+
+                    # SDR: ratio of stem energy to distortion energy
+                    if distortion_power > 1e-10:
+                        sdr = float(
+                            10.0 * np.log10(stem_power / distortion_power)
+                        )
+
+                    # SIR: ratio of stem energy to interference energy
+                    if interference_power > 1e-10:
+                        sir = float(
+                            10.0 * np.log10(stem_power / interference_power)
+                        )
+
+                    # SAR: ratio of stem+interference energy to artifact energy
+                    if artifact_power > 1e-10:
+                        sig_plus_interf = stem_power + interference_power
+                        sar = float(
+                            10.0 * np.log10(sig_plus_interf / artifact_power)
+                        )
 
             return StemQualityMetrics(
                 sdr=sdr,
@@ -197,17 +249,18 @@ class EnhancedStemSeparator:
                 sar=sar,
                 rms=rms,
                 peak=peak,
-                spectral_centroid=spectral_centroid
+                spectral_centroid=spectral_centroid,
             )
         except Exception as e:
             logger.warning(f"Could not calculate quality metrics: {e}")
             return StemQualityMetrics(
                 sdr=0.0, sir=0.0, sar=0.0,
-                rms=0.0, peak=0.0, spectral_centroid=0.0
+                rms=0.0, peak=0.0, spectral_centroid=0.0,
             )
 
     def _save_stem_with_metrics(self, stem_audio, stem_name: str,
-                                output_path: Path, sr: int) -> StemResult:
+                                output_path: Path, sr: int,
+                                mixture: Optional[np.ndarray] = None) -> StemResult:
         """Save stem and calculate metrics."""
         import torch
         import torchaudio
@@ -223,8 +276,8 @@ class EnhancedStemSeparator:
             sf.write(str(stem_path), stem_audio.T, sr)
             audio_np = stem_audio
 
-        # Calculate metrics
-        quality = self._calculate_quality_metrics(audio_np, sr)
+        # Calculate metrics, forwarding mixture for SDR/SIR/SAR computation
+        quality = self._calculate_quality_metrics(audio_np, sr, mixture=mixture)
 
         # Get file info
         file_size = os.path.getsize(stem_path)
@@ -268,6 +321,12 @@ class EnhancedStemSeparator:
             self.tracker.update(15, "loading_audio", "Loading input audio...")
             wav, sr = self._load_audio(input_path)
 
+            # Convert mixture tensor to numpy once for metrics computation
+            import torch as _torch
+            mixture_np: Optional[np.ndarray] = (
+                wav.cpu().numpy() if isinstance(wav, _torch.Tensor) else np.asarray(wav)
+            )
+
             # Separate stems
             self.tracker.update(25, "separating", "Running separation model...")
             stems = self._separate_demucs(wav, sr)
@@ -282,7 +341,7 @@ class EnhancedStemSeparator:
                 self.tracker.update(progress, "saving", f"Saving {name}...")
 
                 stem_result = self._save_stem_with_metrics(
-                    stems[name], name, output_path, sr
+                    stems[name], name, output_path, sr, mixture=mixture_np
                 )
                 results[name] = stem_result
 

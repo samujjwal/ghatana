@@ -13,7 +13,9 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Nested;
 
 /**
  * Unit tests for {@link TtsGrpcService}.
@@ -252,7 +255,7 @@ class TtsGrpcServiceTest {
     @DisplayName("cloneVoice: valid name + samples → cloned voice returned")
     void cloneVoice_validRequest_returnsClonedVoice() throws Exception { // GH-90000
         VoiceInfo cloned = new VoiceInfo("cloned-1", "MyVoice", "Custom cloned voice", // GH-90000
-                Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, 22050, true, 5_000_000L);
+                Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, 22050, true, 5_000_000L, 0.75f);
         when(mockEngine.cloneVoice(anyString(), any(), any())).thenReturn(cloned); // GH-90000
 
         CloneVoiceRequest request = CloneVoiceRequest.newBuilder() // GH-90000
@@ -264,10 +267,11 @@ class TtsGrpcServiceTest {
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
         CloneVoiceResponse response = observer.getValue(); // GH-90000
-        assertThat(response.getSuccess()).isTrue(); // GH-90000
-        assertThat(response.getVoiceId()).isEqualTo("cloned-1");
-        assertThat(response.getVoice().getIsCloned()).isTrue(); // GH-90000
-    }
+                assertThat(response.getSuccess()).isTrue(); // GH-90000
+                assertThat(response.getVoiceId()).isEqualTo("cloned-1");
+                assertThat(response.getVoice().getIsCloned()).isTrue(); // GH-90000
+                assertThat(response.getSimilarityScore()).isEqualTo(0.75f); // AV-M4: real score from VoiceInfo
+        }
 
     @Test
     @DisplayName("cloneVoice: blank voiceName → INVALID_ARGUMENT")
@@ -335,7 +339,69 @@ class TtsGrpcServiceTest {
     // Test infrastructure
     // ─────────────────────────────────────────────────────────────
 
-    static class CapturingObserver<T> implements StreamObserver<T> {
+        // ─────────────────────────────────────────────────────────────
+        // P50/P95/P99 histogram configuration tests (AV-M1)
+        // ─────────────────────────────────────────────────────────────
+
+        @Nested
+        @DisplayName("TTS timer — P50/P95/P99 histogram configuration")
+        class StreamingLatencyHistogramTests {
+
+                private SimpleMeterRegistry histogramRegistry;
+                private Timer synthesizeTimer;
+                private Timer streamingTimer;
+
+                @BeforeEach
+                void setUp() { // GH-90000
+                        histogramRegistry = new SimpleMeterRegistry(); // GH-90000
+                        // Constructing the real TtsGrpcService wires both timers with publishPercentiles()
+                        new TtsGrpcService(mockLibrary, histogramRegistry); // GH-90000
+                        synthesizeTimer = histogramRegistry.find("tts.synthesize").timer(); // GH-90000
+                        streamingTimer = histogramRegistry.find("tts.synthesize.streaming").timer(); // GH-90000
+                }
+
+                @Test
+                @DisplayName("synthesize timer registered with P50/P95/P99 histogram; P95 not NaN after recording")
+                void synthesizeTimer_p95Percentile_trackedAfterRecording() { // GH-90000
+                        assertThat(synthesizeTimer).isNotNull(); // GH-90000
+                        synthesizeTimer.record(80, TimeUnit.MILLISECONDS); // GH-90000
+
+                        assertThat(synthesizeTimer.percentile(0.95, TimeUnit.MILLISECONDS))
+                                .isNotNaN(); // GH-90000
+                }
+
+                @Test
+                @DisplayName("synthesize timer P50 not NaN after recording")
+                void synthesizeTimer_p50Percentile_trackedAfterRecording() { // GH-90000
+                        assertThat(synthesizeTimer).isNotNull(); // GH-90000
+                        synthesizeTimer.record(80, TimeUnit.MILLISECONDS); // GH-90000
+
+                        assertThat(synthesizeTimer.percentile(0.50, TimeUnit.MILLISECONDS))
+                                .isNotNaN(); // GH-90000
+                }
+
+                @Test
+                @DisplayName("streaming timer registered with P50/P95/P99 histogram; P95 not NaN after recording")
+                void streamingTimer_p95Percentile_trackedAfterRecording() { // GH-90000
+                        assertThat(streamingTimer).isNotNull(); // GH-90000
+                        streamingTimer.record(150, TimeUnit.MILLISECONDS); // GH-90000
+
+                        assertThat(streamingTimer.percentile(0.95, TimeUnit.MILLISECONDS))
+                                .isNotNaN(); // GH-90000
+                }
+
+                @Test
+                @DisplayName("streaming timer P99 not NaN after recording")
+                void streamingTimer_p99Percentile_trackedAfterRecording() { // GH-90000
+                        assertThat(streamingTimer).isNotNull(); // GH-90000
+                        streamingTimer.record(300, TimeUnit.MILLISECONDS); // GH-90000
+
+                        assertThat(streamingTimer.percentile(0.99, TimeUnit.MILLISECONDS))
+                                .isNotNaN(); // GH-90000
+                }
+        }
+
+        static class CapturingObserver<T> implements StreamObserver<T> {
         private T value;
         private Throwable error;
 

@@ -57,7 +57,20 @@ public interface QueueProducerStrategy {
      * @return Promise containing the message id
      */
     default Promise<String> send(String key, String payload) {
-        QueueMessage msg = new QueueMessage(key, payload, Map.of());
+        return send(key, payload, Map.of());
+    }
+
+    /**
+     * Send a keyed payload with explicit headers to the queue asynchronously.
+     * Use this overload to propagate correlation IDs and other trace headers.
+     *
+     * @param key     message routing key
+     * @param payload message body
+     * @param headers message headers (e.g. X-Correlation-ID)
+     * @return Promise containing the message id
+     */
+    default Promise<String> send(String key, String payload, Map<String, String> headers) {
+        QueueMessage msg = new QueueMessage(key, payload, headers);
         ConnectorSendResult result = sendWithResult(msg);
         if (result.isSuccess()) {
             return Promise.of(result.messageId());

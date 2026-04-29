@@ -10,10 +10,37 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Semantic Cache Service for AI Responses (Java/ActiveJ)
+ * Semantic Cache Service for AI Responses.
  *
- * High-performance semantic caching using embeddings and cosine similarity.
- * Returns cached responses for queries with similarity > 0.95 threshold.
+ * <p>Caches AI model responses by embedding similarity rather than exact query match.
+ * A lookup returns a hit when the cosine similarity of the incoming query embedding
+ * against a stored embedding meets or exceeds the <b>similarity threshold</b>.</p>
+ *
+ * <h2>Default configuration</h2>
+ * <ul>
+ *   <li><b>Similarity threshold</b>: {@code 0.95} — two queries must share ≥ 95% cosine
+ *       similarity for the cached response to be reused. Increase toward 1.0 for stricter
+ *       matching (fewer false positives, more misses); decrease toward 0.85 for broader
+ *       reuse (more hits, higher false-positive risk). Override via
+ *       {@link CacheConfig#similarityThreshold()}.</li>
+ *   <li><b>TTL</b>: {@code 24 hours} — cached entries expire 24 h after creation.
+ *       Expired entries are skipped on lookup and removed by the next LRU eviction pass.
+ *       Override via {@link CacheConfig#ttl()}.</li>
+ *   <li><b>Max cache size</b>: {@code 10 000 entries} — oldest (LRU) entries are evicted
+ *       when this limit is reached. Override via {@link CacheConfig#maxCacheSize()}.</li>
+ *   <li><b>Embedding dimension</b>: {@code 1536} — matches OpenAI {@code text-embedding-ada-002}.
+ *       Adjust if a different embedding model is used.</li>
+ * </ul>
+ *
+ * <h2>Hit-ratio metric</h2>
+ * <p>Call {@link #hitRatio()} for a point-in-time (hits / (hits + misses)) ratio in
+ * {@code [0.0, 1.0]}. The value {@code 0.0} is returned when no lookups have been
+ * performed yet. The full counter breakdown is available via {@link #getStats()}.</p>
+ *
+ * <h2>Thread safety</h2>
+ * <p>Lookup and store operations are protected by a {@link ReadWriteLock}. Metric counters
+ * ({@code totalHits}, {@code totalMisses}) are not protected by the same lock; they may
+ * exhibit slight skew under very high concurrency but are suitable for observability use.</p>
  *
  * @doc.type class
  * @doc.purpose Semantic caching for AI responses using embedding similarity
@@ -329,6 +356,21 @@ public class SemanticCacheService {
                 Map.copyOf(hitsByModel),
                 Map.copyOf(hitsByFeature)
         );
+    }
+
+    /**
+     * Returns the point-in-time cache hit ratio as a value in {@code [0.0, 1.0]}.
+     *
+     * <p>The ratio is computed as {@code hits / (hits + misses)}. Returns {@code 0.0}
+     * when no lookups have been performed yet. This method is intended for lightweight
+     * observability polling (e.g., exposing to a metrics endpoint) without constructing
+     * the full {@link CacheStats} record.</p>
+     *
+     * @return hit ratio in [0.0, 1.0]; {@code 0.0} if no lookups have occurred
+     */
+    public double hitRatio() {
+        long total = totalHits + totalMisses;
+        return total == 0 ? 0.0 : (double) totalHits / total;
     }
 
     /**

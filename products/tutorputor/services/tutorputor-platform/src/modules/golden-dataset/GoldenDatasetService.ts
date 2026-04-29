@@ -123,9 +123,7 @@ export class GoldenDatasetService {
    * Generate output for a golden entry
    */
   private async generateOutput(entry: GoldenDatasetEntry): Promise<string> {
-    // In a real implementation, this would call the actual AI generation services
-    // For now, return a placeholder
-    return `[Generated output for ${entry.inputType}] ${entry.input}`;
+    throw new Error('GoldenDataset output generation requires AI generation service integration. Implement actual AI generation pipeline for golden dataset evaluation.');
   }
 
   /**

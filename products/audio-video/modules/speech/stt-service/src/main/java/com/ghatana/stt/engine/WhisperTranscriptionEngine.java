@@ -53,15 +53,26 @@ public class WhisperTranscriptionEngine {
     /**
      * Transcribes the given audio bytes with auto-detected format.
      *
+     * <p>Input validation is enforced before any engine work is attempted:
+     * null or empty {@code audioData} throws {@link TranscriptionException};
+     * null {@code format} throws {@link NullPointerException}. This guarantees
+     * consistent argument-contract behaviour even while the ONNX backend is absent.
+     *
      * @param audioData  raw audio bytes (must not be null or empty)
-     * @param format     input audio format
+     * @param format     input audio format (must not be null)
      * @param language   BCP-47 language hint (null = auto-detect)
      * @return transcription result
-     * @throws UnsupportedOperationException always - this engine is not implemented
+     * @throws TranscriptionException        if {@code audioData} is null or empty
+     * @throws NullPointerException          if {@code format} is null
+     * @throws UnsupportedOperationException always after validation passes — engine not yet implemented
      * @deprecated Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription
      */
     @Deprecated
     public TranscriptionResult transcribe(byte[] audioData, AudioFormat format, String language) {
+        // Validate inputs before surfacing the not-implemented signal so that
+        // callers receive consistent argument-contract errors regardless of
+        // engine availability (tracked in GH-90000).
+        validate(audioData, format);
         throw new UnsupportedOperationException(
                 "WhisperTranscriptionEngine is not implemented. " +
                 "Use GrpcSttClientAdapter with SttMode.LLM_FALLBACK for transcription via AI Inference Service. " +

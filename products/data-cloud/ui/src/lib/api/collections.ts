@@ -26,20 +26,29 @@ import {
 // ---------------------------------------------------------------------------
 
 function entityToCollection(e: BackendEntity): Collection {
-    const d = e.data as Partial<Collection>;
+    const d = e.data as Record<string, unknown>;
+    const schema = d.schema as CollectionSchema | undefined;
     return {
         id: e.id,
         name: String(d.name ?? ''),
         description: String(d.description ?? ''),
         schemaType: (d.schemaType ?? 'entity') as Collection['schemaType'],
         status: (d.status ?? 'draft') as Collection['status'],
-        isActive: d.isActive ?? (d.status === 'active'),
+        isActive: Boolean(d.isActive ?? (d.status === 'active')),
         entityCount: Number(d.entityCount ?? 0),
-        schema: (d.schema ?? { fields: [] }) as CollectionSchema,
+        schema: schema ?? { fields: [] },
         tags: Array.isArray(d.tags) ? (d.tags as string[]) : [],
         createdAt: e.createdAt ?? String(d.createdAt ?? new Date().toISOString()),
         updatedAt: e.updatedAt ?? String(d.updatedAt ?? new Date().toISOString()),
         createdBy: String(d.createdBy ?? 'unknown'),
+        // P0.2 first-class collection registry fields
+        lifecycleStatus: (d.lifecycleStatus ?? 'DRAFT') as Collection['lifecycleStatus'],
+        operationalStatus: (d.operationalStatus ?? 'unknown') as Collection['operationalStatus'],
+        qualityScore: d.qualityScore != null ? Number(d.qualityScore) : undefined,
+        qualityMetrics: d.qualityMetrics as Record<string, number> | undefined,
+        retentionPolicy: d.retentionPolicy as Record<string, unknown> | undefined,
+        lineage: d.lineage as Record<string, unknown> | undefined,
+        owner: String(d.owner ?? d.createdBy ?? 'unknown'),
     };
 }
 
@@ -61,7 +70,7 @@ export interface CollectionSchema {
 }
 
 /**
- * Collection entity
+ * Collection entity with first-class registry metadata (P0.2).
  */
 export interface Collection {
     id: string;
@@ -76,6 +85,14 @@ export interface Collection {
     createdAt: string;
     updatedAt: string;
     createdBy: string;
+    // Registry metadata (P0.2)
+    lifecycleStatus: 'DRAFT' | 'PUBLISHED' | 'DEPRECATED' | 'ARCHIVED' | 'UNKNOWN';
+    operationalStatus: 'healthy' | 'degraded' | 'unavailable' | 'maintenance' | 'unknown';
+    qualityScore?: number;
+    qualityMetrics?: Record<string, number>;
+    retentionPolicy?: Record<string, unknown>;
+    lineage?: Record<string, unknown>;
+    owner: string;
 }
 
 /**
@@ -175,6 +192,9 @@ export const collectionsApi = {
             createdAt: saved.createdAt ?? new Date().toISOString(),
             updatedAt: saved.createdAt ?? new Date().toISOString(),
             createdBy: 'current-user',
+            lifecycleStatus: 'DRAFT',
+            operationalStatus: 'healthy',
+            owner: 'current-user',
         };
     },
 

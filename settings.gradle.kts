@@ -167,6 +167,8 @@ include(":products:data-cloud:platform-api")
 include(":products:data-cloud:launcher")
 include(":products:data-cloud:sdk")
 include(":products:data-cloud:agent-registry")
+include(":products:data-cloud:agent-catalog")
+include(":products:data-cloud:api")
 include(":products:data-cloud:feature-store-ingest")
 include(":products:data-cloud:integration-tests")
 

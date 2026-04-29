@@ -50,47 +50,7 @@ export class PluginMarketplaceService {
    * Get available plugins from marketplace
    */
   async getAvailablePlugins(): Promise<PluginManifest[]> {
-    // This would typically fetch from a remote marketplace registry
-    // For now, return a placeholder list
-    const plugins: PluginManifest[] = [
-      {
-        id: "plugin-analytics-advanced",
-        name: "Advanced Analytics",
-        version: "1.0.0",
-        description: "Advanced analytics dashboards with custom metrics",
-        author: "TutorPutor",
-        category: "analytics",
-        capabilities: ["analytics"],
-        dependencies: [],
-        lifecycleHooks: {
-          onInstall: "installAnalyticsPlugin",
-          onActivate: "activateAnalyticsPlugin",
-          onDeactivate: "deactivateAnalyticsPlugin",
-          onUninstall: "uninstallAnalyticsPlugin",
-        },
-        permissions: ["read:analytics", "write:analytics"],
-      },
-      {
-        id: "plugin-content-ai-enhanced",
-        name: "Enhanced AI Content",
-        version: "1.2.0",
-        description: "Enhanced AI content generation with custom models",
-        author: "TutorPutor",
-        category: "content",
-        capabilities: ["content-generation"],
-        dependencies: ["ai-tutor"],
-        lifecycleHooks: {
-          onInstall: "installAIContentPlugin",
-          onActivate: "activateAIContentPlugin",
-          onDeactivate: "deactivateAIContentPlugin",
-          onUninstall: "uninstallAIContentPlugin",
-          onMigrate: "migrateAIContentPlugin",
-        },
-        permissions: ["read:content", "write:content", "ai:generate"],
-      },
-    ];
-
-    return plugins;
+    throw new Error('Plugin marketplace requires remote registry integration. Implement plugin marketplace API or local plugin registry.');
   }
 
   /**

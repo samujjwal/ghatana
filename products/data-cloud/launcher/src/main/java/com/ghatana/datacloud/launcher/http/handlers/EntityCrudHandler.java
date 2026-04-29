@@ -1390,7 +1390,12 @@ public class EntityCrudHandler {
                             m.put("qualityMetrics", meta.data().get("qualityMetrics"));
                             m.put("retentionPolicy", meta.data().get("retentionPolicy"));
                             m.put("lineage", meta.data().get("lineage"));
+                            m.put("owner", meta.data().getOrDefault("owner", meta.data().get("createdBy")));
                             m.put("operationalStatus", meta.data().getOrDefault("operationalStatus", "unknown"));
+                            Object schema = meta.data().get("schema");
+                            if (schema != null) {
+                                m.put("schema", schema);
+                            }
                         } else {
                             m.put("lifecycleStatus", "UNKNOWN");
                             m.put("operationalStatus", "unknown");

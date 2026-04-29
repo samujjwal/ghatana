@@ -94,7 +94,15 @@ export class EnhancedPredictiveAnalyticsService {
     // Score and rank modules based on learner profile
     const scoredModules = availableModules.map((module) => {
       const difficultyMatch = this.calculateDifficultyMatch(currentMastery, module.difficulty);
-      const probability = Math.min(0.95, difficultyMatch * 0.7 + Math.random() * 0.3);
+      
+      // Additional factors for deterministic scoring
+      const isNewerContent = (completedModules.length === 0); // Boost newer content for beginners
+      const difficultyBonus = module.difficulty === 'INTRO' && currentMastery < 0.3 ? 0.1 : 0;
+      const progressionBonus = completedModules.length > 0 ? Math.min(0.1, completedModules.length * 0.02) : 0;
+      
+      // Deterministic probability calculation without random noise
+      const probability = Math.min(0.95, difficultyMatch * 0.7 + difficultyBonus + progressionBonus + (isNewerContent ? 0.05 : 0));
+      
       return {
         moduleId: module.id,
         moduleName: module.title,
@@ -292,17 +300,118 @@ export class EnhancedPredictiveAnalyticsService {
       classroomId,
     });
 
-    // In production, this would analyze mastery data across students
-    // For now, return placeholder data
-    return [
-      {
-        conceptId: 'concept-1',
-        conceptName: 'Basic Algebra',
-        gapSeverity: 'medium',
-        affectedStudents: 15,
-        recommendedContent: ['Algebra fundamentals module', 'Practice problems'],
-      },
-    ];
+    try {
+      // Get learner mastery data for the tenant/classroom
+      // Note: classroomId filtering not implemented as LearnerProfile doesn't have classroomId
+      // In production, this would require a ClassroomMembership or similar relation
+      const masteryData = await this.prisma.learnerMastery.findMany({
+        where: {
+          tenantId,
+        },
+        select: {
+          profileId: true,
+          conceptId: true,
+          masteryProbability: true,
+        },
+      });
+
+      if (masteryData.length === 0) {
+        return [];
+      }
+
+      // Group mastery data by concept
+      const conceptMastery = new Map<string, { masteryLevels: number[]; profileIds: Set<string> }>();
+      
+      for (const mastery of masteryData) {
+        if (!conceptMastery.has(mastery.conceptId)) {
+          conceptMastery.set(mastery.conceptId, {
+            masteryLevels: [],
+            profileIds: new Set(),
+          });
+        }
+        const data = conceptMastery.get(mastery.conceptId)!;
+        data.masteryLevels.push(mastery.masteryProbability);
+        data.profileIds.add(mastery.profileId);
+      }
+
+      // Calculate gaps for each concept
+      const gaps: Array<{
+        conceptId: string;
+        conceptName: string;
+        gapSeverity: 'low' | 'medium' | 'high';
+        affectedStudents: number;
+        recommendedContent: string[];
+      }> = [];
+
+      for (const [conceptId, data] of conceptMastery) {
+        const avgMastery = data.masteryLevels.reduce((sum, level) => sum + level, 0) / data.masteryLevels.length;
+        const affectedStudents = data.profileIds.size;
+        
+        // Determine gap severity based on average mastery
+        let gapSeverity: 'low' | 'medium' | 'high';
+        if (avgMastery < 0.3) {
+          gapSeverity = 'high';
+        } else if (avgMastery < 0.6) {
+          gapSeverity = 'medium';
+        } else {
+          gapSeverity = 'low';
+        }
+
+        // Only include concepts with significant gaps
+        if (gapSeverity !== 'low' && affectedStudents > 0) {
+          // Try to get concept name from modules or learning objectives
+          let conceptName = conceptId;
+          
+          // Try to find a module or learning objective with this concept
+          const module = await this.prisma.module.findFirst({
+            where: {
+              tenantId,
+              OR: [
+                { description: { contains: conceptId, mode: 'insensitive' } },
+                { title: { contains: conceptId, mode: 'insensitive' } },
+              ],
+            },
+            select: { title: true },
+          });
+
+          if (module) {
+            conceptName = module.title;
+          }
+
+          // Generate content recommendations based on gap severity
+          const recommendedContent: string[] = [];
+          if (gapSeverity === 'high') {
+            recommendedContent.push(`${conceptName} fundamentals module`);
+            recommendedContent.push(`${conceptName} practice problems`);
+            recommendedContent.push(`${conceptName} interactive simulation`);
+          } else if (gapSeverity === 'medium') {
+            recommendedContent.push(`${conceptName} reinforcement exercises`);
+            recommendedContent.push(`${conceptName} review module`);
+          }
+
+          gaps.push({
+            conceptId,
+            conceptName,
+            gapSeverity,
+            affectedStudents,
+            recommendedContent,
+          });
+        }
+      }
+
+      // Sort by severity and number of affected students
+      gaps.sort((a, b) => {
+        const severityOrder = { high: 3, medium: 2, low: 1 };
+        const severityDiff = severityOrder[b.gapSeverity] - severityOrder[a.gapSeverity];
+        if (severityDiff !== 0) return severityDiff;
+        return b.affectedStudents - a.affectedStudents;
+      });
+
+      return gaps.slice(0, 10); // Return top 10 gaps
+    } catch (error) {
+      logger.error({ error }, 'Failed to analyze content gaps');
+      return [];
+    }
   }
 
   private calculateDifficultyMatch(currentMastery: number, moduleDifficulty: string): number {

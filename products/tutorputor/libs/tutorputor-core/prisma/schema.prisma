@@ -4306,10 +4306,43 @@ model GenerationRequest {
 
   // Relations
   jobs GenerationJob[]
+  provenanceNodes ProvenanceNode[]
 
   @@index([tenantId, status])
   @@index([tenantId, requestedBy])
   @@index([tenantId, domain])
+}
+
+model ProvenanceNode {
+  id                   String   @id @default(cuid())
+  generationRequestId String
+  tenantId             String
+  
+  // Artifact being traced
+  claimRef             String
+  kind                 String   // claim, example, simulation, animation, evidence_item, validation_result
+  assertionText        String   @db.Text
+  
+  // Source context
+  model                String
+  modelVersion         String
+  promptHash           String
+  sourceDocumentRef    String?
+  context              Json?    // domain, gradeLevel, etc.
+  
+  // Metadata
+  generatedAt          DateTime @default(now())
+  schemaVersion        String   @default("1.0")
+  
+  // Lifecycle
+  createdAt            DateTime @default(now())
+  
+  // Relations
+  generationRequest    GenerationRequest @relation(fields: [generationRequestId], references: [id], onDelete: Cascade)
+  
+  @@index([generationRequestId, tenantId])
+  @@index([tenantId, claimRef])
+  @@index([tenantId, kind])
 }
 
 model GenerationJob {

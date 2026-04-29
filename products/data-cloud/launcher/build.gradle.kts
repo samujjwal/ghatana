@@ -106,6 +106,116 @@ tasks.named("check") {
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
+// ── OpenAPI ↔ router drift detection ────────────────────────────────────────
+
+/**
+ * Bidirectional OpenAPI ↔ controller drift check for Data Cloud.
+ *
+ * <p>Extracts all HTTP paths from:
+ * <ul>
+ *   <li>the canonical OpenAPI spec ({@code products/data-cloud/api/openapi.yaml})
+ *   <li>the canonical route registration source ({@code DataCloudRouterBuilder.java})
+ * </ul>
+ *
+ * <p>After normalising path parameters (ActiveJ {@code :param} → OpenAPI {@code {param}}),
+ * the task fails the build if:
+ * <ul>
+ *   <li><b>spec-only</b>: a path appears in the spec but has no matching route registration —
+ *       the endpoint is documented but unimplemented.
+ *   <li><b>router-only</b>: a path appears in the router but is absent from the spec —
+ *       the endpoint is implemented but undocumented.
+ * </ul>
+ *
+ * @doc.type task
+ * @doc.purpose Detect bidirectional drift between the OpenAPI specification and the
+ *              Data Cloud HTTP router registration to prevent undocumented or
+ *              unimplemented endpoints from reaching production.
+ * @doc.layer product
+ * @doc.pattern Contract Validation
+ */
+abstract class CheckDataCloudOpenApiRouterSync : DefaultTask() {
+
+    @get:InputFile
+    abstract val openapiSpec: RegularFileProperty
+
+    @get:InputFile
+    abstract val routerSource: RegularFileProperty
+
+    @TaskAction
+    fun check() {
+        val specPaths = extractSpecPaths(openapiSpec.get().asFile)
+        val routerPaths = extractRouterPaths(routerSource.get().asFile)
+
+        val specOnly = (specPaths - routerPaths).sorted()
+        val routerOnly = (routerPaths - specPaths).sorted()
+
+        if (specOnly.isEmpty() && routerOnly.isEmpty()) {
+            logger.lifecycle(
+                "✓ Data Cloud OpenAPI ↔ router in sync ({} paths, 0 drift)",
+                specPaths.size
+            )
+            return
+        }
+
+        val report = buildString {
+            appendLine()
+            appendLine("╔══════════════════════════════════════════════════════════════════════╗")
+            appendLine("║  Data Cloud: OpenAPI ↔ router drift detected                        ║")
+            appendLine("╠══════════════════════════════════════════════════════════════════════╣")
+            if (specOnly.isNotEmpty()) {
+                appendLine("║  SPEC-ONLY paths (documented but NOT implemented in router):         ║")
+                specOnly.forEach { path ->
+                    appendLine("║    - $path")
+                }
+                appendLine("║  → Add these routes to DataCloudRouterBuilder or remove from spec.  ║")
+            }
+            if (routerOnly.isNotEmpty()) {
+                appendLine("║  ROUTER-ONLY paths (implemented but NOT documented in spec):         ║")
+                routerOnly.forEach { path ->
+                    appendLine("║    - $path")
+                }
+                appendLine("║  → Add these paths to openapi.yaml or remove from the router.       ║")
+            }
+            appendLine("╠══════════════════════════════════════════════════════════════════════╣")
+            appendLine("║  Spec: ${openapiSpec.get().asFile.relativeTo(project.rootDir)}")
+            appendLine("║  Router: ${routerSource.get().asFile.relativeTo(project.rootDir)}")
+            appendLine("╚══════════════════════════════════════════════════════════════════════╝")
+        }
+        throw GradleException(report)
+    }
+
+    /** Extracts and normalises path keys from an OpenAPI YAML {@code paths:} section. */
+    private fun extractSpecPaths(spec: File): Set<String> {
+        val pathPattern = Regex("""^  (/[^\s:]+)\s*:""")
+        val paramPattern = Regex("""\{[^}]+\}""")
+        return spec.readLines()
+            .mapNotNull { line -> pathPattern.find(line)?.groupValues?.get(1) }
+            .map { path -> paramPattern.replace(path, ":p") }
+            .toSet()
+    }
+
+    /** Extracts and normalises path strings from ActiveJ {@code RoutingServlet.with()} calls. */
+    private fun extractRouterPaths(source: File): Set<String> {
+        val routePattern = Regex("""\.with\(HttpMethod\.\w+,\s*"([^"]+)"""")
+        val paramPattern = Regex(""":[^/]+""")
+        return source.readLines()
+            .mapNotNull { line -> routePattern.find(line)?.groupValues?.get(1) }
+            .map { path -> paramPattern.replace(path, ":p") }
+            .toSet()
+    }
+}
+
+tasks.register<CheckDataCloudOpenApiRouterSync>("checkDataCloudOpenApiSync") {
+    group = "contracts"
+    description = "Bidirectional check: OpenAPI spec ↔ DataCloudRouterBuilder route registration."
+    openapiSpec.set(rootProject.file("products/data-cloud/api/openapi.yaml"))
+    routerSource.set(file("src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java"))
+}
+
+tasks.named("check") {
+    dependsOn("checkDataCloudOpenApiSync")
+}
+
 spotbugs {
     toolVersion = "4.8.6"
     ignoreFailures = true

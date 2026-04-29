@@ -1,17 +1,15 @@
 # Data Cloud UI – Design & Architecture
 
-## 1. Purpose
+> **See the canonical architecture document**: [`ui/ARCHITECTURE.md`](../ARCHITECTURE.md)
+>
+> This file is kept as a navigation aid. All architectural decisions, module boundaries,
+> component inventories, and testing strategy are maintained in `ARCHITECTURE.md`.
 
-The **Data Cloud UI** module provides user interfaces for defining, inspecting, and managing tenants, collections, entities, and relationships.
+## Summary
 
-## 2. Responsibilities
+The Data Cloud frontend is split into two modules:
 
-- Render forms, tables, and flows for Data Cloud operations.
-- Call Data Cloud APIs for reads/writes and display validation/constraint feedback.
+- **`@data-cloud/ui`** (`products/data-cloud/ui/`) — application layer: pages, routing, stores, feature components.
+- **`@data-cloud/ui-components`** (`products/data-cloud/libs/ui-components/`) — presentational library: reusable primitives with no app-level dependencies.
 
-## 3. Architectural Position
-
-- Sits on top of Data Cloud APIs; contains no backend-specific business logic.
-- Reuses shared UI libraries and design tokens where available.
-
-This document is self-contained and summarizes the role and architecture of the Data Cloud UI module.
+For full details see [`ARCHITECTURE.md`](../ARCHITECTURE.md).

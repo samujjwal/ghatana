@@ -260,9 +260,9 @@ export class GradingQualityMonitoringService {
   }
 
   private calculateBias(attempts: any[]): number {
-    // Simplified: check for score distribution anomalies across student groups
-    // In production, this would use actual demographic data
-    return 0.05; // Placeholder
+    // Check for score distribution anomalies across student groups
+    // Requires demographic data which is not currently available
+    throw new Error('Bias calculation requires demographic data. Implement demographic tracking in assessment attempts.');
   }
 
   private calculateAvgConfidence(reviewTasks: any[]): number {
@@ -280,8 +280,8 @@ export class GradingQualityMonitoringService {
   }
 
   private calculateAvgProcessingTime(attempts: any[]): number {
-    // Placeholder: would need actual processing time data
-    return 500; // 500ms average
+    // Requires processing time data from assessment attempts
+    throw new Error('Average processing time calculation requires timing data. Add processingTime field to GradingAttempt schema.');
   }
 
   private getReviewTaskDelegate(): ReviewTaskMetricsDelegate {
@@ -297,17 +297,7 @@ export class GradingQualityMonitoringService {
   }
 
   private async calculateTrends(tenantId: string): Promise<Array<{ date: string; accuracy: number; agreement: number }>> {
-    // Generate last 7 days of trend data
-    const trends: Array<{ date: string; accuracy: number; agreement: number }> = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-      const datePart = date.toISOString().split('T')[0] ?? date.toISOString();
-      trends.push({
-        date: datePart,
-        accuracy: 0.8 + Math.random() * 0.1, // Placeholder
-        agreement: 0.85 + Math.random() * 0.1, // Placeholder
-      });
-    }
-    return trends;
+    // Requires historical accuracy and agreement data over time
+    throw new Error('Trend calculation requires historical grading data. Implement time-series tracking for grading metrics.');
   }
 }

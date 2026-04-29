@@ -1,0 +1,123 @@
+# YAPPC Route Manifest
+# Single source of truth for all routes served by YAPPC servers.
+# The CheckYappcOpenApiParity Gradle task fails if any route listed here
+# does not appear in products/yappc/docs/api/openapi.yaml paths.
+#
+# Format: each route entry is  "METHOD /path"
+# Parametrised segments use {name} notation (same as OpenAPI).
+
+# ─── yappc-services (YappcHttpServer) ─────────────────────────────────────────
+yappc-services:
+  - GET  /health
+  - GET  /api/v1/yappc/info
+  - POST /api/v1/yappc/intent/capture
+  - POST /api/v1/yappc/intent/analyze
+  - GET  /api/v1/yappc/intent/{id}
+  - POST /api/v1/yappc/shape/derive
+  - POST /api/v1/yappc/shape/model
+  - GET  /api/v1/yappc/shape/{id}
+  - POST /api/v1/yappc/validate
+  - POST /api/v1/yappc/validate/with-config
+  - POST /api/v1/yappc/validate/with-policy
+  - POST /api/v1/yappc/generate
+  - POST /api/v1/yappc/generate/diff
+  - GET  /api/v1/yappc/generate/artifacts/{id}
+  - POST /api/v1/yappc/run
+  - POST /api/v1/yappc/run/with-observation
+  - POST /api/v1/yappc/run/rollback
+  - POST /api/v1/yappc/run/promote
+  - POST /api/v1/yappc/observe
+  - POST /api/v1/yappc/learn
+  - POST /api/v1/yappc/learn/with-context
+  - POST /api/v1/yappc/evolve
+  - POST /api/v1/yappc/evolve/with-constraints
+  - POST /api/v1/yappc/lifecycle/execute
+  - POST /api/v1/yappc/artifact/graph/ingest
+  - POST /api/v1/yappc/artifact/graph/analyze
+  - POST /api/v1/yappc/artifact/graph/merge
+  - POST /api/v1/yappc/artifact/graph/query
+  - POST /api/v1/yappc/artifact/residual/analyze
+
+# ─── yappc-api (VectorRoutes / AgentRoutes / WorkflowRoutes) ──────────────────
+yappc-api:
+  # Vector
+  - POST   /api/v1/vector/search
+  - POST   /api/v1/vector/search/hybrid
+  - GET    /api/v1/vector/similar/{id}
+  - POST   /api/v1/vector/index
+  - POST   /api/v1/vector/index/batch
+  - DELETE /api/v1/vector/index/{id}
+  - POST   /api/v1/vector/rag
+  - POST   /api/v1/vector/rag/chat
+  # Agents
+  - GET  /api/v1/agents
+  - GET  /api/v1/agents/health
+  - GET  /api/v1/agents/capabilities
+  - GET  /api/v1/agents/by-capability/{capability}
+  - GET  /api/v1/agents/{name}
+  - GET  /api/v1/agents/{name}/health
+  - POST /api/v1/agents/{name}/execute
+  - POST /api/v1/agents/copilot/chat
+  - POST /api/v1/agents/search
+  - POST /api/v1/agents/predict
+  # Workflows
+  - POST   /api/v1/workflows
+  - GET    /api/v1/workflows
+  - GET    /api/v1/workflows/{id}
+  - DELETE /api/v1/workflows/{id}
+  - POST   /api/v1/workflows/{id}/start
+  - POST   /api/v1/workflows/{id}/pause
+  - POST   /api/v1/workflows/{id}/resume
+  - POST   /api/v1/workflows/{id}/cancel
+  - POST   /api/v1/workflows/{id}/steps/advance
+  - POST   /api/v1/workflows/{id}/steps/{stepId}/goto
+  - POST   /api/v1/workflows/{id}/plans/generate
+  - POST   /api/v1/workflows/{workflowId}/plans/{planId}/approve
+  - POST   /api/v1/workflows/{workflowId}/plans/{planId}/reject
+  - PUT    /api/v1/workflows/{workflowId}/plans/{planId}/steps
+  - POST   /api/v1/workflows/{id}/route
+
+# ─── scaffold/api (YappcServer) ───────────────────────────────────────────────
+scaffold-api:
+  - GET  /api/v1/packs
+  - GET  /api/v1/packs/languages
+  - GET  /api/v1/packs/categories
+  - GET  /api/v1/packs/platforms
+  - POST /api/v1/packs/refresh
+  - GET  /api/v1/packs/{name}
+  - GET  /api/v1/packs/{name}/validate
+  - GET  /api/v1/packs/{name}/templates
+  - GET  /api/v1/packs/{name}/variables
+  - POST /api/v1/scaffold/projects
+  - POST /api/v1/scaffold/projects/add-feature
+  - POST /api/v1/scaffold/projects/update
+  - GET  /api/v1/scaffold/projects/info
+  - GET  /api/v1/scaffold/projects/state
+  - GET  /api/v1/scaffold/projects/validate
+  - GET  /api/v1/scaffold/projects/check-updates
+  - POST /api/v1/scaffold/projects/preview-update
+  - GET  /api/v1/scaffold/projects/features
+  - POST /api/v1/scaffold/projects/export
+  - POST /api/v1/scaffold/projects/import
+  - POST /api/v1/templates/render
+  - GET  /api/v1/templates/helpers
+  - POST /api/v1/templates/validate
+  - GET  /api/v1/dependencies/analyze/pack/{name}
+  - POST /api/v1/dependencies/analyze/project
+  - POST /api/v1/dependencies/conflicts
+  - POST /api/v1/dependencies/add-conflicts
+
+# ─── refactorer/api (RefactorerHttpServer) ────────────────────────────────────
+refactorer-api:
+  - POST   /api/v1/jobs
+  - GET    /api/v1/jobs/{jobId}
+  - DELETE /api/v1/jobs/{jobId}
+  - GET    /api/v1/jobs/{jobId}/report
+  - POST   /api/v1/jobs/{jobId}/start
+  - POST   /api/v1/jobs/{jobId}/stop
+  - POST   /api/v1/jobs/{jobId}/runs
+  - GET    /api/v1/jobs/{jobId}/runs
+  - GET    /api/v1/jobs/{jobId}/runs/{runId}
+  - GET    /api/v1/jobs/{jobId}/runs/{runId}/logs
+  - POST   /v1/diagnose
+  - GET    /v1/config

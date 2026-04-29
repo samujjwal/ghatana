@@ -95,13 +95,7 @@ include(":services")
 // backend modules removed (2026-03-23) — functionality consolidated into core modules
 // NOTE: backend:websocket, backend:api, backend:persistence, backend:auth removed
 
-// --- Core: Reusable Service Modules (Phase 2: moved from services/ to separate deployables from libraries) ---
-// DEPRECATED (SIMP-Y8): Both modules are merged into :core:yappc-services.
-// Sources moved to yappc-services in SIMP-Y8. These includes are kept temporarily
-// to avoid breaking the Gradle project graph during the migration window.
-// TODO(SIMP-Y8-CLEANUP): Remove these two includes once all downstream dependents are confirmed clean.
-include(":core:services-platform")   // DEPRECATED — merged into yappc-services
-include(":core:services-lifecycle")  // DEPRECATED — merged into yappc-services
+// --- Core: Reusable Service Modules (SIMP-Y8 complete: consolidated into :core:yappc-services) ---
 
 // --- Core: Scaffold Engine ---
 include(":core:scaffold")
@@ -199,9 +193,7 @@ if (isStandaloneBuild) {
             "platform",
             "services",
             // backend modules removed (2026-03-23)
-            // services:platform/lifecycle moved to core (Phase 2: separate deployables from reusables)
-            "core:services-platform",
-            "core:services-lifecycle",
+            // services:platform and services:lifecycle removed (SIMP-Y8 complete — consolidated into yappc-services)
             // services:ai, services:scaffold removed — merged into services:lifecycle
             "core:scaffold",
             "core:scaffold:api",

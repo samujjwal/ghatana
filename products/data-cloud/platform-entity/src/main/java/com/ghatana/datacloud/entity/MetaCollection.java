@@ -252,6 +252,12 @@ public class MetaCollection {
     private Map<String, Object> lineage;
 
     /**
+     * P0.2: Owner identifier (team, user, or service) responsible for this collection.
+     */
+    @Column(name = "owner", length = 255)
+    private String owner;
+
+    /**
      * P0.2: Operational status for runtime registry truth.
      * Values: healthy, degraded, unavailable, maintenance
      */
@@ -450,6 +456,14 @@ public class MetaCollection {
         this.lineage = lineage;
     }
 
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
     public String getOperationalStatus() {
         return operationalStatus;
     }
@@ -493,6 +507,7 @@ public class MetaCollection {
         private Map<String, Object> qualityMetrics;
         private Map<String, Object> retentionPolicy;
         private Map<String, Object> lineage;
+        private String owner;
         private String operationalStatus = "healthy";
         private List<MetaField> fields = new ArrayList<>();
 
@@ -596,6 +611,11 @@ public class MetaCollection {
             return this;
         }
 
+        public Builder owner(String owner) {
+            this.owner = owner;
+            return this;
+        }
+
         public Builder operationalStatus(String operationalStatus) {
             this.operationalStatus = operationalStatus;
             return this;
@@ -628,6 +648,7 @@ public class MetaCollection {
             collection.qualityMetrics = this.qualityMetrics;
             collection.retentionPolicy = this.retentionPolicy;
             collection.lineage = this.lineage;
+            collection.owner = this.owner;
             collection.operationalStatus = this.operationalStatus;
             collection.fields = this.fields;
             return collection;
@@ -643,6 +664,7 @@ public class MetaCollection {
                 ", label='" + label + '\'' +
                 ", active=" + active +
                 ", lifecycleStatus='" + lifecycleStatus + '\'' +
+                ", owner='" + owner + '\'' +
                 ", operationalStatus='" + operationalStatus + '\'' +
                 ", version=" + version +
                 ", createdAt=" + createdAt +

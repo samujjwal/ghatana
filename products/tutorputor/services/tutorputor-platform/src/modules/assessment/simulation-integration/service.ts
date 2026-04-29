@@ -692,16 +692,14 @@ export class SimulationTracePersistenceService {
   /**
    * Retrieve traces for replay and analysis
    */
-  async getTracesForReplay(_filters: {
+  async getTracesForReplay(filters: {
     tenantId: string;
     simulationManifestId?: string;
     learnerId?: string;
     minScore?: number;
     limit?: number;
   }): Promise<SimulationTraceRecord[]> {
-    // Query implementation would go here
-    // For now, return empty array as placeholder
-    return [];
+    throw new Error('getTracesForReplay requires simulation trace storage implementation. Add SimulationTraceRecord table to schema and implement query logic.');
   }
 
   /**

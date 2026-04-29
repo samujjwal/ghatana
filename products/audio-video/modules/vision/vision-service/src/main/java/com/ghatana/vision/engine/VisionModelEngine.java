@@ -1,6 +1,11 @@
 package com.ghatana.vision.engine;
 
+import com.ghatana.audio.video.vision.detection.VisionDetector;
+import com.ghatana.audio.video.vision.detection.VisionDetector.VisionCapability;
+import com.ghatana.audio.video.vision.model.DetectionOptions;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Vision model engine for object detection, classification, OCR, and face detection.
@@ -38,14 +43,29 @@ public class VisionModelEngine {
 
     private final String modelId;
     private final double confidenceThreshold;
+    /** Production OpenCV-backed detector; null in test/CI environments. */
+    private final VisionDetector detector;
 
-    public VisionModelEngine(String modelId, double confidenceThreshold) {
+    /**
+     * Constructs an engine backed by a real {@link VisionDetector} (e.g. YoloV8Adapter).
+     * Use this constructor in production wiring.
+     */
+    public VisionModelEngine(String modelId, double confidenceThreshold, VisionDetector detector) {
         Objects.requireNonNull(modelId, "modelId must not be null");
         if (confidenceThreshold < 0.0 || confidenceThreshold > 1.0) {
             throw new IllegalArgumentException("confidenceThreshold must be in [0.0, 1.0]");
         }
         this.modelId = modelId;
         this.confidenceThreshold = confidenceThreshold;
+        this.detector = detector;
+    }
+
+    /**
+     * Constructs a deterministic-stub engine for testing and CI environments
+     * where OpenCV native libraries are unavailable.
+     */
+    public VisionModelEngine(String modelId, double confidenceThreshold) {
+        this(modelId, confidenceThreshold, null);
     }
 
     /**
@@ -57,7 +77,26 @@ public class VisionModelEngine {
      */
     public List<DetectedObject> detectObjects(byte[] imageData) {
         validateImage(imageData);
-        // Stub: return deterministic detections based on image hash
+        if (detector != null && detector.isInitialized()) {
+            DetectionOptions options = DetectionOptions.builder()
+                    .confidenceThreshold(confidenceThreshold)
+                    .maxDetections(50)
+                    .build();
+            try {
+                return detector.detectObjects(imageData, options).stream()
+                        .map(d -> new DetectedObject(
+                                d.getClassName(),
+                                d.getConfidence(),
+                                d.getBoundingBox().getX(),
+                                d.getBoundingBox().getY(),
+                                d.getBoundingBox().getWidth(),
+                                d.getBoundingBox().getHeight()))
+                        .collect(Collectors.toList());
+            } catch (VisionDetector.DetectionException ex) {
+                throw new VisionException("Detection failed: " + ex.getMessage(), ex);
+            }
+        }
+        // Deterministic stub for test/CI environments without OpenCV native libs
         Random rng = new Random(hash(imageData));
         int count = 1 + rng.nextInt(5);
         String[] labels = {"person", "car", "truck", "bicycle", "dog", "cat", "chair", "bottle"};
@@ -80,11 +119,36 @@ public class VisionModelEngine {
     /**
      * Classifies the top-level content of the given image.
      *
+     * <p>Delegates to the backing {@link VisionDetector} when it supports
+     * {@link VisionCapability#CLASSIFICATION}; falls back to a deterministic
+     * stub for test/CI environments without a real classifier.
+     *
      * @param imageData raw image bytes
      * @return classification result with top label and alternatives
      */
     public ClassificationResult classify(byte[] imageData) {
         validateImage(imageData);
+        if (detector != null && detector.isInitialized()
+                && detector.supportsCapability(VisionCapability.CLASSIFICATION)) {
+            DetectionOptions options = DetectionOptions.builder()
+                    .confidenceThreshold(confidenceThreshold)
+                    .maxDetections(10)
+                    .build();
+            try {
+                var candidates = detector.classify(imageData, options);
+                if (!candidates.isEmpty()) {
+                    String topLabel = candidates.get(0).label();
+                    double topConf = candidates.get(0).confidence();
+                    List<String> allLabels = candidates.stream()
+                            .map(com.ghatana.audio.video.vision.model.ClassificationCandidate::label)
+                            .collect(Collectors.toList());
+                    return new ClassificationResult(topLabel, topConf, allLabels);
+                }
+            } catch (VisionDetector.DetectionException ex) {
+                throw new VisionException("Classification failed: " + ex.getMessage(), ex);
+            }
+        }
+        // Deterministic stub for test/CI environments without a real classifier
         Random rng = new Random(hash(imageData));
         String[] categories = {"indoor", "outdoor", "urban", "nature", "food", "document"};
         String top = categories[rng.nextInt(categories.length)];
@@ -94,11 +158,28 @@ public class VisionModelEngine {
     /**
      * Extracts text from the given image using OCR.
      *
+     * <p>Delegates to the backing {@link VisionDetector} when it supports
+     * {@link VisionCapability#OCR}; falls back to a deterministic stub otherwise.
+     *
      * @param imageData raw image bytes
      * @return OCR result with extracted text
      */
     public OcrResult extractText(byte[] imageData) {
         validateImage(imageData);
+        if (detector != null && detector.isInitialized()
+                && detector.supportsCapability(VisionCapability.OCR)) {
+            DetectionOptions options = DetectionOptions.builder()
+                    .confidenceThreshold(confidenceThreshold)
+                    .maxDetections(100)
+                    .build();
+            try {
+                String text = detector.extractText(imageData, options);
+                return new OcrResult(text, 1.0, List.of());
+            } catch (VisionDetector.DetectionException ex) {
+                throw new VisionException("OCR failed: " + ex.getMessage(), ex);
+            }
+        }
+        // Deterministic stub for test/CI environments without a real OCR engine
         String stubText = "Extracted text from image (" + imageData.length + " bytes)";
         return new OcrResult(stubText, 0.92, List.of());
     }
@@ -106,11 +187,41 @@ public class VisionModelEngine {
     /**
      * Detects faces in the given image.
      *
+     * <p>Delegates to the backing {@link VisionDetector} when it supports
+     * {@link VisionCapability#FACE_DETECTION}; falls back to a deterministic
+     * stub for test/CI environments without a real face detector.
+     *
      * @param imageData raw image bytes
      * @return list of detected faces above the confidence threshold
      */
     public List<FaceDetection> detectFaces(byte[] imageData) {
         validateImage(imageData);
+        if (detector != null && detector.isInitialized()
+                && detector.supportsCapability(VisionCapability.FACE_DETECTION)) {
+            DetectionOptions options = DetectionOptions.builder()
+                    .confidenceThreshold(confidenceThreshold)
+                    .maxDetections(50)
+                    .build();
+            try {
+                return detector.detectFaces(imageData, options).stream()
+                        .map(f -> {
+                            Map<String, double[]> lm = new HashMap<>();
+                            f.landmarks().forEach((k, p) -> lm.put(k, new double[]{p.getX(), p.getY()}));
+                            return new FaceDetection(
+                                    f.boundingBox().getX(),
+                                    f.boundingBox().getY(),
+                                    f.boundingBox().getWidth(),
+                                    f.boundingBox().getHeight(),
+                                    f.confidence(),
+                                    lm
+                            );
+                        })
+                        .collect(Collectors.toList());
+            } catch (VisionDetector.DetectionException ex) {
+                throw new VisionException("Face detection failed: " + ex.getMessage(), ex);
+            }
+        }
+        // Deterministic stub for test/CI environments without a real face detector
         Random rng = new Random(hash(imageData) + 42);
         int count = rng.nextInt(3);
         List<FaceDetection> faces = new ArrayList<>();

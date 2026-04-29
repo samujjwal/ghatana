@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -420,6 +421,192 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             assertThat(counts.paused()).isEqualTo(1); // GH-90000
             assertThat(counts.total()).isEqualTo(3); // GH-90000
             assertThat(counts.active()).isEqualTo(1); // only in-progress // GH-90000
+        }
+    }
+
+    @Nested
+    @DisplayName("Durable Workflow Cancellation")
+    class WorkflowCancellationTests {
+
+        @Test
+        @DisplayName("should cancel IN_PROGRESS workflow with cooperative method")
+        void shouldCancelInProgressWorkflowCooperatively() {
+            // GIVEN
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "In-Progress Cancel", "Desc",
+                    AiWorkflowInstance.WorkflowType.APP_CREATION, "user-1"
+                )
+            ));
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID));
+
+            // WHEN
+            AiWorkflowInstance cancelled = runPromise(() ->
+                service.cancelWorkflow(created.id(), TENANT_ID, "user-1", "no longer needed")
+            );
+
+            // THEN
+            assertThat(cancelled.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED);
+            assertThat(cancelled.isTerminal()).isTrue();
+            assertThat(cancelled.cancelRequestedAt()).isNotNull();
+            assertThat(cancelled.cancelCompletedAt()).isNotNull();
+            assertThat(cancelled.cancelRequestedBy()).isEqualTo("user-1");
+            assertThat(cancelled.cancelReason()).isEqualTo("no longer needed");
+            assertThat(cancelled.cancelMethod()).isEqualTo("cooperative");
+        }
+
+        @Test
+        @DisplayName("should cancel PAUSED workflow with immediate method")
+        void shouldCancelPausedWorkflowImmediately() {
+            // GIVEN
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "Paused Cancel", "Desc",
+                    AiWorkflowInstance.WorkflowType.FEATURE_DEVELOPMENT, "user-2"
+                )
+            ));
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID));
+            runPromise(() -> service.pauseWorkflow(created.id(), TENANT_ID));
+
+            // WHEN
+            AiWorkflowInstance cancelled = runPromise(() ->
+                service.cancelWorkflow(created.id(), TENANT_ID, "user-2", "paused too long")
+            );
+
+            // THEN
+            assertThat(cancelled.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED);
+            assertThat(cancelled.cancelMethod()).isEqualTo("immediate");
+            assertThat(cancelled.cancelRequestedBy()).isEqualTo("user-2");
+            assertThat(cancelled.cancelReason()).isEqualTo("paused too long");
+        }
+
+        @Test
+        @DisplayName("should cancel DRAFT workflow with immediate method")
+        void shouldCancelDraftWorkflowImmediately() {
+            // GIVEN
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "Draft Cancel", "Desc",
+                    AiWorkflowInstance.WorkflowType.REFACTORING, null
+                )
+            ));
+
+            // WHEN
+            AiWorkflowInstance cancelled = runPromise(() ->
+                service.cancelWorkflow(created.id(), TENANT_ID, null, "abandoned")
+            );
+
+            // THEN
+            assertThat(cancelled.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED);
+            assertThat(cancelled.cancelMethod()).isEqualTo("immediate");
+            assertThat(cancelled.cancelRequestedBy()).isNull();
+            assertThat(cancelled.cancelReason()).isEqualTo("abandoned");
+        }
+
+        @Test
+        @DisplayName("should record cancelRequestedAt before cancelCompletedAt")
+        void shouldRecordCancellationTimestampsInOrder() {
+            // GIVEN
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "Timestamp Cancel", "Desc",
+                    AiWorkflowInstance.WorkflowType.TESTING, null
+                )
+            ));
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID));
+
+            // WHEN
+            AiWorkflowInstance cancelled = runPromise(() ->
+                service.cancelWorkflow(created.id(), TENANT_ID, "auditor", null)
+            );
+
+            // THEN — cancelRequestedAt must not be after cancelCompletedAt
+            assertThat(cancelled.cancelRequestedAt()).isNotNull();
+            assertThat(cancelled.cancelCompletedAt()).isNotNull();
+            assertThat(cancelled.cancelRequestedAt())
+                .isBeforeOrEqualTo(cancelled.cancelCompletedAt());
+        }
+
+        @Test
+        @DisplayName("should throw WorkflowNotFoundException for unknown workflow")
+        void shouldThrowForUnknownWorkflow() {
+            // WHEN/THEN
+            assertThatThrownBy(() ->
+                runPromise(() -> service.cancelWorkflow("no-such-id", TENANT_ID, null, null))
+            ).isInstanceOf(AiWorkflowService.WorkflowNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("should throw InvalidWorkflowStateException when cancelling a CANCELLED workflow")
+        void shouldThrowWhenCancellingTerminalWorkflow() {
+            // GIVEN — cancel once to reach terminal state
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "Double Cancel", "Desc",
+                    AiWorkflowInstance.WorkflowType.BUG_FIX, null
+                )
+            ));
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID));
+            runPromise(() -> service.cancelWorkflow(created.id(), TENANT_ID, null, "first cancel"));
+
+            // WHEN/THEN — second cancel must reject
+            assertThatThrownBy(() ->
+                runPromise(() -> service.cancelWorkflow(created.id(), TENANT_ID, null, "second cancel"))
+            ).isInstanceOf(AiWorkflowService.InvalidWorkflowStateException.class);
+        }
+
+        @Test
+        @DisplayName("should use hard_kill method when hard-kill timeout already elapsed")
+        void shouldUseHardKillMethodWhenTimeoutElapsed() {
+            // GIVEN — use a registry with an effectively zero hard-kill timeout
+            WorkflowCancellationRegistry instantRegistry =
+                new WorkflowCancellationRegistry(Duration.ofNanos(1));
+            AiWorkflowService serviceWithFastTimeout =
+                new AiWorkflowService(workflowRepository, planRepository, agentRegistry, instantRegistry);
+
+            AiWorkflowInstance created = runPromise(() -> serviceWithFastTimeout.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "Hard Kill Workflow", "Desc",
+                    AiWorkflowInstance.WorkflowType.DEPLOYMENT, null
+                )
+            ));
+            runPromise(() -> serviceWithFastTimeout.startWorkflow(created.id(), TENANT_ID));
+
+            // Pre-signal to plant a timed-out entry in the registry
+            instantRegistry.signal(created.id(), TENANT_ID);
+
+            // WHEN — second cancel arrives after timeout is already exceeded
+            AiWorkflowInstance cancelled = runPromise(() ->
+                serviceWithFastTimeout.cancelWorkflow(created.id(), TENANT_ID, "admin", "force kill")
+            );
+
+            // THEN
+            assertThat(cancelled.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED);
+            assertThat(cancelled.cancelMethod()).isEqualTo("hard_kill");
+        }
+
+        @Test
+        @DisplayName("should release cancellation signal after successful cancel")
+        void shouldReleaseCancellationSignalAfterCancel() {
+            // GIVEN
+            WorkflowCancellationRegistry registry = new WorkflowCancellationRegistry();
+            AiWorkflowService trackedService =
+                new AiWorkflowService(workflowRepository, planRepository, agentRegistry, registry);
+
+            AiWorkflowInstance created = runPromise(() -> trackedService.createWorkflow(
+                new AiWorkflowService.CreateWorkflowRequest(
+                    TENANT_ID, "Signal Release", "Desc",
+                    AiWorkflowInstance.WorkflowType.CUSTOM, null
+                )
+            ));
+            runPromise(() -> trackedService.startWorkflow(created.id(), TENANT_ID));
+
+            // WHEN
+            runPromise(() -> trackedService.cancelWorkflow(created.id(), TENANT_ID, null, null));
+
+            // THEN — signal must be released so registry does not leak
+            assertThat(registry.activeSignalCount()).isZero();
+            assertThat(registry.isCancellationRequested(created.id(), TENANT_ID)).isFalse();
         }
     }
 }

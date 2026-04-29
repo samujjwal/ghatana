@@ -51,6 +51,14 @@ export const CollectionSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   createdBy: z.string(),
+  // P0.2 first-class collection registry fields
+  lifecycleStatus: z.enum(['DRAFT', 'PUBLISHED', 'DEPRECATED', 'ARCHIVED', 'UNKNOWN']).default('DRAFT'),
+  operationalStatus: z.enum(['healthy', 'degraded', 'unavailable', 'maintenance', 'unknown']).default('unknown'),
+  qualityScore: z.number().optional(),
+  qualityMetrics: z.record(z.string(), z.number()).optional(),
+  retentionPolicy: z.record(z.string(), z.unknown()).optional(),
+  lineage: z.record(z.string(), z.unknown()).optional(),
+  owner: z.string().default('unknown'),
 });
 
 export const PaginatedCollectionResponseSchema = z.object({

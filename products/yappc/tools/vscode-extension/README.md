@@ -149,7 +149,7 @@ npm run watch
 ### Testing
 1. Start YAPPC dev server:
    ```bash
-   cd ../../app-creator
+   cd ../../frontend/web
    pnpm dev
    ```
 

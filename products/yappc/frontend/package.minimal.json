@@ -1,5 +1,5 @@
 {
-  "name": "app-creator",
+  "name": "yappc-web",
   "private": true,
   "dependencies": {
     "typescript": "^5.0.0"

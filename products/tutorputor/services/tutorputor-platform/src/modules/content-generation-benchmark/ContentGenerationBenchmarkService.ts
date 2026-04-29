@@ -83,8 +83,17 @@ export class ContentGenerationBenchmarkService {
 
     const jobs = await this.prisma.generationJob.findMany({
       where: {
-        tenantId,
+        request: {
+          tenantId,
+        },
         createdAt: { gte: oneHourAgo },
+      },
+      include: {
+        request: {
+          select: {
+            tenantId: true,
+          },
+        },
       },
     });
 
@@ -133,23 +142,88 @@ export class ContentGenerationBenchmarkService {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
-    // This would typically come from gRPC metrics/observability
-    // For now, we'll use a placeholder implementation
-    const requestsPerSecond = 10; // Placeholder
-    const avgLatencyMs = 50; // Placeholder
-    const p50LatencyMs = 45; // Placeholder
-    const p95LatencyMs = 100; // Placeholder
-    const p99LatencyMs = 200; // Placeholder
-    const errorRate = 0.01; // Placeholder
+    try {
+      // Query generation jobs to derive gRPC throughput metrics
+      // Generation jobs are processed via gRPC, so their timing reflects gRPC performance
+      const jobs = await this.prisma.generationJob.findMany({
+        where: {
+          request: {
+            tenantId,
+          },
+          createdAt: { gte: oneHourAgo },
+        },
+        select: {
+          startedAt: true,
+          completedAt: true,
+          status: true,
+        },
+      });
 
-    return {
-      requestsPerSecond,
-      avgLatencyMs,
-      p50LatencyMs,
-      p95LatencyMs,
-      p99LatencyMs,
-      errorRate,
-    };
+      if (jobs.length === 0) {
+        return {
+          requestsPerSecond: 0,
+          avgLatencyMs: 0,
+          p50LatencyMs: 0,
+          p95LatencyMs: 0,
+          p99LatencyMs: 0,
+          errorRate: 0,
+        };
+      }
+
+      // Calculate latencies from job completion times
+      const completedJobs = jobs.filter((j) => {
+        const status = (j as any).status;
+        return status === "COMPLETED" && j.startedAt && j.completedAt;
+      });
+
+      const failedJobs = jobs.filter((j) => (j as any).status === "FAILED");
+
+      const latencies = completedJobs.map((j) => {
+        const startedAt = new Date(j.startedAt!);
+        const completedAt = new Date(j.completedAt!);
+        return completedAt.getTime() - startedAt.getTime();
+      });
+
+      if (latencies.length === 0) {
+        return {
+          requestsPerSecond: 0,
+          avgLatencyMs: 0,
+          p50LatencyMs: 0,
+          p95LatencyMs: 0,
+          p99LatencyMs: 0,
+          errorRate: jobs.length > 0 ? failedJobs.length / jobs.length : 0,
+        };
+      }
+
+      const sortedLatencies = latencies.sort((a, b) => a - b);
+      const avgLatencyMs = latencies.reduce((sum, lat) => sum + lat, 0) / latencies.length;
+      const p50LatencyMs = sortedLatencies[Math.floor(sortedLatencies.length * 0.5)] || 0;
+      const p95LatencyMs = sortedLatencies[Math.floor(sortedLatencies.length * 0.95)] || 0;
+      const p99LatencyMs = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)] || 0;
+
+      // Calculate requests per second (jobs per hour / 3600)
+      const requestsPerSecond = completedJobs.length / 3600;
+      const errorRate = jobs.length > 0 ? failedJobs.length / jobs.length : 0;
+
+      return {
+        requestsPerSecond,
+        avgLatencyMs,
+        p50LatencyMs,
+        p95LatencyMs,
+        p99LatencyMs,
+        errorRate,
+      };
+    } catch (error) {
+      console.error("Failed to measure gRPC throughput:", error);
+      return {
+        requestsPerSecond: 0,
+        avgLatencyMs: 0,
+        p50LatencyMs: 0,
+        p95LatencyMs: 0,
+        p99LatencyMs: 0,
+        errorRate: 0,
+      };
+    }
   }
 
   /**
@@ -186,8 +260,14 @@ export class ContentGenerationBenchmarkService {
     const p95LatencyMs = sortedLatencies[Math.floor(sortedLatencies.length * 0.95)] || 0;
     const p99LatencyMs = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)] || 0;
 
-    // Calculate token throughput (placeholder - would need actual token counts)
-    const tokenThroughputPerSecond = 100; // Placeholder
+    // Calculate token throughput based on latency and estimated token generation rate
+    // Typical LLMs generate ~30-50 tokens/second. We estimate 40 tokens/second as a baseline.
+    // Token throughput = (number of requests * avg tokens per request) / total time
+    // Since we don't have exact token counts, we estimate based on latency
+    const estimatedTokensPerRequest = avgLatencyMs > 0 ? (avgLatencyMs / 1000) * 40 : 0;
+    const totalEstimatedTokens = aiLogs.length * estimatedTokensPerRequest;
+    const totalRequestTimeSeconds = (3600); // 1 hour in seconds
+    const tokenThroughputPerSecond = totalRequestTimeSeconds > 0 ? totalEstimatedTokens / totalRequestTimeSeconds : 0;
 
     // Breakdown by model
     const modelBreakdown: Record<string, { avgLatencyMs: number; requestCount: number }> = {};

@@ -67,7 +67,18 @@ fn lock_or_recover<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-/// Retry configuration for gRPC calls
+/// Retry configuration for gRPC calls.
+///
+/// Values are read from environment variables at startup; the defaults shown
+/// below apply when the variables are absent or malformed.
+///
+/// | Env variable                           | Default |
+/// |----------------------------------------|---------|
+/// | `GHATANA_RETRY_MAX_ATTEMPTS`           | 3       |
+/// | `GHATANA_RETRY_INITIAL_DELAY_MS`       | 100     |
+/// | `GHATANA_RETRY_MAX_DELAY_MS`           | 5000    |
+/// | `GHATANA_RETRY_BACKOFF_MULTIPLIER`     | 2.0     |
+#[derive(Debug, Clone)]
 pub struct RetryConfig {
     pub max_attempts: u32,
     pub initial_delay_ms: u64,
@@ -78,12 +89,33 @@ pub struct RetryConfig {
 impl Default for RetryConfig {
     fn default() -> Self {
         Self {
-            max_attempts: 3,
-            initial_delay_ms: 100,
-            max_delay_ms: 5000,
-            backoff_multiplier: 2.0,
+            max_attempts: env_u32("GHATANA_RETRY_MAX_ATTEMPTS", 3),
+            initial_delay_ms: env_u64("GHATANA_RETRY_INITIAL_DELAY_MS", 100),
+            max_delay_ms: env_u64("GHATANA_RETRY_MAX_DELAY_MS", 5000),
+            backoff_multiplier: env_f64("GHATANA_RETRY_BACKOFF_MULTIPLIER", 2.0),
         }
     }
+}
+
+fn env_u32(name: &str, default: u32) -> u32 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
+}
+
+fn env_u64(name: &str, default: u64) -> u64 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
+}
+
+fn env_f64(name: &str, default: f64) -> f64 {
+    std::env::var(name)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
 }
 
 /// Retry a gRPC operation with exponential backoff
@@ -346,5 +378,67 @@ mod tests {
         assert_eq!(*lock_or_recover(&breaker.state), CircuitState::Open);
         assert_eq!(*lock_or_recover(&breaker.success_count), 0);
         assert_eq!(*lock_or_recover(&breaker.failure_count), 1);
+    }
+
+    #[test]
+    fn retry_config_default_uses_hardcoded_values_when_env_vars_absent() {
+        std::env::remove_var("GHATANA_RETRY_MAX_ATTEMPTS");
+        std::env::remove_var("GHATANA_RETRY_INITIAL_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_MAX_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_BACKOFF_MULTIPLIER");
+
+        let config = RetryConfig::default();
+        assert_eq!(config.max_attempts, 3);
+        assert_eq!(config.initial_delay_ms, 100);
+        assert_eq!(config.max_delay_ms, 5000);
+        assert!((config.backoff_multiplier - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn retry_config_default_reads_max_attempts_from_env() {
+        std::env::remove_var("GHATANA_RETRY_INITIAL_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_MAX_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_BACKOFF_MULTIPLIER");
+        std::env::set_var("GHATANA_RETRY_MAX_ATTEMPTS", "7");
+
+        let config = RetryConfig::default();
+        assert_eq!(config.max_attempts, 7);
+        assert_eq!(config.initial_delay_ms, 100);
+
+        std::env::remove_var("GHATANA_RETRY_MAX_ATTEMPTS");
+    }
+
+    #[test]
+    fn retry_config_default_reads_all_fields_from_env() {
+        std::env::set_var("GHATANA_RETRY_MAX_ATTEMPTS", "5");
+        std::env::set_var("GHATANA_RETRY_INITIAL_DELAY_MS", "50");
+        std::env::set_var("GHATANA_RETRY_MAX_DELAY_MS", "2000");
+        std::env::set_var("GHATANA_RETRY_BACKOFF_MULTIPLIER", "1.5");
+
+        let config = RetryConfig::default();
+        assert_eq!(config.max_attempts, 5);
+        assert_eq!(config.initial_delay_ms, 50);
+        assert_eq!(config.max_delay_ms, 2000);
+        assert!((config.backoff_multiplier - 1.5).abs() < f64::EPSILON);
+
+        std::env::remove_var("GHATANA_RETRY_MAX_ATTEMPTS");
+        std::env::remove_var("GHATANA_RETRY_INITIAL_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_MAX_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_BACKOFF_MULTIPLIER");
+    }
+
+    #[test]
+    fn retry_config_default_falls_back_for_malformed_env_values() {
+        std::env::remove_var("GHATANA_RETRY_INITIAL_DELAY_MS");
+        std::env::remove_var("GHATANA_RETRY_MAX_DELAY_MS");
+        std::env::set_var("GHATANA_RETRY_MAX_ATTEMPTS", "not-a-number");
+        std::env::set_var("GHATANA_RETRY_BACKOFF_MULTIPLIER", "bad");
+
+        let config = RetryConfig::default();
+        assert_eq!(config.max_attempts, 3);
+        assert!((config.backoff_multiplier - 2.0).abs() < f64::EPSILON);
+
+        std::env::remove_var("GHATANA_RETRY_MAX_ATTEMPTS");
+        std::env::remove_var("GHATANA_RETRY_BACKOFF_MULTIPLIER");
     }
 }

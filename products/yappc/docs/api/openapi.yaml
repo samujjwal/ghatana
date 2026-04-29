@@ -47,6 +47,30 @@ tags:
     description: Durable workflow engine
   - name: health
     description: Liveness and readiness probes
+  - name: run
+    description: RUN phase — execute runs, rollback, and promote
+  - name: observe
+    description: OBSERVE phase — collect observations from runs
+  - name: learn
+    description: LEARN phase — analyze runs and record learning signals
+  - name: evolve
+    description: EVOLVE phase — propose architectural evolutions
+  - name: artifact-graph
+    description: Artifact knowledge graph ingestion and querying
+  - name: vector
+    description: Vector semantic search, indexing, and RAG
+  - name: agents
+    description: Agent registry, execution, and copilot integration
+  - name: scaffold-packs
+    description: Scaffold pack catalogue and management
+  - name: scaffold-projects
+    description: Scaffold project creation and state management
+  - name: scaffold-templates
+    description: Template rendering and validation
+  - name: scaffold-dependencies
+    description: Scaffold dependency analysis and conflict detection
+  - name: refactorer
+    description: Automated refactoring job management
 
 # ─────────────────────────────────────────────────────────────────────────────
 paths:
@@ -2181,6 +2205,1302 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+
+  # ── Run ──────────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/run:
+    post:
+      tags: [run]
+      summary: Execute a YAPPC run
+      operationId: executeRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunRequest"
+      responses:
+        "200":
+          description: Run result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/run/with-observation:
+    post:
+      tags: [run]
+      summary: Execute a run with embedded observation collection
+      operationId: executeRunWithObservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunRequest"
+      responses:
+        "200":
+          description: Run result with observations
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/run/rollback:
+    post:
+      tags: [run]
+      summary: Rollback the last executed run
+      operationId: rollback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RollbackRequest"
+      responses:
+        "200":
+          description: Rollback result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/run/promote:
+    post:
+      tags: [run]
+      summary: Promote the last validated run to the next environment
+      operationId: promote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromoteRequest"
+      responses:
+        "200":
+          description: Promotion result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Observe ───────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/observe:
+    post:
+      tags: [observe]
+      summary: Collect an observation for a run
+      operationId: collectObservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ObservationRequest"
+      responses:
+        "200":
+          description: Observation recorded
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Learn ─────────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/learn:
+    post:
+      tags: [learn]
+      summary: Analyze a completed run and record learning signals
+      operationId: analyze
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearnRequest"
+      responses:
+        "200":
+          description: Learning result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/learn/with-context:
+    post:
+      tags: [learn]
+      summary: Analyze with explicit contextual metadata
+      operationId: analyzeWithContext
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearnWithContextRequest"
+      responses:
+        "200":
+          description: Learning result with context
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Evolve ────────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/evolve:
+    post:
+      tags: [evolve]
+      summary: Propose evolutions based on accumulated learning signals
+      operationId: propose
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvolveRequest"
+      responses:
+        "200":
+          description: Evolution proposals
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/yappc/evolve/with-constraints:
+    post:
+      tags: [evolve]
+      summary: Propose evolutions within explicit architectural constraints
+      operationId: proposeWithConstraints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvolveWithConstraintsRequest"
+      responses:
+        "200":
+          description: Constrained evolution proposals
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/lifecycle/execute:
+    post:
+      tags: [lifecycle]
+      summary: Execute the full YAPPC lifecycle pipeline (intent → shape → generate → validate → run)
+      operationId: executeFullLifecycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FullLifecycleRequest"
+      responses:
+        "200":
+          description: Full lifecycle execution result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Artifact Graph ────────────────────────────────────────────────────────────
+
+  /api/v1/yappc/artifact/graph/ingest:
+    post:
+      tags: [artifact-graph]
+      summary: Ingest artifacts into the knowledge graph
+      operationId: ingestArtifactGraph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactGraphRequest"
+      responses:
+        "200":
+          description: Ingest result
+
+  /api/v1/yappc/artifact/graph/analyze:
+    post:
+      tags: [artifact-graph]
+      summary: Analyze the artifact knowledge graph
+      operationId: analyzeArtifactGraph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactGraphRequest"
+      responses:
+        "200":
+          description: Analysis result
+
+  /api/v1/yappc/artifact/graph/merge:
+    post:
+      tags: [artifact-graph]
+      summary: Merge two artifact graphs
+      operationId: mergeArtifactGraph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactGraphRequest"
+      responses:
+        "200":
+          description: Merge result
+
+  /api/v1/yappc/artifact/graph/query:
+    post:
+      tags: [artifact-graph]
+      summary: Query the artifact knowledge graph
+      operationId: queryArtifactGraph
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactGraphQueryRequest"
+      responses:
+        "200":
+          description: Query result
+
+  /api/v1/yappc/artifact/residual/analyze:
+    post:
+      tags: [artifact-graph]
+      summary: Analyze residual artifacts not yet incorporated into the graph
+      operationId: analyzeResidual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtifactGraphRequest"
+      responses:
+        "200":
+          description: Residual analysis result
+
+  # ── Vector ────────────────────────────────────────────────────────────────────
+
+  /api/v1/vector/search:
+    post:
+      tags: [vector]
+      summary: Semantic vector search
+      operationId: vectorSearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VectorSearchRequest"
+      responses:
+        "200":
+          description: Search results
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/vector/search/hybrid:
+    post:
+      tags: [vector]
+      summary: Hybrid keyword + semantic vector search
+      operationId: vectorHybridSearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VectorSearchRequest"
+      responses:
+        "200":
+          description: Hybrid search results
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/vector/similar/{id}:
+    get:
+      tags: [vector]
+      summary: Find documents similar to a stored document
+      operationId: vectorSimilar
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Similar documents
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/vector/index:
+    post:
+      tags: [vector]
+      summary: Index a single document
+      operationId: vectorIndexDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VectorIndexRequest"
+      responses:
+        "200":
+          description: Document indexed
+
+  /api/v1/vector/index/batch:
+    post:
+      tags: [vector]
+      summary: Batch-index multiple documents
+      operationId: vectorBatchIndex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/VectorIndexRequest"
+      responses:
+        "200":
+          description: Batch index result
+
+  /api/v1/vector/index/{id}:
+    delete:
+      tags: [vector]
+      summary: Remove a document from the vector index
+      operationId: vectorDeleteIndex
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Document removed
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/vector/rag:
+    post:
+      tags: [vector]
+      summary: Retrieval-augmented generation (single turn)
+      operationId: vectorRag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagRequest"
+      responses:
+        "200":
+          description: RAG response
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/vector/rag/chat:
+    post:
+      tags: [vector]
+      summary: Retrieval-augmented generation (multi-turn chat)
+      operationId: vectorRagChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RagChatRequest"
+      responses:
+        "200":
+          description: RAG chat response
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ── Agents (Central Registry) ─────────────────────────────────────────────────
+
+  /api/v1/agents:
+    get:
+      tags: [agents]
+      summary: List all registered agents
+      operationId: listAgents
+      responses:
+        "200":
+          description: Agent list
+
+  /api/v1/agents/health:
+    get:
+      tags: [agents]
+      summary: Health summary for all agents
+      operationId: getAllAgentsHealth
+      responses:
+        "200":
+          description: Aggregated health status
+
+  /api/v1/agents/capabilities:
+    get:
+      tags: [agents]
+      summary: List all declared agent capabilities
+      operationId: listCapabilities
+      responses:
+        "200":
+          description: Capability descriptors
+
+  /api/v1/agents/by-capability/{capability}:
+    get:
+      tags: [agents]
+      summary: Find agents matching a capability
+      operationId: findByCapability
+      parameters:
+        - name: capability
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching agents
+
+  /api/v1/agents/copilot/chat:
+    post:
+      tags: [agents]
+      summary: Natural-language copilot chat backed by agent routing
+      operationId: copilotChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopilotChatRequest"
+      responses:
+        "200":
+          description: Chat response
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/agents/search:
+    post:
+      tags: [agents]
+      summary: Search agents by capability or metadata
+      operationId: searchAgents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentSearchRequest"
+      responses:
+        "200":
+          description: Agent search results
+
+  /api/v1/agents/predict:
+    post:
+      tags: [agents]
+      summary: Run a prediction via the best-matching agent
+      operationId: predictViaAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentPredictRequest"
+      responses:
+        "200":
+          description: Prediction result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/agents/{name}:
+    get:
+      tags: [agents]
+      summary: Get agent descriptor by name
+      operationId: getAgent
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent descriptor
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/agents/{name}/health:
+    get:
+      tags: [agents]
+      summary: Health status for a specific agent
+      operationId: getAgentHealth
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent health
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/agents/{name}/execute:
+    post:
+      tags: [agents]
+      summary: Execute a specific agent by name
+      operationId: executeAgent
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentExecuteRequest"
+      responses:
+        "200":
+          description: Execution result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Workflows (CRUD + lifecycle) ──────────────────────────────────────────────
+
+  /api/v1/workflows:
+    get:
+      tags: [workflows]
+      summary: List all workflows
+      operationId: listWorkflows
+      responses:
+        "200":
+          description: Workflow list
+    post:
+      tags: [workflows]
+      summary: Create a workflow
+      operationId: createWorkflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDefinition"
+      responses:
+        "201":
+          description: Workflow created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/workflows/{id}:
+    get:
+      tags: [workflows]
+      summary: Get a workflow by ID
+      operationId: getWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Workflow descriptor
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [workflows]
+      summary: Delete a workflow
+      operationId: deleteWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/workflows/{id}/start:
+    post:
+      tags: [workflows]
+      summary: Start a workflow run
+      operationId: startWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Workflow run started
+
+  /api/v1/workflows/{id}/pause:
+    post:
+      tags: [workflows]
+      summary: Pause a running workflow
+      operationId: pauseWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Workflow paused
+
+  /api/v1/workflows/{id}/resume:
+    post:
+      tags: [workflows]
+      summary: Resume a paused workflow
+      operationId: resumeWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Workflow resumed
+
+  /api/v1/workflows/{id}/cancel:
+    post:
+      tags: [workflows]
+      summary: Cancel a workflow run
+      operationId: cancelWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Workflow cancelled
+
+  /api/v1/workflows/{id}/steps/advance:
+    post:
+      tags: [workflows]
+      summary: Advance workflow to the next step
+      operationId: advanceWorkflowStep
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Workflow advanced
+
+  /api/v1/workflows/{id}/steps/{stepId}/goto:
+    post:
+      tags: [workflows]
+      summary: Jump to a specific step in the workflow
+      operationId: gotoWorkflowStep
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: stepId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Jumped to step
+
+  /api/v1/workflows/{id}/plans/generate:
+    post:
+      tags: [workflows]
+      summary: Generate an execution plan for a workflow
+      operationId: generateWorkflowPlan
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Execution plan
+
+  /api/v1/workflows/{workflowId}/plans/{planId}/approve:
+    post:
+      tags: [workflows]
+      summary: Approve a generated workflow plan
+      operationId: approveWorkflowPlan
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan approved
+
+  /api/v1/workflows/{workflowId}/plans/{planId}/reject:
+    post:
+      tags: [workflows]
+      summary: Reject a generated workflow plan
+      operationId: rejectWorkflowPlan
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan rejected
+
+  /api/v1/workflows/{workflowId}/plans/{planId}/steps:
+    put:
+      tags: [workflows]
+      summary: Update steps in a workflow plan
+      operationId: updateWorkflowPlanSteps
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Steps updated
+
+  /api/v1/workflows/{id}/route:
+    post:
+      tags: [workflows]
+      summary: Route a workflow to an appropriate execution engine
+      operationId: routeWorkflow
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: Routing result
+
+  # ── Scaffold — Packs ──────────────────────────────────────────────────────────
+
+  /api/v1/packs:
+    get:
+      tags: [scaffold-packs]
+      summary: List all available scaffold packs
+      operationId: listPacks
+      responses:
+        "200":
+          description: Pack list
+
+  /api/v1/packs/languages:
+    get:
+      tags: [scaffold-packs]
+      summary: List supported programming languages
+      operationId: getPackLanguages
+      responses:
+        "200":
+          description: Language list
+
+  /api/v1/packs/categories:
+    get:
+      tags: [scaffold-packs]
+      summary: List pack categories
+      operationId: getPackCategories
+      responses:
+        "200":
+          description: Category list
+
+  /api/v1/packs/platforms:
+    get:
+      tags: [scaffold-packs]
+      summary: List supported target platforms
+      operationId: getPackPlatforms
+      responses:
+        "200":
+          description: Platform list
+
+  /api/v1/packs/refresh:
+    post:
+      tags: [scaffold-packs]
+      summary: Refresh the pack registry from remote sources
+      operationId: refreshPacks
+      responses:
+        "200":
+          description: Refresh result
+
+  /api/v1/packs/{name}:
+    get:
+      tags: [scaffold-packs]
+      summary: Get pack descriptor by name
+      operationId: getPack
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Pack descriptor
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/packs/{name}/validate:
+    get:
+      tags: [scaffold-packs]
+      summary: Validate a pack's integrity and schema
+      operationId: validatePack
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Validation result
+
+  /api/v1/packs/{name}/templates:
+    get:
+      tags: [scaffold-packs]
+      summary: List templates provided by a pack
+      operationId: listPackTemplates
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Template list
+
+  /api/v1/packs/{name}/variables:
+    get:
+      tags: [scaffold-packs]
+      summary: Get variable schema for a pack
+      operationId: getPackVariables
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Variable schema
+
+  # ── Scaffold — Projects ───────────────────────────────────────────────────────
+
+  /api/v1/scaffold/projects:
+    post:
+      tags: [scaffold-projects]
+      summary: Create a new scaffold project
+      operationId: createScaffoldProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScaffoldProjectRequest"
+      responses:
+        "201":
+          description: Project created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/scaffold/projects/add-feature:
+    post:
+      tags: [scaffold-projects]
+      summary: Add a feature to an existing scaffold project
+      operationId: addFeatureToProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddFeatureRequest"
+      responses:
+        "200":
+          description: Feature added
+
+  /api/v1/scaffold/projects/update:
+    post:
+      tags: [scaffold-projects]
+      summary: Update scaffold project configuration
+      operationId: updateScaffoldProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScaffoldProjectRequest"
+      responses:
+        "200":
+          description: Project updated
+
+  /api/v1/scaffold/projects/info:
+    get:
+      tags: [scaffold-projects]
+      summary: Get current scaffold project info
+      operationId: getScaffoldProjectInfo
+      responses:
+        "200":
+          description: Project info
+
+  /api/v1/scaffold/projects/state:
+    get:
+      tags: [scaffold-projects]
+      summary: Get full scaffold project state
+      operationId: getScaffoldProjectState
+      responses:
+        "200":
+          description: Project state
+
+  /api/v1/scaffold/projects/validate:
+    get:
+      tags: [scaffold-projects]
+      summary: Validate the current scaffold project
+      operationId: validateScaffoldProject
+      responses:
+        "200":
+          description: Validation result
+
+  /api/v1/scaffold/projects/check-updates:
+    get:
+      tags: [scaffold-projects]
+      summary: Check for available scaffold pack updates
+      operationId: checkScaffoldUpdates
+      responses:
+        "200":
+          description: Update availability
+
+  /api/v1/scaffold/projects/preview-update:
+    post:
+      tags: [scaffold-projects]
+      summary: Preview changes from applying a scaffold update
+      operationId: previewScaffoldUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Preview diff
+
+  /api/v1/scaffold/projects/features:
+    get:
+      tags: [scaffold-projects]
+      summary: List features in the current scaffold project
+      operationId: getScaffoldProjectFeatures
+      responses:
+        "200":
+          description: Feature list
+
+  /api/v1/scaffold/projects/export:
+    post:
+      tags: [scaffold-projects]
+      summary: Export scaffold project state
+      operationId: exportScaffoldState
+      responses:
+        "200":
+          description: Exported state
+
+  /api/v1/scaffold/projects/import:
+    post:
+      tags: [scaffold-projects]
+      summary: Import scaffold project state
+      operationId: importScaffoldState
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Import result
+
+  # ── Scaffold — Templates ──────────────────────────────────────────────────────
+
+  /api/v1/templates/render:
+    post:
+      tags: [scaffold-templates]
+      summary: Render a template with provided variables
+      operationId: renderTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateRenderRequest"
+      responses:
+        "200":
+          description: Rendered output
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/templates/helpers:
+    get:
+      tags: [scaffold-templates]
+      summary: List available template helper functions
+      operationId: getTemplateHelpers
+      responses:
+        "200":
+          description: Helper list
+
+  /api/v1/templates/validate:
+    post:
+      tags: [scaffold-templates]
+      summary: Validate a template definition
+      operationId: validateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Validation result
+
+  # ── Scaffold — Dependencies ───────────────────────────────────────────────────
+
+  /api/v1/dependencies/analyze/pack/{name}:
+    get:
+      tags: [scaffold-dependencies]
+      summary: Analyze dependencies for a pack
+      operationId: analyzeDependenciesForPack
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dependency analysis
+
+  /api/v1/dependencies/analyze/project:
+    post:
+      tags: [scaffold-dependencies]
+      summary: Analyze dependencies for a project
+      operationId: analyzeDependenciesForProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Dependency analysis
+
+  /api/v1/dependencies/conflicts:
+    post:
+      tags: [scaffold-dependencies]
+      summary: Check for dependency conflicts
+      operationId: checkDependencyConflicts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Conflict report
+
+  /api/v1/dependencies/add-conflicts:
+    post:
+      tags: [scaffold-dependencies]
+      summary: Check for conflicts introduced by adding new dependencies
+      operationId: checkAddDependencyConflicts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Add-conflict report
+
+  # ── Refactorer ────────────────────────────────────────────────────────────────
+
+  /api/v1/jobs:
+    post:
+      tags: [refactorer]
+      summary: Create and submit a refactoring job
+      operationId: createRefactorerJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefactorerJobRequest"
+      responses:
+        "202":
+          description: Job accepted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/jobs/{jobId}:
+    get:
+      tags: [refactorer]
+      summary: Get job status
+      operationId: getRefactorerJobStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job status
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [refactorer]
+      summary: Cancel a refactoring job
+      operationId: cancelRefactorerJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job cancelled
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/jobs/{jobId}/report:
+    get:
+      tags: [refactorer]
+      summary: Get the full report for a completed job
+      operationId: getRefactorerJobReport
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job report (JSON or HTML based on Accept header)
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/jobs/{jobId}/start:
+    post:
+      tags: [refactorer]
+      summary: Start a paused job (not yet implemented — returns 501)
+      operationId: startRefactorerJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Not implemented
+
+  /api/v1/jobs/{jobId}/stop:
+    post:
+      tags: [refactorer]
+      summary: Stop a running job (not yet implemented — returns 501)
+      operationId: stopRefactorerJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Not implemented
+
+  /api/v1/jobs/{jobId}/runs:
+    post:
+      tags: [refactorer]
+      summary: Create a new run for an existing job
+      operationId: createJobRun
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefactorerJobRequest"
+      responses:
+        "202":
+          description: Run accepted
+    get:
+      tags: [refactorer]
+      summary: List runs for a job
+      operationId: listJobRuns
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run list
+
+  /api/v1/jobs/{jobId}/runs/{runId}:
+    get:
+      tags: [refactorer]
+      summary: Get a specific run
+      operationId: getJobRun
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Run details
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/jobs/{jobId}/runs/{runId}/logs:
+    get:
+      tags: [refactorer]
+      summary: Stream logs for a specific job run
+      operationId: getJobRunLogs
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Log stream (text/plain or text/event-stream)
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/diagnose:
+    post:
+      tags: [refactorer]
+      summary: Diagnose repository or workspace issues
+      operationId: diagnose
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Diagnosis result
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/config:
+    get:
+      tags: [refactorer]
+      summary: Get refactorer configuration
+      operationId: getRefactorerConfig
+      responses:
+        "200":
+          description: Configuration
+
 # ─────────────────────────────────────────────────────────────────────────────
 components:
 
@@ -3522,6 +4842,264 @@ components:
           type: object
           additionalProperties: true
           description: Problem-type-specific extension members
+
+    # ── Run / Observe / Learn / Evolve / Lifecycle ────────────────────────────
+
+    RunRequest:
+      type: object
+      required: [runId]
+      properties:
+        runId:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    RollbackRequest:
+      type: object
+      required: [runId]
+      properties:
+        runId:
+          type: string
+        reason:
+          type: string
+
+    PromoteRequest:
+      type: object
+      required: [runId, targetEnvironment]
+      properties:
+        runId:
+          type: string
+        targetEnvironment:
+          type: string
+
+    ObservationRequest:
+      type: object
+      required: [runId]
+      properties:
+        runId:
+          type: string
+        observations:
+          type: object
+          additionalProperties: true
+
+    LearnRequest:
+      type: object
+      required: [runId]
+      properties:
+        runId:
+          type: string
+        signals:
+          type: object
+          additionalProperties: true
+
+    LearnWithContextRequest:
+      allOf:
+        - $ref: "#/components/schemas/LearnRequest"
+        - type: object
+          properties:
+            contextMetadata:
+              type: object
+              additionalProperties: true
+
+    EvolveRequest:
+      type: object
+      required: [projectId]
+      properties:
+        projectId:
+          type: string
+        scope:
+          type: string
+
+    EvolveWithConstraintsRequest:
+      allOf:
+        - $ref: "#/components/schemas/EvolveRequest"
+        - type: object
+          properties:
+            constraints:
+              type: array
+              items:
+                type: string
+
+    FullLifecycleRequest:
+      type: object
+      required: [intent]
+      properties:
+        intent:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    ArtifactGraphRequest:
+      type: object
+      properties:
+        artifacts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    ArtifactGraphQueryRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+
+    # ── Vector ────────────────────────────────────────────────────────────────
+
+    VectorSearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        topK:
+          type: integer
+          default: 10
+        filters:
+          type: object
+          additionalProperties: true
+
+    VectorIndexRequest:
+      type: object
+      required: [id, content]
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+
+    RagRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+        topK:
+          type: integer
+          default: 5
+        systemPrompt:
+          type: string
+
+    RagChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            type: object
+            required: [role, content]
+            properties:
+              role:
+                type: string
+                enum: [user, assistant, system]
+              content:
+                type: string
+        topK:
+          type: integer
+          default: 5
+
+    # ── Agents ────────────────────────────────────────────────────────────────
+
+    AgentExecuteRequest:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: object
+          additionalProperties: true
+        context:
+          type: object
+          additionalProperties: true
+
+    CopilotChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        history:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    AgentSearchRequest:
+      type: object
+      properties:
+        capability:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    AgentPredictRequest:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: object
+          additionalProperties: true
+
+    # ── Scaffold ──────────────────────────────────────────────────────────────
+
+    ScaffoldProjectRequest:
+      type: object
+      required: [packName, projectName]
+      properties:
+        packName:
+          type: string
+        projectName:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    AddFeatureRequest:
+      type: object
+      required: [featureName]
+      properties:
+        featureName:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    TemplateRenderRequest:
+      type: object
+      required: [templateId, variables]
+      properties:
+        templateId:
+          type: string
+        variables:
+          type: object
+          additionalProperties: true
+
+    # ── Refactorer ────────────────────────────────────────────────────────────
+
+    RefactorerJobRequest:
+      type: object
+      required: [repositoryPath]
+      properties:
+        repositoryPath:
+          type: string
+        rules:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+          additionalProperties: true
 
     ErrorResponse:
       type: object

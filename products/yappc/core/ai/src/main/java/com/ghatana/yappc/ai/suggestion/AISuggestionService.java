@@ -5,6 +5,7 @@
 package com.ghatana.yappc.ai.suggestion;
 
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.yappc.ai.AiSource;
 import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.router.AIRequest;
 import com.ghatana.yappc.ai.router.AIResponse;
@@ -201,6 +202,7 @@ public final class AISuggestionService {
                 phase,
                 type,
                 line,
+                AiSource.MODEL,
                 Instant.now()
         );
     }
@@ -231,11 +233,14 @@ public final class AISuggestionService {
     /**
      * An individual AI-generated suggestion.
      *
-     * @param id         unique suggestion identifier
-     * @param projectId  project this suggestion pertains to
-     * @param phase      lifecycle phase context
-     * @param type       suggestion category
-     * @param text       human-readable suggestion text
+     * @param id          unique suggestion identifier
+     * @param projectId   project this suggestion pertains to
+     * @param phase       lifecycle phase context
+     * @param type        suggestion category
+     * @param text        human-readable suggestion text
+     * @param source      provenance discriminator — {@link AiSource#MODEL} when produced by an
+     *                    LLM/ML model, {@link AiSource#RULE} when produced by a deterministic
+     *                    rule engine
      * @param generatedAt when this suggestion was produced
      */
     public record Suggestion(
@@ -244,5 +249,6 @@ public final class AISuggestionService {
             String         phase,
             SuggestionType type,
             String         text,
+            AiSource       source,
             Instant        generatedAt) {}
 }

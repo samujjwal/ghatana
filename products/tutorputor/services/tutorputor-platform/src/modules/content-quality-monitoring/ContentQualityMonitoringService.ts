@@ -118,15 +118,82 @@ export class ContentQualityMonitoringService {
     completeness: number;
     engagement: number;
   }> {
-    // Placeholder implementation - in a real system, this would fetch the content
-    // and calculate actual metrics based on the content model
-    // For now, return placeholder values
-    return {
-      clarity: 0.8,
-      accuracy: 0.75,
-      completeness: 0.7,
-      engagement: 0.65,
-    };
+    try {
+      // Try to fetch content from various sources based on contentId format
+      // Content IDs may reference different content types
+      let contentText = "";
+
+      // Try to fetch as module content block (uses payload field)
+      const contentBlock = await this.prisma.moduleContentBlock.findUnique({
+        where: { id: contentId },
+        select: { payload: true },
+      });
+
+      if (contentBlock) {
+        contentText = typeof contentBlock.payload === "string" 
+          ? contentBlock.payload 
+          : JSON.stringify(contentBlock.payload);
+      } else {
+        // Try to fetch as learning objective (uses label field, id is Int)
+        const objectiveId = parseInt(contentId, 10);
+        if (!isNaN(objectiveId)) {
+          const learningObjective = await this.prisma.moduleLearningObjective.findUnique({
+            where: { id: objectiveId },
+            select: { label: true },
+          });
+
+          if (learningObjective) {
+            contentText = learningObjective.label;
+          }
+        }
+
+        if (!contentText) {
+          // Try to fetch as simulation manifest
+          const simulationManifest = await this.prisma.simulationManifest.findUnique({
+            where: { id: contentId },
+            select: { manifest: true },
+          });
+
+          if (simulationManifest) {
+            contentText = typeof simulationManifest.manifest === "string"
+              ? simulationManifest.manifest
+              : JSON.stringify(simulationManifest.manifest);
+          }
+        }
+      }
+
+      // If no content found, return default low metrics
+      if (!contentText) {
+        return {
+          clarity: 0.5,
+          accuracy: 0.5,
+          completeness: 0.5,
+          engagement: await this.calculateEngagement(contentId),
+        };
+      }
+
+      // Calculate actual metrics
+      const clarity = this.calculateClarity(contentText);
+      const accuracy = await this.calculateAccuracy(contentText, contentId);
+      const completeness = this.calculateCompleteness(contentText);
+      const engagement = await this.calculateEngagement(contentId);
+
+      return {
+        clarity,
+        accuracy,
+        completeness,
+        engagement,
+      };
+    } catch (error) {
+      console.error("Failed to calculate current metrics:", error);
+      // Return default values on error
+      return {
+        clarity: 0.5,
+        accuracy: 0.5,
+        completeness: 0.5,
+        engagement: 0.5,
+      };
+    }
   }
 
   /**
@@ -198,9 +265,110 @@ export class ContentQualityMonitoringService {
    * Calculate engagement score
    */
   private async calculateEngagement(contentId: string): Promise<number> {
-    // Fetch engagement metrics (views, time spent, interactions)
-    // For now, return a default value
-    return 0.7;
+    try {
+      // Try to determine the moduleId from contentId
+      let moduleId: string | null = null;
+
+      // Try to fetch as module content block
+      const contentBlock = await this.prisma.moduleContentBlock.findUnique({
+        where: { id: contentId },
+        select: { moduleId: true },
+      });
+
+      if (contentBlock) {
+        moduleId = contentBlock.moduleId;
+      } else {
+        // Try to fetch as learning objective
+        const objectiveId = parseInt(contentId, 10);
+        if (!isNaN(objectiveId)) {
+          const learningObjective = await this.prisma.moduleLearningObjective.findUnique({
+            where: { id: objectiveId },
+            select: { moduleId: true },
+          });
+
+          if (learningObjective) {
+            moduleId = learningObjective.moduleId;
+          }
+        }
+
+        if (!moduleId) {
+          // Try to fetch as simulation manifest
+          const simulationManifest = await this.prisma.simulationManifest.findUnique({
+            where: { id: contentId },
+            select: { moduleId: true },
+          });
+
+          if (simulationManifest) {
+            moduleId = simulationManifest.moduleId;
+          }
+        }
+      }
+
+      if (!moduleId) {
+        return 0.5; // Default if no module found
+      }
+
+      // Calculate engagement based on module enrollment and learning events
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      // Get enrollments for this module
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: {
+          moduleId,
+          status: { in: ["IN_PROGRESS", "COMPLETED"] },
+        },
+        select: {
+          id: true,
+          userId: true,
+          status: true,
+          progressPercent: true,
+          startedAt: true,
+        },
+      });
+
+      if (enrollments.length === 0) {
+        return 0.5; // No engagement yet
+      }
+
+      // Get learning events for this module in the last 30 days
+      const learningEvents = await this.prisma.learningEvent.findMany({
+        where: {
+          moduleId,
+          timestamp: { gte: thirtyDaysAgo },
+        },
+        select: {
+          id: true,
+          userId: true,
+          eventType: true,
+        },
+      });
+
+      // Calculate engagement score based on:
+      // - Average progress across enrollments
+      // - Frequency of learning events
+      // - Completion rate
+
+      const avgProgress = enrollments.reduce((sum, e) => sum + (e.progressPercent || 0), 0) / enrollments.length;
+      const completedCount = enrollments.filter((e) => e.status === "COMPLETED").length;
+      const completionRate = completedCount / enrollments.length;
+
+      // Normalize event frequency (events per enrollment per 30 days)
+      const eventsPerEnrollment = enrollments.length > 0 ? learningEvents.length / enrollments.length : 0;
+      const normalizedEventFrequency = Math.min(eventsPerEnrollment / 10, 1); // Cap at 10 events per enrollment
+
+      // Combine metrics into engagement score
+      const engagementScore = (
+        (avgProgress / 100) * 0.4 + // Progress contributes 40%
+        completionRate * 0.3 + // Completion rate contributes 30%
+        normalizedEventFrequency * 0.3 // Event frequency contributes 30%
+      );
+
+      return engagementScore;
+    } catch (error) {
+      console.error("Failed to calculate engagement:", error);
+      return 0.5; // Default on error
+    }
   }
 
   /**

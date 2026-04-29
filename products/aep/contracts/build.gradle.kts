@@ -157,4 +157,85 @@ tasks.named("build") {
 }
 tasks.named("check") {
     dependsOn("validateAepSpec")
+    dependsOn("checkAepOpenApiSync")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TASK: Verify that all three OpenAPI spec copies are byte-for-byte identical.
+//
+// Three locations hold the AEP OpenAPI spec:
+//   1. products/aep/contracts/openapi.yaml       — canonical source (this module)
+//   2. products/aep/server/src/main/resources/   — served at runtime by the Java HTTP layer
+//   3. platform/contracts/openapi/aep.yaml       — shared platform-level registry
+//
+// This task computes SHA-256 digests of all three files and fails with a
+// descriptive message if any pair diverges. It is wired into `check` so that
+// drift is caught on every CI build.
+//
+// Update all three files in lockstep. Do not symlink — Gradle tracks each
+// input independently for correct up-to-date checking.
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Verifies that all three AEP OpenAPI specification copies are byte-for-byte identical.
+ *
+ * @doc.type task
+ * @doc.purpose Catch OpenAPI spec drift across the three canonical copies before it reaches CI
+ * @doc.layer product
+ * @doc.pattern Contract Validation
+ */
+abstract class CheckOpenApiSync : DefaultTask() {
+
+    @get:InputFiles
+    abstract val specFiles: ConfigurableFileCollection
+
+    @TaskAction
+    fun check() {
+        val digests = specFiles.files.associateWith { file ->
+            val digest = java.security.MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { stream ->
+                val buffer = ByteArray(8192)
+                var read = stream.read(buffer)
+                while (read != -1) {
+                    digest.update(buffer, 0, read)
+                    read = stream.read(buffer)
+                }
+            }
+            digest.digest().joinToString("") { "%02x".format(it) }
+        }
+
+        val reference = digests.values.first()
+        val drifted = digests.filter { (_, hash) -> hash != reference }
+
+        if (drifted.isNotEmpty()) {
+            val canonical = specFiles.files.first()
+            val lines = buildString {
+                appendLine()
+                appendLine("╔══════════════════════════════════════════════════════════════════╗")
+                appendLine("║  AEP OpenAPI spec drift detected — all three copies must match  ║")
+                appendLine("╠══════════════════════════════════════════════════════════════════╣")
+                digests.forEach { (file, hash) ->
+                    val marker = if (drifted.containsKey(file)) "DIFFERS" else "OK     "
+                    appendLine("║  [$marker]  ${file.relativeTo(project.rootDir)}  ║")
+                    appendLine("║           sha256: $hash  ║")
+                }
+                appendLine("╠══════════════════════════════════════════════════════════════════╣")
+                appendLine("║  Canonical copy: ${canonical.relativeTo(project.rootDir)}")
+                appendLine("║  Update all three files in lockstep to resolve drift.")
+                appendLine("╚══════════════════════════════════════════════════════════════════╝")
+            }
+            throw GradleException(lines)
+        }
+
+        logger.lifecycle("✓ AEP OpenAPI specs are in sync (${specFiles.files.size} copies, SHA-256: $reference)")
+    }
+}
+
+tasks.register<CheckOpenApiSync>("checkAepOpenApiSync") {
+    group = "contracts"
+    description = "Verifies that all three AEP OpenAPI spec copies are byte-for-byte identical."
+    specFiles.from(
+        file("openapi.yaml"),
+        rootProject.file("products/aep/server/src/main/resources/openapi.yaml"),
+        rootProject.file("platform/contracts/openapi/aep.yaml")
+    )
 }

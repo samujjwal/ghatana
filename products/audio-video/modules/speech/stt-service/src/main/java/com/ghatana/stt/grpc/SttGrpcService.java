@@ -46,6 +46,8 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
         this.library = library;
         this.transcribeTimer = Timer.builder("stt.transcribe")
             .description("Transcription latency")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(metrics);
     }
 
@@ -67,6 +69,8 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
         this.library = AudioVideoLibrary.builder().withSttConfig(config).build();
         this.transcribeTimer = Timer.builder("stt.transcribe")
             .description("Transcription latency")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(metrics);
 
         LOG.info("STT Service initialized with model: {}", config.modelId());

@@ -138,9 +138,9 @@ const governanceRules = {
     },
   ],
 
-  // Prefer type imports
+  // Prefer type imports — error to enforce as CI gate (F-Y032)
   '@typescript-eslint/consistent-type-imports': [
-    'warn',
+    'error',
     {
       prefer: 'type-imports',
       fixStyle: 'inline-type-imports',
@@ -263,7 +263,7 @@ const governanceOverrides = [
   // YAPPC web app consolidation gate: flag legacy @yappc/* imports in product web src.
   // Keep this in warning mode until migration is fully complete, then switch to error.
   {
-    files: ['products/yappc/frontend/web/src/**/*.{ts,tsx}'],
+    files: ['web/src/**/*.{ts,tsx}'],
     rules: {
       'import/no-restricted-imports': [
         'warn',

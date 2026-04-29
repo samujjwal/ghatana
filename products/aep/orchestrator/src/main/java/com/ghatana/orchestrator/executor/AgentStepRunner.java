@@ -159,7 +159,10 @@ public class AgentStepRunner {
                     }
 
                     if (!completed.compareAndSet(false, true)) {
-                        // Already completed, return a placeholder
+                        // Step was already resolved by a concurrent callback (timeout race);
+                        // return a success sentinel so the outer chain is not left dangling.
+                        // TODO(GH-91002): unify timeout and success resolution paths to eliminate
+                        //   this sentinel via a single Promise.first() combinator.
                         return Promise.of(AgentStepResult.builder()
                                 .stepId(step.getId())
                                 .agentId(step.getAgentId())

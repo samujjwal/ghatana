@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -34,22 +35,43 @@ public class AiWorkflowService {
     private final AiWorkflowRepository workflowRepository;
     private final AiPlanRepository planRepository;
     private final AgentRegistry agentRegistry;
+    private final WorkflowCancellationRegistry cancellationRegistry;
 
     /**
-     * Creates a new AiWorkflowService.
+     * Creates a new AiWorkflowService with a default cancellation registry.
      *
      * @param workflowRepository Repository for workflows
-     * @param planRepository Repository for plans
-     * @param agentRegistry Registry for AI agents
+     * @param planRepository     Repository for plans
+     * @param agentRegistry      Registry for AI agents
      */
     public AiWorkflowService(
         @NotNull AiWorkflowRepository workflowRepository,
         @NotNull AiPlanRepository planRepository,
         @NotNull AgentRegistry agentRegistry
     ) {
-        this.workflowRepository = Objects.requireNonNull(workflowRepository);
-        this.planRepository = Objects.requireNonNull(planRepository);
-        this.agentRegistry = Objects.requireNonNull(agentRegistry);
+        this(workflowRepository, planRepository, agentRegistry, new WorkflowCancellationRegistry());
+    }
+
+    /**
+     * Creates a new AiWorkflowService with an explicit cancellation registry.
+     * Package-private to keep the public API to a single constructor; use this
+     * from tests or internal wiring code that needs a custom registry.
+     *
+     * @param workflowRepository    Repository for workflows
+     * @param planRepository        Repository for plans
+     * @param agentRegistry         Registry for AI agents
+     * @param cancellationRegistry  Registry for cooperative workflow cancellation
+     */
+    AiWorkflowService(
+        @NotNull AiWorkflowRepository workflowRepository,
+        @NotNull AiPlanRepository planRepository,
+        @NotNull AgentRegistry agentRegistry,
+        @NotNull WorkflowCancellationRegistry cancellationRegistry
+    ) {
+        this.workflowRepository = Objects.requireNonNull(workflowRepository, "workflowRepository");
+        this.planRepository = Objects.requireNonNull(planRepository, "planRepository");
+        this.agentRegistry = Objects.requireNonNull(agentRegistry, "agentRegistry");
+        this.cancellationRegistry = Objects.requireNonNull(cancellationRegistry, "cancellationRegistry");
     }
 
     // ==================== WORKFLOW LIFECYCLE ====================
@@ -246,14 +268,30 @@ public class AiWorkflowService {
     }
 
     /**
-     * Cancels a workflow with durable cancellation contract.
-     * Following AEP §F-003 pattern: persist intent, cooperative cancel, hard kill on timeout, audit attempt + complete.
+     * Cancels a workflow using the durable cancellation contract.
      *
-     * @param workflowId The workflow ID
-     * @param tenantId The tenant ID
-     * @param requestedBy User requesting cancellation
-     * @param reason Cancellation reason
-     * @return Promise resolving to the cancelled workflow
+     * <p>The cancellation protocol follows three phases:
+     * <ol>
+     *   <li><b>Signal</b> – the {@link WorkflowCancellationRegistry} is notified so that any
+     *       agent executing this workflow will detect the signal at its next step boundary
+     *       and exit cooperatively.</li>
+     *   <li><b>Method determination</b> – if the workflow is {@code IN_PROGRESS} the method is
+     *       {@code "cooperative"}; if the hard-kill timeout has already elapsed (repeated cancel
+     *       attempts past the 30-second window) the method is {@code "hard_kill"}; for all other
+     *       statuses (PAUSED, PENDING, DRAFT, AWAITING_REVIEW) the method is {@code "immediate"}
+     *       since no agent is actively executing.</li>
+     *   <li><b>Persist</b> – {@code updateWithCancellation} atomically records intent,
+     *       completion timestamp, requester, reason, and method in durable storage so the
+     *       record survives a service restart.</li>
+     * </ol>
+     *
+     * <p>Audit events are emitted at attempt and completion for every invocation.
+     *
+     * @param workflowId  The workflow ID
+     * @param tenantId    The tenant ID
+     * @param requestedBy User requesting cancellation (nullable)
+     * @param reason      Cancellation reason (nullable)
+     * @return Promise resolving to the cancelled workflow instance
      */
     @NotNull
     public Promise<AiWorkflowInstance> cancelWorkflow(
@@ -262,18 +300,19 @@ public class AiWorkflowService {
         @Nullable String requestedBy,
         @Nullable String reason
     ) {
-        LOG.info("Durable cancellation requested for workflow: {} by tenant: {} by user: {}", workflowId, tenantId, requestedBy);
+        LOG.info("Durable cancellation requested for workflow={} tenant={} requestedBy={}",
+            workflowId, tenantId, requestedBy);
 
         return workflowRepository.findById(workflowId, tenantId)
             .then(optWorkflow -> {
                 if (optWorkflow.isEmpty()) {
-                    LOG.warn("Cancel attempt failed: workflow not found: {} for tenant: {}", workflowId, tenantId);
+                    LOG.warn("Cancel failed: workflow not found workflow={} tenant={}", workflowId, tenantId);
                     return Promise.ofException(new WorkflowNotFoundException(workflowId));
                 }
 
                 AiWorkflowInstance workflow = optWorkflow.get();
                 if (workflow.isTerminal()) {
-                    LOG.warn("Cancel attempt failed: workflow in terminal state: {} status: {}", workflowId, workflow.status());
+                    LOG.warn("Cancel failed: terminal state workflow={} status={}", workflowId, workflow.status());
                     return Promise.ofException(
                         new InvalidWorkflowStateException(
                             workflow.id(),
@@ -283,25 +322,34 @@ public class AiWorkflowService {
                     );
                 }
 
-                // Persist cancel intent (durable cancellation step 1)
+                // ── Step 1: Persist cancel intent (durable — survives restart) ───────────
                 Instant cancelRequestedAt = Instant.now();
-                LOG.info("Persisting cancel intent for workflow: {} at: {}", workflowId, cancelRequestedAt);
 
-                // Attempt cooperative cancellation with agent (durable cancellation step 2)
-                // For now, we'll mark as CANCELLED directly. In a full implementation, this would:
-                // 1. Send cancel signal to running agent
-                // 2. Wait for graceful shutdown (cooperative cancel)
-                // 3. Force terminate if timeout exceeded (hard kill)
+                // ── Step 2: Cooperative cancel signal ────────────────────────────────────
+                // For IN_PROGRESS workflows, signal the registry so the running agent detects
+                // the flag at the next step boundary and exits without being forcibly killed.
+                // For non-running states (PAUSED/PENDING/DRAFT/AWAITING_REVIEW) no agent is
+                // executing, so the cancel is immediate.
+                boolean pastHardKillTimeout = cancellationRegistry.isHardKillRequired(workflowId, tenantId);
+                int attemptNumber = cancellationRegistry.signal(workflowId, tenantId);
+
+                String cancelMethod;
+                if (workflow.status() == AiWorkflowInstance.WorkflowStatus.IN_PROGRESS) {
+                    // Agent is (or was) running: cooperative unless the hard-kill window elapsed
+                    cancelMethod = pastHardKillTimeout ? "hard_kill" : "cooperative";
+                } else {
+                    // No active agent execution — cancel is immediate
+                    cancelMethod = "immediate";
+                }
+
+                // ── Step 3: Audit — cancel-attempt ───────────────────────────────────────
+                LOG.info("Audit: cancel-attempt workflow={} tenant={} user={} reason={} attempt={} method={}",
+                    workflowId, tenantId, requestedBy, reason, attemptNumber, cancelMethod);
+
+                // ── Step 4: Persist and release signal ───────────────────────────────────
                 Instant cancelCompletedAt = Instant.now();
-                String cancelMethod = "direct";
+                long durationMs = Duration.between(cancelRequestedAt, cancelCompletedAt).toMillis();
 
-                // Audit cancel attempt and completion (durable cancellation step 4)
-                LOG.info("Audit: cancel-attempt workflow:{} tenant:{} user:{} reason:{}", workflowId, tenantId, requestedBy, reason);
-                LOG.info("Audit: cancel-complete workflow:{} tenant:{} method:{} durationMs:{}", 
-                    workflowId, tenantId, cancelMethod, 
-                    java.time.Duration.between(cancelRequestedAt, cancelCompletedAt).toMillis());
-
-                // Update workflow with cancellation tracking
                 return workflowRepository.updateWithCancellation(
                     workflowId,
                     tenantId,
@@ -310,7 +358,13 @@ public class AiWorkflowService {
                     reason,
                     cancelCompletedAt,
                     cancelMethod
-                );
+                ).map(cancelled -> {
+                    // Release signal after durable record is committed
+                    cancellationRegistry.notifyExit(workflowId, tenantId);
+                    LOG.info("Audit: cancel-complete workflow={} tenant={} method={} durationMs={} attempts={}",
+                        workflowId, tenantId, cancelMethod, durationMs, attemptNumber);
+                    return cancelled;
+                });
             });
     }
 

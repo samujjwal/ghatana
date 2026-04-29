@@ -62,6 +62,7 @@ flowchart TB
 | **ADR-DC-003** | [Canonical Query Contract](./adr-dc-003-canonical-query-contract.md) | Accepted | 2026-04-26 | Data Cloud Team | HIGH - Query specification standard |
 | **ADR-DC-004** | [Event Envelope for Replay & Audit](./adr-dc-004-event-envelope.md) | Accepted | 2026-04-26 | Data Cloud Team | HIGH - Provenance & temporal truth |
 | **ADR-DC-005** | [Governance Fail-Closed](./adr-dc-005-governance-fail-closed.md) | Accepted | 2026-04-26 | Data Cloud Team | HIGH - Production security requirements |
+| **ADR-DC-008** | [Connector SPI](./adr-dc-008-connector-spi.md) | Accepted | 2026-04-26 | Data Cloud Team | HIGH - Source/sink lifecycle, schema inference, credentials, health, tenancy |
 | **ADR-DC-011** | [OpenAPI-Generated SDK Clients Only](./adr-dc-011-openapi-sdk-contract.md) | Accepted | 2026-04-26 | Data Cloud Team | HIGH - Contract truth |
 
 ### Platform ADRs Affecting Data Cloud
@@ -196,4 +197,4 @@ Focus on:
 
 ---
 
-*Last updated: April 12, 2026*
+*Last updated: April 27, 2026*

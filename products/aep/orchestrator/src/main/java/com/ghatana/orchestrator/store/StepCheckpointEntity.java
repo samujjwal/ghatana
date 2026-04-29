@@ -21,8 +21,13 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * Day 39: JPA entity for storing individual step checkpoints within pipeline executions.
+ * JPA entity for storing individual step checkpoints within pipeline executions.
  * Enables detailed tracking of step execution for resume and debugging capabilities.
+ *
+ * @doc.type class
+ * @doc.purpose Persistent entity for step-level execution checkpoints (resume, debugging)
+ * @doc.layer persistence
+ * @doc.pattern Entity
  */
 @Entity
 @Table(

@@ -7,12 +7,14 @@ import com.ghatana.agent.registry.domain.AgentInfo;
 
 /**
  * Domain model for agent information.
- * This is a wrapper around the AgentInfo domain class for compatibility.
-  * @doc.type class
- * @doc.purpose Provides agent domain model functionality.
+ *
+ * <p>Wraps {@link AgentInfo} for use in registry endpoints and pipeline domain logic.</p>
+ *
+ * @doc.type class
+ * @doc.purpose Provides agent domain model as a registry-compatible wrapper around AgentInfo.
  * @doc.layer product
- * @doc.pattern Agent
-*/
+ * @doc.pattern Domain Model
+ */
 public class AgentDomainModel {
     private final AgentInfo agentInfo;
 

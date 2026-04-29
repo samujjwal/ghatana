@@ -1,11 +1,21 @@
 package com.ghatana.vision.engine;
 
+import com.ghatana.audio.video.vision.detection.VisionDetector;
+import com.ghatana.audio.video.vision.detection.VisionDetector.VisionCapability;
+import com.ghatana.audio.video.vision.model.BoundingBox;
+import com.ghatana.audio.video.vision.model.ClassificationCandidate;
+import com.ghatana.audio.video.vision.model.DetectedFace;
+import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.vision.engine.VisionModelEngine.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.data.Offset.offset;
 
 /**
  * Tests for {@link VisionModelEngine}.
@@ -156,6 +166,149 @@ class VisionModelEngineTest {
     void detectedFacesHaveLandmarks() { // GH-90000
         engine.detectFaces(SAMPLE_IMAGE).forEach(face -> // GH-90000
                 assertThat(face.landmarks()).isNotEmpty()); // GH-90000
+    }
+
+    // ── Real-detector delegation path ─────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Real-detector delegation")
+    class RealDetectorDelegation {
+
+        /**
+         * Test-only inline detector that supports CLASSIFICATION and FACE_DETECTION.
+         * Avoids native library loading while exercising the real delegation code path.
+         */
+        private VisionDetector fullCapabilityDetector(
+                List<ClassificationCandidate> classResults,
+                List<DetectedFace> faceResults,
+                String ocrText) {
+            return new VisionDetector() {
+                @Override
+                public List<com.ghatana.audio.video.vision.model.DetectedObject> detectObjects(
+                        byte[] imageData, DetectionOptions options) {
+                    return List.of();
+                }
+
+                @Override
+                public boolean isInitialized() { return true; }
+
+                @Override
+                public boolean supportsCapability(VisionCapability capability) {
+                    return capability == VisionCapability.CLASSIFICATION
+                            || capability == VisionCapability.FACE_DETECTION
+                            || capability == VisionCapability.OCR
+                            || capability == VisionCapability.OBJECT_DETECTION;
+                }
+
+                @Override
+                public List<ClassificationCandidate> classify(
+                        byte[] imageData, DetectionOptions options) {
+                    return classResults;
+                }
+
+                @Override
+                public List<DetectedFace> detectFaces(
+                        byte[] imageData, DetectionOptions options) {
+                    return faceResults;
+                }
+
+                @Override
+                public String extractText(byte[] imageData, DetectionOptions options) {
+                    return ocrText;
+                }
+            };
+        }
+
+        @Test
+        @DisplayName("classify delegates to detector when CLASSIFICATION capability is declared")
+        void classifyDelegatesToDetector() { // GH-90000
+            List<ClassificationCandidate> candidates = List.of(
+                    new ClassificationCandidate("vehicle", 0.91),
+                    new ClassificationCandidate("outdoor", 0.78));
+            VisionDetector det = fullCapabilityDetector(candidates, List.of(), ""); // GH-90000
+
+            VisionModelEngine realEngine = new VisionModelEngine("resnet50", 0.5, det); // GH-90000
+            ClassificationResult result = realEngine.classify(SAMPLE_IMAGE); // GH-90000
+
+            assertThat(result.label()).isEqualTo("vehicle"); // GH-90000
+            assertThat(result.confidence()).isCloseTo(0.91, offset(0.001)); // GH-90000
+            assertThat(result.topLabels()).containsExactly("vehicle", "outdoor"); // GH-90000
+        }
+
+        @Test
+        @DisplayName("detectFaces delegates to detector when FACE_DETECTION capability is declared")
+        void detectFacesDelegatesToDetector() { // GH-90000
+            BoundingBox box = BoundingBox.builder().x(0.1).y(0.2).width(0.3).height(0.4).build(); // GH-90000
+            DetectedFace face = new DetectedFace(box, 0.88); // GH-90000
+            VisionDetector det = fullCapabilityDetector(List.of(), List.of(face), ""); // GH-90000
+
+            VisionModelEngine realEngine = new VisionModelEngine("mediapipe-face", 0.5, det); // GH-90000
+            List<FaceDetection> faces = realEngine.detectFaces(SAMPLE_IMAGE); // GH-90000
+
+            assertThat(faces).hasSize(1); // GH-90000
+            FaceDetection f = faces.get(0); // GH-90000
+            assertThat(f.confidence()).isCloseTo(0.88, offset(0.001)); // GH-90000
+            assertThat(f.x()).isCloseTo(0.1, offset(0.001)); // GH-90000
+            assertThat(f.y()).isCloseTo(0.2, offset(0.001)); // GH-90000
+        }
+
+        @Test
+        @DisplayName("extractText delegates to detector when OCR capability is declared")
+        void extractTextDelegatesToDetector() { // GH-90000
+            VisionDetector det = fullCapabilityDetector(
+                    List.of(), List.of(), "Hello World from Tesseract"); // GH-90000
+
+            VisionModelEngine realEngine = new VisionModelEngine("tesseract", 0.5, det); // GH-90000
+            OcrResult result = realEngine.extractText(SAMPLE_IMAGE); // GH-90000
+
+            assertThat(result.text()).isEqualTo("Hello World from Tesseract"); // GH-90000
+        }
+
+        @Test
+        @DisplayName("classify falls back to stub when detector does not support CLASSIFICATION")
+        void classifyFallsBackWhenCapabilityAbsent() { // GH-90000
+            // detector only supports OBJECT_DETECTION (default supportsCapability behaviour)
+            VisionDetector yoloOnly = new VisionDetector() {
+                @Override
+                public List<com.ghatana.audio.video.vision.model.DetectedObject> detectObjects(
+                        byte[] imageData, DetectionOptions options) {
+                    return List.of();
+                }
+                @Override
+                public boolean isInitialized() { return true; }
+                // supportsCapability defaults: only OBJECT_DETECTION = true
+            };
+
+            VisionModelEngine realEngine = new VisionModelEngine("yolov8-base", 0.5, yoloOnly); // GH-90000
+            ClassificationResult result = realEngine.classify(SAMPLE_IMAGE); // GH-90000
+
+            // Stub fallback still returns a valid result
+            assertThat(result.label()).isNotBlank(); // GH-90000
+            assertThat(result.confidence()).isBetween(0.0, 1.0); // GH-90000
+        }
+
+        @Test
+        @DisplayName("engine uses stub for all operations when detector is not initialized")
+        void uninitializedDetectorUsesFallback() { // GH-90000
+            VisionDetector uninit = new VisionDetector() {
+                @Override
+                public List<com.ghatana.audio.video.vision.model.DetectedObject> detectObjects(
+                        byte[] imageData, DetectionOptions options) {
+                    return List.of();
+                }
+                @Override
+                public boolean isInitialized() { return false; }
+                @Override
+                public boolean supportsCapability(VisionCapability capability) { return true; }
+            };
+
+            VisionModelEngine realEngine = new VisionModelEngine("resnet", 0.5, uninit); // GH-90000
+
+            // Must not throw; stub fallback should activate
+            assertThatCode(() -> realEngine.classify(SAMPLE_IMAGE)).doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> realEngine.detectFaces(SAMPLE_IMAGE)).doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> realEngine.extractText(SAMPLE_IMAGE)).doesNotThrowAnyException(); // GH-90000
+        }
     }
 
     // ── Error handling ────────────────────────────────────────────────────────

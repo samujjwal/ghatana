@@ -57,6 +57,7 @@ fn stt_transcribe(
 ) -> Result<String, String> {
     let services = state.services.clone();
     let stt_circuit_breaker = state.stt_circuit_breaker.clone();
+    let retry_config = state.retry_config.clone();
 
     tauri::async_runtime::block_on(stt_transcribe_inner(
         audio_data,
@@ -64,6 +65,7 @@ fn stt_transcribe(
         filename,
         services,
         stt_circuit_breaker,
+        retry_config,
     ))
 }
 
@@ -73,6 +75,7 @@ async fn stt_transcribe_inner(
     filename: Option<String>,
     services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
     stt_circuit_breaker: CircuitBreaker,
+    retry_config: RetryConfig,
 ) -> Result<String, String> {
     let sanitized_filename = filename.as_deref().map(sanitize_filename);
 
@@ -96,7 +99,7 @@ async fn stt_transcribe_inner(
 
     let addr = std::env::var("STT_GRPC_URL").unwrap_or_else(|_| "http://localhost:50051".to_string());
     let result = stt_circuit_breaker
-        .call_async_for("STT", || run_stt_transcription(addr.clone(), audio_data.clone(), language.clone()))
+        .call_async_for("STT", || run_stt_transcription(addr.clone(), audio_data.clone(), language.clone(), retry_config.clone()))
         .await;
 
     match result {
@@ -121,8 +124,8 @@ async fn run_stt_transcription(
     addr: String,
     audio_data: Vec<u8>,
     language: Option<String>,
+    config: RetryConfig,
 ) -> Result<String, String> {
-    let config = RetryConfig::default();
     let mut delay_ms = config.initial_delay_ms;
 
     for attempt in 1..=config.max_attempts {
@@ -198,12 +201,14 @@ fn tts_synthesize(
 ) -> Result<Vec<u8>, String> {
     let services = state.services.clone();
     let tts_circuit_breaker = state.tts_circuit_breaker.clone();
+    let retry_config = state.retry_config.clone();
 
     tauri::async_runtime::block_on(tts_synthesize_inner(
         text,
         voice_id,
         services,
         tts_circuit_breaker,
+        retry_config,
     ))
 }
 
@@ -212,6 +217,7 @@ async fn tts_synthesize_inner(
     voice_id: Option<String>,
     services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
     tts_circuit_breaker: CircuitBreaker,
+    retry_config: RetryConfig,
 ) -> Result<Vec<u8>, String> {
     // Validate text input
     if let Err(e) = validate_text(&text) {
@@ -231,7 +237,7 @@ async fn tts_synthesize_inner(
 
     let addr = std::env::var("TTS_GRPC_URL").unwrap_or_else(|_| "http://localhost:50052".to_string());
     let result = tts_circuit_breaker
-        .call_async_for("TTS", || run_tts_synthesis(addr.clone(), text.clone(), voice_id.clone()))
+        .call_async_for("TTS", || run_tts_synthesis(addr.clone(), text.clone(), voice_id.clone(), retry_config.clone()))
         .await;
     
     match result {
@@ -254,8 +260,8 @@ async fn run_tts_synthesis(
     addr: String,
     text: String,
     voice_id: Option<String>,
+    config: RetryConfig,
 ) -> Result<Vec<u8>, String> {
-    let config = RetryConfig::default();
     let mut delay_ms = config.initial_delay_ms;
 
     for attempt in 1..=config.max_attempts {
@@ -336,6 +342,7 @@ fn ai_voice_process(
 ) -> Result<String, String> {
     let services = state.services.clone();
     let ai_voice_circuit_breaker = state.ai_voice_circuit_breaker.clone();
+    let retry_config = state.retry_config.clone();
 
     tauri::async_runtime::block_on(ai_voice_process_inner(
         text,
@@ -346,6 +353,7 @@ fn ai_voice_process(
         pitch_semitones,
         services,
         ai_voice_circuit_breaker,
+        retry_config,
     ))
 }
 
@@ -358,6 +366,7 @@ async fn ai_voice_process_inner(
     pitch_semitones: Option<f32>,
     services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
     ai_voice_circuit_breaker: CircuitBreaker,
+    retry_config: RetryConfig,
 ) -> Result<String, String> {
     // Validate text input before sending to the AI Voice service.
     if let Err(e) = validate_text(&text) {
@@ -394,6 +403,7 @@ async fn ai_voice_process_inner(
                 emotion.clone(),
                 speaking_rate,
                 pitch_semitones,
+                retry_config.clone(),
             )
         })
         .await;
@@ -424,8 +434,8 @@ async fn run_ai_voice_processing(
     emotion: Option<String>,
     speaking_rate: Option<f32>,
     pitch_semitones: Option<f32>,
+    config: RetryConfig,
 ) -> Result<String, String> {
-    let config = RetryConfig::default();
     let mut delay_ms = config.initial_delay_ms;
 
     for attempt in 1..=config.max_attempts {
@@ -511,6 +521,7 @@ fn vision_process(
 ) -> Result<String, String> {
     let services = state.services.clone();
     let vision_circuit_breaker = state.vision_circuit_breaker.clone();
+    let retry_config = state.retry_config.clone();
 
     tauri::async_runtime::block_on(vision_process_inner(
         image_data,
@@ -518,6 +529,7 @@ fn vision_process(
         filename,
         services,
         vision_circuit_breaker,
+        retry_config,
     ))
 }
 
@@ -527,6 +539,7 @@ async fn vision_process_inner(
     filename: Option<String>,
     services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
     vision_circuit_breaker: CircuitBreaker,
+    retry_config: RetryConfig,
 ) -> Result<String, String> {
     let sanitized_filename = filename.as_deref().map(sanitize_filename);
 
@@ -550,7 +563,7 @@ async fn vision_process_inner(
 
     let addr = std::env::var("VISION_GRPC_URL").unwrap_or_else(|_| "http://localhost:50054".to_string());
     let result = vision_circuit_breaker
-        .call_async_for("Vision", || run_vision_detection(addr.clone(), image_data.clone(), task.clone()))
+        .call_async_for("Vision", || run_vision_detection(addr.clone(), image_data.clone(), task.clone(), retry_config.clone()))
         .await;
     
     match result {
@@ -573,8 +586,8 @@ async fn run_vision_detection(
     addr: String,
     image_data: Vec<u8>,
     task: String,
+    config: RetryConfig,
 ) -> Result<String, String> {
-    let config = RetryConfig::default();
     let mut delay_ms = config.initial_delay_ms;
 
     for attempt in 1..=config.max_attempts {
@@ -651,11 +664,13 @@ fn multimodal_process(
 ) -> Result<String, String> {
     let services = state.services.clone();
     let multimodal_circuit_breaker = state.multimodal_circuit_breaker.clone();
+    let retry_config = state.retry_config.clone();
 
     tauri::async_runtime::block_on(multimodal_process_inner(
         request,
         services,
         multimodal_circuit_breaker,
+        retry_config,
     ))
 }
 
@@ -663,6 +678,7 @@ async fn multimodal_process_inner(
     request: serde_json::Value,
     services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
     multimodal_circuit_breaker: CircuitBreaker,
+    retry_config: RetryConfig,
 ) -> Result<String, String> {
     // Extract and validate data from request
     let audio_data = request.get("audio_data")
@@ -713,6 +729,7 @@ async fn multimodal_process_inner(
                 image_data.clone(),
                 video_data.clone(),
                 text.clone(),
+                retry_config.clone(),
             )
         })
         .await;
@@ -739,8 +756,8 @@ async fn run_multimodal_processing(
     image_data: Vec<u8>,
     video_data: Vec<u8>,
     text: String,
+    config: RetryConfig,
 ) -> Result<String, String> {
-    let config = RetryConfig::default();
     let mut delay_ms = config.initial_delay_ms;
 
     for attempt in 1..=config.max_attempts {
@@ -808,29 +825,31 @@ async fn process_multimodal_once(
     .to_string())
 }
 
-// Application Commands
-#[tauri::command]
-fn get_all_services_status(state: State<'_, AppState>) -> Result<Vec<ServiceStatus>, String> {
-    tauri::async_runtime::block_on(get_all_services_status_inner(state.services.clone()))
+// Application state
+#[derive(Debug)]
+struct AppState {
+    services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
+    retry_config: RetryConfig,
+    stt_circuit_breaker: CircuitBreaker,
+    tts_circuit_breaker: CircuitBreaker,
+    ai_voice_circuit_breaker: CircuitBreaker,
+    vision_circuit_breaker: CircuitBreaker,
+    multimodal_circuit_breaker: CircuitBreaker,
 }
 
-async fn get_all_services_status_inner(
-    services: Arc<Mutex<HashMap<String, ServiceStatus>>>,
-) -> Result<Vec<ServiceStatus>, String> {
-    let services = services.lock().unwrap_or_else(|e| e.into_inner());
-    let mut status_list: Vec<ServiceStatus> = services.values().cloned().collect();
-    
-    // Ensure all services are represented
-    let all_services = vec!["stt", "tts", "ai-voice", "vision", "multimodal"];
-    for service_name in all_services {
-        if !services.contains_key(service_name) {
-            status_list.push(ServiceStatus {
-                name: service_name.to_uppercase().to_string(),
-                status: "unknown".to_string(),
-                endpoint: format!("http://localhost:500{}", match service_name {
-                    "stt" => "51",
-                    "tts" => "52", 
-                    "ai-voice" => "53",
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            services: Arc::new(Mutex::new(HashMap::new())),
+            retry_config: RetryConfig::default(),
+            stt_circuit_breaker: CircuitBreaker::default(),
+            tts_circuit_breaker: CircuitBreaker::default(),
+            ai_voice_circuit_breaker: CircuitBreaker::default(),
+            vision_circuit_breaker: CircuitBreaker::default(),
+            multimodal_circuit_breaker: CircuitBreaker::default(),
+        }
+    }
+}
                     "vision" => "54",
                     "multimodal" => "55",
                     _ => "50"

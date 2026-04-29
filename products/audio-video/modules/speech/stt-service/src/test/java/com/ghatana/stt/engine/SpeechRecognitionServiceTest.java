@@ -56,29 +56,26 @@ class SpeechRecognitionServiceTest {
 
         @Test
         @DisplayName("null audio data throws TranscriptionException")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation")
-        void nullAudioData_throwsTranscriptionException() { // GH-90000
-            assertThatThrownBy(() -> engine.transcribe(null, AudioFormat.PCM, "en")) // GH-90000
-                    .isInstanceOf(TranscriptionException.class) // GH-90000
+        void nullAudioData_throwsTranscriptionException() {
+            assertThatThrownBy(() -> engine.transcribe(null, AudioFormat.PCM, "en"))
+                    .isInstanceOf(TranscriptionException.class)
                     .hasMessageContaining("must not be null or empty");
         }
 
         @Test
         @DisplayName("empty audio bytes throws TranscriptionException")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation")
-        void emptyAudioBytes_throwsTranscriptionException() { // GH-90000
+        void emptyAudioBytes_throwsTranscriptionException() {
             byte[] empty = new byte[0];
-            assertThatThrownBy(() -> engine.transcribe(empty, AudioFormat.PCM, "en")) // GH-90000
-                    .isInstanceOf(TranscriptionException.class) // GH-90000
+            assertThatThrownBy(() -> engine.transcribe(empty, AudioFormat.PCM, "en"))
+                    .isInstanceOf(TranscriptionException.class)
                     .hasMessageContaining("must not be null or empty");
         }
 
         @Test
         @DisplayName("null audio format throws NullPointerException")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation")
-        void nullAudioFormat_throwsNullPointerException() { // GH-90000
-            assertThatThrownBy(() -> engine.transcribe(SAMPLE_AUDIO_EN, null, "en")) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullAudioFormat_throwsNullPointerException() {
+            assertThatThrownBy(() -> engine.transcribe(SAMPLE_AUDIO_EN, null, "en"))
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test

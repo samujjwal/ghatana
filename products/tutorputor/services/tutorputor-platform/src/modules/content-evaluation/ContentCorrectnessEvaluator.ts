@@ -187,9 +187,64 @@ export class ContentCorrectnessEvaluator {
     title: string;
     excerpt: string;
   } | null> {
-    // Placeholder implementation - in a real system, this would search the curriculum
-    // For now, return null to indicate no match found
-    return null;
+    try {
+      // Search module content blocks for matching content
+      const contentBlocks = await this.prisma.moduleContentBlock.findMany({
+        where: {
+          moduleId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+        },
+        take: 10,
+      });
+
+      // Search learning objectives for matching content
+      const learningObjectives = await this.prisma.moduleLearningObjective.findMany({
+        where: {
+          moduleId,
+        },
+        select: {
+          id: true,
+          label: true,
+        },
+        take: 10,
+      });
+
+      // Combine and search for best match using text similarity
+      const candidates = [
+        ...contentBlocks.map((block) => ({
+          id: block.id,
+          title: "Content Block",
+          excerpt: typeof block.payload === "string" ? block.payload : JSON.stringify(block.payload),
+        })),
+        ...learningObjectives.map((obj) => ({
+          id: String(obj.id),
+          title: "Learning Objective",
+          excerpt: obj.label,
+        })),
+      ];
+
+      // Find best match by text similarity
+      let bestMatch: { id: string; title: string; excerpt: string; similarity: number } | null = null;
+      const similarityThreshold = 0.3;
+
+      for (const candidate of candidates) {
+        const similarity = this.textSimilarity(text, candidate.excerpt);
+        if (similarity > similarityThreshold && (!bestMatch || similarity > bestMatch.similarity)) {
+          bestMatch = { ...candidate, similarity };
+        }
+      }
+
+      return bestMatch ? { id: bestMatch.id, title: bestMatch.title, excerpt: bestMatch.excerpt.slice(0, 500) } : null;
+    } catch (error) {
+      // Log error but don't fail the evaluation
+      console.error("Failed to search curriculum:", error);
+      return null;
+    }
   }
 
   /**
@@ -200,9 +255,53 @@ export class ContentCorrectnessEvaluator {
     title: string;
     excerpt: string;
   } | null> {
-    // Placeholder implementation - in a real system, this would search citations
-    // For now, return null to indicate no match found
-    return null;
+    try {
+      // Search for evidence bundles related to the module
+      // Note: EvidenceBundleMetadata doesn't have direct moduleId, so we search all
+      // and filter by relevance. In a real system, this would use a proper search index.
+      const evidenceBundles = await this.prisma.evidenceBundleMetadata.findMany({
+        take: 20,
+        orderBy: {
+          generatedAt: "desc",
+        },
+      });
+
+      // For each evidence bundle, try to find associated evidence items
+      // This is a simplified approach - in production, use proper search index
+      const candidates: Array<{ id: string; title: string; excerpt: string }> = [];
+
+      for (const bundle of evidenceBundles) {
+        // Search for any evidence items that might contain matching text
+        // This would be more efficient with a full-text search index
+        const bundleId = bundle.id;
+        const similarity = this.textSimilarity(text, JSON.stringify(bundle));
+
+        if (similarity > 0.2) {
+          candidates.push({
+            id: bundleId,
+            title: `Evidence Bundle (${bundle.primarySourceTypes.join(", ")})`,
+            excerpt: `Confidence: ${bundle.bundleConfidence.toFixed(2)}, Coverage: ${bundle.coverageScore.toFixed(2)}`,
+          });
+        }
+      }
+
+      // Find best match
+      let bestMatch: { id: string; title: string; excerpt: string; similarity: number } | null = null;
+      const similarityThreshold = 0.25;
+
+      for (const candidate of candidates) {
+        const similarity = this.textSimilarity(text, candidate.excerpt);
+        if (similarity > similarityThreshold && (!bestMatch || similarity > bestMatch.similarity)) {
+          bestMatch = { ...candidate, similarity };
+        }
+      }
+
+      return bestMatch ? { id: bestMatch.id, title: bestMatch.title, excerpt: bestMatch.excerpt.slice(0, 500) } : null;
+    } catch (error) {
+      // Log error but don't fail the evaluation
+      console.error("Failed to search citations:", error);
+      return null;
+    }
   }
 
   /**
@@ -253,14 +352,42 @@ export class ContentCorrectnessEvaluator {
     accuracy: number;
     averageConfidence: number;
   }> {
-    // Placeholder implementation - in a real system, this would query the database
-    // For now, return placeholder statistics
-    return {
-      totalClaims: 0,
-      correctClaims: 0,
-      incorrectClaims: 0,
-      accuracy: 0,
-      averageConfidence: 0,
-    };
+    try {
+      // Query content evaluations for this module
+      const evaluations = await this.prisma.contentEvaluation.findMany({
+        where: {
+          moduleId,
+        },
+        select: {
+          isCorrect: true,
+          confidence: true,
+        },
+      });
+
+      const totalClaims = evaluations.length;
+      const correctClaims = evaluations.filter((e) => e.isCorrect).length;
+      const incorrectClaims = totalClaims - correctClaims;
+      const accuracy = totalClaims > 0 ? correctClaims / totalClaims : 0;
+      const averageConfidence = totalClaims > 0
+        ? evaluations.reduce((sum, e) => sum + (e.confidence || 0), 0) / totalClaims
+        : 0;
+
+      return {
+        totalClaims,
+        correctClaims,
+        incorrectClaims,
+        accuracy,
+        averageConfidence,
+      };
+    } catch (error) {
+      console.error("Failed to get module evaluation stats:", error);
+      return {
+        totalClaims: 0,
+        correctClaims: 0,
+        incorrectClaims: 0,
+        accuracy: 0,
+        averageConfidence: 0,
+      };
+    }
   }
 }

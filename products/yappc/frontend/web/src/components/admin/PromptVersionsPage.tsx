@@ -127,7 +127,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className={className}>
+    <div className={className} data-testid="prompt-versions-page">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -158,7 +158,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
         {/* Loading */}
         {isLoading && (
-          <div className="flex items-center gap-2 text-zinc-400 py-8 justify-center">
+          <div className="flex items-center gap-2 text-zinc-400 py-8 justify-center" data-testid="loading-spinner">
             <SpinnerIcon size={20} className="animate-spin" />
             <span>Loading prompt versions…</span>
           </div>
@@ -166,7 +166,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
         {/* Error */}
         {isError && (
-          <div className="flex items-center gap-2 text-red-400 bg-red-900/20 border border-red-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-400 bg-red-900/20 border border-red-800 rounded-lg p-4" data-testid="error-message">
             <ErrorIcon size={16} />
             <span className="text-sm">
               {error instanceof Error ? error.message : 'Failed to load prompt versions.'}
@@ -194,7 +194,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
                 </thead>
                 <tbody>
                   {versions.map((version) => (
-                    <tr key={version.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                    <tr key={version.id} className="border-b border-zinc-800 hover:bg-zinc-800/50" data-testid={`version-row-${version.id}`}>
                       <td className="py-3 px-4">
                         {version.active ? (
                           <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-900/30 text-emerald-400 text-xs font-medium">
@@ -263,7 +263,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
         {/* Empty state */}
         {!isLoading && !isError && promptVersions.length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
+          <div className="text-center py-12 text-zinc-500" data-testid="empty-state">
             No prompt versions found.
           </div>
         )}
@@ -317,7 +317,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
       {/* Rollback Confirmation Dialog */}
       {rollbackDialogOpen && selectedPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="rollback-dialog">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <h2 className="text-lg font-semibold text-zinc-100">Confirm Rollback</h2>
@@ -380,7 +380,7 @@ export function PromptVersionsPage({ className }: PromptVersionsPageProps) {
 
       {/* Weight Configuration Dialog */}
       {weightDialogOpen && selectedPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="weight-dialog">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <h2 className="text-lg font-semibold text-zinc-100">Configure Weight</h2>

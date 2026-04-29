@@ -5,6 +5,7 @@ import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageBackendType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.entity.storage.StorageProfile;
+import com.ghatana.datacloud.observability.MdcPropagation;
 import io.activej.promise.Promise;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.NoopMetricsCollector;
@@ -117,6 +118,15 @@ public class OpenSearchConnector implements StorageConnector {
         this.client = new OpenSearchClient(transport);
     }
 
+    /**
+     * Wraps a blocking operation so that the calling thread's MDC context
+     * (requestId, tenantId, traceId) is propagated to the worker thread.
+     */
+    private <T> Promise<T> blocking(MdcPropagation.BlockingSupplier<T> supplier) {
+        Map<String, String> mdc = MdcPropagation.capture();
+        return Promise.ofBlocking(executor, () -> MdcPropagation.withContext(mdc, supplier));
+    }
+
     // =========================================================================
     //  StorageConnector implementation
     // =========================================================================
@@ -127,7 +137,7 @@ public class OpenSearchConnector implements StorageConnector {
         if (entity.getId() == null) {
             entity.setId(UUID.randomUUID());
         }
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             long startMs = System.currentTimeMillis();
             try {
                 String index = tenantIndex(entity.getTenantId());
@@ -152,7 +162,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Optional<Entity>> read(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             try {
                 metricsCollector.incrementCounter("opensearch.entity.read.total");
                 String index = tenantIndex(tenantId);
@@ -177,7 +187,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Void> delete(UUID collectionId, String tenantId, UUID entityId) {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             String index = tenantIndex(tenantId);
             client.delete(DeleteRequest.of(req -> req.index(index).id(entityId.toString())));
             metricsCollector.incrementCounter("opensearch.entity.delete.total");
@@ -187,7 +197,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<QueryResult> query(UUID collectionId, String tenantId, QuerySpec spec) {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             long startMs = System.currentTimeMillis();
             try {
                 String index = tenantIndex(tenantId);
@@ -222,7 +232,7 @@ public class OpenSearchConnector implements StorageConnector {
     @Override
     public Promise<List<Entity>> scan(UUID collectionId, String tenantId,
                                       String filterExpression, int limit, int offset) {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             int effectiveLimit  = limit  > 0 ? limit  : QuerySpec.DEFAULT_LIMIT;
             int effectiveOffset = offset > 0 ? offset : 0;
             String index = tenantIndex(tenantId);
@@ -247,7 +257,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Long> count(UUID collectionId, String tenantId, String filterExpression) {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             String index = tenantIndex(tenantId);
             Query tenantFilter = Query.of(q -> q.term(t -> t.field(FIELD_TENANT_ID).value(FieldValue.of(tenantId))));
             CountResponse resp = client.count(
@@ -259,7 +269,7 @@ public class OpenSearchConnector implements StorageConnector {
     @Override
     public Promise<List<Entity>> bulkCreate(UUID collectionId, String tenantId, List<Entity> entities) {
         if (entities.isEmpty()) return Promise.of(entities);
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             String index = tenantIndex(tenantId);
             ensureIndex(index);
 
@@ -290,7 +300,7 @@ public class OpenSearchConnector implements StorageConnector {
     @Override
     public Promise<Long> bulkDelete(UUID collectionId, String tenantId, List<UUID> entityIds) {
         if (entityIds.isEmpty()) return Promise.of(0L);
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             String index = tenantIndex(tenantId);
             List<BulkOperation> ops = new ArrayList<>();
             for (UUID id : entityIds) {
@@ -305,7 +315,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Long> truncate(UUID collectionId, String tenantId) {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             // Count then delete-all using a match-all query via scroll is heavy;
             // For simplicity, delete the tenant index and recreate it.
             String index = tenantIndex(tenantId);
@@ -340,7 +350,7 @@ public class OpenSearchConnector implements StorageConnector {
 
     @Override
     public Promise<Void> healthCheck() {
-        return Promise.ofBlocking(executor, () -> {
+        return blocking(() -> {
             client.cluster().health(req -> req);
             return (Void) null;
         });

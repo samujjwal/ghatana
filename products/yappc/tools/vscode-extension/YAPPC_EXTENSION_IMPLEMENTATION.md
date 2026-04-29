@@ -256,7 +256,7 @@ ${nodeName}Router.get('/', (req, res) => {
 
 1. **Start YAPPC Dev Server**:
    ```bash
-   cd products/yappc/app-creator
+   cd products/yappc/frontend/web
    pnpm dev
    ```
    Server runs on `localhost:5174`

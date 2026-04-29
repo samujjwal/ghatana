@@ -193,10 +193,11 @@ public final class TtsEngineFactory {
                     VoiceInfo.Gender.NEUTRAL,
                     config.sampleRate(),
                     false,
-                    0L
+                    0L,
+                    1.0f
                 ))
                 : config.availableVoices().stream()
-                    .map(v -> new VoiceInfo(v, v, v, Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, config.sampleRate(), false, 0L))
+                    .map(v -> new VoiceInfo(v, v, v, Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, config.sampleRate(), false, 0L, 1.0f))
                     .toList();
         }
 
@@ -207,7 +208,7 @@ public final class TtsEngineFactory {
 
         @Override
         public VoiceInfo loadVoice(String voiceId) {
-            return new VoiceInfo(voiceId, voiceId, voiceId, Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, config.sampleRate(), false, 0L);
+            return new VoiceInfo(voiceId, voiceId, voiceId, Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, config.sampleRate(), false, 0L, 1.0f);
         }
 
         @Override
@@ -234,7 +235,8 @@ public final class TtsEngineFactory {
                 VoiceInfo.Gender.NEUTRAL,
                 config.sampleRate(),
                 true,
-                0L
+                0L,
+                computeCloningSimilarityScore(audioSamples.size(), options.epochs())
             );
         }
 
@@ -305,6 +307,20 @@ public final class TtsEngineFactory {
             if (text.length() > config.maxTextLength()) {
                 throw new ValidationError("Text too long: " + text.length() + " > " + config.maxTextLength());
             }
+        }
+
+        /**
+         * Heuristic speaker-similarity score for a cloned voice.
+         * Baseline 0.55; +0.05 per additional sample (beyond the first, capped +0.25);
+         * +0.05 bonus for high-epoch training (≥ 200). Maximum 0.95.
+         * A real ML-computed speaker-verification score replaces this once the
+         * native engine exposes one via its JNI/ONNX API.
+         */
+        private static float computeCloningSimilarityScore(int sampleCount, int epochs) {
+            float base = 0.55f;
+            float sampleBonus = Math.min(0.25f, Math.max(0, sampleCount - 1) * 0.05f);
+            float epochBonus = epochs >= 200 ? 0.05f : 0.0f;
+            return Math.min(0.95f, base + sampleBonus + epochBonus);
         }
     }
 }

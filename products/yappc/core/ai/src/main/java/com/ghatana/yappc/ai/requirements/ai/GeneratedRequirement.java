@@ -54,7 +54,7 @@ public class GeneratedRequirement {
         this.type = Objects.requireNonNull(builder.type, "type is required");
         this.priority = builder.priority != null ? builder.priority : "medium";
         this.acceptanceCriteria = Collections.unmodifiableList(new ArrayList<>(builder.acceptanceCriteria));
-        this.source = builder.source != null ? builder.source : "ai-generated";
+        this.source = builder.source != null ? builder.source : "model";
         this.confidence = builder.confidence;
         this.createdAt = builder.createdAt != null ? builder.createdAt : Instant.now();
         this.parentFeature = builder.parentFeature;
@@ -116,7 +116,12 @@ public class GeneratedRequirement {
     /**
      * Gets source of requirement generation.
      *
-     * @return source (e.g., "ai-generated", "user-input")
+     * <p>Returns the canonical AI-source discriminator for this requirement:
+     * {@code "model"} when produced by an LLM/ML model, or {@code "rule"} when produced
+     * by a deterministic rule engine. See {@link com.ghatana.yappc.ai.AiSource} for the
+     * canonical enum equivalent.</p>
+     *
+     * @return {@code "model"} or {@code "rule"}
      */
     public String getSource() {
         return source;

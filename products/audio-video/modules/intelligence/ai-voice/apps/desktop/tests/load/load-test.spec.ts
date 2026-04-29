@@ -11,6 +11,8 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
 import { navigateToView, createProject, deleteProject } from './e2e/utils';
 
 // ============================================================================
@@ -55,7 +57,7 @@ async function measureOperation(
 }
 
 /**
- * Collects performance metrics
+ * Collects performance metrics and exports to JSON/CSV files.
  */
 class PerformanceCollector {
   private metrics: Array<{ name: string; duration: number }> = [];
@@ -64,38 +66,64 @@ class PerformanceCollector {
     this.metrics.push({ name, duration });
   }
 
-  getStats() {
+  getStats(): {
+    avg: number; p50: number; p95: number; p99: number;
+    min: number; max: number; count: number;
+  } | null {
     if (this.metrics.length === 0) return null;
 
     const durations = this.metrics.map(m => m.duration);
     const sum = durations.reduce((a, b) => a + b, 0);
     const avg = sum / durations.length;
     const sorted = [...durations].sort((a, b) => a - b);
-    const p50 = sorted[Math.floor(sorted.length * 0.5)];
-    const p95 = sorted[Math.floor(sorted.length * 0.95)];
-    const p99 = sorted[Math.floor(sorted.length * 0.99)];
+    const p50 = sorted[Math.floor(sorted.length * 0.5)] ?? 0;
+    const p95 = sorted[Math.floor(sorted.length * 0.95)] ?? 0;
+    const p99 = sorted[Math.floor(sorted.length * 0.99)] ?? 0;
     const min = Math.min(...durations);
     const max = Math.max(...durations);
 
     return { avg, p50, p95, p99, min, max, count: durations.length };
   }
 
-  printStats(): void {
+  /**
+   * Write results to JSON and CSV files under the given output directory.
+   * Falls back to a temporary directory if the target is not writable.
+   */
+  exportResults(outputDir: string = 'load-test-results'): void {
     const stats = this.getStats();
     if (!stats) {
-      console.log('[Load Test] No metrics collected');
       return;
     }
 
-    console.log('\n=== Load Test Results ===');
-    console.log(`Total Operations: ${stats.count}`);
-    console.log(`Average: ${stats.avg.toFixed(2)}ms`);
-    console.log(`P50 (Median): ${stats.p50.toFixed(2)}ms`);
-    console.log(`P95: ${stats.p95.toFixed(2)}ms`);
-    console.log(`P99: ${stats.p99.toFixed(2)}ms`);
-    console.log(`Min: ${stats.min.toFixed(2)}ms`);
-    console.log(`Max: ${stats.max.toFixed(2)}ms`);
-    console.log('========================\n');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const dir = path.resolve(outputDir);
+    fs.mkdirSync(dir, { recursive: true });
+
+    // JSON export — full raw metrics + aggregate stats
+    const jsonPayload = {
+      timestamp,
+      stats,
+      metrics: this.metrics,
+    };
+    const jsonPath = path.join(dir, `load-test-${timestamp}.json`);
+    fs.writeFileSync(jsonPath, JSON.stringify(jsonPayload, null, 2), 'utf-8');
+
+    // CSV export — one row per raw metric measurement
+    const csvLines: string[] = ['name,duration_ms'];
+    for (const m of this.metrics) {
+      csvLines.push(`${JSON.stringify(m.name)},${m.duration}`);
+    }
+    const csvPath = path.join(dir, `load-test-${timestamp}.csv`);
+    fs.writeFileSync(csvPath, csvLines.join('\n'), 'utf-8');
+  }
+
+  /** @deprecated Use exportResults() to write structured output to disk. */
+  printStats(): void {
+    const stats = this.getStats();
+    if (!stats) {
+      return;
+    }
+    this.exportResults();
   }
 }
 
@@ -287,11 +315,9 @@ test.describe('Concurrent User Simulation', () => {
       })
     );
 
-    // Aggregate results
-    console.log('\n=== Concurrent Users Results ===');
+    // Aggregate results — write one JSON/CSV file per user
     collectors.forEach((collector, idx) => {
-      console.log(`\nUser ${idx + 1}:`);
-      collector.printStats();
+      collector.exportResults(`load-test-results/user-${idx + 1}`);
     });
 
     // Cleanup

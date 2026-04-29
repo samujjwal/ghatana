@@ -65,7 +65,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
     staleTime: 30_000,
   });
 
-  const experiments = listResponse?.items;
+  const experiments = listResponse?.items ?? [];
 
   const createMutation = useMutation({
     mutationFn: (req: CreateVariantRequest) => createExperiment(req),
@@ -151,7 +151,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
   };
 
   return (
-    <div className={className}>
+    <div className={className} data-testid="ab-testing-dashboard">
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -177,6 +177,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
               type="button"
               onClick={() => setCreateDialogOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+              data-testid="btn-create-experiment"
             >
               <AddIcon size={16} />
               Create Experiment
@@ -189,28 +190,28 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
         </div>
 
         {isLoading && (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-16" data-testid="loading-spinner">
             <SpinnerIcon size={32} className="animate-spin text-blue-400" />
           </div>
         )}
 
         {isError && (
-          <div className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-800 rounded-lg text-red-400">
+          <div
+            className="flex items-center gap-3 p-4 bg-red-900/20 border border-red-800 rounded-lg text-red-400"
+            data-testid="error-message"
+          >
             <ErrorIcon size={18} className="shrink-0" />
             <p className="text-sm">
               {error instanceof Error ? error.message : 'Failed to load experiments. Please retry.'}
             </p>
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              className="ml-auto text-sm underline underline-offset-2 hover:no-underline"
-            >
-              Retry
-                  on>
           </div>
         )}
 
-          <div className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-3">
+        {!isLoading && !isError && experiments.length === 0 && (
+          <div
+            className="flex flex-col items-center justify-center py-16 text-zinc-500 space-y-3"
+            data-testid="empty-state"
+          >
             <TrendingUpIcon size={40} className="opacity-30" />
             <p className="text-sm">No experiments found.</p>
             <button
@@ -223,14 +224,17 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
           </div>
         )}
 
-                                 & experiments && experiments.length > 0 && (
+        {!isLoading && !isError && experiments.length > 0 && (
           <div className="space-y-4">
             {experiments.map((experiment) => (
               <div
                 key={experiment.id}
                 className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors"
+                data-testid={`experiment-row-${experiment.id}`}
               >
-                <div className="flex ite                <div className="flex ite                <div className="   <h2 className="text-lg font-semibold text-zinc-100 mb-1">{experiment.name}</h2>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-zinc-100 mb-1">{experiment.name}</h2>
                     <p className="text-sm text-zinc-400">{experiment.description}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -266,7 +270,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                         </div>
                         <div className="flex justify-between">
                           <span>Quality:</span>
-                          <span className="text-zinc-300">{variant.avgQuality.toFixed(1)}</span>
+                          <span className="text-zinc-300">{variant.avgQualityScore.toFixed(1)}</span>
                         </div>
                         {variant.statisticalSignificance && (
                           <div className="text-emerald-400">Statistically significant</div>
@@ -286,6 +290,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                       type="button"
                       onClick={() => handleView(experiment)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg transition-colors"
+                      data-testid={`btn-view-${experiment.id}`}
                     >
                       <ViewIcon size={14} />
                       View Details
@@ -296,6 +301,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                         onClick={() => pauseMutation.mutate(experiment.id)}
                         disabled={pauseMutation.isPending}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-700/40 hover:bg-amber-700/60 text-amber-300 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                        data-testid={`btn-pause-${experiment.id}`}
                       >
                         {pauseMutation.isPending ? (
                           <SpinnerIcon size={14} className="animate-spin" />
@@ -304,10 +310,13 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                         )}
                         Pause
                       </button>
-                    )}                    {experiment.status === 'completed' && !experiment.winnerId && (                      <button
+                    )}
+                    {experiment.status === 'completed' && !experiment.winnerId && (
+                      <button
                         type="button"
                         onClick={() => handlePromote(experiment)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium rounded-lg transition-colors"
+                        data-testid={`btn-promote-${experiment.id}`}
                       >
                         <PromoteIcon size={14} />
                         Promote Winner
@@ -322,7 +331,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
       </div>
 
       {viewDialogOpen && selectedExperiment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="view-dialog">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-auto">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <h2 className="text-lg font-semibold text-zinc-100">Experiment Details</h2>
@@ -375,8 +384,8 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                           </td>
                           <td className="py-2 px-3 text-sm text-zinc-300 text-right">{variant.impressions.toLocaleString()}</td>
                           <td className="py-2 px-3 text-sm text-zinc-300 text-right">{(variant.conversionRate * 100).toFixed(1)}%</td>
-                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">{variant.avgQuality.toFixed(1)}</td>
-                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">${variant.avgCost.toFixed(3)}</td>
+                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">{variant.avgQualityScore.toFixed(1)}</td>
+                          <td className="py-2 px-3 text-sm text-zinc-300 text-right">${variant.avgCostUsd.toFixed(3)}</td>
                           <td className="py-2 px-3 text-sm text-right">
                             {variant.statisticalSignificance ? (
                               <span className="text-emerald-400">yes (p={variant.pValue?.toFixed(3)})</span>
@@ -405,7 +414,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
       )}
 
       {promoteDialogOpen && selectedExperiment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="promote-dialog">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <h2 className="text-lg font-semibold text-zinc-100">Promote Winner</h2>
@@ -427,6 +436,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                     key={variant.variantId}
                     type="button"
                     onClick={() => setSelectedVariantId(variant.variantId)}
+                    data-testid={`variant-option-${variant.variantId}`}
                     className={`w-full p-3 rounded-lg border text-left transition-colors ${
                       selectedVariantId === variant.variantId
                         ? 'border-purple-500 bg-purple-900/20'
@@ -471,9 +481,11 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
               <button
                 type="button"
                 onClick={handleConfirmPromote}
+                disabled={!selectedVariantId || promoteMutation.isPending}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                data-testid="btn-confirm-promote"
               >
-                                           && <SpinnerIcon size={14} className="animate-spin" />}
+                {promoteMutation.isPending && <SpinnerIcon size={14} className="animate-spin" />}
                 Promote Winner
               </button>
             </div>
@@ -482,7 +494,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
       )}
 
       {createDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-testid="create-dialog">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
               <h2 className="text-lg font-semibold text-zinc-100">Create Experiment</h2>
@@ -580,6 +592,7 @@ export function ABTestingDashboardPage({ className }: ABTestingDashboardPageProp
                 onClick={handleCreateExperiment}
                 disabled={!newExperimentName.trim() || !newExperimentPromptName.trim() || createMutation.isPending}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                data-testid="btn-confirm-create"
               >
                 {createMutation.isPending && <SpinnerIcon size={14} className="animate-spin" />}
                 Create

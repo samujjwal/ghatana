@@ -86,9 +86,10 @@ describe('GeneratedCodeQualityGate', () => {
       <GeneratedCodeQualityGate artifactId="art-1" onAccept={vi.fn()} />,
       { wrapper: wrapper(qc) }
     );
-    const btn = await screen.findByTestId('btn-accept');
+    // Wait for the check rows (conditionally rendered after fetch resolves)
+    await screen.findByTestId('check-compile');
+    const btn = screen.getByTestId('btn-accept');
     expect(btn).toBeDisabled();
-    expect(screen.getByTestId('check-compile')).toBeInTheDocument();
   });
 
   it('Accept button is disabled when lint or test fails', async () => {
@@ -98,10 +99,11 @@ describe('GeneratedCodeQualityGate', () => {
       <GeneratedCodeQualityGate artifactId="art-1" onAccept={vi.fn()} />,
       { wrapper: wrapper(qc) }
     );
-    const btn = await screen.findByTestId('btn-accept');
+    await screen.findByTestId('check-compile');
+    const btn = screen.getByTestId('btn-accept');
     expect(btn).toBeDisabled();
     expect(screen.getByText('no-console violation')).toBeInTheDocument();
-    expect(screen.getByText('Remove console.log')).toBeInTheDocument();
+    expect(screen.getByText(/Remove console\.log/)).toBeInTheDocument();
   });
 
   it('Accept button is enabled and calls onAccept when all checks pass', async () => {
@@ -112,7 +114,8 @@ describe('GeneratedCodeQualityGate', () => {
       <GeneratedCodeQualityGate artifactId="art-1" onAccept={onAccept} />,
       { wrapper: wrapper(qc) }
     );
-    const btn = await screen.findByTestId('btn-accept');
+    await screen.findByTestId('check-compile');
+    const btn = screen.getByTestId('btn-accept');
     expect(btn).not.toBeDisabled();
     fireEvent.click(btn);
     expect(onAccept).toHaveBeenCalledTimes(1);
@@ -125,8 +128,7 @@ describe('GeneratedCodeQualityGate', () => {
       <GeneratedCodeQualityGate artifactId="art-1" onAccept={vi.fn()} />,
       { wrapper: wrapper(qc) }
     );
-    await screen.findByTestId('btn-accept');
-    expect(screen.getByTestId('check-compile')).toBeInTheDocument();
+    expect(await screen.findByTestId('check-compile')).toBeInTheDocument();
     expect(screen.getByTestId('check-lint')).toBeInTheDocument();
     expect(screen.getByTestId('check-test')).toBeInTheDocument();
   });

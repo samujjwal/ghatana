@@ -463,25 +463,26 @@ MIT
 
 ---
 
-## 🎉 Project Status
+## Project Status
 
-**Implementation:** Preview feature set with mixed maturity  
-**Code Quality:** Repository-internal assessment only; do not treat it as release certification  
-**Test Coverage:** Reproducible test entrypoints are available from the desktop package.  
-**Performance:** Environment-dependent; no release-grade benchmark evidence is claimed here  
-**Release Status:** Experimental / Internal Preview  
+> **Formal governance entry**: `docs/AI_GOVERNANCE_CONTRACTS.md` — Appendix A: AI Capability Release Status Registry.
+> Status terms follow [docs/process/PRODUCT_TRUTHFULNESS_POLICY.md](../../../../../docs/process/PRODUCT_TRUTHFULNESS_POLICY.md).
 
-**Completion by Feature:**
-- D3 (Stem Separation): real separation path available with dependencies installed
-- D4 (Voice Training): partial / preview
-- D5 (Voice Conversion): partial / preview
-- D6 (Multi-Track): local editor workflow available
+| Capability | Phase | Release Status | Notes |
+|---|---|---|---|
+| Stem separation (Demucs) | D3 | `verified locally` | Reproducible pytest suite; Demucs dependency must be installed |
+| Voice training (RVC/VITS) | D4 | **`experimental`** | Pipeline scaffolding exists; ML quality not release evidence; NOT for user-facing production use |
+| Voice conversion | D5 | **`experimental`** | Conversion flow exists; quality/latency environment-dependent; NOT for user-facing production use |
+| Multi-track editing | D6 | `verified locally` | Functional local editor; not deployment-validated |
+| Export/publish workflows | — | `experimental` | Preview workflow; no persistent backend |
+
+**D4 and D5 are formally classified as `experimental`** per the governance decision recorded in `AI_GOVERNANCE_CONTRACTS.md` (2026-04-28). They must not be described as production-ready or deployment-validated until the promotion criteria in that document are met.
 
 ---
 
-**Last Updated:** 2026-04-17  
+**Last Updated:** 2026-04-28  
 **Version:** 1.0.0  
-**Status:** Experimental / Internal Preview
+**Status:** D3/D6 — verified locally · D4/D5 — experimental (non-GA)
 
 ---
 

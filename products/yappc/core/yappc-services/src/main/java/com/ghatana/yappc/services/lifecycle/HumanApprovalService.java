@@ -171,8 +171,12 @@ public class HumanApprovalService {
      * @throws IllegalArgumentException if the request is not found or already decided
      */
     public Promise<ApprovalRequest> approve(String tenantId, String requestId, String decidedBy) {
+        ApprovalRequest.ApprovalStatus priorStatus = findById(tenantId, requestId)
+                .map(ApprovalRequest::status)
+                .orElse(null);
         ApprovalRequest updated = transition(tenantId, requestId, decidedBy, true);
-        log.info("[tenant={}] Approval approved id={} by={}", tenantId, requestId, decidedBy);
+        log.info("[tenant={}] Approval approved id={} by={} priorStatus={}",
+                tenantId, requestId, decidedBy, priorStatus);
         publishDecision(updated);
         if (notificationService != null) {
             notificationService.notifyApproved(updated, decidedBy)
@@ -181,7 +185,7 @@ public class HumanApprovalService {
                     });
         }
         if (auditLogger != null) {
-            auditLogger.logApproved(updated, decidedBy).whenComplete((v, e) -> {
+            auditLogger.logApproved(updated, decidedBy, priorStatus).whenComplete((v, e) -> {
                 if (e != null) log.warn("[tenant={}] Audit-approved failed id={}: {}", tenantId, requestId, e.getMessage());
             });
         }
@@ -198,8 +202,12 @@ public class HumanApprovalService {
      * @throws IllegalArgumentException if the request is not found or already decided
      */
     public Promise<ApprovalRequest> reject(String tenantId, String requestId, String decidedBy) {
+        ApprovalRequest.ApprovalStatus priorStatus = findById(tenantId, requestId)
+                .map(ApprovalRequest::status)
+                .orElse(null);
         ApprovalRequest updated = transition(tenantId, requestId, decidedBy, false);
-        log.info("[tenant={}] Approval rejected id={} by={}", tenantId, requestId, decidedBy);
+        log.info("[tenant={}] Approval rejected id={} by={} priorStatus={}",
+                tenantId, requestId, decidedBy, priorStatus);
         publishDecision(updated);
         if (notificationService != null) {
             notificationService.notifyRejected(updated, decidedBy)
@@ -208,7 +216,7 @@ public class HumanApprovalService {
                     });
         }
         if (auditLogger != null) {
-            auditLogger.logRejected(updated, decidedBy).whenComplete((v, e) -> {
+            auditLogger.logRejected(updated, decidedBy, priorStatus).whenComplete((v, e) -> {
                 if (e != null) log.warn("[tenant={}] Audit-rejected failed id={}: {}", tenantId, requestId, e.getMessage());
             });
         }

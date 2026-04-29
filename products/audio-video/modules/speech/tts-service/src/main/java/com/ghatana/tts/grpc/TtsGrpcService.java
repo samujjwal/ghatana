@@ -48,9 +48,13 @@ public class TtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase {
         this.library = library;
         this.synthesizeTimer = Timer.builder("tts.synthesize")
             .description("Synthesis latency")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(metrics);
         this.streamingTimer = Timer.builder("tts.synthesize.streaming")
             .description("Streaming synthesis latency")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(metrics);
     }
 
@@ -66,9 +70,13 @@ public class TtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase {
         this.library = AudioVideoLibrary.builder().withTtsConfig(config).build();
         this.synthesizeTimer = Timer.builder("tts.synthesize")
             .description("Synthesis latency")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(metrics);
         this.streamingTimer = Timer.builder("tts.synthesize.streaming")
             .description("Streaming synthesis latency")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(metrics);
 
         LOG.info("TTS Service initialized with voice: {}", config.defaultVoiceId());
@@ -417,7 +425,7 @@ public class TtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase {
                 .setSuccess(true)
                 .setMessage("Voice cloned successfully: " + voiceName)
                 .setVoiceId(cloned.voiceId())
-                .setSimilarityScore(0.85f) // placeholder — real score from engine metric
+                .setSimilarityScore(cloned.similarityScore())
                 .setVoice(com.ghatana.tts.core.grpc.proto.VoiceInfo.newBuilder()
                     .setVoiceId(cloned.voiceId())
                     .setName(cloned.name())

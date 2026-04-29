@@ -107,8 +107,10 @@ public class PatternRegistryService implements PatternService {
                     p.setCreatedBy(userId);
                     p.setUpdatedBy(userId);
 
-                    // In production, would validate spec via pattern-compiler
-                    // For now, mark as compiled with placeholder
+                    // TODO(GH-91001): replace synthetic compilation with real pattern-compiler
+                    //   validation. The pattern-compiler module should parse
+                    //   `pattern.getSpecification()` and return a typed DetectionPlan
+                    //   before the status is set to COMPILED.
                     p.setStatus("COMPILED");
                     p.setDetectionPlan("compiled:" + pattern.getSpecification());
                     if (p.getConfidence() == 0) {

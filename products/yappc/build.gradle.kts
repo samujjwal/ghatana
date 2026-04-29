@@ -151,3 +151,91 @@ tasks.named("check") {
         dependsOn("checkNoGetResultInTests")
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OpenAPI parity gate
+//
+// Reads docs/api/route-manifest.yaml (source-of-truth route list) and confirms
+// that every declared path is present in docs/api/openapi.yaml.  Fails the
+// build if any route is undocumented.  Skipped when configuration cache is on
+// (file I/O incompatible with CC serialisation; run with --no-configuration-cache).
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * @doc.type task
+ * @doc.purpose Fail the build if any route in route-manifest.yaml is absent from openapi.yaml
+ * @doc.layer product
+ * @doc.pattern Contract Validation
+ */
+tasks.register("checkYappcOpenApiParity") {
+    group = "verification"
+    description = "Verifies that every route in docs/api/route-manifest.yaml is documented in docs/api/openapi.yaml."
+
+    val configurationCacheRequested = gradle.startParameter.isConfigurationCacheRequested
+
+    if (configurationCacheRequested) {
+        doLast {
+            logger.lifecycle("Skipping checkYappcOpenApiParity because configuration cache is enabled")
+        }
+        return@register
+    }
+
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val manifestFile = file("docs/api/route-manifest.yaml")
+        val specFile = file("docs/api/openapi.yaml")
+
+        if (!manifestFile.exists()) {
+            throw GradleException("Route manifest not found: ${manifestFile.absolutePath}")
+        }
+        if (!specFile.exists()) {
+            throw GradleException("OpenAPI spec not found: ${specFile.absolutePath}")
+        }
+
+        // Collect paths declared in openapi.yaml (lines that start with two spaces + '/')
+        val specPaths: Set<String> = specFile.readLines()
+            .filter { it.matches(Regex("^  /[^#].*:")) }
+            .map { it.trim().trimEnd(':') }
+            .toSet()
+
+        // Parse route-manifest.yaml: extract path segments from "METHOD /path" lines
+        val routeLinePattern = Regex("""^\s*-\s+(?:GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+(/\S+)""")
+        val manifestRoutes = mutableListOf<Pair<String, String>>()  // (server, path)
+        var currentServer = "unknown"
+
+        manifestFile.readLines().forEach { line ->
+            if (line.trimEnd().endsWith(":") && !line.startsWith(" ") && !line.startsWith("#")) {
+                currentServer = line.trimEnd(':').trim()
+            } else {
+                val match = routeLinePattern.matchEntire(line)
+                if (match != null) {
+                    // Normalise ActiveJ :param segments to OpenAPI {param} style
+                    val rawPath = match.groupValues[1]
+                    val normPath = rawPath.replace(Regex("/:([^/]+)"), "/\\{$1\\}")
+                    manifestRoutes.add(currentServer to normPath)
+                }
+            }
+        }
+
+        val missing = manifestRoutes.filter { (_, path) ->
+            // Exact match or match after normalising colon params
+            path !in specPaths
+        }
+
+        if (missing.isNotEmpty()) {
+            val report = missing.joinToString("\n") { (server, path) -> "  [$server] $path" }
+            throw GradleException(
+                "OpenAPI parity failure — ${missing.size} route(s) in route-manifest.yaml are missing from openapi.yaml:\n$report\n\n" +
+                "Add the missing path(s) to products/yappc/docs/api/openapi.yaml and re-run the check."
+            )
+        }
+
+        logger.lifecycle("OpenAPI parity check passed — all ${manifestRoutes.size} manifest routes are documented.")
+    }
+}
+
+tasks.named("check") {
+    if (!gradle.startParameter.isConfigurationCacheRequested) {
+        dependsOn("checkYappcOpenApiParity")
+    }
+}

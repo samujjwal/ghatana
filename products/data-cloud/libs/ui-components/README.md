@@ -1,5 +1,10 @@
 # @data-cloud/ui-components
 
+> **See the canonical architecture document**: [`ui/ARCHITECTURE.md`](../../ui/ARCHITECTURE.md)
+>
+> Full component inventory, dependency rules, and module boundaries are maintained there.
+> This README covers quick-start usage only.
+
 Reusable, presentation-layer UI components extracted from the Data Cloud application. This library contains generic components that can be reused across features without application-level dependencies (no routing, no stores, no services).
 
 ## Purpose

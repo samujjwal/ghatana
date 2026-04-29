@@ -149,6 +149,7 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
         className="flex w-full items-start gap-2 px-4 py-3 text-left"
         onClick={() => setExpanded((e) => !e)}
         aria-expanded={expanded}
+        data-testid={`btn-expand-${suggestion.id}`}
       >
         {expanded ? (
           <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-text-secondary" />

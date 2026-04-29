@@ -13,6 +13,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import path from "path";
 import { fileURLToPath } from "url";
+import { trace, context, SpanStatusCode, SpanKind } from "@opentelemetry/api";
 import type { createLearnerProfileService } from "./learner-profile-service.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,11 +41,27 @@ export function createLearnerProfileGrpcHandlers(
       call: UnaryCall<{ tenant_id: string; learner_id: string }>,
       callback: UnaryCallback<{ profile: Record<string, unknown> }>,
     ) {
+      const tracer = trace.getTracer("tutorputor-platform");
+      const span = tracer.startSpan("LearnerProfileService.GetProfile", {
+        kind: SpanKind.SERVER,
+        attributes: {
+          "rpc.system": "grpc",
+          "rpc.service": "tutorputor.learner_profile.LearnerProfileService",
+          "rpc.method": "GetProfile",
+          "tenant.id": call.request.tenant_id,
+          "learner.id": call.request.learner_id,
+        },
+      });
+
       try {
         const snapshot = await service.getPersonalizationSnapshot(
           call.request.tenant_id,
           call.request.learner_id,
         );
+
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.setAttribute("profile.learner_id", snapshot.learnerId);
+        span.setAttribute("profile.knowledge_gaps_count", snapshot.knowledgeGaps.length);
 
         callback(null, {
           profile: {
@@ -72,7 +89,14 @@ export function createLearnerProfileGrpcHandlers(
           },
         });
       } catch (error) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        span.recordException(error instanceof Error ? error : new Error(String(error)));
         callback(toGrpcError(error), null);
+      } finally {
+        span.end();
       }
     },
 
@@ -89,6 +113,20 @@ export function createLearnerProfileGrpcHandlers(
       }>,
       callback: UnaryCallback<Record<string, unknown>>,
     ) {
+      const tracer = trace.getTracer("tutorputor-platform");
+      const span = tracer.startSpan("LearnerProfileService.UpdateMastery", {
+        kind: SpanKind.SERVER,
+        attributes: {
+          "rpc.system": "grpc",
+          "rpc.service": "tutorputor.learner_profile.LearnerProfileService",
+          "rpc.method": "UpdateMastery",
+          "tenant.id": call.request.tenant_id,
+          "learner.id": call.request.learner_id,
+          "concept.id": call.request.concept_id,
+          "correct": call.request.correct,
+        },
+      });
+
       try {
         const mastery = await service.updateMastery(
           call.request.tenant_id,
@@ -111,6 +149,10 @@ export function createLearnerProfileGrpcHandlers(
           },
         );
 
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.setAttribute("mastery_probability", mastery.masteryProbability);
+        span.setAttribute("concept.id", mastery.conceptId);
+
         callback(null, {
           learner_id: call.request.learner_id,
           concept_id: mastery.conceptId,
@@ -118,7 +160,14 @@ export function createLearnerProfileGrpcHandlers(
           next_review_days: calculateNextReviewDays(mastery.nextReviewAt),
         });
       } catch (error) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        span.recordException(error instanceof Error ? error : new Error(String(error)));
         callback(toGrpcError(error), null);
+      } finally {
+        span.end();
       }
     },
 
@@ -138,6 +187,21 @@ export function createLearnerProfileGrpcHandlers(
       }>,
       callback: UnaryCallback<Record<string, unknown>>,
     ) {
+      const tracer = trace.getTracer("tutorputor-platform");
+      const span = tracer.startSpan("LearnerProfileService.RecordGap", {
+        kind: SpanKind.SERVER,
+        attributes: {
+          "rpc.system": "grpc",
+          "rpc.service": "tutorputor.learner_profile.LearnerProfileService",
+          "rpc.method": "RecordGap",
+          "tenant.id": call.request.tenant_id,
+          "learner.id": call.request.learner_id,
+          "concept.id": call.request.concept_id,
+          "prerequisite.id": call.request.prerequisite_id,
+          "severity": call.request.severity ?? "MEDIUM",
+        },
+      });
+
       try {
         const gap = await service.recordKnowledgeGap(
           call.request.tenant_id,
@@ -154,6 +218,10 @@ export function createLearnerProfileGrpcHandlers(
           },
         );
 
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.setAttribute("gap.severity", gap.severity);
+        span.setAttribute("gap.status", gap.status);
+
         callback(null, {
           learner_id: call.request.learner_id,
           concept_id: gap.conceptId,
@@ -162,7 +230,14 @@ export function createLearnerProfileGrpcHandlers(
           status: gap.status,
         });
       } catch (error) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        span.recordException(error instanceof Error ? error : new Error(String(error)));
         callback(toGrpcError(error), null);
+      } finally {
+        span.end();
       }
     },
 
@@ -176,6 +251,21 @@ export function createLearnerProfileGrpcHandlers(
       }>,
       callback: UnaryCallback<{ recommendations: Record<string, unknown>[] }>,
     ) {
+      const tracer = trace.getTracer("tutorputor-platform");
+      const span = tracer.startSpan("LearnerProfileService.GetRecommendations", {
+        kind: SpanKind.SERVER,
+        attributes: {
+          "rpc.system": "grpc",
+          "rpc.service": "tutorputor.learner_profile.LearnerProfileService",
+          "rpc.method": "GetRecommendations",
+          "tenant.id": call.request.tenant_id,
+          "learner.id": call.request.learner_id,
+          "current_concept_id": call.request.current_concept_id ?? "",
+          "goal_concept_id": call.request.goal_concept_id ?? "",
+          "available_time_minutes": call.request.available_time_minutes ?? 0,
+        },
+      });
+
       try {
         const recommendations = await service.getRecommendations(
           call.request.tenant_id,
@@ -193,6 +283,9 @@ export function createLearnerProfileGrpcHandlers(
           },
         );
 
+        span.setStatus({ code: SpanStatusCode.OK });
+        span.setAttribute("recommendations.count", recommendations.length);
+
         callback(null, {
           recommendations: recommendations.map((recommendation) => ({
             concept_id: recommendation.conceptId,
@@ -205,7 +298,14 @@ export function createLearnerProfileGrpcHandlers(
           })),
         });
       } catch (error) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        span.recordException(error instanceof Error ? error : new Error(String(error)));
         callback(toGrpcError(error), null);
+      } finally {
+        span.end();
       }
     },
   };

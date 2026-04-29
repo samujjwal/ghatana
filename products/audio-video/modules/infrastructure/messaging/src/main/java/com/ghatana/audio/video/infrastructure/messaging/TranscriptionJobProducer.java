@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -96,6 +98,11 @@ public class TranscriptionJobProducer {
     }
     
     /**
+     * Header name for correlation ID propagation across service boundaries.
+     */
+    static final String HEADER_CORRELATION_ID = "X-Correlation-ID";
+
+    /**
      * Submit a transcription job
      */
     public Promise<String> submitJob(TranscriptionJobMessage job) {
@@ -110,8 +117,10 @@ public class TranscriptionJobProducer {
             
             long startTime = System.currentTimeMillis();
             String payload = serializeJob(job);
+
+            Map<String, String> headers = buildHeaders();
             
-            return producerStrategy.send(job.jobId().toString(), payload)
+            return producerStrategy.send(job.jobId().toString(), payload, headers)
                 .map(messageId -> {
                     long latencyMs = System.currentTimeMillis() - startTime;
                     metricsCollector.incrementCounter("av.messaging.jobs.submitted",
@@ -132,6 +141,20 @@ public class TranscriptionJobProducer {
                     LOG.error("Failed to submit transcription job: {}", job.jobId(), e);
                 });
         }
+    }
+
+    /**
+     * Build outbound message headers, propagating correlation ID from the current MDC context.
+     * Callers that set {@code correlationId} in MDC before invoking {@link #submitJob} will
+     * have the value forwarded to the message broker so downstream consumers can join traces.
+     */
+    private Map<String, String> buildHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        String correlationId = MDC.get("correlationId");
+        if (correlationId != null && !correlationId.isBlank()) {
+            headers.put(HEADER_CORRELATION_ID, correlationId);
+        }
+        return Map.copyOf(headers);
     }
     
     /**

@@ -157,6 +157,95 @@ public class AudioVideoTracingService {
     }
 
     /**
+     * Start a span for an STT transcription operation, including the requested language
+     * as a custom attribute so the language distribution can be queried in Jaeger/Grafana.
+     *
+     * @param transcriptionId unique ID for this transcription request
+     * @param tenantId        tenant performing the request
+     * @param language        BCP-47 language tag (e.g. {@code "en"}, {@code "fr"})
+     *                        or {@code "auto"} when auto-detection is requested
+     */
+    public Span startTranscriptionSpan(String transcriptionId, String tenantId, String language) {
+        String correlationId = getOrCreateCorrelationId();
+
+        Span span = tracer.spanBuilder("audiovideo.stt.transcribe")
+                .setSpanKind(SpanKind.INTERNAL)
+                .setAttribute("transcription.id", transcriptionId)
+                .setAttribute("tenant.id", tenantId)
+                .setAttribute("stt.language", language != null ? language : "auto")
+                .setAttribute("correlation.id", correlationId)
+                .startSpan();
+
+        MDC.put("transcriptionId", transcriptionId);
+        MDC.put("sttLanguage", language != null ? language : "auto");
+
+        return span;
+    }
+
+    /**
+     * Set transcription result attributes on an in-flight span once the STT result is known.
+     *
+     * <p>Call this before ending the span (i.e. before {@link #recordSuccess} or
+     * {@link #recordError}).
+     *
+     * @param span             the active span returned by {@link #startTranscriptionSpan}
+     * @param confidence       model confidence score in {@code [0.0, 1.0]}
+     * @param detectedLanguage BCP-47 tag of the language actually detected by the model,
+     *                         or {@code null} when the model does not return a language
+     */
+    public void recordTranscriptionResult(Span span, double confidence, String detectedLanguage) {
+        if (span == null) {
+            return;
+        }
+        span.setAttribute("stt.confidence", confidence);
+        if (detectedLanguage != null && !detectedLanguage.isBlank()) {
+            span.setAttribute("stt.detected_language", detectedLanguage);
+        }
+    }
+
+    /**
+     * Start a span for a vision object-detection operation, including the configured
+     * confidence threshold so detection quality can be correlated with latency in traces.
+     *
+     * @param detectionId         unique ID for this detection request
+     * @param tenantId            tenant performing the request
+     * @param confidenceThreshold minimum detection confidence in {@code [0.0, 1.0]}
+     */
+    public Span startVisionDetectionSpan(String detectionId, String tenantId, double confidenceThreshold) {
+        String correlationId = getOrCreateCorrelationId();
+
+        Span span = tracer.spanBuilder("audiovideo.vision.detect")
+                .setSpanKind(SpanKind.INTERNAL)
+                .setAttribute("detection.id", detectionId)
+                .setAttribute("tenant.id", tenantId)
+                .setAttribute("vision.confidence_threshold", confidenceThreshold)
+                .setAttribute("correlation.id", correlationId)
+                .startSpan();
+
+        MDC.put("detectionId", detectionId);
+
+        return span;
+    }
+
+    /**
+     * Set vision detection result attributes on an in-flight span once detection completes.
+     *
+     * @param span            the active span returned by {@link #startVisionDetectionSpan}
+     * @param detectionCount  number of objects detected above the confidence threshold
+     * @param maxConfidence   highest confidence score among detected objects, or
+     *                        {@link Double#NaN} when no objects were detected
+     */
+    public void recordVisionDetectionResult(Span span, int detectionCount, double maxConfidence) {
+        if (span == null) {
+            return;
+        }
+        span.setAttribute("vision.detection_count", detectionCount);
+        if (!Double.isNaN(maxConfidence)) {
+            span.setAttribute("vision.max_confidence", maxConfidence);
+        }
+    }
+
+    /**
      * Clear all MDC context
      */
     public void clearContext() {

@@ -126,7 +126,7 @@ describe('RefactorSuggestionPanel', () => {
     );
     await screen.findByTestId('suggestion-row-sug-1');
     // expand the row
-    fireEvent.click(screen.getByRole('button', { name: '' }));
+    fireEvent.click(screen.getByTestId('btn-expand-sug-1'));
     expect(screen.getByTestId('btn-simulate-sug-1')).toBeInTheDocument();
   });
 
@@ -140,14 +140,14 @@ describe('RefactorSuggestionPanel', () => {
     );
     await screen.findByTestId('suggestion-row-sug-1');
     // expand
-    fireEvent.click(screen.getByRole('button', { name: '' }));
+    fireEvent.click(screen.getByTestId('btn-expand-sug-1'));
     // simulate
     fireEvent.click(screen.getByTestId('btn-simulate-sug-1'));
     await waitFor(() =>
       expect(mockedSimulate).toHaveBeenCalledWith('design-42', 'sug-1')
     );
     expect(await screen.findByTestId('diff-viewer')).toBeInTheDocument();
-    expect(screen.getByText('src/services/foo.ts')).toBeInTheDocument();
+    expect(screen.getAllByText('src/services/foo.ts').length).toBeGreaterThan(0);
   });
 
   it('shows Apply button after simulate and calls applyRefactorSuggestion', async () => {
@@ -165,7 +165,7 @@ describe('RefactorSuggestionPanel', () => {
     );
     await screen.findByTestId('suggestion-row-sug-1');
     // expand
-    fireEvent.click(screen.getByRole('button', { name: '' }));
+    fireEvent.click(screen.getByTestId('btn-expand-sug-1'));
     fireEvent.click(screen.getByTestId('btn-apply-sug-1'));
     await waitFor(() =>
       expect(mockedApply).toHaveBeenCalledWith('design-42', 'sug-1')
@@ -187,7 +187,7 @@ describe('RefactorSuggestionPanel', () => {
     );
     await screen.findByTestId('suggestion-row-sug-1');
     // expand
-    fireEvent.click(screen.getByRole('button', { name: '' }));
+    fireEvent.click(screen.getByTestId('btn-expand-sug-1'));
     expect(screen.getByTestId('btn-undo-sug-1')).toBeInTheDocument();
     fireEvent.click(screen.getByTestId('btn-undo-sug-1'));
     await waitFor(() =>

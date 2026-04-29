@@ -166,10 +166,114 @@ public class AudioVideoGrpcInstrumentation {
     }
 
     /**
+     * Instrument an STT transcription operation with tenant, language, and confidence
+     * span attributes.
+     *
+     * <p>The {@code task} receives the active {@link io.opentelemetry.api.trace.Span} so
+     * that the caller can invoke
+     * {@link AudioVideoTracingService#recordTranscriptionResult} once the model result is
+     * available but before the span is closed.
+     *
+     * @param transcriptionId unique request identifier
+     * @param tenantId        tenant performing the request
+     * @param language        requested language (BCP-47) or {@code "auto"}
+     * @param task            lambda that executes the transcription and receives the span
+     * @param <T>             result type
+     */
+    public <T> T instrumentTranscription(
+            String transcriptionId,
+            String tenantId,
+            String language,
+            TranscriptionTask<T> task) throws Exception {
+
+        io.opentelemetry.api.trace.Span span =
+                tracingService.startTranscriptionSpan(transcriptionId, tenantId, language);
+        long startTime = System.currentTimeMillis();
+
+        try (io.opentelemetry.context.Scope scope = tracingService.createScope(span)) {
+            log.info("Starting STT transcription: transcriptionId={}, language={}", transcriptionId, language);
+
+            T result = task.execute(span);
+
+            long duration = System.currentTimeMillis() - startTime;
+            tracingService.recordSuccess(span, duration);
+
+            log.info("STT transcription completed in {}ms", duration);
+            return result;
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            tracingService.recordError(span, e, duration);
+            throw e;
+        } finally {
+            tracingService.clearContext();
+        }
+    }
+
+    /**
+     * Instrument a vision detection operation with tenant, confidence threshold, and
+     * detection result attributes.
+     *
+     * <p>The {@code task} receives the active span so that the caller can invoke
+     * {@link AudioVideoTracingService#recordVisionDetectionResult} once detection is done.
+     *
+     * @param detectionId         unique request identifier
+     * @param tenantId            tenant performing the request
+     * @param confidenceThreshold minimum detection confidence in {@code [0.0, 1.0]}
+     * @param task                lambda that executes detection and receives the span
+     * @param <T>                 result type
+     */
+    public <T> T instrumentVisionDetection(
+            String detectionId,
+            String tenantId,
+            double confidenceThreshold,
+            VisionDetectionTask<T> task) throws Exception {
+
+        io.opentelemetry.api.trace.Span span =
+                tracingService.startVisionDetectionSpan(detectionId, tenantId, confidenceThreshold);
+        long startTime = System.currentTimeMillis();
+
+        try (io.opentelemetry.context.Scope scope = tracingService.createScope(span)) {
+            log.info("Starting vision detection: detectionId={}, confidenceThreshold={}", detectionId, confidenceThreshold);
+
+            T result = task.execute(span);
+
+            long duration = System.currentTimeMillis() - startTime;
+            tracingService.recordSuccess(span, duration);
+
+            log.info("Vision detection completed in {}ms", duration);
+            return result;
+        } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            tracingService.recordError(span, e, duration);
+            throw e;
+        } finally {
+            tracingService.clearContext();
+        }
+    }
+
+    /**
      * Functional interface for synthesis task
      */
     @FunctionalInterface
     public interface SynthesisTask<T> {
         T execute() throws Exception;
+    }
+
+    /**
+     * Functional interface for transcription task; receives the active span so callers
+     * can set confidence/language result attributes.
+     */
+    @FunctionalInterface
+    public interface TranscriptionTask<T> {
+        T execute(io.opentelemetry.api.trace.Span span) throws Exception;
+    }
+
+    /**
+     * Functional interface for vision detection task; receives the active span so callers
+     * can set detection count and max-confidence result attributes.
+     */
+    @FunctionalInterface
+    public interface VisionDetectionTask<T> {
+        T execute(io.opentelemetry.api.trace.Span span) throws Exception;
     }
 }

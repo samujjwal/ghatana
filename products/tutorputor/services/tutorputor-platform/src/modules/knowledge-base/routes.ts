@@ -285,15 +285,49 @@ export function registerKnowledgeBaseRoutes(
   // Get knowledge base statistics
   fastify.get("/api/knowledge-base/stats", async (_request, reply) => {
     try {
-      // This would return statistics about the knowledge base
+      const prisma = (knowledgeBaseService as any).prisma;
+      
+      // Query actual statistics from the database
+      const [totalConcepts, totalSources, evidenceBundles] = await Promise.all([
+        // Count total concepts from learner mastery
+        prisma.learnerMastery.count({
+          distinct: ['conceptId'],
+        }),
+        // Count total sources from evidence bundles
+        prisma.evidenceBundleMetadata.count(),
+        // Get evidence bundles for confidence calculation
+        prisma.evidenceBundleMetadata.findMany({
+          select: { bundleConfidence: true },
+          take: 1000,
+        }),
+      ]);
+
+      // Calculate average confidence
+      const averageConfidence = evidenceBundles.length > 0
+        ? evidenceBundles.reduce((sum: number, bundle: { bundleConfidence: number }) => sum + bundle.bundleConfidence, 0) / evidenceBundles.length
+        : 0;
+
+      // Get unique domains from modules
+      const modules = await prisma.module.findMany({
+        select: { domain: true },
+        distinct: ['domain'],
+      });
+      const domains = modules.map((m: { domain: string }) => m.domain.toLowerCase());
+
+      // Get last updated timestamp from most recent evidence bundle
+      const lastUpdated = await prisma.evidenceBundleMetadata.findFirst({
+        orderBy: { generatedAt: 'desc' },
+        select: { generatedAt: true },
+      });
+
       return {
         success: true,
         data: {
-          totalConcepts: 1000, // Placeholder
-          totalSources: 50, // Placeholder
-          averageConfidence: 0.85,
-          lastUpdated: new Date(),
-          domains: ["math", "science", "physics", "chemistry", "biology"],
+          totalConcepts,
+          totalSources,
+          averageConfidence,
+          lastUpdated: lastUpdated?.generatedAt || new Date(),
+          domains,
         },
       };
     } catch (error) {

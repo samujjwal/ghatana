@@ -8,10 +8,13 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @doc.type class
@@ -21,14 +24,27 @@ import java.util.Optional;
  */
 final class ApprovalHttpHandlers {
 
-    private static final HttpHeader TENANT_HEADER = HttpHeaders.of("X-Tenant-Id");
+    private static final HttpHeader TENANT_HEADER      = HttpHeaders.of("X-Tenant-Id");
+    private static final HttpHeader IDEMPOTENCY_HEADER = HttpHeaders.of("Idempotency-Key");
+
+    /** Replay window: successful approve/reject responses are cached for 24 hours. */
+    private static final Duration REPLAY_WINDOW = Duration.ofHours(24);
 
     private final HumanApprovalService humanApprovalService;
     private final ObjectMapper objectMapper;
+    private final IdempotencyStore idempotencyStore;
 
     ApprovalHttpHandlers(HumanApprovalService humanApprovalService, ObjectMapper objectMapper) {
+        this(humanApprovalService, objectMapper, new InMemoryIdempotencyStore(REPLAY_WINDOW));
+    }
+
+    ApprovalHttpHandlers(
+            HumanApprovalService humanApprovalService,
+            ObjectMapper objectMapper,
+            IdempotencyStore idempotencyStore) {
         this.humanApprovalService = Objects.requireNonNull(humanApprovalService, "humanApprovalService");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.objectMapper         = Objects.requireNonNull(objectMapper, "objectMapper");
+        this.idempotencyStore     = Objects.requireNonNull(idempotencyStore, "idempotencyStore");
     }
 
     Promise<HttpResponse> listPending(HttpRequest request) {
@@ -147,6 +163,25 @@ final class ApprovalHttpHandlers {
             return Promise.of(badRequest("Missing required X-Tenant-Id header"));
         }
 
+        String idempotencyKey = request.getHeader(IDEMPOTENCY_HEADER);
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return Promise.of(HttpResponse.ofCode(422)
+                    .withJson(errorJson("Missing required Idempotency-Key header"))
+                    .build());
+        }
+
+        // Scope the idempotency key to tenant + request + action to prevent cross-tenant replay.
+        String storeKey = tenantId + ":" + requestId + ":" + (approved ? "approve" : "reject")
+                + ":" + idempotencyKey;
+
+        Optional<String> replay = idempotencyStore.get(storeKey);
+        if (replay.isPresent()) {
+            return Promise.of(HttpResponse.ok200()
+                    .withHeader(HttpHeaders.of("X-Idempotent-Replayed"), "true")
+                    .withJson(replay.get())
+                    .build());
+        }
+
         return request.loadBody().then(body -> {
             try {
                 @SuppressWarnings("unchecked")
@@ -160,8 +195,10 @@ final class ApprovalHttpHandlers {
 
                 return decision.map(result -> {
                     try {
+                        String responseBody = objectMapper.writeValueAsString(result);
+                        idempotencyStore.put(storeKey, responseBody);
                         return HttpResponse.ok200()
-                                .withJson(objectMapper.writeValueAsString(result))
+                                .withJson(responseBody)
                                 .build();
                     } catch (Exception exception) {
                         return HttpResponse.ofCode(500).withPlainText("Serialization error").build();
@@ -199,5 +236,58 @@ final class ApprovalHttpHandlers {
 
     private String errorJson(String message) {
         return "{\"error\":\"" + message + "\"}";
+    }
+
+    // ─── Idempotency support ─────────────────────────────────────────────────
+
+    /**
+     * Pluggable idempotency store contract.
+     *
+     * <p>Implementations must be thread-safe. They must return the cached response body
+     * within the replay window and expire entries automatically after that window closes.
+     */
+    interface IdempotencyStore {
+        /** Returns the cached response body for {@code key}, if present and not expired. */
+        Optional<String> get(String key);
+
+        /** Stores {@code responseBody} under {@code key} for the configured replay window. */
+        void put(String key, String responseBody);
+    }
+
+    /**
+     * In-memory idempotency store with TTL-based expiry.
+     *
+     * <p>Suitable for single-node deployments. For multi-node deployments, replace with a
+     * Redis-backed implementation that delegates to
+     * {@code platform:java:cache} (tracked in F-Y048 follow-up).
+     */
+    static final class InMemoryIdempotencyStore implements IdempotencyStore {
+
+        private record Entry(String responseBody, Instant expiresAt) {}
+
+        private final ConcurrentHashMap<String, Entry> store = new ConcurrentHashMap<>();
+        private final Duration replayWindow;
+
+        InMemoryIdempotencyStore(Duration replayWindow) {
+            this.replayWindow = Objects.requireNonNull(replayWindow, "replayWindow");
+        }
+
+        @Override
+        public Optional<String> get(String key) {
+            Entry entry = store.get(key);
+            if (entry == null) {
+                return Optional.empty();
+            }
+            if (Instant.now().isAfter(entry.expiresAt())) {
+                store.remove(key);
+                return Optional.empty();
+            }
+            return Optional.of(entry.responseBody());
+        }
+
+        @Override
+        public void put(String key, String responseBody) {
+            store.put(key, new Entry(responseBody, Instant.now().plus(replayWindow)));
+        }
     }
 }

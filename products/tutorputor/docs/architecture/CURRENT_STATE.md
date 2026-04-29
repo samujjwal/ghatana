@@ -1,266 +1,206 @@
-# TutorPutor Current State — March 2026
+# TutorPutor Current State
 
-> **Document type**: Current State  
-> **Last updated**: 2026-03-24 (WS1–WS8 remediation validated + remaining partial items resolved or reduced: gamification Prisma models added (`Badge`, `BadgeEarned`, `UserPoints`); `DeviceToken` model and first-class device-token lifecycle routes added; Stripe subscription routes (`paymentRoutes`) mounted in `setup.ts` with JWT-based identity; LTI platform admin routes added (`GET/PATCH/DELETE /api/v1/integration/lti/platforms/*`); Stripe webhook handler added to billing routes with signature verification; billing webhook URL exempted from JWT guard; `modules/payments` `routes.ts` rewritten to use `requestContext` helpers; authorization hardening complete for auto-revision and collaboration routes; forum reply/edit/delete/accepted-answer/reaction flows now resolve posts through tenant/topic-bound helpers; study-group join-request, invite, member mutation, and session RSVP flows now resolve through tenant/group-bound helpers; student marketplace page now consumes live marketplace + billing APIs with mock-checkout auto-verification in local/dev; authoring library refresh/delete plus claim/task/settings flows now use real Content Studio endpoints; authoring animation save/load now persists full specs through existing `ClaimAnimation` records via `/api/content-studio/experiences/:id/animations`; authoring simulation save/load/link now uses manifest-backed `/api/sim-author/manifests*` plus claim-linking APIs instead of page-local-only state; public LTI grade passback now delegates through the real AGS flow even without a persisted TutorPutor LTI session by resolving platform context from the line item; compliance export requests now require the target user to resolve inside the caller's tenant before queuing portability work; collaboration answer-marking now verifies that the selected post belongs to the caller's tenant-bound thread before resolving it)
-> **Status keys**: `implemented` | `partial` | `stubbed` | `disabled` | `planned`
-
-This is the **single source of truth** for what TutorPutor does and does not do today. Pair it with `../audit/TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md` for the audited gap list and remediation priorities. Architecture goals and aspirational features are documented separately in `TARGET_ARCHITECTURE.md`.
-
-Current generated verification artifacts:
-
-- `CURRENT_VERIFICATION_STATUS.md`
-- `CURRENT_ROUTE_INVENTORY.md`
-- `CURRENT_PACKAGE_INVENTORY.md`
-- `latest-typecheck-status.json`
+**Last Updated:** April 28, 2026  
+**Based on:** Comprehensive Product Audit TUTORPUTOR_COMPREHENSIVE_AUDIT_2026-04-28.md
 
 ---
 
-## 1. Product Overview
+## Executive Summary
 
-TutorPutor is an AI-powered adaptive learning platform. It is built as a monorepo product with:
+**Overall Status:** CONDITIONAL PRODUCTION READY
 
-- **`tutorputor-platform`** — Fastify/Node.js backend (single monolith replacing 28 former microservices)
-- **`tutorputor-web`** — React 19 student-facing SPA
-- **`tutorputor-admin`** — React admin dashboard for content authoring
-- **`tutorputor-core`** — Shared Prisma schema, generated client, and seed scripts
-- **`tutorputor-simulation`** — Simulation engine library
-- **`contracts/v1`** — TypeScript type contracts shared between frontend and backend
+TutorPutor demonstrates strong architectural foundations with a consolidated modular monolith backend, comprehensive Prisma schema (60+ models, 61 enums), mature simulation engine, and well-structured content generation pipeline. The platform has made significant progress since the April 19-20, 2026 audits with many critical gaps resolved.
+
+**Verdict:** Can ship to production for web-based learning with manual content review. **Not ready** for fully autonomous content generation without human-in-the-loop.
 
 ---
 
-## 2. API Contract State
+## Completed Improvements (April 28, 2026)
 
-### Route Prefix Strategy (Canonical as of 2026-03-23)
+### Critical Priority Items (4/4) ✓
 
-All API routes are exposed under `/api/v1/`. The legacy mixed `/api/...` and `/api/v1/...` patterns have been unified.
+1. **Knowledge Base Semantic Search**: Implemented actual database queries for ModuleContentBlock and ModuleLearningObjective with text similarity matching (Jaccard index)
+2. **gRPC Telemetry**: Replaced placeholder metrics with actual measurements from GenerationJob timing data
+3. **Content Quality Analysis**: Implemented real content fetching and quality calculation from database
+4. **Analytics Determinism**: Removed random noise from predictions, replaced with deterministic scoring
 
-| Route Namespace                                        | Backend Prefix         | Status        |
-| ------------------------------------------------------ | ---------------------- | ------------- |
-| `/api/v1/modules`                                      | `contentModule`        | `implemented` |
-| `/api/v1/learning`                                     | `learningModule`       | `implemented` |
-| `/api/v1/enrollments`                                  | `learningModule`       | `implemented` |
-| `/api/v1/pathways`                                     | `learningModule`       | `implemented` |
-| `/api/v1/assessments`                                  | `learningModule`       | `implemented` |
-| `/api/v1/teacher`                                      | `userModule`           | `implemented` |
-| `/api/v1/collaboration`                                | `collaborationModule`  | `implemented` |
-| `/api/v1/gamification`                                 | `engagementModule`     | `implemented` |
-| `/api/v1/search`                                       | `searchModule`         | `implemented` |
-| `/api/v1/auth`                                         | `authModule`           | `implemented` |
-| `/api/v1/ai`                                           | `aiModule`             | `implemented` |
-| `/api/sim-author`                                      | `simulationModule`     | `implemented` |
-| `/api/content-studio`                                  | `contentModule`        | `implemented` |
-| `/api/content-studio/experiences/:id/comprehensive`    | `contentModule`        | `implemented` |
-| `/api/content-studio/experiences/:id/examples`         | `contentModule`        | `implemented` |
-| `/api/content-studio/experiences/:id/simulations`      | `contentModule`        | `implemented` |
-| `/api/content-studio/experiences/:id/animations`       | `contentModule`        | `implemented` |
-| `/api/content-studio/automation-rules`                 | `contentModule`        | `implemented` |
-| `/api/sim-author/manifests/:id/link-claim`             | `simulationModule`     | `implemented` |
-| `/api/v1/vr/labs`                                      | `vrRoutes`             | `implemented` |
-| `/api/v1/vr/sessions`                                  | `vrRoutes`             | `implemented` |
-| `/api/v1/notifications`                                | `notificationRoutes`   | `implemented` |
-| `/api/v1/integration/lti`                              | `integrationModule`    | `implemented` |
-| `/api/v1/integration/marketplace`                      | `integrationModule`    | `implemented` |
-| `/api/v1/integration/billing`                          | `integrationModule`    | `implemented` |
-| `/api/v1/tenant/sso-providers`                         | `tenantModule`         | `implemented` |
-| `/api/v1/plugins`                                      | `kernelRegistryRoutes` | `implemented` |
-| `/api/content-studio/experiences/:id/automation-rules` | `contentModule`        | `implemented` |
-| `/api/v1/payments/plans`                               | `paymentRoutes`        | `implemented` |
-| `/api/v1/payments/subscriptions`                       | `paymentRoutes`        | `implemented` |
-| `/api/v1/payments/subscription`                        | `paymentRoutes`        | `implemented` |
-| `/api/v1/payments/subscription/cancel`                 | `paymentRoutes`        | `implemented` |
-| `/api/v1/payments/subscription/change`                 | `paymentRoutes`        | `implemented` |
-| `/api/v1/notifications/device-tokens`                  | `notificationRoutes`   | `implemented` |
-| `/api/v1/integration/lti/platforms`                    | `integrationModule`    | `implemented` |
-| `/api/v1/integration/billing/webhook`                  | `integrationModule`    | `implemented` |
+### High Priority Items (3/4) ✓
+
+1. **Stripe Tax Rate Caching**: Implemented Stripe Tax API integration with caching framework
+2. **Mobile API Configuration**: Made mobile API URL configurable via environment variables
+3. **Content Gap Analysis**: Implemented actual analysis from LearnerMastery data
+4. **UnifiedContentStudio Refactor**: PENDING - Large refactoring task requiring dedicated effort
+
+### Medium Priority Items (4/4) ✓
+
+1. **LLM Token Counting**: Implemented estimation based on latency and token generation rate
+2. **Engagement Tracking**: Implemented calculation from enrollment and learning event data
+3. **Knowledge Base Stats**: Implemented actual database queries for real statistics
+4. **Module Evaluation Stats**: Implemented actual query from ContentEvaluation table
 
 ---
 
-## 3. Authentication Architecture
+## Backend Modules Status
 
-### Current Auth Model: JWT + SSO (OIDC)
+### Content Generation Pipeline
+- **Status**: Operational with Quality Hardening
+- **Improvements**: Real gRPC metrics, token throughput estimation
+- **Gaps**: Semantic validation still heuristic-based, not semantic
 
-| Aspect                         | Status        | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------ | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| JWT validation (fastify-jwt)   | `implemented` | HS256, 15-min access tokens                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| SSO login via OIDC             | `implemented` | Provider config per tenant                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| JWT-based request identity     | `implemented` | After remediation — no longer raw-header only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Tenant isolation in JWT claims | `implemented` | `tenantId` in every token                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Public LMS interoperability    | `implemented` | LTI launch, JWKS, config, deep-linking, and grade-passback entrypoints bypass the JWT guard; JWKS and config reflect the active `/api/v1/integration/lti/*` surface; grade passback now delegates through the real AGS service both for session-backed submissions and for public passback requests resolved via line item/platform lookup                                                                                                                                                                                                                                                                                                                                                |
-| Role-based access control      | `partial`     | JWT role claims enforced on Content Studio admin routes, AI assessment generation plus concept/simulation generation, teacher/admin analytics routes, teacher and institution-admin operations, audit exports/queries, cross-user compliance exports (with tenant-bound target-user resolution), legacy credential issuance/evaluation for other users, and engagement award/unlock mutations for points, achievements, and badges; engagement social routes also now resolve tenant/user identity through the shared JWT-backed request context, and social profile reads now redact sensitive fields for non-owners/non-privileged callers; granular per-resource ABAC is still planned |
-| Admin dev bypass mode          | `implemented` | Controlled via `VITE_DEV_AUTH_BYPASS=true` env var; not triggerable by production routes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Per-tenant identity providers  | `implemented` | `IdentityProvider` model, SSO callbacks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+### Content Validation
+- **Status**: Implemented with Database Queries
+- **Improvements**: Real curriculum/citation search, actual stats queries
+- **Gaps**: Text similarity only (Jaccard), no vector-based semantic search
 
-### What Changed (WS2 remediation)
+### Analytics
+- **Status**: Enhanced with Real Data
+- **Improvements**: Deterministic scoring, real gap analysis
+- **Gaps**: No ML-based predictions, heuristic-only gap detection
 
-- **`request-helpers.ts`** and **`requestContext.ts`** now extract identity from JWT (`request.user`) via fastify-jwt's `authenticate` hook, not from raw `x-user-id`/`x-user-role` headers.
-- Missing identity returns `401` (unauthorized), not a default `"anonymous"` value.
-- The admin app `useAuth.ts` dev bypass is now gated by `VITE_DEV_AUTH_BYPASS=true` environment variable.
-- **`useAuth.ts`** now calls `setAuthToken(token)` from `contentStudioApi` on every auth state transition, ensuring the admin API adapter always holds a fresh token. Logout clears the token and uses the correct `/api/v1/auth/logout` endpoint.
+### Quality Monitoring
+- **Status**: Real Implementation
+- **Improvements**: Real content fetching, engagement tracking
+- **Gaps**: Surface-level analysis, no pedagogical quality assessment
 
----
+### Payments/Tax
+- **Status**: Partial Implementation
+- **Improvements**: Stripe Tax API integration
+- **Gaps**: Caching framework placeholder, needs database-backed cache
 
-## 4. Backend Module State
-
-| Module            | File                                                       | Status        | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------- | ---------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Content (modules) | `modules/content/`                                         | `implemented` | CRUD, CMS; public module listing/detail routes now resolve tenant and optional user context through the shared request-context helpers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Content Studio    | `modules/content/studio/`                                  | `implemented` | Experience CRUD, AI generation, validation, publish, admin RBAC; CMS routes now use the stricter `requestContext` helpers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Learning          | `modules/learning/`                                        | `implemented` | Dashboard, enrollment, pathways, assessments, analytics; learning routes now use the stricter `requestContext` helpers, analytics event ingestion binds `userId` to the authenticated caller, and analytics summary plus advanced/risk views and AI assessment generation explicitly require `teacher`/`admin`/`superadmin` roles                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Collaboration     | `modules/collaboration/`                                   | `implemented` | Threads, posts, shared notes; JWT-based identity via `getTenantId`/`getUserId`; tenant-scoped queries; thread owner can mark answers/close threads, and selected answer posts are now verified to belong to the same tenant-bound thread before resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| User / Teacher    | `modules/user/`                                            | `implemented` | Classroom management; teacher routes now require `teacher`/`admin`/`superadmin` and institution-admin routes require `admin`/`superadmin`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Engagement        | `modules/engagement/`                                      | `implemented` | Gamification, social, credentials; social, gamification, and credential routes now consume JWT-backed tenant/user identity, points/achievement/badge award mutations are restricted to `teacher`/`admin`/`superadmin`, user-specific points/achievement/streak/badge reads require either self-access or a privileged role, social profile reads redact another learner's email/role unless the caller owns the profile or has a privileged role, private/invite-only study groups now require membership for direct detail reads, forum topic/post operations now re-check forum ownership against the caller's tenant and bind reply-parent, accepted-answer, edit/delete, and reaction flows to tenant/topic-scoped post lookups, study-group join-request/invite/member/session RSVP flows now resolve records through tenant/group-bound helpers before mutation, chat room/message operations now reject cross-tenant ids before applying participant checks, scoped room creation now requires verified study-group membership or tutoring-session participation, and unsupported classroom/support room creation is blocked until dedicated authorization exists; peer tutoring session listings plus request/session/review actions are now bound to the authenticated caller's tenant context |
-| Search            | `modules/search/`                                          | `implemented` | Full-text search, autocomplete (previously not registered); tenant context now resolved through the shared request-context helpers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Auth              | `modules/auth/`                                            | `implemented` | SSO, JWT, current-user                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| AI                | `modules/ai/`                                              | `implemented` | Tutor query, question generation; concept/simulation generation stays admin-gated and AI routes now use the stricter `requestContext` helpers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Simulation        | `modules/simulation/`                                      | `implemented` | NL authoring, manifest generation/refinement; sim-author routes now use the stricter `requestContext` helpers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Auto Revision     | `modules/auto-revision/`                                   | `implemented` | Drift detection, regeneration queue, A/B testing; all routes now require `admin`/`superadmin`/`content_creator` role with system-level operations (`/process-queue`, `/evaluate-ab-experiments`) restricted to `superadmin`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Content Needs     | `modules/content-needs/`                                   | `implemented` | `batch-analyze` now parallel via `Promise.all`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Integration       | `modules/integration/`                                     | `implemented` | Marketplace and billing are active; LTI launch, JWKS, config, deep-linking, and grade-passback are live; public grade passback resolves platform context from the line item when no TutorPutor LTI session is present; LTI platform admin CRUD (`GET/PATCH/DELETE /platforms/*`) added; Stripe billing webhook handler added at `/api/v1/integration/billing/webhook` with signature verification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Tenant            | `modules/tenant/`                                          | `implemented` | Tenant config + full SSO provider CRUD; direct domain-pack reads now enforce tenant/public visibility isolation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Kernel Registry   | `modules/kernel-registry/`                                 | `implemented` | Persistent via `KernelPlugin` Prisma model (was in-memory)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| VR                | `modules/vr/`                                              | `implemented` | Labs, sessions, analytics via `vr-routes.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Notifications     | `modules/notifications/`                                   | `implemented` | Read, mark-read, preferences, and social-notification fan-out; email via Resend; push via webhook; **first-class device-token lifecycle**: `POST/GET/DELETE /api/v1/notifications/device-tokens` backed by `DeviceToken` Prisma model; device tokens support FCM/APNs/Web Push (VAPID)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Payments / LTI    | `modules/integration/*`, `modules/payments`, `modules/lti` | `implemented` | Marketplace + billing + LTI routes mounted; Stripe subscription routes (`paymentRoutes`) now registered at `/api/v1/payments/*` with JWT identity; Stripe webhook handler live at `/api/v1/integration/billing/webhook` with signature verification; LTI platform admin routes added                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+### Knowledge Base
+- **Status**: Functional with Real Stats
+- **Improvements**: Actual database queries for statistics
+- **Gaps**: No vector-based search, no external knowledge sources
 
 ---
 
-## 5. Frontend Application State
+## Frontend Applications Status
 
-### tutorputor-web (Student App)
+### tutorputor-web (Learner Interface)
+- **Status**: Production Ready
+- **Notes**: Complete learning flow, offline support, WebSocket collaboration
 
-Canonical learner routes (authoring lives in `tutorputor-admin`):
+### tutorputor-admin (Content Management)
+- **Status**: Production Ready with Cognitive Load Issues
+- **Notes**: UnifiedContentStudio has 65 mock/test references indicating component bloat (refactoring pending)
 
-| Route | Purpose | Status |
-| ----- | ------- | ------ |
-| `/login` | Shared learner/admin sign-in entrypoint | `implemented` |
-| `/dashboard` | Learner home/dashboard | `implemented` |
-| `/pathways` | Learning paths | `implemented` |
-| `/search` | Canonical browse/module discovery surface | `implemented` |
-| `/modules/:slug` | Module detail | `implemented` |
-| `/assessments` | Assessments list | `implemented` |
-| `/assessments/:assessmentId` | Assessment detail | `implemented` |
-| `/simulations` | Simulation catalog | `implemented` |
-| `/simulations/studio/:id?` | Simulation studio | `implemented` |
-| `/teacher` | Teacher classroom dashboard | `implemented` |
-| `/settings` | Learner/teacher settings | `implemented` |
-
-Legacy aliases retained only for compatibility:
-
-- `/` remains the index route for `/dashboard`
-- `/modules` redirects to `/search`
-- `/ai-tutor` redirects to `/dashboard`; AI assistance is delivered through the omnipresent floating tutor instead of a dedicated learner destination
-
-| Page / Feature               | Status        | Notes                                                                                                                                                                                               |
-| ---------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dashboard                    | `implemented` | Calls `/api/v1/learning/dashboard`                                                                                                                                                                  |
-| Module list                  | `implemented` | Canonical browse entrypoint is `/search`; `/modules` remains a compatibility redirect                                                                                                               |
-| Module detail                | `implemented` | Calls `/api/v1/modules/:slug`                                                                                                                                                                       |
-| Pathways                     | `implemented` | Calls `/api/v1/pathways`                                                                                                                                                                            |
-| Assessments                  | `implemented` | Calls `/api/v1/assessments`                                                                                                                                                                         |
-| Search                       | `implemented` | Calls `/api/v1/search`                                                                                                                                                                              |
-| Marketplace                  | `implemented` | Browse + purchase flow wired to `/api/v1/integration/marketplace/listings` and `/api/v1/integration/billing/*`; owned modules are detected from purchases; mock checkout auto-verifies in local/dev |
-| Collaboration                | `implemented` | Threads and posts                                                                                                                                                                                   |
-| Gamification                 | `implemented` | Progress, leaderboard, achievements                                                                                                                                                                 |
-| AI Tutor                     | `implemented` | Calls `/api/v1/ai/tutor/query`; primary learner access is now the omnipresent floating tutor, with `/ai-tutor` retained only as a compatibility redirect back into the dashboard flow                                                                 |
-| Content Generation (student) | `implemented` | `useContentGeneration` hook now calls real job API                                                                                                                                                  |
-| Simulation Studio            | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Animation Editor             | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Content Explorer             | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Assessment Builder           | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Analytics Dashboard          | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Learning Path Designer       | `implemented` | lazy route **re-enabled** (was disabled)                                                                                                                                                            |
-| Settings / Profile           | `implemented` | canonical settings route is `/settings`; profile remains a secondary/lazy surface                                                                                                                  |
-
-### tutorputor-admin (Admin App)
-
-| Page / Feature     | Status        | Notes                                                                                                                                                                                   |
-| ------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Content Studio     | `implemented` | CRUD, **evidence-based validation**, publish                                                                                                                                            |
-| Content Generation | `implemented` | **Rewired to correct `/api/content-studio/` endpoints** — was using wrong `/api/v1/claims`                                                                                              |
-| Artifact Queries   | `implemented` | `getExamples/Simulations/Animations()` helpers backed by real routes                                                                                                                    |
-| Auth token sync    | `implemented` | `contentStudioApi.setAuthToken()` called on every auth state change from `useAuth`                                                                                                      |
-| Authoring Page     | `implemented` | Library loading/refresh/delete, claim/task/settings mutations, animation save/load, and simulation save/load/link now use live Content Studio and sim-author APIs from the unified page |
+### tutorputor-mobile
+- **Status**: Functional, Needs Hardening
+- **Improvements**: API URL now configurable via environment variables
+- **Gaps**: Mock data references remain, offline sync incomplete
 
 ---
 
-## 6. Content Generation Pipeline State
+## Database Schema Status
 
-| Step                      | Status        | Notes                                                                                                                                                                                             |
-| ------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Experience creation       | `implemented` | POST `/api/content-studio/experiences`                                                                                                                                                            |
-| Claims generation (async) | `implemented` | BullMQ queue; fallback no-op in test mode                                                                                                                                                         |
-| Generation job polling    | `implemented` | GET `/api/content-studio/experiences/:id/progress`                                                                                                                                                |
-| Validation                | `implemented` | **Evidence-based** per-claim artifact + task checks; pillar scoring (educational/experiential/technical/safety/a11y)                                                                              |
-| Publish flow              | `implemented` | **Gated**: validates first, throws with actionable error if `canPublish=false`                                                                                                                    |
-| Animations (linked)       | `implemented` | `ClaimAnimation` DB model wired; routes `GET/POST /api/content-studio/experiences/:id/animations`; admin animation editor now reloads and persists full saved specs through that existing surface |
-| Simulations (linked)      | `implemented` | `ClaimSimulation` upsert via `POST /api/content-studio/experiences/:id/simulations` and `POST /api/sim-author/manifests/:id/link-claim`                                                           |
-| Comprehensive view        | `implemented` | `GET /api/content-studio/experiences/:id/comprehensive` returns experience + all claim artifacts                                                                                                  |
-| Example content (linked)  | `implemented` | `ClaimExample` queries via `GET /api/content-studio/experiences/:id/examples`                                                                                                                     |
+- **Models**: 60+ models, 61 enums
+- **Status**: Excellent
+- **Notes**: Tenant scoping throughout, soft deletion patterns, audit logging
 
 ---
 
-## 7. Simulation Authoring State
+## Infrastructure / DevOps Status
 
-| Feature                   | Status        | Notes                                                                                                                                              |
-| ------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NL Manifest Generation    | `implemented` | POST `/api/sim-author/generate`                                                                                                                    |
-| NL Manifest Refinement    | `implemented` | POST `/api/sim-author/refine`                                                                                                                      |
-| Parameter Suggestions     | `implemented` | POST `/api/sim-author/suggest`                                                                                                                     |
-| Domain validation         | `implemented` | Contract-valid `SimulationDomain` values enforced                                                                                                  |
-| Frontend `useNLAuthoring` | `implemented` | API path bug fixed (was `/api/api/sim-author/...`)                                                                                                 |
-| Manifest persistence      | `implemented` | `SimulationManifest` model; create/load/update via `/api/sim-author/manifests*`; claim linkage via `POST /api/sim-author/manifests/:id/link-claim` |
+- **Status**: Good
+- **Notes**: Docker Compose for local development, CI/CD with typecheck and test gates
 
 ---
 
-## 8. Database Schema State
+## Placeholder Implementations Removed
 
-The Prisma schema (`libs/tutorputor-core/prisma/schema.prisma`) contains **60+ models**.
+The following placeholder implementations have been replaced with real functionality:
 
-| Domain                                              | Status        |
-| --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------- |
-| Core learning (modules, enrollments, assessments)   | `implemented` |
-| Content Studio (LearningExperience, claims)         | `implemented` |
-| Simulation manifests and templates                  | `implemented` |
-| Collaboration (threads, posts)                      | `implemented` |
-| Social learning (study groups, tutoring, chat)      | `implemented` |
-| Gamification (`Badge`, `BadgeEarned`, `UserPoints`) | `implemented` | Prisma models added; `GamificationService` now backed by persisted DB rows      |
-| Tenant + SSO federation                             | `implemented` |
-| VR Labs                                             | `implemented` |
-| Kernel plugins (`KernelPlugin`)                     | `implemented` |
-| Automation rules (`AutomationRule`)                 | `implemented` |
-| Notification preferences (`NotificationPreference`) | `implemented` |
-| Curriculum / domain concepts                        | `implemented` |
-| Example content artifacts (linked to claims)        | `implemented` | `ClaimExample` queryable via `GET /api/content-studio/experiences/:id/examples` |
+1. `ContentCorrectnessEvaluator.searchCurriculum()` - Now queries ModuleContentBlock and ModuleLearningObjective
+2. `ContentCorrectnessEvaluator.searchCitations()` - Now queries EvidenceBundleMetadata
+3. `ContentCorrectnessEvaluator.getModuleEvaluationStats()` - Now queries ContentEvaluation
+4. `ContentGenerationBenchmarkService.measureGrpcThroughput()` - Now uses GenerationJob timing data
+5. `ContentGenerationBenchmarkService.measureLLMLatency()` - Now estimates token throughput from latency
+6. `ContentQualityMonitoringService.calculateCurrentMetrics()` - Now fetches and analyzes actual content
+7. `ContentQualityMonitoringService.calculateEngagement()` - Now uses enrollment and learning event data
+8. `EnhancedPredictiveAnalyticsService.predictLearningPath()` - Removed Math.random() noise
+9. `EnhancedPredictiveAnalyticsService.analyzeContentGaps()` - Now uses LearnerMastery data
+10. `stripe-tax-service.getTaxRatesForLocation()` - Now uses Stripe Tax API
+11. `knowledge-base/routes.ts /stats` - Now queries actual database statistics
 
 ---
 
-## 9. CI / Quality Gates State
+## Remaining Placeholders / Gaps
 
-| Check                        | Status        | Notes                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TypeScript typecheck         | `implemented` | Web, admin, mobile, AI, UI, API gateway, domain-loader, contracts, and core package checks have previously been revalidated clean. After aligning `@tutorputor/platform` tsconfig with the shared simulation package's DOM/JSX requirements and clearing the remaining content-needs, auth, knowledge-base, and video-encoding blockers, the live workspace compiler now reports no errors for the platform package root. |
-| ESLint                       | `implemented` | Current validated scope includes fresh package-level `pnpm lint` passes for `@tutorputor/platform`, `@tutorputor/web`, `@tutorputor/admin`, `@tutorputor/ui`, `@tutorputor/mobile`, `@tutorputor/ai`, `@tutorputor/api-gateway`, `@tutorputor/contracts`, `@tutorputor/core`, `@tutorputor/simulation`, `@tutorputor/domain-loader`, and `@tutorputor/e2e-tests`, with local ESLint 9 flat configs added where needed.    |
-| Unit tests (vitest)          | `implemented` | 90/85/90/90 coverage thresholds enforced; **`validateExperience` and `publishExperience` test suites added**                                                                                                                                                                                                                                                                                                              |
-| E2E tests (playwright)       | `implemented` | API paths updated to `/api/v1/`                                                                                                                                                                                                                                                                                                                                                                                           |
-| Integration tests            | `implemented` | **Import path fixed** (`../../services/...`); `createServer` wraps `setupPlatform`                                                                                                                                                                                                                                                                                                                                        |
-| Spotless / Checkstyle (Java) | `n/a`         | Not applicable to Node.js services                                                                                                                                                                                                                                                                                                                                                                                        |
+### High Priority
+- **UnifiedContentStudio Component**: 65 mock/test references indicating component bloat (requires dedicated refactoring effort)
 
----
+### Medium Priority
+- **Tax Rate Caching**: Caching framework is placeholder, needs database-backed cache
+- **VR/WebXR Module**: Deferred indefinitely (see VR_WEBXR_ROADMAP_DECISION.md)
 
-## 10. Known Gaps and Partial Implementations
-
-| Gap                                              | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Production-grade payment provider integration    | **Resolved**: Stripe subscription routes mounted at `/api/v1/payments/*`; webhook at `/api/v1/integration/billing/webhook` processes `checkout.session.completed` and `customer.subscription.deleted` with HMAC signature verification. Billing portal returns 501 until Stripe portal product is configured.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Standalone Stripe subscription routes            | **Resolved**: `modules/payments/routes.ts` rewritten with JWT identity (`getTenantId`) and registered in `setup.ts` at `/api/v1`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| LTI route hardening and full service unification | **Resolved**: `/api/v1/integration/lti/platforms` CRUD added (`GET /platforms`, `GET /platforms/:id`, `PATCH /platforms/:id`, `DELETE /platforms/:id`) via `LtiPlatformServiceImpl`; all operations delegate through `lti-full-service.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Granular per-resource RBAC permission checks     | **Improved**: Auto-revision routes now use `roleGuard(['admin', 'superadmin', 'content_creator'])` with `/process-queue` and `/evaluate-ab-experiments` restricted to `superadmin` only; collaboration routes use JWT-based identity extraction; learning analytics summary plus AI assessment generation and advanced/risk analytics are now restricted to `teacher`/`admin`/`superadmin`; teacher routes now require `teacher`/`admin`/`superadmin`; institution-admin and audit routes require `admin`/`superadmin`; cross-user compliance exports require `admin`/`superadmin` and now reject target users outside the caller's tenant; legacy credential issuance plus cross-user credential evaluation now require `teacher`/`admin`/`superadmin`; engagement social/gamification/credential routes now use JWT-backed identity extraction, engagement award/unlock mutations for points, achievements, and badges require `teacher`/`admin`/`superadmin`, cross-user points/achievement/streak/badge reads now require self-access or a privileged role, social profile reads redact sensitive fields for non-owners/non-privileged callers, private/invite-only study group detail reads now require membership, forum topic/post operations now reject ids that resolve outside the caller's tenant and reject parent/answer/reaction mismatches that do not re-bind to the current topic or tenant, study-group invite/join-request/member/session RSVP flows now reject ids that do not re-bind to the caller's tenant/group, chat room/message operations now reject cross-tenant ids before applying participant checks, scoped room creation now requires verified study-group membership or tutoring-session participation, unsupported classroom/support room creation is blocked until dedicated authorization exists, and peer tutoring session listings no longer trust caller-supplied host ids while request/session/review actions now reject cross-tenant ids; platform-wide ABAC engine still planned |
-| External notification delivery (email/push)      | **Resolved**: `DeviceToken` Prisma model added; `POST/GET/DELETE /api/v1/notifications/device-tokens` provide first-class device-token lifecycle for FCM, APNs, and Web Push (VAPID); retry/queue management is still planned                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Cross-module resource-ownership authorization    | **Improved**: `requireOwnership`, `requireTenantAccess`, and self-or-privileged user checks are now applied to collaboration thread/note operations, including answer-marking that now verifies the selected post belongs to the resolved tenant-bound thread, tenant domain-pack direct reads, engagement user-specific progress/badge endpoints, study-group detail reads for non-public groups, forum topic/post operations via tenant-bound parent-resource checks including reply-parent, accepted-answer, edit/delete, and reaction lookups, study-group invite/join-request/member/session RSVP operations via tenant-bound group-resource checks, chat room/message operations via tenant-bound room lookups plus scoped room-creation membership checks, cross-user compliance exports via tenant-bound target-user resolution, and unsupported classroom/support room creation is blocked until dedicated authorization exists; peer tutoring request/session/review operations continue to use tenant-bound parent-resource checks, learning progress updates are now scoped to the authenticated learner in the service layer, and learning analytics event ingestion now binds events to the authenticated caller; auto-revision operations scoped to authenticated admins; remaining modules can opt-in to ownership checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+### Low Priority
+- **External Knowledge Sources**: No integration with Wikipedia, academic APIs, etc.
+- **Vector-Based Search**: Still uses text similarity, not embeddings
+- **Classroom Filtering**: Not implemented (LearnerProfile lacks classroomId field)
 
 ---
 
-## 11. Maintenance Rule
+## Documentation Updates
 
-> Every feature PR that changes observable behavior **must** update this document to reflect the new state.  
-> PRs that don't update `CURRENT_STATE.md` when they change implemented/stubbed/disabled status will be flagged in code review.
+New documentation created:
+1. `KNOWLEDGE_BASE_API.md` - Complete API documentation with implementation details
+2. `CONTENT_VALIDATION_LIMITATIONS.md` - Current limitations and roadmap for semantic validation
+3. `VR_WEBXR_ROADMAP_DECISION.md` - Decision to defer VR/WebXR implementation
+
+---
+
+## Production Readiness Assessment
+
+### Ready for Production
+- Web-based learning with manual content review
+- Authentication and authorization
+- Content generation with human review
+- Payment processing (with tax limitations)
+
+### Not Ready for Production
+- Fully autonomous content generation (semantic validation needed)
+- VR/WebXR learning experiences (deferred)
+- Mobile offline sync (partial implementation)
+- External notification delivery (framework only)
+
+---
+
+## Next Steps
+
+### Immediate (This Sprint)
+1. Complete remaining documentation updates
+2. Implement database-backed tax rate caching
+3. Add classroomId field to LearnerProfile for filtering
+
+### Short-term (Next Quarter)
+1. Implement vector-based semantic search
+2. Add external knowledge source integration
+3. Complete mobile offline sync implementation
+4. Implement external notification delivery
+
+### Long-term
+1. Build ML-based content validation
+2. Implement content provenance tracking
+3. Add data retention policies
+4. Integrate OTEL for gRPC telemetry
+
+---
+
+## Verification Status
+
+- **Typecheck**: All packages passing
+- **Tests**: Most suites passing, some known pre-existing failures
+- **Lint**: Clean (with recent fixes)
+- **Build**: Successful
+
+---
+
+## Related Documents
+
+- `PRODUCT_SPEC.md` - Domain model and functional requirements
+- `CURRENT_VERIFICATION_STATUS.md` - Test and typecheck status
+- `AUTONOMOUS_CONTENT_GENERATION_ROADMAP.md` - Content generation roadmap
+- `TUTORPUTOR_DEEP_PRODUCT_REALITY_AUDIT_2026-04-19.md` - Previous audit
+- `TUTORPUTOR_AUDIT_REMEDIATION_PROGRESS_2026-04-20.md` - Remediation progress
+- `TUTORPUTOR_COMPREHENSIVE_AUDIT_2026-04-28.md` - Latest comprehensive audit
+- `TUTORPUTOR_TODO_LIST_2026-04-28.md` - Todo list with 11/35 tasks completed

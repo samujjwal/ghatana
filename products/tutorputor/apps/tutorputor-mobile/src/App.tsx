@@ -14,6 +14,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import { API_BASE_URL, SYNC_MAX_CONCURRENT, SYNC_RETRY_DELAY_MS } from './config';
 import { database } from './storage/SQLiteStorage';
 import { initSessionStorage, hasValidSession, installNativeSessionStorageShim } from './storage/NativeSessionStorage';
 import { getMmkvEncryptionKey } from './storage/SecureKeyManager';
@@ -64,15 +65,14 @@ export function App(): React.ReactElement {
 
         if (authenticated) {
           // Initialize sync service only when authenticated
-          const apiBaseUrl = 'https://api.tutorputor.com';
           await syncService.init({
-            apiBaseUrl,
+            apiBaseUrl: API_BASE_URL,
             getAuthToken: async () => {
               const { getSecureToken } = await import('./storage/NativeSessionStorage');
               return getSecureToken('access');
             },
-            maxConcurrent: 3,
-            retryBaseDelayMs: 1000,
+            maxConcurrent: SYNC_MAX_CONCURRENT,
+            retryBaseDelayMs: SYNC_RETRY_DELAY_MS,
             onSyncStart: () => {
               console.log('[Sync] Started');
             },

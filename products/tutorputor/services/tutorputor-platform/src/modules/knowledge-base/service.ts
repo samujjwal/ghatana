@@ -7,6 +7,7 @@
 
 import type { PrismaClient } from "@tutorputor/core/db";
 import { createStandaloneLogger } from "@tutorputor/core/logger";
+import { HybridSearchService } from "../content/semantic/hybrid-search-service.js";
 
 const DEFAULT_GOVERNED_EVIDENCE_DOMAINS = [
   "medical",
@@ -156,6 +157,7 @@ export class KnowledgeBaseServiceImpl {
   private logger = createStandaloneLogger({ service: "KnowledgeBaseService" });
   private cache: Map<string, CacheEntry<unknown>> = new Map();
   private cacheTimeoutMs = 30 * 60 * 1000; // 30 minutes
+  private hybridSearchService?: HybridSearchService;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -165,8 +167,13 @@ export class KnowledgeBaseServiceImpl {
       khanAcademyApiUrl?: string;
       enableCaching?: boolean;
       governedEvidenceDomains?: string[];
+      enableSemanticSearch?: boolean;
     } = {},
-  ) {}
+  ) {
+    if (config.enableSemanticSearch !== false) {
+      this.hybridSearchService = new HybridSearchService(prisma);
+    }
+  }
 
   private isGovernedEvidenceDomain(domain: string): boolean {
     const governedDomains =
@@ -288,13 +295,14 @@ export class KnowledgeBaseServiceImpl {
   }
 
   /**
-   * Search for concepts in the knowledge base
+   * Search for concepts in the knowledge base using semantic search
    */
   async searchConcept(
     query: string,
     domain: string,
+    tenantId: string = "default",
   ): Promise<KnowledgeBaseEntry[]> {
-    const cacheKey = `concept:${query}:${domain}`;
+    const cacheKey = `concept:${query}:${domain}:${tenantId}`;
 
     if (this.config.enableCaching !== false) {
       const cached = this.getCached<KnowledgeBaseEntry[]>(cacheKey);
@@ -303,9 +311,21 @@ export class KnowledgeBaseServiceImpl {
 
     const results: KnowledgeBaseEntry[] = [];
 
-    // Search in local database first
-    const localResults = await this.searchLocalKnowledgeBase(query, domain);
-    results.push(...localResults);
+    // Use semantic search if available
+    if (this.hybridSearchService) {
+      try {
+        const semanticResults = await this.semanticSearchConcept(query, domain, tenantId);
+        results.push(...semanticResults);
+      } catch (error) {
+        this.logger.warn({ error }, "Semantic search failed, falling back to local search");
+      }
+    }
+
+    // Fallback to local database search
+    if (results.length < 5) {
+      const localResults = await this.searchLocalKnowledgeBase(query, domain);
+      results.push(...localResults);
+    }
 
     // Search external sources if needed
     if (results.length < 5 && !this.isGovernedEvidenceDomain(domain)) {
@@ -319,6 +339,41 @@ export class KnowledgeBaseServiceImpl {
     }
 
     return results;
+  }
+
+  /**
+   * Perform semantic search using HybridSearchService
+   */
+  private async semanticSearchConcept(
+    query: string,
+    domain: string,
+    tenantId: string,
+  ): Promise<KnowledgeBaseEntry[]> {
+    if (!this.hybridSearchService) {
+      return [];
+    }
+
+    const hybridResponse = await this.hybridSearchService.search({
+      query,
+      tenantId,
+      domain,
+      assetTypes: ["explainer", "module"],
+      limit: 10,
+    });
+
+    // Convert HybridSearchResult to KnowledgeBaseEntry
+    return hybridResponse.results.map((result): KnowledgeBaseEntry => ({
+      id: result.asset.id,
+      concept: result.asset.title,
+      definition: result.asset.searchableText || "",
+      domain: result.asset.domain,
+      gradeRange: result.asset.targetGrades.join(",") || "unknown",
+      examples: [],
+      relatedConcepts: [],
+      sources: [],
+      confidence: result.ranking.score,
+      lastVerified: new Date(result.asset.updatedAt),
+    }));
   }
 
   /**
@@ -897,15 +952,48 @@ export class KnowledgeBaseServiceImpl {
       },
     });
 
+    // Also perform semantic validation against knowledge base
+    let semanticScore = 0;
+    let semanticEvidence: KnowledgeBaseEntry[] = [];
+    
+    if (this.hybridSearchService) {
+      try {
+        // Search for semantically similar content
+        semanticEvidence = await this.semanticSearchConcept(
+          request.content,
+          request.domain,
+          "default",
+        );
+        
+        // Calculate semantic consistency score
+        if (semanticEvidence.length > 0) {
+          const avgConfidence = semanticEvidence.reduce((sum, entry) => sum + entry.confidence, 0) / semanticEvidence.length;
+          semanticScore = avgConfidence;
+        }
+      } catch (error) {
+        this.logger.warn({ error }, "Semantic validation failed");
+      }
+    }
+
+    // Combine fact-check and semantic validation scores
+    const combinedScore = (factCheck.confidence * 0.7) + (semanticScore * 0.3);
+    const passed = factCheck.verified && combinedScore >= 0.7;
+
     return {
       type: "factual_accuracy",
-      passed: factCheck.verified,
-      score: Math.round(factCheck.confidence * 100),
-      message: factCheck.verified
-        ? "Content appears factually accurate"
-        : "Content may contain factual inaccuracies",
-      suggestions: factCheck.recommendations,
-      evidence: factCheck.sources,
+      passed,
+      score: Math.round(combinedScore * 100),
+      message: passed
+        ? "Content appears factually accurate and semantically consistent"
+        : "Content may contain factual inaccuracies or semantic inconsistencies",
+      suggestions: [
+        ...factCheck.recommendations,
+        ...(semanticEvidence.length > 0 ? ["Review semantically similar content for consistency"] : []),
+      ],
+      evidence: {
+        factSources: factCheck.sources,
+        semanticEntries: semanticEvidence.slice(0, 3), // Top 3 semantic matches
+      },
     };
   }
 

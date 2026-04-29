@@ -81,7 +81,12 @@ public class QueueSinkConnector implements ConnectorOperator {
     }
 
     /**
-     * Creates a QueueSinkConnector without a producer strategy (for testing/placeholder).
+     * Creates a QueueSinkConnector without a producer strategy.
+     *
+     * <p>This constructor is intended for unit tests that do not exercise the messaging
+     * path. Production wiring must supply a non-null {@code producerStrategy}.
+     *
+     * @see #QueueSinkConnector(String, ConnectorSpec, MetricsCollector, QueueProducerStrategy)
      */
     public QueueSinkConnector(String id, ConnectorSpec spec, MetricsCollector metricsCollector) {
         this(id, spec, metricsCollector, null);

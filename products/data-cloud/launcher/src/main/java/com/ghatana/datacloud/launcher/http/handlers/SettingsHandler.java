@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP handler for admin settings CRUD operations.
@@ -82,7 +81,7 @@ public class SettingsHandler {
      */
     public Promise<HttpResponse> handleGetGeneralSettings(HttpRequest request) {
         String tenantId = resolveTenantId(request);
-        Map<String, Object> response = new ConcurrentHashMap<>(store.getGeneralSettings(tenantId));
+        Map<String, Object> response = new LinkedHashMap<>(store.getGeneralSettings(tenantId));
         response.put("_storageMode", store.getStorageMode());
         return Promise.of(http.jsonResponse(response));
     }
@@ -99,7 +98,7 @@ public class SettingsHandler {
                     String body = buf.getString(StandardCharsets.UTF_8);
                     Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
 
-                    Map<String, Object> current = new ConcurrentHashMap<>(store.getGeneralSettings(tenantId));
+                    Map<String, Object> current = new LinkedHashMap<>(store.getGeneralSettings(tenantId));
                     payload.forEach((key, value) -> {
                         if (value == null) {
                             current.remove(key);
@@ -140,7 +139,7 @@ public class SettingsHandler {
                     String body = buf.getString(StandardCharsets.UTF_8);
                     Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
 
-                    Map<String, Object> current = new ConcurrentHashMap<>(store.getSecuritySettings(tenantId));
+                    Map<String, Object> current = new LinkedHashMap<>(store.getSecuritySettings(tenantId));
                     payload.forEach((key, value) -> {
                         if (value == null) {
                             current.remove(key);
@@ -161,7 +160,7 @@ public class SettingsHandler {
     public Promise<HttpResponse> handleListApiKeys(HttpRequest request) {
         String tenantId = resolveTenantId(request);
         List<Map<String, Object>> keys = store.listApiKeys(tenantId);
-        Map<String, Object> envelope = new ConcurrentHashMap<>();
+        Map<String, Object> envelope = new LinkedHashMap<>();
         envelope.put("tenantId", tenantId);
         envelope.put("keys", keys);
         envelope.put("count", keys.size());
@@ -180,7 +179,7 @@ public class SettingsHandler {
                 String id = UUID.randomUUID().toString();
                 String secret = UUID.randomUUID().toString().replace("-", "");
                 Instant now = Instant.now();
-                Map<String, Object> key = new ConcurrentHashMap<>();
+                Map<String, Object> key = new LinkedHashMap<>();
                 key.put("id", id);
                 key.put("tenantId", tenantId);
                 key.put("name", payload.getOrDefault("name", "unnamed-key"));
@@ -191,13 +190,13 @@ public class SettingsHandler {
                 key.put("status", "active");
                 key.put("createdAt", now.toString());
                 key.put("expiresAt", now.plusSeconds(86400 * 90).toString());
-                key.put("rotatedAt", null);
+                // rotatedAt is absent until the key is first rotated
                 key.put("rotationCount", 0);
                 key.put("audit", List.of(
                     Map.of("action", "created", "actor", "settings-handler", "timestamp", now.toString())
                 ));
                 store.createApiKey(tenantId, key);
-                Map<String, Object> response = new ConcurrentHashMap<>(key);
+                Map<String, Object> response = new LinkedHashMap<>(key);
                 response.remove("secret");
                 return Promise.of(http.jsonResponse(response));
             } catch (Exception e) {
@@ -211,7 +210,7 @@ public class SettingsHandler {
         String keyId = request.getPathParameter("id");
         Optional<Map<String, Object>> keyOpt = store.getApiKey(tenantId, keyId);
         if (keyOpt.isPresent()) {
-            Map<String, Object> response = new ConcurrentHashMap<>(keyOpt.get());
+            Map<String, Object> response = new LinkedHashMap<>(keyOpt.get());
             response.remove("secret");
             return Promise.of(http.jsonResponse(response));
         }
@@ -224,7 +223,7 @@ public class SettingsHandler {
         String newSecret = UUID.randomUUID().toString().replace("-", "");
         Optional<Map<String, Object>> rotated = store.rotateApiKey(tenantId, keyId, newSecret);
         if (rotated.isPresent()) {
-            Map<String, Object> response = new ConcurrentHashMap<>(rotated.get());
+            Map<String, Object> response = new LinkedHashMap<>(rotated.get());
             // One-time reveal of the new secret after rotation
             response.put("secret", newSecret);
             response.put("secretRevealed", true);
@@ -247,7 +246,7 @@ public class SettingsHandler {
 
     public Promise<HttpResponse> handleGetProfile(HttpRequest request) {
         String tenantId = resolveTenantId(request);
-        Map<String, Object> response = new ConcurrentHashMap<>(store.getProfile(tenantId));
+        Map<String, Object> response = new LinkedHashMap<>(store.getProfile(tenantId));
         response.put("_storageMode", store.getStorageMode());
         return Promise.of(http.jsonResponse(response));
     }
@@ -259,7 +258,7 @@ public class SettingsHandler {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-                Map<String, Object> current = new ConcurrentHashMap<>(store.getProfile(tenantId));
+                Map<String, Object> current = new LinkedHashMap<>(store.getProfile(tenantId));
                 payload.forEach((key, value) -> {
                     if (value != null) {
                         current.put(key, value);
@@ -277,7 +276,7 @@ public class SettingsHandler {
 
     public Promise<HttpResponse> handleGetPreferences(HttpRequest request) {
         String tenantId = resolveTenantId(request);
-        Map<String, Object> response = new ConcurrentHashMap<>(store.getPreferences(tenantId));
+        Map<String, Object> response = new LinkedHashMap<>(store.getPreferences(tenantId));
         response.put("_storageMode", store.getStorageMode());
         return Promise.of(http.jsonResponse(response));
     }
@@ -289,7 +288,7 @@ public class SettingsHandler {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-                Map<String, Object> current = new ConcurrentHashMap<>(store.getPreferences(tenantId));
+                Map<String, Object> current = new LinkedHashMap<>(store.getPreferences(tenantId));
                 payload.forEach((key, value) -> {
                     if (value != null) {
                         current.put(key, value);
@@ -307,7 +306,7 @@ public class SettingsHandler {
 
     public Promise<HttpResponse> handleGetNotificationPreferences(HttpRequest request) {
         String tenantId = resolveTenantId(request);
-        Map<String, Object> response = new ConcurrentHashMap<>(store.getNotificationPreferences(tenantId));
+        Map<String, Object> response = new LinkedHashMap<>(store.getNotificationPreferences(tenantId));
         response.put("_storageMode", store.getStorageMode());
         return Promise.of(http.jsonResponse(response));
     }
@@ -319,7 +318,7 @@ public class SettingsHandler {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-                Map<String, Object> current = new ConcurrentHashMap<>(store.getNotificationPreferences(tenantId));
+                Map<String, Object> current = new LinkedHashMap<>(store.getNotificationPreferences(tenantId));
                 payload.forEach((key, value) -> {
                     if (value != null) {
                         current.put(key, value);
@@ -423,17 +422,17 @@ public class SettingsHandler {
 
                 switch (changeType) {
                     case "security" -> {
-                        Map<String, Object> current = new ConcurrentHashMap<>(store.getSecuritySettings(tenantId));
+                        Map<String, Object> current = new LinkedHashMap<>(store.getSecuritySettings(tenantId));
                         proposed.forEach((k, v) -> { if (v != null) current.put(k, v); });
                         store.updateSecuritySettings(tenantId, current);
                     }
                     case "general" -> {
-                        Map<String, Object> current = new ConcurrentHashMap<>(store.getGeneralSettings(tenantId));
+                        Map<String, Object> current = new LinkedHashMap<>(store.getGeneralSettings(tenantId));
                         proposed.forEach((k, v) -> { if (v != null) current.put(k, v); });
                         store.updateGeneralSettings(tenantId, current);
                     }
                     case "profile" -> {
-                        Map<String, Object> current = new ConcurrentHashMap<>(store.getProfile(tenantId));
+                        Map<String, Object> current = new LinkedHashMap<>(store.getProfile(tenantId));
                         proposed.forEach((k, v) -> { if (v != null) current.put(k, v); });
                         store.updateProfile(tenantId, current);
                     }

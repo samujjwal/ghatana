@@ -189,6 +189,219 @@ class AepAuthFilterTest extends EventloopTestBase {
         assertNotNull(filter); // GH-90000
     }
 
+    // ─── Additional coverage: auth bypass, token validity, tenant, payload unit tests ───
+
+    @Test
+    @DisplayName("missing Authorization header returns 401 on private path")
+    void missingAuthorizationHeaderReturnsUnauthorized() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true);
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL).build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
+        verify(nextServlet, never()).serve(any());
+    }
+
+    @Test
+    @DisplayName("Authorization header with empty bearer token after prefix returns 401")
+    void emptyBearerTokenReturnsUnauthorized() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true);
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer ")
+                .build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
+        verify(nextServlet, never()).serve(any());
+    }
+
+    @Test
+    @DisplayName("JWT with invalid structure (single part) returns 401")
+    void invalidJwtStructureReturnsUnauthorized() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true);
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer notavalidjwt")
+                .build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
+        verify(nextServlet, never()).serve(any());
+    }
+
+    @Test
+    @DisplayName("JWT signed with wrong secret returns 401 (signature mismatch)")
+    void jwtSignedWithWrongSecretReturnsUnauthorized() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "correct-secret", true);
+
+        // Sign token with a DIFFERENT secret — signature mismatch
+        String tamperedJwt = createJwt("wrong-secret");
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer " + tamperedJwt)
+                .build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
+        verify(nextServlet, never()).serve(any());
+    }
+
+    @Test
+    @DisplayName("expired JWT returns 401 (exp in the past)")
+    void expiredJwtReturnsUnauthorized() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        String jwtSecret = "unit-test-secret";
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, jwtSecret, true);
+
+        // Build a JWT whose exp is 60 seconds in the past
+        long issuedAt = Instant.now().getEpochSecond() - 120;
+        long expiresAt = issuedAt + 60; // already expired
+        String header = encodeBase64Url("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
+        String payload = encodeBase64Url(String.format(
+                "{\"sub\":\"expired-user\",\"iss\":\"unit-test\",\"iat\":%d,\"exp\":%d}",
+                issuedAt, expiresAt));
+        String token = header + "." + payload + "." + sign(header + "." + payload, jwtSecret);
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer " + token)
+                .build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
+        verify(nextServlet, never()).serve(any());
+    }
+
+    @Test
+    @DisplayName("auth disabled (dev mode) allows requests to private paths without a token")
+    void authDisabledAllowsPrivatePath() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        when(nextServlet.serve(any())).thenReturn(Promise.of(HttpResponse.ofCode(200).build()));
+
+        // authEnabled=false, jwtSecret=blank — permitted in development environment
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", false, "development");
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL).build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(200, response.getCode());
+        verify(nextServlet).serve(any());
+    }
+
+    @Test
+    @DisplayName("tenant ID is extracted from JWT claims and attached to the request payload")
+    void tenantIdExtractedFromJwtClaims() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        AtomicReference<AepAuthFilter.JwtPayload> capturedPayload = new AtomicReference<>();
+        when(nextServlet.serve(any())).thenAnswer(invocation -> {
+            HttpRequest req = invocation.getArgument(0);
+            capturedPayload.set(req.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT));
+            return Promise.of(HttpResponse.ofCode(200).build());
+        });
+
+        String jwtSecret = "unit-test-secret";
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, jwtSecret, true);
+
+        String jwt = createJwt(jwtSecret, "\"tenantId\":\"tenant-acme-42\"");
+        HttpRequest request = HttpRequest.get(PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer " + jwt)
+                .build();
+        serve(filter, request);
+
+        assertNotNull(capturedPayload.get());
+        assertEquals("tenant-acme-42", capturedPayload.get().tenantId());
+    }
+
+    @Test
+    @DisplayName("OPTIONS preflight request bypasses JWT auth and reaches downstream")
+    void optionsPreflightBypassesJwtAuth() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        when(nextServlet.serve(any())).thenReturn(Promise.of(HttpResponse.ofCode(204).build()));
+
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true);
+
+        HttpRequest request = HttpRequest.builder(io.activej.http.HttpMethod.OPTIONS, PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Origin"), "https://app.ghatana.dev")
+                .build();
+        HttpResponse response = serve(filter, request);
+
+        // Downstream should be called without auth check; no 401
+        assertEquals(204, response.getCode());
+        verify(nextServlet).serve(any());
+    }
+
+    @Test
+    @DisplayName("JwtPayload.hasRole is case-insensitive")
+    void jwtPayloadHasRoleIsCaseInsensitive() {
+        AepAuthFilter.JwtPayload payload = new AepAuthFilter.JwtPayload(
+                "sub", "iss", 0L, 0L,
+                java.util.List.of("ADMIN", "viewer"),
+                java.util.List.of(),
+                null);
+
+        assertThat(payload.hasRole("admin")).isTrue();
+        assertThat(payload.hasRole("VIEWER")).isTrue();
+        assertThat(payload.hasRole("operator")).isFalse();
+    }
+
+    @Test
+    @DisplayName("JwtPayload.hasPermission returns true for wildcard permission '*'")
+    void jwtPayloadWildcardPermissionGrantsAll() {
+        AepAuthFilter.JwtPayload payload = new AepAuthFilter.JwtPayload(
+                "sub", "iss", 0L, 0L,
+                java.util.List.of(),
+                java.util.List.of("*"),
+                null);
+
+        assertThat(payload.hasPermission("deployment:create")).isTrue();
+        assertThat(payload.hasPermission("anything")).isTrue();
+    }
+
+    @Test
+    @DisplayName("JwtPayload.canManageDeployments is true for 'deployer' role")
+    void jwtPayloadDeployerRoleCanManage() {
+        AepAuthFilter.JwtPayload payload = new AepAuthFilter.JwtPayload(
+                "sub", "iss", 0L, 0L,
+                java.util.List.of("deployer"),
+                java.util.List.of("read"),
+                "tenant-xyz");
+
+        assertThat(payload.canManageDeployments()).isTrue();
+    }
+
+    @Test
+    @DisplayName("JwtPayload.canManageDeployments is false for 'viewer' role with no deployment permissions")
+    void jwtPayloadViewerCannotManage() {
+        AepAuthFilter.JwtPayload payload = new AepAuthFilter.JwtPayload(
+                "sub", "iss", 0L, 0L,
+                java.util.List.of("viewer"),
+                java.util.List.of("read"),
+                "tenant-xyz");
+
+        assertThat(payload.canManageDeployments()).isFalse();
+    }
+
+    @Test
+    @DisplayName("missing JWT secret with auth enabled returns 401 (fail-closed)")
+    void missingJwtSecretWithAuthEnabledRejectRequests() throws Exception {
+        AsyncServlet nextServlet = mock(AsyncServlet.class);
+        // authEnabled=true but no secret — should fail-closed
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "development");
+
+        HttpRequest request = HttpRequest.get(PRIVATE_URL)
+                .withHeader(HttpHeaders.of("Authorization"), "Bearer sometoken")
+                .build();
+        HttpResponse response = serve(filter, request);
+
+        assertEquals(401, response.getCode());
+        verify(nextServlet, never()).serve(any());
+    }
+
     private HttpResponse serve(AsyncServlet filter, HttpRequest request) { // GH-90000
         return runPromise(() -> filter.serve(request)); // GH-90000
     }

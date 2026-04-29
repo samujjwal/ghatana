@@ -17,7 +17,9 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.Nested;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -584,6 +587,59 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
     // Test infrastructure
     // ─────────────────────────────────────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────
+    // P50/P95/P99 histogram configuration tests (AV-M1)
+    // ─────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("STT transcribe timer — P50/P95/P99 histogram configuration")
+    class StreamingLatencyHistogramTests {
+
+        private SimpleMeterRegistry histogramRegistry;
+        private Timer transcribeTimer;
+
+        @BeforeEach
+        void setUp() { // GH-90000
+            histogramRegistry = new SimpleMeterRegistry(); // GH-90000
+            // Constructing the real SttGrpcService wires the timer with publishPercentiles()
+            SttGrpcService.forTesting(mockLibrary, histogramRegistry); // GH-90000
+            transcribeTimer = histogramRegistry.find("stt.transcribe").timer(); // GH-90000
+        }
+
+        @Test
+        @DisplayName("transcribe timer registered in registry after service construction")
+        void transcribeTimer_registeredInRegistry() { // GH-90000
+            assertThat(transcribeTimer).isNotNull(); // GH-90000
+        }
+
+        @Test
+        @DisplayName("transcribe timer P50 percentile is tracked (not NaN) after recording")
+        void transcribeTimer_p50PercentileTracked_afterRecording() { // GH-90000
+            transcribeTimer.record(100, TimeUnit.MILLISECONDS); // GH-90000
+
+            assertThat(transcribeTimer.percentile(0.50, TimeUnit.MILLISECONDS))
+                .isNotNaN(); // GH-90000
+        }
+
+        @Test
+        @DisplayName("transcribe timer P95 percentile is tracked (not NaN) after recording")
+        void transcribeTimer_p95PercentileTracked_afterRecording() { // GH-90000
+            transcribeTimer.record(100, TimeUnit.MILLISECONDS); // GH-90000
+
+            assertThat(transcribeTimer.percentile(0.95, TimeUnit.MILLISECONDS))
+                .isNotNaN(); // GH-90000
+        }
+
+        @Test
+        @DisplayName("transcribe timer P99 percentile is tracked (not NaN) after recording")
+        void transcribeTimer_p99PercentileTracked_afterRecording() { // GH-90000
+            transcribeTimer.record(200, TimeUnit.MILLISECONDS); // GH-90000
+
+            assertThat(transcribeTimer.percentile(0.99, TimeUnit.MILLISECONDS))
+                .isNotNaN(); // GH-90000
+        }
+    }
 
     static class CapturingObserver<T> implements StreamObserver<T> {
         private T value;

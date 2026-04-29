@@ -79,29 +79,41 @@ public final class ApprovalAuditLogger {
     /**
      * Records an {@code approval.approved} entry when an approver approves.
      *
-     * @param request   the approved request
-     * @param decidedBy user ID of the approver
+     * @param request     the approved request (post-transition)
+     * @param decidedBy   user ID of the approver
+     * @param priorStatus the request status immediately before this decision
      * @return always-completing promise
      */
-    public Promise<Void> logApproved(ApprovalRequest request, String decidedBy) {
-        return emit(EVENT_APPROVED, request, decidedBy);
+    public Promise<Void> logApproved(
+            ApprovalRequest request,
+            String decidedBy,
+            ApprovalRequest.ApprovalStatus priorStatus) {
+        return emit(EVENT_APPROVED, request, decidedBy, priorStatus);
     }
 
     /**
      * Records an {@code approval.rejected} entry when an approver rejects.
      *
-     * @param request   the rejected request
-     * @param decidedBy user ID of the rejector
+     * @param request     the rejected request (post-transition)
+     * @param decidedBy   user ID of the rejector
+     * @param priorStatus the request status immediately before this decision
      * @return always-completing promise
      */
-    public Promise<Void> logRejected(ApprovalRequest request, String decidedBy) {
-        return emit(EVENT_REJECTED, request, decidedBy);
+    public Promise<Void> logRejected(
+            ApprovalRequest request,
+            String decidedBy,
+            ApprovalRequest.ApprovalStatus priorStatus) {
+        return emit(EVENT_REJECTED, request, decidedBy, priorStatus);
     }
 
     // ─── Internal helpers ─────────────────────────────────────────────────────
 
-    private Promise<Void> emit(String eventType, ApprovalRequest request, String decidedBy) {
-        Map<String, Object> event = buildEvent(eventType, request, decidedBy);
+    private Promise<Void> emit(
+            String eventType,
+            ApprovalRequest request,
+            String decidedBy,
+            ApprovalRequest.ApprovalStatus priorStatus) {
+        Map<String, Object> event = buildEvent(eventType, request, decidedBy, priorStatus);
         return delegate.log(event)
                 .then(
                         $ -> Promise.complete(),
@@ -116,7 +128,8 @@ public final class ApprovalAuditLogger {
     private Map<String, Object> buildEvent(
             String eventType,
             ApprovalRequest request,
-            String decidedBy) {
+            String decidedBy,
+            ApprovalRequest.ApprovalStatus priorStatus) {
 
         Map<String, Object> event = new LinkedHashMap<>();
         event.put("type",               eventType);
@@ -128,6 +141,10 @@ public final class ApprovalAuditLogger {
         event.put("status",             request.status().name());
         event.put("occurredAt",         Instant.now().toString());
 
+        if (priorStatus != null) {
+            event.put("priorStatus",   priorStatus.name());
+            event.put("statusDiff",    priorStatus.name() + " → " + request.status().name());
+        }
         if (decidedBy != null) {
             event.put("decidedBy", decidedBy);
         }
@@ -140,7 +157,22 @@ public final class ApprovalAuditLogger {
             event.put("fromPhase",     ctx.fromPhase());
             event.put("toPhase",       ctx.toPhase());
             event.put("blockReason",   ctx.blockReason());
+            if (ctx.workflowId() != null) {
+                event.put("workflowId",  ctx.workflowId());
+            }
+            if (ctx.planId() != null) {
+                event.put("planId",      ctx.planId());
+            }
+            if (ctx.priorPlanId() != null) {
+                event.put("priorPlanId", ctx.priorPlanId());
+            }
         }
         return event;
+    }
+
+    // --- Legacy two-arg overloads kept for logCreated/logReviewStarted ----------
+
+    private Promise<Void> emit(String eventType, ApprovalRequest request, String decidedBy) {
+        return emit(eventType, request, decidedBy, null);
     }
 }

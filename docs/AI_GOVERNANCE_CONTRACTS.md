@@ -654,3 +654,37 @@ export function withAiGovernance(operation: AiOperationName) {
 **Owner**: Platform AI Integration Lead  
 **Status**: Draft (awaiting stakeholder review and approval)  
 **Review Date**: 2026-05-07
+
+---
+
+## Appendix A: AI Capability Release Status Registry
+
+This registry records the formal release-readiness decision for every AI-backed capability in Ghatana.
+Entries here supersede marketing language in product READMEs for governance purposes.
+All terms follow the definitions in [docs/process/PRODUCT_TRUTHFULNESS_POLICY.md](process/PRODUCT_TRUTHFULNESS_POLICY.md).
+
+### Audio-Video: AI Voice Module
+
+**Product area**: `products/audio-video/modules/intelligence/ai-voice/`  
+**Formal decision date**: 2026-04-28  
+**Decision authority**: Platform AI Integration + Audio-Video Product Owner  
+
+| Capability | Phase | Status | Evidence requirement before promotion |
+|---|---|---|---|
+| Stem separation (Demucs) | D3 | `verified locally` | Reproducible pytest suite in `apps/desktop/tests/`; Demucs dependency must be installed |
+| Voice training (RVC/VITS) | D4 | `experimental` | Pipeline scaffolding and UI exist; end-to-end ML quality claims are not release evidence; real model training not validated in CI |
+| Voice conversion | D5 | `experimental` | Conversion flow implemented; quality and latency claims are environment-dependent; no reproducible benchmark in CI |
+| Multi-track editing | D6 | `verified locally` | Local editor functional; not deployment-validated |
+| Export/publish workflows | — | `experimental` | Preview workflow only; no persistent backend evidence |
+
+**Formal governance constraints for D4 and D5 (`experimental` tier)**:
+
+1. **D4 and D5 MUST NOT be presented as `production-ready` or `deployment-validated`** in any product surface (UI, docs, marketing) until the evidence requirements above are met.
+2. Any UI surface exposing D4/D5 capabilities MUST display an explicit `Experimental` badge or disclaimer consistent with `PRODUCT_TRUTHFULNESS_POLICY.md` §UI Rules.
+3. D4/D5 model paths that integrate with LLM/ML providers MUST register models as `ModelTier.EXPERIMENTAL` in the `UnifiedModelRegistry` (Contract 1 above) before any user-facing invocation.
+4. Promotion from `experimental` to `verified in integration` requires: (a) reproducible integration test in CI against a real model, (b) latency and quality benchmarks with a documented baseline, (c) sign-off from Platform AI Integration Lead.
+5. Promotion from `verified in integration` to `production-ready` additionally requires: (a) deployment runbook, (b) rollback plan, (c) observable failure modes (metrics + alerts).
+
+**Rationale**: D4 (Voice Training) and D5 (Voice Conversion) contain ML pipeline scaffolding and UI, but the repository does not contain reproducible CI evidence of model-quality claims meeting a defined threshold. Marking them `experimental` is the correct truthful status per `PRODUCT_TRUTHFULNESS_POLICY.md`. This decision is not a defect — it is an honest boundary that protects users from relying on unvalidated capabilities.
+
+**Review cycle**: Re-evaluate this entry when a reproducible CI integration test exists for D4 or D5 that exercises a real model (not a mock). Next scheduled review: 2026-07-01.

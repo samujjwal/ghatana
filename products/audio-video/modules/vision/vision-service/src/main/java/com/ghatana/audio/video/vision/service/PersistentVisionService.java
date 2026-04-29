@@ -44,6 +44,8 @@ public class PersistentVisionService {
         this.audioFileService = Objects.requireNonNull(audioFileService, "audioFileService cannot be null");
         this.detectTimer = Timer.builder("vision.persistent.detect")
             .description("Vision detection latency with persistence")
+            .publishPercentiles(0.50, 0.95, 0.99)
+            .publishPercentileHistogram()
             .register(meterRegistry);
     }
 
