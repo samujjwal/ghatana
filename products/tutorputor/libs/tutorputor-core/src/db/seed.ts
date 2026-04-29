@@ -70,11 +70,12 @@ async function main(options: SeedOptions = {}) {
   const profile = options.profile ?? "base";
 
   if (profile === "demo") {
-    // TODO: Create ../prisma/seed-admin.js file or remove demo profile
-    console.warn("Demo profile not yet implemented - skipping admin demo data");
-    // const { seedAdminDemoData } = await import("../prisma/seed-admin.js");
-    // await seedAdminDemoData();
-    return;
+    console.warn(
+      "Demo profile is not available in this environment. " +
+      "To seed demo data, create a src/db/seed-demo.ts module and invoke it here. " +
+      "Falling back to base seed.",
+    );
+    // Fall through to base seed rather than silently returning.
   }
 
   const prisma = createPrismaClient();

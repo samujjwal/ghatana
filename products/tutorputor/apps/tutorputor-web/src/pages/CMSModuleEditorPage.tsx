@@ -57,7 +57,7 @@ export function CMSModuleEditorPage() {
 
     // Handle block selection from picker
     const handleBlockTypeSelect = (blockType: unknown) => {
-        handleAddBlock(blockType);
+        handleAddBlock(blockType as import('./cms/types').ContentBlockType);
     };
 
     return (
@@ -103,17 +103,11 @@ export function CMSModuleEditorPage() {
                 <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
                         <SimulationBlockEditor
-                            manifest={
-                                (draft.contentBlocks[editingBlockIndex].payload as any)?.inlineManifest
+                            initialPayload={
+                                (draft.contentBlocks[editingBlockIndex].payload as any) ?? undefined
                             }
-                            onSave={(manifest) => {
-                                handleUpdateBlock(editingBlockIndex, {
-                                    inlineManifest: manifest,
-                                    display: (draft.contentBlocks[editingBlockIndex].payload as any)?.display || {
-                                        showControls: true,
-                                        showTimeline: true,
-                                    },
-                                });
+                            onSave={(payload) => {
+                                handleUpdateBlock(editingBlockIndex, payload as any);
                             }}
                             onCancel={() => setEditingBlockIndex(null)}
                         />

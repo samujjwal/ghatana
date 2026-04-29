@@ -10,7 +10,7 @@
  * @doc.pattern Seed
  */
 
-import type { LearningUnit } from "@tutorputor/contracts/v1/learning-unit";
+import type { LearningUnit, Task } from "@tutorputor/contracts/v1/learning-unit";
 
 // ============================================================================
 // Physics Learning Units

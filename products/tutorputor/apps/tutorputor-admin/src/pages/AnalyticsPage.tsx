@@ -70,11 +70,11 @@ function ResponsiveTable<T>({
   );
 }
 
-const PullToRefresh = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
-const LineChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
-const BarChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
-const PieChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
-const AreaChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const PullToRefresh = ({ children, onRefresh: _onRefresh }: { children: React.ReactNode; onRefresh?: () => void | Promise<void> }) => <div>{children}</div>;
+const LineChart = (_props: Record<string, unknown>) => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const BarChart = (_props: Record<string, unknown>) => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const PieChart = (_props: Record<string, unknown>) => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const AreaChart = (_props: Record<string, unknown>) => <div className="h-64 bg-gray-100 rounded">Chart</div>;
 
 type DateRange = "7d" | "30d" | "90d" | "1y";
 type MetricTab = "engagement" | "content" | "users" | "performance";

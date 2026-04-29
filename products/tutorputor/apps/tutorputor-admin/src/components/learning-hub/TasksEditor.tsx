@@ -13,21 +13,21 @@ const TASK_TYPES = ['prediction', 'simulation', 'explanation', 'construction'] a
 export function TasksEditor({ tasks, claims, evidence, onChange }: TasksEditorProps) {
     const handleAddTask = () => {
         const newId = `T${tasks.length + 1}`;
-        const newTask: Task = {
+        const newTask = {
             id: newId,
-            type: 'prediction',
+            type: 'prediction' as const,
             claimRef: claims[0]?.id || '',
             evidenceRef: evidence[0]?.id || '',
             prompt: '',
-            confidenceRequired: true,
+            confidenceRequired: true as const,
             options: [],
         };
-        onChange([...tasks, newTask]);
+        onChange([...tasks, newTask as unknown as Task]);
     };
 
     const handleUpdateTask = (index: number, updates: Partial<Task>) => {
         const updated = [...tasks];
-        updated[index] = { ...updated[index], ...updates };
+        updated[index] = { ...updated[index], ...updates } as unknown as Task;
         onChange(updated);
     };
 

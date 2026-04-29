@@ -9,6 +9,10 @@
 
 import type { SimKernelService, SimulationDomain } from '@tutorputor/contracts/v1/simulation';
 
+// Portable canvas type aliases — avoids requiring DOM lib in non-browser consumers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CanvasLike = any;
+
 /**
  * Plugin metadata.
  */
@@ -79,7 +83,7 @@ export interface VisualizerPlugin {
   supportedDomains: string[];
   /** Render function */
   render: (
-    canvas: HTMLCanvasElement | OffscreenCanvas,
+    canvas: CanvasLike,
     keyframe: unknown,
     options?: Record<string, unknown>
   ) => void;

@@ -246,10 +246,12 @@ export interface PublishGenerationRequestResult {
 // ---------------------------------------------------------------------------
 
 function mapExpToAdmin(exp: Record<string, unknown>): AdminExperience {
+  const gradeAdaptation = exp.gradeAdaptation as Record<string, unknown> | undefined;
+  const claims = exp.claims as Record<string, unknown>[] | undefined ?? [];
   return {
-    id: exp.id,
-    title: exp.title,
-    description: exp.description ?? exp.intentProblem ?? "",
+    id: exp.id as string,
+    title: exp.title as string,
+    description: (exp.description ?? exp.intentProblem ?? "") as string,
     status:
       exp.status === "published"
         ? "published"
@@ -258,42 +260,42 @@ function mapExpToAdmin(exp: Record<string, unknown>): AdminExperience {
           : exp.status === "review"
             ? "review"
             : "draft",
-    gradeLevel: exp.gradeAdaptation?.gradeRange ?? "grade_6_8",
-    subject: exp.domain ?? "TECH",
-    claims: (exp.claims ?? []).map((c) => ({
-      id: c.id,
-      text: c.text ?? c.statement ?? "",
-      bloomLevel: c.bloomLevel ?? c.bloom,
-      orderIndex: c.orderIndex ?? 0,
-      examples: c.examples ?? [],
-      simulations: c.simulations ?? [],
-      animations: c.animations ?? [],
+    gradeLevel: (gradeAdaptation?.gradeRange ?? "grade_6_8") as string,
+    subject: (exp.domain ?? "TECH") as string,
+    claims: claims.map((c) => ({
+      id: c.id as string,
+      text: (c.text ?? c.statement ?? "") as string,
+      bloomLevel: (c.bloomLevel ?? c.bloom) as string | undefined,
+      orderIndex: (c.orderIndex ?? 0) as number,
+      examples: (c.examples ?? []) as unknown[],
+      simulations: (c.simulations ?? []) as unknown[],
+      animations: (c.animations ?? []) as unknown[],
     })),
-    createdAt: exp.createdAt,
-    updatedAt: exp.updatedAt,
+    createdAt: exp.createdAt as string,
+    updatedAt: exp.updatedAt as string,
   };
 }
 
 function mapValidationToAdmin(v: Record<string, unknown>): AdminValidationResult {
+  const pillarScores2 = v.pillarScores as Record<string, unknown> | undefined;
   const pillarScores: Record<string, number> = {
-    Educational: v.pillarScores?.educational ?? v.score ?? 0,
-    Experiential: v.pillarScores?.experiential ?? v.score ?? 0,
-    Safety: v.pillarScores?.safety ?? 100,
-    Technical: v.pillarScores?.technical ?? v.score ?? 0,
-    Accessibility: v.pillarScores?.accessibility ?? v.score ?? 0,
+    Educational: (pillarScores2?.educational ?? v.score ?? 0) as number,
+    Experiential: (pillarScores2?.experiential ?? v.score ?? 0) as number,
+    Safety: (pillarScores2?.safety ?? 100) as number,
+    Technical: (pillarScores2?.technical ?? v.score ?? 0) as number,
+    Accessibility: (pillarScores2?.accessibility ?? v.score ?? 0) as number,
   };
 
-  const checks: AdminValidationResult["checks"] = (v.checks ?? []).map(
-    (c: unknown) => ({
-      checkId: c.checkId ?? c.id ?? "check",
-      pillar: c.pillar ?? "General",
-      name: c.name ?? c.description ?? "Check",
-      passed: c.passed ?? c.status === "pass",
-      severity: c.severity ?? (c.passed ? "info" : "warning"),
-      message: c.message ?? "",
-      suggestion: c.suggestion,
-    }),
-  );
+  const rawChecks = (v.checks ?? []) as Record<string, unknown>[];
+  const checks: AdminValidationResult["checks"] = rawChecks.map((c) => ({
+    checkId: (c.checkId ?? c.id ?? "check") as string,
+    pillar: (c.pillar ?? "General") as string,
+    name: (c.name ?? c.description ?? "Check") as string,
+    passed: (c.passed ?? c.status === "pass") as boolean,
+    severity: (c.severity ?? (c.passed ? "info" : "warning")) as "error" | "warning" | "info",
+    message: (c.message ?? "") as string,
+    suggestion: c.suggestion as string | undefined,
+  }));
 
   return {
     status:
@@ -302,11 +304,11 @@ function mapValidationToAdmin(v: Record<string, unknown>): AdminValidationResult
         : v.status === "warnings"
           ? "warnings"
           : "invalid",
-    canPublish: v.canPublish ?? false,
+    canPublish: (v.canPublish ?? false) as boolean,
     checks,
-    score: v.score ?? 0,
+    score: (v.score ?? 0) as number,
     pillarScores,
-    validatedAt: v.validatedAt ? new Date(v.validatedAt) : new Date(),
+    validatedAt: v.validatedAt ? new Date(v.validatedAt as string) : new Date(),
   };
 }
 
@@ -803,3 +805,7 @@ export const contentStudioApi = {
     };
   },
 };
+
+export function useContentStudioApi() {
+  return contentStudioApi;
+}

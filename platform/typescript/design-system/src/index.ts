@@ -12,6 +12,7 @@ export * from "./atoms/Button";
 export * from "./atoms/TextField";
 export * from "./atoms/IconButton";
 export { Input } from "./atoms/Input";
+export type { InputProps } from "./atoms/Input";
 export * from "./atoms/InputAdornment";
 export * from "./atoms/TextArea";
 export * from "./atoms/Badge";
@@ -47,6 +48,10 @@ export * from "./atoms/AILabel";
 export * from "./atoms/ConfidenceBadge";
 export * from "./atoms/OperationStatus";
 export * from "./atoms/SyncStatusIndicator";
+export * from "./atoms/AlertDialog";
+export * from "./atoms/ScrollArea";
+export * from "./atoms/Popover";
+export * from "./atoms/Command";
 
 // Molecules
 export * from "./molecules/Accordion";
@@ -91,6 +96,9 @@ export * from "./molecules/UsageStatsCard";
 export * from "./molecules/PolicyCard";
 export * from "./molecules/PermissionBanner";
 export * from "./molecules/ReviewRequiredBanner";
+export { ResponsiveTable } from "./molecules/ResponsiveTable/ResponsiveTable";
+export type { ResponsiveTableProps } from "./molecules/ResponsiveTable/ResponsiveTable";
+export * from "./atoms/ResponsiveImage/ResponsiveImage";
 
 // Organisms
 export * from "./organisms/DashboardLayout";

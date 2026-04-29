@@ -7,7 +7,7 @@
 
 import { clsx } from 'clsx';
 
-export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'low' | 'medium' | 'high' | 'critical';
 
 interface RiskBadgeProps {
     riskLevel: RiskLevel;
@@ -16,7 +16,7 @@ interface RiskBadgeProps {
     className?: string;
 }
 
-const riskColors: Record<RiskLevel, { bg: string; text: string; border: string }> = {
+const riskColors: Record<'LOW' | 'MEDIUM' | 'HIGH', { bg: string; text: string; border: string }> = {
     LOW: {
         bg: 'bg-green-100',
         text: 'text-green-800',
@@ -34,7 +34,7 @@ const riskColors: Record<RiskLevel, { bg: string; text: string; border: string }
     },
 };
 
-const riskLabels: Record<RiskLevel, string> = {
+const riskLabels: Record<'LOW' | 'MEDIUM' | 'HIGH', string> = {
     LOW: 'Low Risk',
     MEDIUM: 'Medium Risk',
     HIGH: 'High Risk - Review Required',
@@ -52,7 +52,9 @@ export function RiskBadge({
     size = 'md',
     className
 }: RiskBadgeProps) {
-    const colors = riskColors[riskLevel];
+    const normalized = riskLevel.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH';
+    const safeLevel: 'LOW' | 'MEDIUM' | 'HIGH' = normalized === 'LOW' || normalized === 'MEDIUM' || normalized === 'HIGH' ? normalized : 'HIGH';
+    const colors = riskColors[safeLevel];
 
     return (
         <span
@@ -64,18 +66,18 @@ export function RiskBadge({
                 sizeClasses[size],
                 className
             )}
-            title={riskLabels[riskLevel]}
+            title={riskLabels[safeLevel]}
         >
             <span
                 className={clsx(
                     'inline-block rounded-full',
                     size === 'sm' ? 'h-1.5 w-1.5' : size === 'md' ? 'h-2 w-2' : 'h-2.5 w-2.5',
-                    riskLevel === 'LOW' && 'bg-green-500',
-                    riskLevel === 'MEDIUM' && 'bg-yellow-500',
-                    riskLevel === 'HIGH' && 'bg-red-500'
+                    safeLevel === 'LOW' && 'bg-green-500',
+                    safeLevel === 'MEDIUM' && 'bg-yellow-500',
+                    safeLevel === 'HIGH' && 'bg-red-500'
                 )}
             />
-            {showLabel && <span>{riskLevel}</span>}
+            {showLabel && <span>{safeLevel}</span>}
         </span>
     );
 }

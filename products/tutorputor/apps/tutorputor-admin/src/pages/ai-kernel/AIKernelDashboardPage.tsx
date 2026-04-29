@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Tabs } from "@ghatana/design-system";
-import { globalRegistry } from "@tutorputor/learning-kernel";
-import { PluginCard } from "../../components/ai-kernel/PluginCard";
-import type { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
-
-// Import built-in plugins to ensure they are registered
 import {
+  globalRegistry,
   CBMProcessor,
   XAPIIngestor,
   LearningUnitValidator,
-} from "@tutorputor/learning-kernel";
+} from "@tutorputor/core/kernel";
+import { PluginCard } from "../../components/ai-kernel/PluginCard";
+import type { PluginMetadata } from "@tutorputor/contracts/v1/plugin-interfaces";
 
 export function AIKernelDashboardPage() {
   const navigate = useNavigate();
@@ -44,9 +42,10 @@ export function AIKernelDashboardPage() {
     // Fetch plugins from registry
     const allPlugins = globalRegistry.listAll().map((p) => ({
       ...p,
+      category: "general",
       status: "active" as const, // Mock status for now, registry doesn't expose status in listAll yet
     }));
-    setPlugins(allPlugins);
+    setPlugins(allPlugins as unknown as Array<PluginMetadata & { category: string; status: "active" | "inactive" | "error" }>);
   }, []);
 
   const stats = {

@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import fastifyJwt from "@fastify/jwt";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
+import { register as metricsRegistry, collectDefaultMetrics, Counter, Histogram } from "prom-client";
 import { getConfig } from "../config/config.js";
 import { getRedisClient } from "./redis-client.js";
 import { errorHandler } from "../core/middleware/error-handler.js";
@@ -42,7 +43,7 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
     const { PrismaClient } = await import("@tutorputor/core/db");
     app.prisma = new PrismaClient({
       datasourceUrl: process.env.DATABASE_URL,
-    }) as PrismaClient;
+    } as ConstructorParameters<typeof PrismaClient>[0]) as PrismaClient;
   }
 
   // 2. Setup Redis
@@ -108,10 +109,34 @@ export const setupCorePlugins: FastifyPluginAsync<CorePluginsOptions> = async (
     }
   });
 
-  // 10. Setup metrics endpoint (basic)
+  // 10. Setup Prometheus metrics registry
+  collectDefaultMetrics({ register: metricsRegistry });
+
+  const httpRequestCounter = new Counter({
+    name: "http_requests_total",
+    help: "Total number of HTTP requests",
+    labelNames: ["method", "route", "status_code"],
+    registers: [metricsRegistry],
+  });
+
+  const httpRequestDurationHistogram = new Histogram({
+    name: "http_request_duration_seconds",
+    help: "Duration of HTTP requests in seconds",
+    labelNames: ["method", "route", "status_code"],
+    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+    registers: [metricsRegistry],
+  });
+
+  app.addHook("onResponse", async (request, reply) => {
+    const route = (request as unknown as { routerPath?: string }).routerPath ?? "unknown";
+    const labels = { method: request.method, route, status_code: String(reply.statusCode) };
+    httpRequestCounter.inc(labels);
+    httpRequestDurationHistogram.observe(labels, reply.elapsedTime / 1000);
+  });
+
   app.get("/metrics", async (request, reply) => {
     reply.type("text/plain");
-    return reply.send("# TutorPutor Platform Metrics\n# TODO: Add Prometheus metrics\n");
+    return reply.send(await metricsRegistry.metrics());
   });
 
   // 11. Setup readiness check

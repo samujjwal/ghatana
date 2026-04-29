@@ -10,6 +10,10 @@
  * @doc.pattern Seed
  */
 
+// SimulationManifest type alias (avoids branded-ID issues in seed data)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SimulationManifest = Record<string, any>;
+
 // ============================================================================
 // Types (inline until contracts export is verified)
 // ============================================================================
@@ -1137,12 +1141,12 @@ export const pendulumDraftSim: SimulationManifest = {
 // ============================================================================
 
 export const allSimulationManifests: SimulationBlueprintSeed[] = [
-  fallingObjectsVacuumSim,
-  projectileMotionSim,
-  enzymeKineticsSim,
-  mitosisStagesSim,
-  sortingVisualizerSim,
-  pendulumDraftSim,
+  fallingObjectsVacuumSim as unknown as SimulationBlueprintSeed,
+  projectileMotionSim as unknown as SimulationBlueprintSeed,
+  enzymeKineticsSim as unknown as SimulationBlueprintSeed,
+  mitosisStagesSim as unknown as SimulationBlueprintSeed,
+  sortingVisualizerSim as unknown as SimulationBlueprintSeed,
+  pendulumDraftSim as unknown as SimulationBlueprintSeed,
 ];
 
 export const publishedSimulations = allSimulationManifests.filter(
@@ -1194,7 +1198,7 @@ export const simulationStats: Record<string, SimulationStats> = {
     avgSessionDuration: 15,
     completionRate: 0.72,
     avgAttemptsToSuccess: 4.2,
-    popularParameters: { inhibitorType: "competitive" },
+    popularParameters: { inhibitorType: 0 },
     rating: 4.5,
     ratingCount: 112,
   },
@@ -1214,7 +1218,7 @@ export const simulationStats: Record<string, SimulationStats> = {
     avgSessionDuration: 10,
     completionRate: 0.88,
     avgAttemptsToSuccess: 2.1,
-    popularParameters: { algorithm: "bubble" },
+    popularParameters: { algorithm: 0 },
     rating: 4.6,
     ratingCount: 201,
   },

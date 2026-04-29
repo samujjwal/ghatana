@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import type Stripe from "stripe";
 
 import type { TenantId } from "@tutorputor/contracts/v1/types";
 import {
@@ -244,12 +245,28 @@ export async function paymentRoutes(
         });
       }
 
-      // TODO: implement Stripe portal session creation when key is present
-      return reply.code(503).send({
-        error: "FeatureNotEnabled",
-        message:
-          "Billing portal is not available on this deployment. Contact your platform operator to enable Stripe integration.",
-      });
+      const tenantId = getTenantId(request) as TenantId;
+      const { prisma } = fastify as unknown as { prisma: { stripeCustomer: { findUnique: (args: { where: { tenantId: string } }) => Promise<{ stripeCustomerId: string } | null> } } };
+      const stripeCustomer = await prisma.stripeCustomer.findUnique({ where: { tenantId } });
+
+      if (!stripeCustomer) {
+        return reply.code(404).send({
+          error: "CustomerNotFound",
+          message: "No Stripe customer found for this tenant. Complete onboarding first.",
+        });
+      }
+
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2026-03-25.dahlia" });
+      const sessionParams: Stripe.BillingPortal.SessionCreateParams = {
+        customer: stripeCustomer.stripeCustomerId,
+      };
+      if (parseResult.data.returnUrl) {
+        sessionParams.return_url = parseResult.data.returnUrl;
+      }
+      const session = await stripe.billingPortal.sessions.create(sessionParams);
+
+      return reply.code(200).send({ url: session.url });
     },
   );
 }

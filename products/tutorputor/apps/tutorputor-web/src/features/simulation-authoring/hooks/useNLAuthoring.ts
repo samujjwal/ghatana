@@ -354,9 +354,9 @@ export function useNLAuthoring(
     onSuccess: (result) => {
       const paramSuggestions: ParameterSuggestion[] = result.suggestions.map(
         (s) => ({
-          name: s.parameterName,
-          value: s.suggestedValue,
-          explanation: s.explanation,
+          name: s.param,
+          value: s.value,
+          explanation: s.rationale,
           confidence: s.confidence,
         }),
       );
@@ -395,9 +395,9 @@ export function useNLAuthoring(
     async (context: string): Promise<ParameterSuggestion[]> => {
       const result = await suggestMutation.mutateAsync(context);
       return result.suggestions.map((s) => ({
-        name: s.parameterName,
-        value: s.suggestedValue,
-        explanation: s.explanation,
+        name: s.param,
+        value: s.value,
+        explanation: s.rationale,
         confidence: s.confidence,
       }));
     },

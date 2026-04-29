@@ -12,8 +12,62 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-const AUTH_TOKEN_KEY = "tutorputor_auth_token";
-const REFRESH_TOKEN_KEY = "tutorputor_refresh_token";
+export const AUTH_TOKEN_KEY = "tutorputor_auth_token";
+export const REFRESH_TOKEN_KEY = "tutorputor_refresh_token";
+export const TENANT_ID_KEY = "tutorputor_tenant_id";
+
+export interface TutorPutorJwtUser {
+  id: string;
+  email: string;
+  tenantId: string;
+  role: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+}
+
+export function extractUserFromToken(token: string): TutorPutorJwtUser | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1])) as Record<string, unknown>;
+    return {
+      id: String(payload.sub ?? ""),
+      email: String(payload.email ?? ""),
+      tenantId: String(payload.tenantId ?? ""),
+      role: String(payload.role ?? "student"),
+      displayName: payload.name != null ? String(payload.name) : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function persistTokens(accessToken: string, refreshToken?: string): void {
+  localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+}
+
+export function readAccessToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function clearAuthStorage(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(TENANT_ID_KEY);
+}
+
+export function getSafeStorage(): Storage | null {
+  try {
+    return typeof window !== "undefined" ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface User {
   id: string;

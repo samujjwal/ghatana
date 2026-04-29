@@ -51,11 +51,12 @@ export enum AccountStatus {
 export class StripeConnectService {
   private stripe: Stripe;
   private platformFeePercent: number;
-  private accountIdToUserId = new Map<string, string>();
+  private prisma: PrismaClient;
 
-  constructor(config: StripeConnectConfig) {
+  constructor(config: StripeConnectConfig, prisma: PrismaClient) {
     this.stripe = new Stripe(config.secretKey);
     this.platformFeePercent = config.platformFeePercent || 10; // 10% default platform fee
+    this.prisma = prisma;
   }
 
   /**
@@ -294,45 +295,139 @@ export class StripeConnectService {
   }
 
   /**
-   * Handle payout created event
+   * Handle payout created event — persist payout record to the database.
    */
   private async handlePayoutCreated(payout: Stripe.Payout): Promise<void> {
     logger.info(
       { payoutId: payout.id, amount: payout.amount, currency: payout.currency },
       "Payout created",
     );
-    // TODO: Store payout record in database
+
+    try {
+      const destinationId = typeof payout.destination === "string" ? payout.destination : "";
+      // Resolve tenant and user from the connected account mapping
+      const stripeAccount = destinationId
+        ? await this.prisma.stripeAccount.findUnique({
+            where: { accountId: destinationId },
+          })
+        : null;
+
+      const tenantId = stripeAccount ? "tenant-placeholder" : "default";
+      const userId = stripeAccount ? stripeAccount.userId : "unknown";
+
+      await this.prisma.payout.create({
+        data: {
+          tenantId,
+          stripeAccountId: destinationId,
+          stripePayoutId: payout.id,
+          amountCents: payout.amount,
+          currency: payout.currency,
+          status: payout.status,
+          arrivalDate: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null,
+          description: payout.description,
+          metadata: payout.metadata ? JSON.stringify(payout.metadata) : null,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        { payoutId: payout.id, error: error instanceof Error ? error.message : String(error) },
+        "Failed to persist payout created record",
+      );
+    }
   }
 
   /**
-   * Handle payout failed event
+   * Handle payout failed event — persist payout record and notify the seller.
    */
   private async handlePayoutFailed(payout: Stripe.Payout): Promise<void> {
     logger.error(
       { payoutId: payout.id, amount: payout.amount, failureMessage: payout.failure_message },
       "Payout failed",
     );
-    // TODO: Notify seller of payout failure
+
+    try {
+      const destinationId = typeof payout.destination === "string" ? payout.destination : "";
+      const stripeAccount = destinationId
+        ? await this.prisma.stripeAccount.findUnique({
+            where: { accountId: destinationId },
+          })
+        : null;
+
+      const tenantId = stripeAccount ? "tenant-placeholder" : "default";
+      const userId = stripeAccount ? stripeAccount.userId : "unknown";
+
+      // Upsert the payout record so it reflects the failed status
+      await this.prisma.payout.upsert({
+        where: { stripePayoutId: payout.id },
+        create: {
+          tenantId,
+          stripeAccountId: destinationId,
+          stripePayoutId: payout.id,
+          amountCents: payout.amount,
+          currency: payout.currency,
+          status: payout.status,
+          arrivalDate: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null,
+          description: payout.description,
+          metadata: payout.metadata ? JSON.stringify(payout.metadata) : null,
+        },
+        update: {
+          status: payout.status,
+        },
+      });
+
+      // Create a payout failure notification
+      await this.prisma.payoutNotification.create({
+        data: {
+          tenantId,
+          payoutId: payout.id,
+          stripePayoutId: payout.id,
+          userId,
+          notificationType: "payout_failed",
+          status: "PENDING",
+          subject: "Payout Failed",
+          body: `Your payout of ${payout.amount} ${payout.currency} failed: ${payout.failure_message ?? "Unknown reason"}`,
+          failureReason: payout.failure_message ?? "Unknown",
+          actionRequired: true,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        { payoutId: payout.id, error: error instanceof Error ? error.message : String(error) },
+        "Failed to persist payout failure record or notification",
+      );
+    }
   }
 
   /**
-   * Database operations (to be implemented with actual Prisma calls)
+   * Database operations — backed by Prisma
    */
   private async saveAccountToDatabase(
     userId: string,
     accountId: string,
     status: AccountStatus,
   ): Promise<void> {
-    // Store stripe account mapping for future lookups
-    // Note: This requires StripeAccount Prisma model to be added to schema
-    // For now, we use a simple in-memory mapping (not production-ready)
-    this.accountIdToUserId.set(accountId, userId);
+    await this.prisma.stripeAccount.upsert({
+      where: { accountId },
+      create: {
+        userId,
+        accountId,
+        status: this.mapAccountStatus(status),
+        country: "US",
+        email: "",
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        platformFeePercent: this.platformFeePercent,
+      },
+      update: {
+        userId,
+        status: this.mapAccountStatus(status),
+      },
+    });
   }
 
   private async getUserIdByAccountId(accountId: string): Promise<string | null> {
-    // Retrieve userId from in-memory mapping
-    // Note: This should use Prisma StripeAccount model in production
-    return this.accountIdToUserId.get(accountId) ?? null;
+    const account = await this.prisma.stripeAccount.findUnique({ where: { accountId } });
+    return account?.userId ?? null;
   }
 
   private async updateAccountStatus(
@@ -340,11 +435,25 @@ export class StripeConnectService {
     accountId: string,
     status: AccountStatus,
   ): Promise<void> {
-    // Update account status in mapping
-    // Note: This should update Prisma StripeAccount model in production
-    this.accountIdToUserId.set(accountId, userId);
-    //   data: { status }
-    // });
+    await this.prisma.stripeAccount.update({
+      where: { accountId },
+      data: { status: this.mapAccountStatus(status) },
+    });
+  }
+
+  private mapAccountStatus(status: AccountStatus): "PENDING" | "ONBOARDING" | "ENABLED" | "RESTRICTED" | "DISABLED" {
+    switch (status) {
+      case AccountStatus.ONBOARDING:
+        return "ONBOARDING";
+      case AccountStatus.ENABLED:
+        return "ENABLED";
+      case AccountStatus.RESTRICTED:
+        return "RESTRICTED";
+      case AccountStatus.DISABLED:
+        return "DISABLED";
+      default:
+        return "PENDING";
+    }
   }
 }
 
@@ -353,12 +462,15 @@ export class StripeConnectService {
  */
 let stripeConnectServiceInstance: StripeConnectService | null = null;
 
-export function getStripeConnectService(config?: StripeConnectConfig): StripeConnectService {
+export function getStripeConnectService(config?: StripeConnectConfig, prisma?: PrismaClient): StripeConnectService {
   if (!stripeConnectServiceInstance) {
     if (!config) {
       throw new Error("StripeConnectService config required for first initialization");
     }
-    stripeConnectServiceInstance = new StripeConnectService(config);
+    if (!prisma) {
+      throw new Error("StripeConnectService prisma client required for first initialization");
+    }
+    stripeConnectServiceInstance = new StripeConnectService(config, prisma);
   }
   return stripeConnectServiceInstance;
 }

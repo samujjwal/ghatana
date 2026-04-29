@@ -4591,3 +4591,140 @@ model RegenerationCandidate {
   @@index([tenantId, assetId])
   @@index([tenantId, trigger])
 }
+
+// =============================================================================
+// Content Evaluation – Remediation Queue
+// =============================================================================
+
+enum RemediationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  DISMISSED
+}
+
+model RemediationQueue {
+  id           String            @id @default(cuid())
+  tenantId     String
+  experienceId String
+  artifactId   String
+  contentType  String
+
+  // Evaluation context
+  trustScore       Float
+  publishDecision  String
+  triggerReason    String
+  remediationNotes String?
+
+  // Processing status
+  status      RemediationStatus @default(PENDING)
+  assignedTo  String?           // AI agent or worker ID
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  // Retry tracking
+  attemptCount Int       @default(0)
+  lastAttemptAt DateTime?
+  nextAttemptAt DateTime?
+
+  // Result
+  resultArtifactId String?
+  resultValidationId String?
+
+  metadata Json? // { originalScores, appliedChanges, validationResults }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, experienceId])
+  @@index([tenantId, artifactId])
+  @@index([status, nextAttemptAt])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Stripe Tax – Transaction Records for Compliance Reporting
+// =============================================================================
+
+model TaxTransaction {
+  id              String   @id @default(cuid())
+  tenantId        String
+
+  // Stripe references
+  stripeTaxCalculationId String
+  stripeTaxTransactionId String? @unique
+  stripePaymentIntentId  String?
+
+  // Transaction details
+  amountCents     Int
+  taxAmountCents  Int
+  currency        String   @default("usd")
+  country         String
+  state           String?
+  postalCode      String?
+
+  // Tax breakdown (stored as JSON for flexibility)
+  taxBreakdown    Json? // Array of { jurisdiction, ratePercentage, taxType, amountCents }
+
+  // Compliance
+  reference       String? // External reference (invoice number, etc.)
+  reportedAt      DateTime?
+  reportId        String? // Link to generated compliance report
+
+  metadata        Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, country, state])
+  @@index([tenantId, reportId])
+  @@index([stripeTaxTransactionId])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Payout Failure Notifications
+// =============================================================================
+
+enum PayoutNotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model PayoutNotification {
+  id              String                  @id @default(cuid())
+  tenantId        String
+  payoutId        String
+  stripePayoutId  String
+  userId          String
+
+  notificationType String // "payout_failed", "payout_created", "payout_delayed"
+  status          PayoutNotificationStatus @default(PENDING)
+
+  // Delivery channels
+  emailSent       Boolean  @default(false)
+  emailSentAt     DateTime?
+  pushSent        Boolean  @default(false)
+  pushSentAt      DateTime?
+
+  // Content
+  subject         String?
+  body            String?
+  failureReason   String?
+  actionRequired  Boolean  @default(false)
+
+  metadata        Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([tenantId, status])
+  @@index([stripePayoutId])
+  @@index([createdAt])
+}

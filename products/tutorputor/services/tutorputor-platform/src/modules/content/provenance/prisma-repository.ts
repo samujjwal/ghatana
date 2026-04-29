@@ -10,6 +10,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma } from "@tutorputor/core/db";
 import type {
   ProvenanceNode,
   ProvenanceRepository,
@@ -30,8 +31,8 @@ export class PrismaProvenanceRepository implements ProvenanceRepository {
         model: node.source.model,
         modelVersion: node.source.modelVersion,
         promptHash: node.source.promptHash,
-        sourceDocumentRef: node.source.sourceDocumentRef,
-        context: node.source.context as Record<string, unknown> | null,
+        sourceDocumentRef: node.source.sourceDocumentRef ?? null,
+        context: node.source.context !== undefined ? (node.source.context as Prisma.InputJsonValue) : Prisma.JsonNull,
         generatedAt: new Date(node.generatedAt),
         schemaVersion: node.schemaVersion,
       },

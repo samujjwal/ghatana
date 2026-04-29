@@ -157,7 +157,7 @@ export function TrashBin({
         <div className="flex items-center gap-4">
           <Checkbox
             checked={selectedIds.length === items.length && items.length > 0}
-            onCheckedChange={toggleAll}
+            onChange={toggleAll}
             id="select-all"
           />
           <label htmlFor="select-all" className="text-sm font-medium">
@@ -216,7 +216,7 @@ export function TrashBin({
               <div className="flex items-center gap-4">
                 <Checkbox
                   checked={selectedIds.includes(item.id)}
-                  onCheckedChange={() => toggleSelection(item.id)}
+                  onChange={() => toggleSelection(item.id)}
                 />
 
                 <div className="p-2 bg-gray-100 rounded-lg">

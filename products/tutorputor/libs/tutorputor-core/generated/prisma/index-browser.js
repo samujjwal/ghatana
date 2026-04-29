@@ -24,12 +24,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 7.8.0
- * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
+ * Prisma Client JS version: 7.7.0
+ * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
  */
 Prisma.prismaVersion = {
-  client: "7.8.0",
-  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
+  client: "7.7.0",
+  engine: "75cbdc1eb7150937890ad5465d861175c6624711"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -2416,6 +2416,23 @@ exports.Prisma.GenerationRequestScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ProvenanceNodeScalarFieldEnum = {
+  id: 'id',
+  generationRequestId: 'generationRequestId',
+  tenantId: 'tenantId',
+  claimRef: 'claimRef',
+  kind: 'kind',
+  assertionText: 'assertionText',
+  model: 'model',
+  modelVersion: 'modelVersion',
+  promptHash: 'promptHash',
+  sourceDocumentRef: 'sourceDocumentRef',
+  context: 'context',
+  generatedAt: 'generatedAt',
+  schemaVersion: 'schemaVersion',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.GenerationJobScalarFieldEnum = {
   id: 'id',
   requestId: 'requestId',
@@ -2516,6 +2533,72 @@ exports.Prisma.RegenerationCandidateScalarFieldEnum = {
   generationRequestId: 'generationRequestId',
   resolvedBy: 'resolvedBy',
   resolvedAt: 'resolvedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RemediationQueueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  experienceId: 'experienceId',
+  artifactId: 'artifactId',
+  contentType: 'contentType',
+  trustScore: 'trustScore',
+  publishDecision: 'publishDecision',
+  triggerReason: 'triggerReason',
+  remediationNotes: 'remediationNotes',
+  status: 'status',
+  assignedTo: 'assignedTo',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  attemptCount: 'attemptCount',
+  lastAttemptAt: 'lastAttemptAt',
+  nextAttemptAt: 'nextAttemptAt',
+  resultArtifactId: 'resultArtifactId',
+  resultValidationId: 'resultValidationId',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.TaxTransactionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  stripeTaxCalculationId: 'stripeTaxCalculationId',
+  stripeTaxTransactionId: 'stripeTaxTransactionId',
+  stripePaymentIntentId: 'stripePaymentIntentId',
+  amountCents: 'amountCents',
+  taxAmountCents: 'taxAmountCents',
+  currency: 'currency',
+  country: 'country',
+  state: 'state',
+  postalCode: 'postalCode',
+  taxBreakdown: 'taxBreakdown',
+  reference: 'reference',
+  reportedAt: 'reportedAt',
+  reportId: 'reportId',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PayoutNotificationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  payoutId: 'payoutId',
+  stripePayoutId: 'stripePayoutId',
+  userId: 'userId',
+  notificationType: 'notificationType',
+  status: 'status',
+  emailSent: 'emailSent',
+  emailSentAt: 'emailSentAt',
+  pushSent: 'pushSent',
+  pushSentAt: 'pushSentAt',
+  subject: 'subject',
+  body: 'body',
+  failureReason: 'failureReason',
+  actionRequired: 'actionRequired',
+  metadata: 'metadata',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -3236,6 +3319,21 @@ exports.RegenerationCandidateStatus = exports.$Enums.RegenerationCandidateStatus
   DISMISSED: 'DISMISSED'
 };
 
+exports.RemediationStatus = exports.$Enums.RemediationStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  DISMISSED: 'DISMISSED'
+};
+
+exports.PayoutNotificationStatus = exports.$Enums.PayoutNotificationStatus = {
+  PENDING: 'PENDING',
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  FAILED: 'FAILED'
+};
+
 exports.Prisma.ModelName = {
   Module: 'Module',
   ModuleTag: 'ModuleTag',
@@ -3395,12 +3493,16 @@ exports.Prisma.ModelName = {
   EmbeddingVector: 'EmbeddingVector',
   RecommendationEdge: 'RecommendationEdge',
   GenerationRequest: 'GenerationRequest',
+  ProvenanceNode: 'ProvenanceNode',
   GenerationJob: 'GenerationJob',
   GenerationReplayManifest: 'GenerationReplayManifest',
   EvaluationRecord: 'EvaluationRecord',
   GenerationReviewDecision: 'GenerationReviewDecision',
   ExplorerEvent: 'ExplorerEvent',
-  RegenerationCandidate: 'RegenerationCandidate'
+  RegenerationCandidate: 'RegenerationCandidate',
+  RemediationQueue: 'RemediationQueue',
+  TaxTransaction: 'TaxTransaction',
+  PayoutNotification: 'PayoutNotification'
 };
 
 /**

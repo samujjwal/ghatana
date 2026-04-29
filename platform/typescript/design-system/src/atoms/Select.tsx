@@ -32,6 +32,9 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
 
   /** MUI-compat styling */
   sx?: SxProps;
+
+  /** shadcn-compat value change callback */
+  onValueChange?: (value: string) => void;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(

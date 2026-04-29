@@ -47,8 +47,6 @@ describe('GenerationGovernancePanel', () => {
                 },
             ],
             total: 1,
-            limit: 8,
-            offset: 0,
         });
 
         vi.mocked(contentStudioApi.getGenerationRequest).mockResolvedValue({

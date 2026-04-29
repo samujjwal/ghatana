@@ -43,16 +43,16 @@ export function EvidenceEditor({ evidence, claims, onChange }: EvidenceEditorPro
 
     const handleAddObservable = (evidenceIndex: number) => {
         const ev = evidence[evidenceIndex];
-        const newObservable: { name: string; type: 'string' | 'number' | 'boolean' | 'enum' | 'vector2d' } = { name: '', type: 'string' };
+        const newObservable = { name: '', type: 'string' as const };
         handleUpdateEvidence(evidenceIndex, {
-            observables: [...(ev.observables || []), newObservable]
+            observables: [...(ev.observables || []), newObservable as import('@tutorputor/contracts/v1/learning-unit').Observable]
         });
     };
 
     const handleUpdateObservable = (evidenceIndex: number, obsIndex: number, updates: Partial<{ name: string; type: 'string' | 'number' | 'boolean' | 'enum' | 'vector2d' }>) => {
         const ev = evidence[evidenceIndex];
         const newObservables = [...(ev.observables || [])];
-        newObservables[obsIndex] = { ...newObservables[obsIndex], ...updates };
+        newObservables[obsIndex] = { ...newObservables[obsIndex], ...updates } as import('@tutorputor/contracts/v1/learning-unit').Observable;
         handleUpdateEvidence(evidenceIndex, { observables: newObservables });
     };
 
@@ -112,7 +112,7 @@ export function EvidenceEditor({ evidence, claims, onChange }: EvidenceEditorPro
                                         </label>
                                         <select
                                             value={ev.type}
-                                            onChange={(e) => handleUpdateEvidence(index, { type: e.target.value as typeof EVIDENCE_TYPES[number] })}
+                                            onChange={(e) => handleUpdateEvidence(index, { type: e.target.value as import('@tutorputor/contracts/v1/learning-unit').EvidenceType })}
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-transparent capitalize"
                                         >
                                             {EVIDENCE_TYPES.map(t => (
@@ -154,7 +154,7 @@ export function EvidenceEditor({ evidence, claims, onChange }: EvidenceEditorPro
                                                 />
                                                 <select
                                                     value={obs.type}
-                                                    onChange={(e) => handleUpdateObservable(index, obsIndex, { type: e.target.value as typeof OBSERVABLE_TYPES[number] })}
+                                                    onChange={(e) => handleUpdateObservable(index, obsIndex, { type: e.target.value as import('@tutorputor/contracts/v1/learning-unit').Observable['type'] })}
                                                     className="w-24 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                                                 >
                                                     {OBSERVABLE_TYPES.map(t => (

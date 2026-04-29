@@ -152,7 +152,9 @@ export const router = createBrowserRouter([
       {
         path: "simulations/studio/:id?",
         lazy: async () => {
-          const module = await import("../pages/SimulationStudio");
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore – SimulationStudio is excluded from TS compilation (experimental)
+          const module = await import("../pages/SimulationStudio") as { default: React.ComponentType };
           return { Component: module.default };
         },
       },

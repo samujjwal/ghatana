@@ -53,7 +53,7 @@ export function useAuth() {
 
     async function checkAuth() {
       const storedAccessToken = readAccessToken();
-      const storedRefreshToken = getSafeStorage().getItem(REFRESH_TOKEN_KEY);
+      const storedRefreshToken = getSafeStorage()?.getItem(REFRESH_TOKEN_KEY);
 
       try {
         const response = await fetch("/api/v1/auth/me", {
@@ -72,7 +72,7 @@ export function useAuth() {
           setAuthToken(resolvedToken);
           setAuth({
             user: resolvedUser,
-            tenantId: (data.tenantId ?? resolvedUser.tenantId ?? DEV_TENANT_ID ?? null) as TenantId | null,
+            tenantId: (data.tenantId ?? (resolvedUser as unknown as { tenantId?: TenantId }).tenantId ?? DEV_TENANT_ID ?? null) as TenantId | null,
             accessToken: resolvedToken,
             isLoading: false,
           });
@@ -92,7 +92,7 @@ export function useAuth() {
               firstName: "Sarah",
               lastName: "Admin",
               fullName: "Sarah Admin",
-            } as UserSummary,
+            } as unknown as UserSummary,
             tenantId: DEV_TENANT_ID as TenantId,
             accessToken: "dev-token",
             isLoading: false,
@@ -117,7 +117,7 @@ export function useAuth() {
               firstName: "Sarah",
               lastName: "Admin",
               fullName: "Sarah Admin",
-            } as UserSummary,
+            } as unknown as UserSummary,
             tenantId: DEV_TENANT_ID as TenantId,
             accessToken: "dev-token",
             isLoading: false,
@@ -152,7 +152,7 @@ export function useAuth() {
           ...(auth.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
         },
         body: JSON.stringify({
-          refreshToken: getSafeStorage().getItem(REFRESH_TOKEN_KEY),
+          refreshToken: getSafeStorage()?.getItem(REFRESH_TOKEN_KEY),
         }),
       });
       clearAuthStorage();

@@ -11,6 +11,7 @@
  */
 
 import { createStandaloneLogger } from "@tutorputor/core/logger";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import Stripe from "stripe";
 
 const logger = createStandaloneLogger({ component: "StripeTaxService" });
@@ -59,9 +60,11 @@ export interface TaxCalculationResult {
  */
 export class StripeTaxService {
   private stripe: Stripe;
+  private prisma: TutorPrismaClient;
 
-  constructor(secretKey: string) {
+  constructor(secretKey: string, prisma: TutorPrismaClient) {
     this.stripe = new Stripe(secretKey);
+    this.prisma = prisma;
   }
 
   /**
@@ -358,7 +361,7 @@ export class StripeTaxService {
       totalTaxCollected: number;
       jurisdictions: Array<{
         country: string;
-        state?: string;
+        state: string | undefined;
         taxAmount: number;
         transactionCount: number;
       }>;
@@ -369,36 +372,55 @@ export class StripeTaxService {
       amount: number;
       taxAmount: number;
       country: string;
-      state?: string;
-      taxRateId?: string;
+      state: string | undefined;
+      taxRateId: string | undefined;
     }>;
   }> {
     logger.info({ tenantId: params.tenantId, startDate: params.startDate, endDate: params.endDate }, "Generating tax compliance report");
 
     try {
-      // Query tax transactions from the database
-      // Note: This assumes a TaxTransaction model exists in the schema
-      // For now, we'll return a placeholder structure
       const reportId = `tax-report-${Date.now()}-${params.tenantId}`;
-      
-      // In production, this would query actual tax transactions
-      // const transactions = await this.prisma.taxTransaction.findMany({
-      //   where: {
-      //     tenantId: params.tenantId,
-      //     createdAt: { gte: params.startDate, lte: params.endDate },
-      //   },
-      //   orderBy: { createdAt: 'asc' },
-      // });
+
+      const transactions = await this.prisma.taxTransaction.findMany({
+        where: {
+          tenantId: params.tenantId,
+          createdAt: { gte: params.startDate, lte: params.endDate },
+        },
+        orderBy: { createdAt: "asc" },
+      }) as Array<{
+        id: string;
+        createdAt: Date;
+        amountCents: number;
+        taxAmountCents: number;
+        country: string;
+        state: string | null;
+        stripeTaxTransactionId: string | null;
+      }>;
+
+      const totalTaxCollected = transactions.reduce((sum: number, tx) => sum + tx.taxAmountCents, 0);
+
+      // Aggregate by jurisdiction
+      const jurisdictionMap = new Map<string, { country: string; state: string | undefined; taxAmount: number; transactionCount: number }>();
+      for (const tx of transactions) {
+        const key = tx.state ? `${tx.country}|${tx.state}` : tx.country;
+        const entry = jurisdictionMap.get(key);
+        if (entry) {
+          entry.taxAmount += tx.taxAmountCents;
+          entry.transactionCount += 1;
+        } else {
+          jurisdictionMap.set(key, {
+            country: tx.country,
+            state: tx.state ?? undefined,
+            taxAmount: tx.taxAmountCents,
+            transactionCount: 1,
+          });
+        }
+      }
 
       const summary = {
-        totalTransactions: 0,
-        totalTaxCollected: 0,
-        jurisdictions: [] as Array<{
-          country: string;
-          state?: string;
-          taxAmount: number;
-          transactionCount: number;
-        }>,
+        totalTransactions: transactions.length,
+        totalTaxCollected,
+        jurisdictions: Array.from(jurisdictionMap.values()),
       };
 
       return {
@@ -406,7 +428,15 @@ export class StripeTaxService {
         generatedAt: new Date(),
         period: { start: params.startDate, end: params.endDate },
         summary,
-        transactions: [],
+        transactions: transactions.map((tx) => ({
+          id: tx.id,
+          date: tx.createdAt,
+          amount: tx.amountCents,
+          taxAmount: tx.taxAmountCents,
+          country: tx.country,
+          state: tx.state ?? undefined,
+          taxRateId: tx.stripeTaxTransactionId ?? undefined,
+        })),
       };
     } catch (error) {
       logger.error(
@@ -459,12 +489,15 @@ export class StripeTaxService {
  */
 let stripeTaxServiceInstance: StripeTaxService | null = null;
 
-export function getStripeTaxService(secretKey?: string): StripeTaxService {
+export function getStripeTaxService(secretKey?: string, prisma?: TutorPrismaClient): StripeTaxService {
   if (!stripeTaxServiceInstance) {
     if (!secretKey) {
       throw new Error("StripeTaxService secretKey required for first initialization");
     }
-    stripeTaxServiceInstance = new StripeTaxService(secretKey);
+    if (!prisma) {
+      throw new Error("StripeTaxService prisma client required for first initialization");
+    }
+    stripeTaxServiceInstance = new StripeTaxService(secretKey, prisma);
   }
   return stripeTaxServiceInstance;
 }

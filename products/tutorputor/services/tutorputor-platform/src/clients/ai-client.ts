@@ -437,7 +437,7 @@ export class AiClient {
       });
     });
 
-    this.breaker.on("failure", (error) => {
+    this.breaker.on("failure", (error: unknown) => {
       this.logger.error({
         message: "AI gRPC invocation failed",
         grpcHost: GRPC_HOST,

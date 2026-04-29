@@ -4,12 +4,12 @@
   "version": "0.1.0",
   "description": "Shared chart primitives built on top of Recharts with Ghatana theming",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/charts/src/index.js",
+  "types": "./dist/charts/src/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/charts/src/index.d.ts",
+      "import": "./dist/charts/src/index.js"
     }
   },
   "files": [

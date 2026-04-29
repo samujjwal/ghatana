@@ -7,8 +7,7 @@
  */
 
 import { PrismaClient } from "../../generated/prisma/index.js";
-import createPrismaRedisCache from "prisma-redis-cache";
-import Redis from "ioredis";
+import type Redis from "ioredis";
 
 /**
  * Optimized Prisma client configuration
@@ -29,30 +28,48 @@ export function createOptimizedPrismaClient(): PrismaClient {
 }
 
 /**
- * Redis-backed query cache for Prisma
- * TODO: Update to match current prisma-redis-cache API
+ * Redis-backed query cache for Prisma using a Prisma client extension.
+ * Wraps read queries for the listed models with a Redis TTL cache.
  */
-export function createPrismaCache(prisma: PrismaClient, redis: Redis) {
-  // Temporarily disabled - prisma-redis-cache API has changed
-  // Need to investigate proper configuration for current version
-  console.warn("Prisma cache not configured - using direct queries");
-  return null;
+export function createPrismaCache(prisma: PrismaClient, redis: Redis): PrismaClient {
+  const modelTtls: Record<string, number> = {
+    Assessment: 600,
+    LearningPath: 60,
+    User: 60,
+  };
 
-  // return createPrismaRedisCache({
-  //   models: [
-  //     // Note: Only cache models that exist in the Prisma schema
-  //     { model: "Assessment", ttl: 600 }, // 10 minutes
-  //     { model: "Content", ttl: 600 },
-  //     { model: "User", ttl: 60 }, // 1 minute
-  //   ],
-  //   redis,
-  //   onHit: (key: string) => {
-  //     console.log(`[CACHE HIT] ${key}`);
-  //   },
-  //   onMiss: (key: string) => {
-  //     console.log(`[CACHE MISS] ${key}`);
-  //   },
-  // });
+  return prisma.$extends({
+    query: {
+      $allModels: {
+        async findFirst({ model, operation, args, query }) {
+          const ttl = modelTtls[model];
+          if (!ttl) return query(args);
+          const key = `prisma:${model}:${operation}:${JSON.stringify(args)}`;
+          const cached = await redis.get(key);
+          if (cached) {
+            console.log(`[CACHE HIT] ${key}`);
+            return JSON.parse(cached) as ReturnType<typeof query>;
+          }
+          const result = await query(args);
+          await redis.setex(key, ttl, JSON.stringify(result));
+          return result;
+        },
+        async findMany({ model, operation, args, query }) {
+          const ttl = modelTtls[model];
+          if (!ttl) return query(args);
+          const key = `prisma:${model}:${operation}:${JSON.stringify(args)}`;
+          const cached = await redis.get(key);
+          if (cached) {
+            console.log(`[CACHE HIT] ${key}`);
+            return JSON.parse(cached) as ReturnType<typeof query>;
+          }
+          const result = await query(args);
+          await redis.setex(key, ttl, JSON.stringify(result));
+          return result;
+        },
+      },
+    },
+  }) as unknown as PrismaClient;
 }
 
 /**
@@ -168,48 +185,38 @@ export const indexRecommendations = {
   // High-frequency query indexes
   requiredIndexes: [
     {
-      table: "Simulation",
-      columns: ["domain", "difficulty"],
-      reason: "Filter by domain and difficulty",
-    },
-    {
-      table: "Simulation",
-      columns: ["createdAt"],
-      reason: "Sort by creation date",
-    },
-    {
-      table: "Animation",
-      columns: ["domain", "tags"],
-      reason: "Filter and search by tags",
-    },
-    {
       table: "Assessment",
       columns: ["userId", "status"],
       reason: "User assessment queries",
     },
     {
-      table: "Content",
-      columns: ["type", "published"],
-      reason: "Content listing",
+      table: "LearningPath",
+      columns: ["userId"],
+      reason: "User progress tracking",
     },
     {
-      table: "LearningPath",
-      columns: ["userId", "progress"],
-      reason: "User progress tracking",
+      table: "TaxTransaction",
+      columns: ["tenantId", "createdAt"],
+      reason: "Tenant-scoped date-range tax reporting",
+    },
+    {
+      table: "RemediationQueue",
+      columns: ["tenantId", "status"],
+      reason: "Remediation queue polling",
+    },
+    {
+      table: "Payout",
+      columns: ["tenantId", "stripePayoutId"],
+      reason: "Payout record lookup",
     },
   ],
 
   // Composite indexes for complex queries
   compositeIndexes: [
     {
-      table: "Simulation",
-      columns: ["domain", "difficulty", "createdAt"],
-      reason: "Combined filter and sort",
-    },
-    {
-      table: "Content",
-      columns: ["type", "domain", "published"],
-      reason: "Content explorer filters",
+      table: "TaxTransaction",
+      columns: ["tenantId", "country", "createdAt"],
+      reason: "Jurisdiction-level tax aggregation",
     },
   ],
 };
@@ -220,88 +227,9 @@ export const indexRecommendations = {
 export class OptimizedQueryBuilder {
   constructor(private prisma: PrismaClient) {}
 
-  // TODO: Re-enable when Simulation model is added to Prisma schema
-  // async findSimulations(filters: {
-  //   domain?: string;
-  //   difficulty?: string;
-  //   tags?: string[];
-  //   cursor?: string;
-  //   limit?: number;
-  // }) {
-  //   return this.prisma.simulation.findMany({
-  //     ...queryOptimization.cursorPagination(filters.cursor, filters.limit),
-  //     where: {
-  //       ...(filters.domain && { domain: filters.domain }),
-  //       ...(filters.difficulty && { difficulty: filters.difficulty }),
-  //       ...(filters.tags && { tags: { hasSome: filters.tags } }),
-  //     },
-  //     select: {
-  //       id: true,
-  //       name: true,
-  //       description: true,
-  //       domain: true,
-  //       difficulty: true,
-  //       duration: true,
-  //       thumbnail: true,
-  //       _count: {
-  //         select: { runs: true },
-  //       },
-  //     },
-  //   });
-  // }
-
-  // TODO: Re-enable when Animation model is added to Prisma schema
-  // async findAnimations(filters: {
-  //   domain?: string;
-  //   style?: string;
-  //   cursor?: string;
-  //   limit?: number;
-  // }) {
-  //   return this.prisma.animation.findMany({
-  //     ...queryOptimization.cursorPagination(filters.cursor, filters.limit),
-  //     where: {
-  //       ...(filters.domain && { domain: filters.domain }),
-  //       ...(filters.style && { style: filters.style }),
-  //     },
-  //     select: {
-  //       id: true,
-  //       name: true,
-  //       description: true,
-  //       domain: true,
-  //       style: true,
-  //       duration: true,
-  //       previewUrl: true,
-  //     },
-  //   });
-  // }
-
   async getUserLearningPath(userId: string) {
-    // Use proper unique constraint (id) instead of userId
     return this.prisma.learningPath.findFirst({
       where: { userId },
-      include: {
-        // TODO: Update include to match actual Prisma schema relations
-        // modules: {
-        //   orderBy: { order: "asc" },
-        //   include: {
-        //     content: {
-        //       select: {
-        //         id: true,
-        //         title: true,
-        //         type: true,
-        //         duration: true,
-        //       },
-        //     },
-        //   },
-        // },
-        // progress: {
-        //   select: {
-        //     completedModules: true,
-        //     totalModules: true,
-        //     percentage: true,
-        //   },
-        // },
-      },
     });
   }
 }

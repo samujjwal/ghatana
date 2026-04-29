@@ -267,7 +267,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   /**
    * Visual variant of the button.
    */
-  variant?: ButtonVariant | 'default' | 'secondary' | 'destructive' | 'primary' | 'contained' | 'outlined' | 'text';
+  variant?: ButtonVariant | 'default' | 'secondary' | 'destructive' | 'primary' | 'contained' | 'outlined' | 'outline' | 'text' | 'ghost' | 'link';
 
   /**
    * Tone controls the color palette.
@@ -313,6 +313,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    * Stretch to full width.
    */
   fullWidth?: boolean;
+
+  /** Alias for `loading` */
+  isLoading?: boolean;
+  /** Text to show during loading state */
+  loadingText?: string;
+  /** Alias for `leadingIcon` */
+  leftIcon?: React.ReactNode;
+  /** Alias for `trailingIcon` */
+  rightIcon?: React.ReactNode;
 }
 
 /**
@@ -328,6 +337,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     trailingIcon,
     endIcon,
     loading = false,
+    isLoading,
+    loadingText: _loadingText,
+    leftIcon,
+    rightIcon: _rightIcon,
     sx,
     fullWidth = false,
     className,
@@ -349,8 +362,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     ...rest
   } = props;
 
-  const resolvedLeadingIcon = leadingIcon ?? startIcon;
+  const resolvedLeadingIcon = leadingIcon ?? startIcon ?? leftIcon;
   const resolvedTrailingIcon = trailingIcon ?? endIcon;
+  const isActuallyLoading = loading || isLoading;
 
   const size: ButtonSize =
     sizeProp === 'small' ? 'sm' : sizeProp === 'medium' ? 'md' : sizeProp === 'large' ? 'lg' : sizeProp;
@@ -430,7 +444,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
     [onMouseUp]
   );
 
-  const isDisabled = Boolean(disabled || loading || rest['aria-disabled']);
+  const isDisabled = Boolean(disabled || isActuallyLoading || rest['aria-disabled']);
 
   const baseStyle: React.CSSProperties = {
     display: 'inline-flex',
@@ -466,14 +480,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
 
   const content = (
     <>
-      {loading && (
+      {isActuallyLoading && (
         <Spinner
           aria-hidden="true"
           size={size === 'lg' ? 'md' : 'sm'}
           color={currentState.foreground}
         />
       )}
-      {!loading && resolvedLeadingIcon ? (
+      {!isActuallyLoading && resolvedLeadingIcon ? (
         <span className="gh-button__icon--leading">{resolvedLeadingIcon}</span>
       ) : null}
       <span className="gh-button__label">{children}</span>
@@ -511,8 +525,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
         data-variant={variant}
         data-tone={tone}
         data-size={size}
-        data-loading={loading ? 'true' : undefined}
-        aria-busy={loading || undefined}
+        data-loading={isActuallyLoading ? 'true' : undefined}
+        aria-busy={isActuallyLoading || undefined}
       >
         {content}
       </a>
@@ -543,8 +557,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
       data-variant={variant}
       data-tone={tone}
       data-size={size}
-      data-loading={loading ? 'true' : undefined}
-      aria-busy={loading || undefined}
+      data-loading={isActuallyLoading ? 'true' : undefined}
+      aria-busy={isActuallyLoading || undefined}
     >
       {content}
     </button>

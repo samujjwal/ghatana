@@ -271,10 +271,10 @@ export const SimulationStudio: React.FC<SimulationStudioProps> = ({
           <div className="flex-1 overflow-y-auto p-4">
             {activeTab === 'entities' && (
               <EntitiesPanel
-                entities={manifest.entities}
+                entities={manifest.initialEntities}
                 selectedEntity={selectedEntity}
                 onSelectEntity={setSelectedEntity}
-                onUpdateEntities={(entities) => handleManifestChange({ entities })}
+                onUpdateEntities={(entities) => handleManifestChange({ initialEntities: entities })}
               />
             )}
 
@@ -332,6 +332,7 @@ export const SimulationStudio: React.FC<SimulationStudioProps> = ({
               totalDuration,
               isPlaying,
               playbackSpeed,
+              playbackRate: playbackSpeed,
               currentKeyframe,
               analytics: {},
             }}
@@ -438,11 +439,12 @@ const EntitiesPanel: React.FC<EntitiesPanelProps> = ({
 }) => {
   const addEntity = () => {
     const newEntity: SimEntityBase = {
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID() as unknown as SimEntityBase['id'],
+      type: 'element',
       label: `Element ${entities.length + 1}`,
-      entityType: 'element',
+      x: Math.random() * 200 - 100,
+      y: Math.random() * 200 - 100,
       visual: { color: '#4A90D9', size: 1, shape: 'rectangle', opacity: 1 },
-      position: { x: Math.random() * 200 - 100, y: Math.random() * 200 - 100 },
     };
     onUpdateEntities([...entities, newEntity]);
   };
@@ -513,13 +515,11 @@ const StepsPanel: React.FC<StepsPanelProps> = ({
 }) => {
   const addStep = () => {
     const newStep = {
-      id: crypto.randomUUID(),
-      stepNumber: steps.length + 1,
+      id: crypto.randomUUID() as unknown as import('@tutorputor/contracts/v1/simulation').SimStepId,
+      orderIndex: steps.length,
       description: `Step ${steps.length + 1}`,
-      algorithm: 'custom',
-      actions: [],
-      duration: 1000,
-    };
+      actions: [] as import('@tutorputor/contracts/v1/simulation').SimAction[],
+    } satisfies import('@tutorputor/contracts/v1/simulation').SimulationStep;
     onUpdateSteps([...steps, newStep]);
   };
 
@@ -707,23 +707,25 @@ const AIPanel: React.FC<AIPanelProps> = ({
 
 function createEmptyManifest(): SimulationManifest {
   return {
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID() as unknown as SimulationManifest['id'],
     version: '1.0',
     domain: 'CS_DISCRETE',
     title: 'New Simulation',
     description: '',
-    entities: [],
+    authorId: '' as unknown as SimulationManifest['authorId'],
+    tenantId: '' as unknown as SimulationManifest['tenantId'],
+    canvas: { width: 800, height: 600, backgroundColor: '#ffffff', gridEnabled: false, gridSize: 50, snapToGrid: false, coordinateSystem: 'screen' as const },
+    playback: { mode: 'step' as const, autoPlay: false, loop: false, speed: 1.0, stepDuration: 1000 },
+    initialEntities: [],
     steps: [],
-    keyframes: [],
-  };
+  } as unknown as SimulationManifest;
 }
 
 function createKeyframeFromManifest(manifest: SimulationManifest, stepIndex: number): SimKeyframe {
   return {
-    id: crypto.randomUUID(),
     timestamp: 0,
     stepIndex,
-    entities: manifest.entities,
+    entities: manifest.initialEntities,
     annotations: manifest.steps[stepIndex]?.annotations ?? [],
     camera: { x: 0, y: 0, zoom: 1 },
   };

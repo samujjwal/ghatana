@@ -321,7 +321,7 @@ export function VisualizationEditor({
                                     Edit
                                 </Button>
                                 <Button
-                                    variant="danger"
+                                    variant="destructive"
                                     size="sm"
                                     onClick={() => {
                                         if (window.confirm('Delete this visualization?')) {

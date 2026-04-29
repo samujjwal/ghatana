@@ -413,7 +413,13 @@ export class OllamaProvider extends BaseAIProvider {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as {
+        response: string;
+        prompt_eval_count?: number;
+        eval_count?: number;
+        done?: boolean;
+        model?: string;
+      };
 
       const aiResponse: AIResponse = {
         content: result.response,
@@ -424,7 +430,7 @@ export class OllamaProvider extends BaseAIProvider {
             (result.prompt_eval_count || 0) + (result.eval_count || 0),
         },
         finishReason: result.done ? "stop" : "length",
-        model: result.model,
+        model: result.model ?? "ollama",
         provider: "ollama",
       };
 
@@ -499,8 +505,8 @@ export class OllamaProvider extends BaseAIProvider {
       const response = await fetch(`${this.baseUrl}/api/tags`);
       if (!response.ok) return [];
 
-      const data = await response.json();
-      return data.models.map((model: any) => ({
+      const data = await response.json() as { models: Array<{ name: string }> };
+      return data.models.map((model) => ({
         id: model.name,
         provider: "ollama",
         name: model.name,

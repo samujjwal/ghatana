@@ -50,7 +50,7 @@ const TOOL_ISSUER =
   process.env.LTI_TOOL_ISSUER ?? "https://tutorputor.ghatana.com";
 const TOOL_CLIENT_ID = process.env.LTI_TOOL_CLIENT_ID ?? "tutorputor-lti-tool";
 
-type LtiKeyMaterial = unknown;
+type LtiKeyMaterial = CryptoKey | import("crypto").KeyObject;
 type RemoteJwkResolver = ReturnType<typeof jose.createRemoteJWKSet>;
 
 type LegacyLtiPrismaClient = PrismaClient & Record<string, any>;

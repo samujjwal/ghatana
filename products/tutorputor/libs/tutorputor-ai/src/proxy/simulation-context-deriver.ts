@@ -1059,7 +1059,7 @@ export function summarizeEntities(
       Object.entries(entity).filter(
         ([k]) =>
           !excludedKeys.has(k) &&
-          (entity as Record<string, unknown>)[k] !== undefined,
+          (entity as unknown as Record<string, unknown>)[k] !== undefined,
       ),
     ),
     role: inferEntityRoleForDomain(entity, domain),

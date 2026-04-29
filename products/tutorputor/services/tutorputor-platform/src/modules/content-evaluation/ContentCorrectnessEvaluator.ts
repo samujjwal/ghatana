@@ -192,12 +192,11 @@ export class ContentCorrectnessEvaluator {
       const contentBlocks = await this.prisma.moduleContentBlock.findMany({
         where: {
           moduleId,
-          deletedAt: null,
         },
         select: {
           id: true,
-          title: true,
-          content: true,
+          blockType: true,
+          payload: true,
         },
         take: 10,
       });
@@ -218,7 +217,7 @@ export class ContentCorrectnessEvaluator {
       const candidates = [
         ...contentBlocks.map((block) => ({
           id: block.id,
-          title: "Content Block",
+          title: `Content Block (${block.blockType})`,
           excerpt: typeof block.payload === "string" ? block.payload : JSON.stringify(block.payload),
         })),
         ...learningObjectives.map((obj) => ({

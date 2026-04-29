@@ -7,8 +7,7 @@
     "lib": ["ES2022"],
     "rootDir": "../..",
     "types": ["node"],
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types", "../../types"],
     "paths": {
       "@tutorputor/contracts": ["../../contracts/v1/index.ts"],
       "@tutorputor/contracts/*": ["../../contracts/*"],
@@ -24,7 +23,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "../../types/**/*.d.ts"],
   "exclude": [
     "dist",
     "node_modules",

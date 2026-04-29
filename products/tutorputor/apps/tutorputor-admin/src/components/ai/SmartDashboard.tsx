@@ -80,7 +80,7 @@ export function SmartDashboard({
 
       try {
         // Get AI intelligence for content
-        const intelligence = await aiServiceManager.analyzeContent(contentData);
+        const intelligence = await aiServiceManager.analyzeContent(contentData as unknown as Record<string, unknown>);
 
         // Generate insights from intelligence
         const generatedInsights = generateInsights(intelligence);

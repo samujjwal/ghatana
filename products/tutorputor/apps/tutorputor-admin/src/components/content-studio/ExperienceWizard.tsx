@@ -152,7 +152,13 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
         }
     }, [query]);
 
-    const handleCreateExperience = useCallback(async (variation: unknown) => {
+    const handleCreateExperience = useCallback(async (variation: {
+        claims?: string[];
+        keywords?: string[];
+        estimatedTimeMinutes?: number;
+        gradeAdaptation?: string;
+        simulation?: { id?: string; version?: string };
+    } | null | undefined) => {
         if (!variation) return;
 
         try {
@@ -187,7 +193,7 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
     }, [query, onExperienceCreated]);
 
     const handleSelectExisting = useCallback((experience: unknown) => {
-        onExperienceCreated(experience);
+        onExperienceCreated(experience as LearningExperience);
     }, [onExperienceCreated]);
 
     // Main render - simplified UI (embedded mode)

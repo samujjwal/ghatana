@@ -34,7 +34,7 @@ export async function initializeErrorTracking(): Promise<void> {
     dsn,
     environment: getEnvironment(),
     tracesSampleRate: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? "0.1"),
-    beforeSend(event): Sentry.Event | null {
+    beforeSend(event): import('@sentry/browser').ErrorEvent | null {
       if (event.request?.headers) {
         delete event.request.headers.Authorization;
         delete event.request.headers.authorization;
@@ -56,17 +56,18 @@ export function captureClientError(
     return;
   }
 
-  sentryModule.withScope((scope) => {
+  const sentry = sentryModule;
+  sentry.withScope((scope) => {
     if (context) {
       scope.setContext("client", context);
     }
 
     if (error instanceof Error) {
-      sentryModule.captureException(error);
+      sentry.captureException(error);
       return;
     }
 
-    sentryModule.captureMessage(String(error), "error");
+    sentry.captureMessage(String(error), "error" as import('@sentry/browser').SeverityLevel);
   });
 }
 
@@ -79,12 +80,13 @@ export function captureClientMessage(
     return;
   }
 
-  sentryModule.withScope((scope) => {
+  const sentry = sentryModule;
+  sentry.withScope((scope) => {
     if (context) {
       scope.setContext("client", context);
     }
 
-    scope.setLevel(level);
-    sentryModule.captureMessage(message, level);
+    scope.setLevel(level as import('@sentry/browser').SeverityLevel);
+    sentry.captureMessage(message, level as import('@sentry/browser').SeverityLevel);
   });
 }

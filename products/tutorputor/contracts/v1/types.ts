@@ -266,6 +266,7 @@ export interface ModuleDetail extends ModuleSummary {
   contentBlocks: ContentBlock[];
   prerequisites: ModuleId[];
   version: number;
+  authorId?: UserId;
 }
 
 export type EnrollmentStatus = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
@@ -462,7 +463,7 @@ export interface AnalyticsSummary {
 // Advanced Analytics
 // =============================================================================
 
-export type RiskLevel = "low" | "medium" | "high" | "critical";
+export type RiskLevel = "low" | "medium" | "high" | "critical" | "LOW" | "MEDIUM" | "HIGH";
 
 /**
  * Student risk indicator for early warning system.

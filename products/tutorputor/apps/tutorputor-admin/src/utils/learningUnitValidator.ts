@@ -34,7 +34,7 @@ export function validateLearningUnit(lu: LearningUnit): ValidationResult {
     errors.push("Claims: At least one claim is required.");
   }
   lu.claims.forEach((claim) => {
-    if (!claim.bloomLevel) {
+    if (!claim.bloom) {
       warnings.push(
         `Claim "${claim.text.substring(0, 20)}...": Missing Bloom's taxonomy level.`,
       );

@@ -10,9 +10,21 @@ import {
 } from "@ghatana/design-system";
 import { useAuth } from "../hooks/useAuth";
 import type {
-  UserSummary,
+  UserSummary as UserSummaryBase,
   PaginatedResult,
 } from "@tutorputor/contracts/v1/types";
+
+type UserSummary = UserSummaryBase & {
+  avatarUrl?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  tenantId?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
+  status?: string;
+  classroomCount?: number;
+};
 
 export function UsersPage() {
   const { tenantId } = useAuth();

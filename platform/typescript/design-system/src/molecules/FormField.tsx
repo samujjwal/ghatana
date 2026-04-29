@@ -15,6 +15,14 @@ export interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;
   description?: React.ReactNode;
   errorMessage?: React.ReactNode;
+  /** Alias for errorMessage */
+  error?: React.ReactNode;
+  /** Alias for description */
+  hint?: React.ReactNode;
+  /** Alias for description */
+  helperText?: React.ReactNode;
+  /** Whether the field is validating */
+  validating?: boolean;
   required?: boolean;
   id?: string;
   children: React.ReactElement;
@@ -28,6 +36,10 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
     label,
     description,
     errorMessage,
+    error,
+    hint,
+    helperText,
+    validating: _validating,
     required = false,
     id,
     className,
@@ -35,10 +47,13 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
     ...rest
   } = props;
 
+  const resolvedDescription = description ?? hint ?? helperText;
+  const resolvedErrorMessage = errorMessage ?? error;
+
   const generatedId = useId('gh-field');
   const fieldId = id ?? generatedId;
-  const descriptionId = description ? `${fieldId}-description` : undefined;
-  const errorId = errorMessage ? `${fieldId}-error` : undefined;
+  const descriptionId = resolvedDescription ? `${fieldId}-description` : undefined;
+  const errorId = resolvedErrorMessage ? `${fieldId}-error` : undefined;
 
   const { resolvedTheme } = useTheme();
   const surface = resolvedTheme === 'dark' ? darkColors : lightColors;
@@ -68,7 +83,7 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
     ]
       .filter(Boolean)
       .join(' ') || undefined,
-    'aria-invalid': errorMessage ? true : undefined,
+    'aria-invalid': resolvedErrorMessage ? true : undefined,
     required: required,
   };
 
@@ -91,7 +106,7 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
     <div
       ref={ref}
       className={cn('gh-form-field', className)}
-      data-invalid={errorMessage ? 'true' : undefined}
+      data-invalid={resolvedErrorMessage ? 'true' : undefined}
       {...rest}
     >
       <label
@@ -123,7 +138,7 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
 
       {control}
 
-      {description ? (
+      {resolvedDescription ? (
         <p
           id={descriptionId}
           className="gh-form-field__description"
@@ -133,11 +148,11 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
             color: surface.text.secondary,
           }}
         >
-          {description}
+          {resolvedDescription}
         </p>
       ) : null}
 
-      {errorMessage ? (
+      {resolvedErrorMessage ? (
         <p
           id={errorId}
           className="gh-form-field__error"
@@ -148,7 +163,7 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>((props
             fontWeight: fontWeight.medium,
           }}
         >
-          {errorMessage}
+          {resolvedErrorMessage}
         </p>
       ) : null}
     </div>

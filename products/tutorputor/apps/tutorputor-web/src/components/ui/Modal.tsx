@@ -5,7 +5,7 @@ interface ModalProps extends React.HTMLAttributes<HTMLDivElement> {
     isOpen?: boolean;
     onOpenChange?: (open: boolean) => void;
     onClose?: () => void;
-    size?: string;
+    size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export function Modal({

@@ -91,7 +91,7 @@ export function AuditPage() {
       
       // Transform to match expected format
       return {
-        logs: result.items.map((item) => ({
+        logs: result.items.map((item: Record<string, unknown>) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
           id: item.id,
           timestamp: item.timestamp,
           actorId: item.actorId,
@@ -311,7 +311,7 @@ export function AuditPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {data?.logs.map((entry) => (
+                {data?.logs.map((entry: AuditLogEntry) => (
                   <tr
                     key={entry.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-800/50"

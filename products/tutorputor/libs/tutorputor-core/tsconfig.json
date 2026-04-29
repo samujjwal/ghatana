@@ -14,14 +14,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "ignoreDeprecations": "6.0",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": false,
     "allowSyntheticDefaultImports": true,
     "types": ["node"],
-    "baseUrl": ".",
     "paths": {
       "@tutorputor/contracts/v1/*": ["../../contracts/dist/*"],
       "@tutorputor/contracts": ["../../contracts/dist/index"]

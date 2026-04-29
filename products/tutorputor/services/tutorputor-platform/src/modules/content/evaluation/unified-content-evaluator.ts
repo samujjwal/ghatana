@@ -675,13 +675,29 @@ export class UnifiedContentEvaluator {
     trustScore: TrustScoreResult,
     provenanceNode: Record<string, unknown>,
   ): Promise<string> {
-    const queueId = `remediate-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const triggerReason = trustScore.reasoning ?? "Trust score below remediation threshold";
+    const remediationNotes = JSON.stringify({
+      scores: trustScore,
+      provenance: provenanceNode,
+    });
 
-    // TODO: Create remediationQueue table in schema and persist queue entry
-    // For now, log and return queue ID for tracking
+    const entry = await this.prisma.remediationQueue.create({
+      data: {
+        tenantId: request.tenantId,
+        experienceId: request.experienceId ?? request.artifactId,
+        artifactId: request.artifactId,
+        contentType: request.contentType,
+        trustScore: trustScore.overall_score,
+        publishDecision: trustScore.publish_decision,
+        triggerReason,
+        remediationNotes,
+        status: "PENDING",
+      },
+    }) as { id: string };
+
     this.logger.info(
       {
-        queueId,
+        queueId: entry.id,
         artifactId: request.artifactId,
         trustScore: trustScore.overall_score,
         reasoning: trustScore.reasoning,
@@ -689,7 +705,7 @@ export class UnifiedContentEvaluator {
       "Queued content for auto-remediation",
     );
 
-    return queueId;
+    return entry.id;
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────

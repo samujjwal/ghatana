@@ -85,7 +85,7 @@ export function ClaimsEditor({ claims, onChange }: ClaimsEditorProps) {
                                         </label>
                                         <select
                                             value={claim.bloom}
-                                            onChange={(e) => handleUpdateClaim(index, { bloom: e.target.value as typeof BLOOM_LEVELS[number] })}
+                                            onChange={(e) => handleUpdateClaim(index, { bloom: e.target.value as import('@tutorputor/contracts/v1/learning-unit').BloomLevel })}
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-transparent capitalize"
                                         >
                                             {BLOOM_LEVELS.map(level => (

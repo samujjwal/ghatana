@@ -62,6 +62,34 @@ export type EasingFunction =
 // =============================================================================
 
 /**
+ * Visual style properties for rendering simulation entities.
+ */
+export interface SimVisualStyle {
+  color?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+  stroke?: {
+    color?: string;
+    width?: number;
+    dash?: number[];
+  };
+  size?: number;
+  shape?: 'rectangle' | 'circle' | 'triangle' | 'diamond' | 'arrow';
+  opacity?: number;
+  label?: string | {
+    visible?: boolean;
+    color?: string;
+    fontSize?: number;
+    fontFamily?: string;
+  };
+  icon?: string;
+  visible?: boolean;
+  fontSize?: number;
+  fontsize?: number;
+  fontFamily?: string;
+}
+
+/**
  * Base entity type - all simulation entities extend this.
  * Provides position, visual properties, and metadata.
  */
@@ -71,6 +99,7 @@ export interface SimEntityBase {
   label?: string;
   x: number;
   y: number;
+  visual?: SimVisualStyle;
   z?: number;
   width?: number;
   height?: number;
@@ -1320,4 +1349,21 @@ export interface SimulationTemplate {
   governance?: TemplateGovernance;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Runtime state of a running simulation for the player UI.
+ */
+export interface SimulationState {
+  isPlaying: boolean;
+  currentTime: number;
+  totalDuration: number;
+  currentStepIndex: number;
+  totalSteps: number;
+  playbackRate: number;
+  playbackSpeed?: number;
+  sessionId?: string;
+  manifestId?: string;
+  currentKeyframe?: SimKeyframe;
+  analytics?: Record<string, unknown>;
 }

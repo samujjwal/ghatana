@@ -163,7 +163,7 @@ export function ContentGenerationWizard({ onContentGenerated, onCancel }: Conten
                 learningObjectives: editedParams.learningObjectives || inferred?.learningObjectives || []
             };
 
-            const result = await contentStudioApi.generateContent(formData);
+            const result = await contentStudioApi.generateContent(formData as unknown as Parameters<typeof contentStudioApi.generateContent>[0]);
 
             clearInterval(progressInterval);
             setGenerationProgress(100);

@@ -215,7 +215,7 @@ export async function testGetDomainWithContent() {
       // Check if concepts include simulations/visualizations
       if (response.data.concepts && response.data.concepts.length > 0) {
         const conceptWithContent = response.data.concepts.find(
-          (c: unknown) => c.simulation || c.visualization,
+          (c: { simulation?: unknown; visualization?: unknown }) => c.simulation || c.visualization,
         );
 
         if (conceptWithContent) {
@@ -252,7 +252,7 @@ export async function testUpdateSimulation() {
 
   try {
     const updatedManifest = {
-      ...projectileMotionSimulation.manifest,
+      ...(projectileMotionSimulation.manifest as Record<string, unknown>),
       initialVelocity: 60, // Changed
       angle: 30, // Changed
       title: "Updated Projectile Motion Simulation",
@@ -370,12 +370,12 @@ export async function testMultipleSimulationTypes() {
         "POST",
         `${ADMIN_API_PREFIX}/domains/${TEST_DOMAIN_ID}/concepts/${TEST_CONCEPT_ID}/simulation`,
         {
-          type: example.simulation.type,
-          manifest: example.simulation.manifest,
-          estimatedTimeMinutes: example.simulation.estimatedTimeMinutes,
-          interactivityLevel: example.simulation.interactivityLevel,
-          purpose: example.simulation.purpose,
-          previewConfig: example.simulation.previewConfig,
+          type: (example.simulation as Record<string, unknown>)?.type,
+          manifest: (example.simulation as Record<string, unknown>)?.manifest,
+          estimatedTimeMinutes: (example.simulation as Record<string, unknown>)?.estimatedTimeMinutes,
+          interactivityLevel: (example.simulation as Record<string, unknown>)?.interactivityLevel,
+          purpose: (example.simulation as Record<string, unknown>)?.purpose,
+          previewConfig: (example.simulation as Record<string, unknown>)?.previewConfig,
         },
       );
 

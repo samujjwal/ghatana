@@ -11,6 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
+import type { SimulationManifest, SimEntity } from "@tutorputor/contracts/v1/simulation";
 import {
   deriveSimulationContext,
   summarizeEntities,
@@ -24,11 +25,17 @@ import {
   type DerivedMetric,
 } from "./simulation-context-deriver";
 
+// Helper to cast partial fixture objects as their canonical types
+const asManifest = (m: unknown) => m as SimulationManifest;
+const asEntities = (e: unknown) => e as SimEntity[];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const asKeyframe = (k: any) => k as Parameters<typeof deriveSimulationContext>[1];
+
 // =============================================================================
 // Mock Data
 // =============================================================================
 
-const createMockPhysicsManifest = () => ({
+const createMockPhysicsManifest = () => ({  /* eslint-disable-line */
   id: "physics-sim-1",
   title: "Projectile Motion",
   description: "Simulate projectile motion with varying initial conditions",
@@ -75,7 +82,7 @@ const createMockPhysicsManifest = () => ({
   ],
 });
 
-const createMockCSManifest = () => ({
+const createMockCSManifest = () => ({  /* eslint-disable-line */
   id: "cs-sim-1",
   title: "Bubble Sort",
   description: "Visualize bubble sort algorithm",
@@ -97,7 +104,7 @@ const createMockCSManifest = () => ({
   ],
 });
 
-const createMockChemistryManifest = () => ({
+const createMockChemistryManifest = () => ({  /* eslint-disable-line */
   id: "chem-sim-1",
   title: "Acid-Base Reaction",
   description: "Simulate acid-base neutralization",
@@ -123,7 +130,7 @@ const createMockChemistryManifest = () => ({
   ],
 });
 
-const createMockEconomicsManifest = () => ({
+const createMockEconomicsManifest = () => ({  /* eslint-disable-line */
   id: "econ-sim-1",
   title: "Supply and Demand",
   description: "Explore market equilibrium",
@@ -140,7 +147,7 @@ const createMockEconomicsManifest = () => ({
   ],
 });
 
-const createMockBioMedManifest = () => ({
+const createMockBioMedManifest = () => ({  /* eslint-disable-line */
   id: "biomed-sim-1",
   title: "Drug Pharmacokinetics",
   description: "Model drug absorption and elimination",
@@ -191,8 +198,8 @@ describe("SimulationContextDeriver", () => {
       ];
 
       const context = await deriveSimulationContext(
-        manifest,
-        currentKeyframe,
+        asManifest(manifest),
+        asKeyframe(currentKeyframe),
         userActions,
       );
 
@@ -211,8 +218,8 @@ describe("SimulationContextDeriver", () => {
       };
 
       const context = await deriveSimulationContext(
-        manifest,
-        currentKeyframe,
+        asManifest(manifest),
+        asKeyframe(currentKeyframe),
         [],
       );
 
@@ -230,8 +237,8 @@ describe("SimulationContextDeriver", () => {
       };
 
       const context = await deriveSimulationContext(
-        manifest,
-        currentKeyframe,
+        asManifest(manifest),
+        asKeyframe(currentKeyframe),
         [],
       );
 
@@ -244,7 +251,7 @@ describe("SimulationContextDeriver", () => {
   describe("summarizeEntities", () => {
     it("should summarize physics entities correctly", () => {
       const manifest = createMockPhysicsManifest();
-      const summaries = summarizeEntities(manifest.initialEntities, "PHYSICS");
+      const summaries = summarizeEntities(asEntities(manifest.initialEntities), "PHYSICS");
 
       expect(summaries).toHaveLength(2);
 
@@ -257,7 +264,7 @@ describe("SimulationContextDeriver", () => {
     it("should summarize CS entities correctly", () => {
       const manifest = createMockCSManifest();
       const summaries = summarizeEntities(
-        manifest.initialEntities,
+        asEntities(manifest.initialEntities),
         "CS_DISCRETE",
       );
 
@@ -268,7 +275,7 @@ describe("SimulationContextDeriver", () => {
     it("should summarize chemistry entities correctly", () => {
       const manifest = createMockChemistryManifest();
       const summaries = summarizeEntities(
-        manifest.initialEntities,
+        asEntities(manifest.initialEntities),
         "CHEMISTRY",
       );
 
@@ -279,7 +286,7 @@ describe("SimulationContextDeriver", () => {
 
     it("should summarize biomed entities correctly", () => {
       const manifest = createMockBioMedManifest();
-      const summaries = summarizeEntities(manifest.initialEntities, "MEDICINE");
+      const summaries = summarizeEntities(asEntities(manifest.initialEntities), "MEDICINE");
 
       expect(summaries).toHaveLength(3);
       const plasma = summaries.find((e) => e.id === "plasma");
@@ -465,7 +472,7 @@ describe("SimulationContextDeriver", () => {
       };
 
       const context = await deriveSimulationContext(
-        manifest,
+        asManifest(manifest),
         { stepIndex: 0, entities: [], metrics: {} },
         [],
       );
@@ -480,7 +487,7 @@ describe("SimulationContextDeriver", () => {
       };
 
       const context = await deriveSimulationContext(
-        manifest,
+        asManifest(manifest),
         { stepIndex: 0, entities: [], metrics: {} },
         [],
       );

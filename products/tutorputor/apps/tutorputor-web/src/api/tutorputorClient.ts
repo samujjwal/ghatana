@@ -14,7 +14,7 @@ type EnrollmentId = string;
 type EnrollmentStatus = "active" | "completed" | "paused" | "expired";
 type ThreadStatus = "OPEN" | "RESOLVED" | "CLOSED";
 
-interface UserInfo {
+export interface UserInfo {
   id: string;
   email: string;
   displayName: string;
@@ -22,7 +22,7 @@ interface UserInfo {
 }
 
 // Dashboard types matching what the pages expect
-interface DashboardEnrollment {
+export interface DashboardEnrollment {
   id: string;
   moduleId: string;
   moduleSlug?: string;
@@ -34,7 +34,7 @@ interface DashboardEnrollment {
   timeSpentSeconds: number;
 }
 
-interface DashboardModuleSummary {
+export interface DashboardModuleSummary {
   id: string;
   title: string;
   slug: string;
@@ -47,7 +47,7 @@ interface DashboardModuleSummary {
   progressPercent?: number;
 }
 
-interface DashboardSummary {
+export interface DashboardSummary {
   user: UserInfo;
   currentEnrollments: DashboardEnrollment[];
   recommendedModules: DashboardModuleSummary[];
@@ -67,7 +67,7 @@ export interface LearnerInsights {
   computedAt: string;
 }
 
-interface ModuleSummary {
+export interface ModuleSummary {
   id: string;
   title: string;
   slug: string;
@@ -78,13 +78,13 @@ interface ModuleSummary {
   tags?: string[];
 }
 
-interface LearningObjective {
+export interface LearningObjective {
   id: string;
   label: string;
   taxonomyLevel: string;
 }
 
-interface ContentBlock {
+export interface ContentBlock {
   id: string;
   blockType: "text" | "video" | "quiz" | "interactive";
   payload?: {
@@ -98,7 +98,7 @@ interface ContentBlock {
   };
 }
 
-interface ModuleDetail {
+export interface ModuleDetail {
   id: string;
   title: string;
   slug: string;
@@ -108,9 +108,11 @@ interface ModuleDetail {
   estimatedTimeMinutes: number;
   learningObjectives: LearningObjective[];
   contentBlocks: ContentBlock[];
+  authorId?: string;
+  publishedAt?: string;
 }
 
-interface Enrollment {
+export interface Enrollment {
   id: string;
   moduleId: string;
   moduleSlug?: string;
@@ -125,14 +127,14 @@ interface Enrollment {
   completedAt?: string;
 }
 
-interface TutorResponsePayload {
+export interface TutorResponsePayload {
   answer: string;
   confidence: number;
   sources?: { title: string; url: string }[];
   followUpQuestions?: string[];
 }
 
-interface PathNode {
+export interface PathNode {
   id: string;
   title: string;
   type: string;
@@ -140,20 +142,20 @@ interface PathNode {
   order: number;
 }
 
-interface LearningPath {
+export interface LearningPath {
   id: string;
   title: string;
   description: string;
   nodes?: PathNode[];
 }
 
-interface NodeProgress {
+export interface NodeProgress {
   nodeId: string;
   status: "not_started" | "in_progress" | "completed";
   completedAt?: string;
 }
 
-interface LearningPathEnrollment {
+export interface LearningPathEnrollment {
   id: string;
   userId: string;
   pathId: string;
@@ -165,7 +167,7 @@ interface LearningPathEnrollment {
   completedAt?: string;
 }
 
-interface Classroom {
+export interface Classroom {
   id: string;
   tenantId: string;
   name: string;
@@ -177,7 +179,7 @@ interface Classroom {
   enrolledModuleIds?: string[];
 }
 
-interface StudentProgress {
+export interface StudentProgress {
   studentId: string;
   studentName: string;
   overallProgress: number;
@@ -195,7 +197,7 @@ interface StudentProgress {
 //     studentProgress: StudentProgress[];
 // }
 
-interface Post {
+export interface Post {
   id: string;
   threadId: string;
   authorId: string;
@@ -207,7 +209,7 @@ interface Post {
   voteCount?: number;
 }
 
-interface Thread {
+export interface Thread {
   id: string;
   tenantId: string;
   moduleId?: string;
@@ -229,7 +231,7 @@ type AchievementCategory =
   | "mastery"
   | "special";
 
-interface Badge {
+export interface Badge {
   id: string;
   name: string;
   icon: string;
@@ -237,14 +239,14 @@ interface Badge {
   rarity: "common" | "rare" | "epic" | "legendary";
 }
 
-interface Achievement {
+export interface Achievement {
   id: string;
   badge: Badge;
   earnedAt: string;
   category: AchievementCategory;
 }
 
-interface MarketplaceListingSummary {
+export interface MarketplaceListingSummary {
   id: string;
   moduleId: string;
   moduleTitle?: string;
@@ -255,7 +257,7 @@ interface MarketplaceListingSummary {
   status?: string;
 }
 
-interface MarketplaceCheckoutSession {
+export interface MarketplaceCheckoutSession {
   id: string;
   listingId: string;
   amountCents: number;
@@ -263,7 +265,7 @@ interface MarketplaceCheckoutSession {
   paymentUrl?: string;
 }
 
-interface MarketplacePurchase {
+export interface MarketplacePurchase {
   id: string;
   moduleId: string;
   listingId: string;

@@ -207,11 +207,28 @@ export function createBillingService(
             userId: UserId;
             returnUrl?: string;
         }) {
-            // For now, return a placeholder URL
-            // In production, this would call Stripe Customer Portal API
-            return {
-                url: `https://billing.stripe.com/session/${tenantId}?return_url=${encodeURIComponent(returnUrl ?? "")}`,
+            // Resolve the Stripe customer record for this tenant
+            const stripeCustomer = await prisma.stripeCustomer.findUnique({
+                where: { tenantId },
+            });
+
+            if (!stripeCustomer) {
+                throw new Error(
+                    `No Stripe customer found for tenant ${tenantId}. ` +
+                        `Complete onboarding before accessing the billing portal.`
+                );
+            }
+
+            // Create a Stripe Billing Portal session
+            const sessionParams: Stripe.BillingPortal.SessionCreateParams = {
+                customer: stripeCustomer.stripeCustomerId,
             };
+            if (returnUrl) {
+                sessionParams.return_url = returnUrl;
+            }
+            const session = await stripe.billingPortal.sessions.create(sessionParams);
+
+            return { url: session.url };
         }
     };
 }

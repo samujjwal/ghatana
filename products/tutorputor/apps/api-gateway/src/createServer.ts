@@ -28,7 +28,7 @@
  */
 
 import fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
-import { setupPlatform } from "../../../services/tutorputor-platform/src/index.ts";
+import { setupPlatform } from "../../../services/tutorputor-platform/src/index";
 
 export async function createServer(): Promise<FastifyInstance> {
   const app = fastify({

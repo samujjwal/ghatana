@@ -127,22 +127,22 @@ export function AnalyticsDashboard({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <MetricCard
                     label="Views"
-                    value={analytics.viewCount.toLocaleString()}
+                    value={(analytics.viewCount ?? 0).toLocaleString()}
                     trend={null}
                 />
                 <MetricCard
                     label="Completions"
-                    value={analytics.completionCount.toLocaleString()}
+                    value={(analytics.completionCount ?? 0).toLocaleString()}
                     trend={null}
                 />
                 <MetricCard
                     label="Completion Rate"
-                    value={`${Math.round(analytics.completionRate * 100)}%`}
-                    trend={analytics.completionRate >= 0.7 ? 'up' : analytics.completionRate < 0.5 ? 'down' : null}
+                    value={`${Math.round((analytics.completionRate ?? 0) * 100)}%`}
+                    trend={(analytics.completionRate ?? 0) >= 0.7 ? 'up' : (analytics.completionRate ?? 0) < 0.5 ? 'down' : null}
                 />
                 <MetricCard
                     label="Avg. Time"
-                    value={`${Math.round(analytics.avgTimeMinutes)} min`}
+                    value={`${Math.round(analytics.avgTimeMinutes ?? 0)} min`}
                     trend={null}
                 />
             </div>
@@ -152,24 +152,24 @@ export function AnalyticsDashboard({
                 <h4 className="mb-4 text-sm font-medium text-gray-700">Simulation Performance</h4>
                 <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">{analytics.simulationStarts}</div>
+                        <div className="text-2xl font-bold text-gray-900">{analytics.simulationStarts ?? 0}</div>
                         <div className="text-xs text-gray-500">Starts</div>
                     </div>
                     <div className="text-center">
                         <div className={clsx(
                             'text-2xl font-bold',
-                            analytics.simulationAborts > analytics.simulationStarts * 0.3 ? 'text-amber-600' : 'text-gray-900'
+                            (analytics.simulationAborts ?? 0) > (analytics.simulationStarts ?? 0) * 0.3 ? 'text-amber-600' : 'text-gray-900'
                         )}>
-                            {analytics.simulationAborts}
+                            {analytics.simulationAborts ?? 0}
                         </div>
                         <div className="text-xs text-gray-500">Aborts</div>
                     </div>
                     <div className="text-center">
                         <div className={clsx(
                             'text-2xl font-bold',
-                            analytics.simulationErrors > 0 ? 'text-red-600' : 'text-gray-900'
+                            (analytics.simulationErrors ?? 0) > 0 ? 'text-red-600' : 'text-gray-900'
                         )}>
-                            {analytics.simulationErrors}
+                            {analytics.simulationErrors ?? 0}
                         </div>
                         <div className="text-xs text-gray-500">Errors</div>
                     </div>

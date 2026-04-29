@@ -159,7 +159,13 @@ export class WebSearchService {
         throw new Error(`DuckDuckGo API returned ${response.status}`);
       }
 
-      const data = await response.json() as unknown;
+      interface DdgResponse {
+        AbstractText?: string;
+        AbstractTitle?: string;
+        AbstractURL?: string;
+        RelatedTopics?: Array<{ Text?: string; FirstURL?: string; Name?: string; Topics?: Array<{ Text?: string; FirstURL?: string }> }>;
+      }
+      const data = await response.json() as DdgResponse;
       
       // Parse DuckDuckGo response format
       const results: SearchResult[] = [];
@@ -182,7 +188,7 @@ export class WebSearchService {
               title: topic.FirstURL?.split('/')[2] || topic.Text.substring(0, 50),
               url: topic.FirstURL || '',
               snippet: topic.Text,
-              domain: this.extractDomain(topic.FirstURL),
+              domain: this.extractDomain(topic.FirstURL ?? ''),
             });
           }
         });
@@ -224,7 +230,10 @@ export class WebSearchService {
         throw new Error(`Google API returned ${response.status}`);
       }
 
-      const data = await response.json() as unknown;
+      interface GoogleSearchResponse {
+        items?: Array<{ title: string; link: string; snippet: string }>;
+      }
+      const data = await response.json() as GoogleSearchResponse;
       
       if (!data.items || data.items.length === 0) {
         return this.getFallbackResults(query);
@@ -270,7 +279,10 @@ export class WebSearchService {
         throw new Error(`Bing API returned ${response.status}`);
       }
 
-      const data = await response.json() as unknown;
+      interface BingSearchResponse {
+        webPages?: { value: Array<{ name: string; url: string; snippet: string }> };
+      }
+      const data = await response.json() as BingSearchResponse;
       
       if (!data.webPages || data.webPages.value.length === 0) {
         return this.getFallbackResults(query);

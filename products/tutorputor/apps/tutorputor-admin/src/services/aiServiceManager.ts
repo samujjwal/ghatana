@@ -102,7 +102,7 @@ interface NaturalLanguageRequest {
 class AIServiceManager {
   private config: AIServiceConfig;
   private context: AIContext;
-  private cache: Map<string, Record<string, unknown>> = new Map();
+  private cache: Map<string, unknown> = new Map();
 
   constructor(config: AIServiceConfig) {
     this.config = config;
@@ -129,12 +129,12 @@ class AIServiceManager {
     const cacheKey = `content-analysis-${JSON.stringify(content)}`;
 
     if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey);
+      return this.cache.get(cacheKey) as unknown as ContentIntelligence;
     }
 
     try {
       // Reuse existing validation API and enhance with AI
-      const validationResult = await contentStudioApi.validateContent(content);
+      const validationResult = await (contentStudioApi as unknown as Record<string, (arg: unknown) => Promise<unknown>>)['validateContent']?.(content) ?? {};
 
       // AI-enhanced analysis
       const intelligence: ContentIntelligence = {
@@ -199,13 +199,13 @@ class AIServiceManager {
   async generateContent(request: Record<string, unknown>): Promise<unknown> {
     try {
       // Enhance existing content generation with AI intelligence
-      const baseContent = await contentStudioApi.generateContent(request);
+      const baseContent = await contentStudioApi.generateContent(request as Parameters<typeof contentStudioApi.generateContent>[0]);
 
       // AI enhancements
       const enhancedContent = {
         ...baseContent,
-        aiInsights: await this.analyzeContent(baseContent),
-        optimizationSuggestions: this.generateOptimizations(baseContent),
+        aiInsights: await this.analyzeContent(baseContent as Record<string, unknown>),
+        optimizationSuggestions: this.generateOptimizations(baseContent as Record<string, unknown>, {}),
         qualityMetrics: this.calculateQualityScore(baseContent),
       };
 

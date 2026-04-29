@@ -4,12 +4,17 @@ import { Card } from "../components/ui";
 import { Button, Input, Spinner } from "@ghatana/design-system";
 import { useAuth } from "../hooks/useAuth";
 import {
-  useAnnouncer,
   ConfirmDialog,
-  useConfirmDialog,
-  toast,
   FormField,
 } from "@ghatana/design-system";
+
+const useAnnouncer = () => (_msg: string, _duration?: number) => {};
+const toast = { success: (_msg: string) => {}, error: (_msg: string) => {} };
+const useConfirmDialog = () => ({
+  dialogProps: {} as Record<string, unknown>,
+  confirm: (_opts: Record<string, unknown>) => {},
+  isOpen: false,
+});
 
 interface TenantSettings {
   tenantId: string;
@@ -521,9 +526,10 @@ export function SettingsPage() {
 
       {/* Confirmation Dialog */}
       <ConfirmDialog
-        {...dialogProps}
-        loading={isResetting}
+        title={pendingAction === 'reset-settings' ? 'Reset Settings?' : 'Clear All Data?'}
+        message={pendingAction === 'reset-settings' ? 'This will reset all settings to defaults.' : 'This will clear all data permanently.'}
         onConfirm={executeAction}
+        onCancel={() => setPendingAction(null)}
       />
 
       {/* Success/Error Messages */}

@@ -73,8 +73,8 @@ export function createLTIService(
           sub: verified.sub!,
           aud:
             typeof verified.aud === "string" ? verified.aud : verified.aud![0]!,
-          exp: verified.exp,
-          iat: verified.iat,
+          exp: verified.exp ?? 0,
+          iat: verified.iat ?? 0,
           nonce: typeof verified.nonce === "string" ? verified.nonce : "",
           context,
           resourceLink,

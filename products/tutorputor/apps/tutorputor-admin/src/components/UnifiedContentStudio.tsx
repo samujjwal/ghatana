@@ -223,7 +223,7 @@ interface GenerationMetrics {
 }
 
 export function UnifiedContentStudio() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get("view") as ContentStudioView | null;
 
   const [currentView, setCurrentView] = useState<ContentStudioView>(
@@ -503,8 +503,8 @@ export function UnifiedContentStudio() {
     async (request: unknown) => {
       setIsGenerating(true);
       try {
-        const result = await contentStudioApi.generateContent(request);
-        setCurrentExperience(result.experience);
+        const result = await contentStudioApi.generateContent(request as Parameters<typeof contentStudioApi.generateContent>[0]);
+        setCurrentExperience(result.experience as unknown as LearningExperience);
         setCurrentView("edit");
         setSearchParams({ id: result.experience.id, view: "edit" });
       } catch (error) {
@@ -667,8 +667,8 @@ export function UnifiedContentStudio() {
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {db === "postgres"
-                        ? `Connections: ${status.connections} | Query: ${status.queryTime}ms`
-                        : `Memory: ${status.memory}% | Hit Rate: ${status.hitRate.toFixed(1)}%`}
+                        ? `Connections: ${'connections' in status ? status.connections : ''} | Query: ${'queryTime' in status ? status.queryTime : ''}ms`
+                        : `Memory: ${'memory' in status ? status.memory : ''}% | Hit Rate: ${'hitRate' in status ? status.hitRate.toFixed(1) : ''}%`}
                     </div>
                   </div>
                 ),
@@ -774,8 +774,8 @@ export function UnifiedContentStudio() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) =>
-                  `${name} ${(percent * 100).toFixed(0)}%`
+                label={({ name, percent }: { name?: string; percent?: number }) =>
+                  `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
                 }
                 outerRadius={80}
                 fill="#8884d8"
@@ -1294,14 +1294,6 @@ export function UnifiedContentStudio() {
       {/* AI Assistant - Always Available */}
       <AIAssistant
         initialContext={currentView}
-        onActionSuggestion={(action) => {
-          console.log("AI Action Suggestion:", action);
-          // Handle AI suggestions
-        }}
-        onContentGenerated={(content) => {
-          console.log("AI Generated Content:", content);
-          // Handle AI-generated content
-        }}
       />
 
       {/* Header */}

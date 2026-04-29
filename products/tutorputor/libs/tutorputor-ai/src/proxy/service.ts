@@ -299,7 +299,7 @@ Be concise and helpful.`;
     topic: string;
     targetAudience: string;
     learningObjectives?: string[];
-  }): Promise<unknown> {
+  }): Promise<Partial<import('@tutorputor/contracts').ModuleDraftInput>> {
     if (!this.openai) throw new Error("AI service unavailable");
 
     const systemPrompt = `You are an expert instructional designer using the Evidence-Based Learning framework.
@@ -342,7 +342,7 @@ Output JSON format matching the ModuleDraftInput structure (simplified):
       });
 
       const content = completion.choices[0]!.message.content;
-      return content ? JSON.parse(content) : null;
+      return content ? (JSON.parse(content) as Partial<import('@tutorputor/contracts').ModuleDraftInput>) : {};
     } catch (e) {
       console.error("Error generating draft:", e);
       throw e;

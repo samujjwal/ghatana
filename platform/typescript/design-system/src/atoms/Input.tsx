@@ -212,3 +212,4 @@ export function TextField({
 
 // Alias for common naming convention
 export const Input = TextField;
+export type { InputTextFieldProps as InputProps };

@@ -177,11 +177,11 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
 
       for (let i = keyframe.entities.length - 1; i >= 0; i--) {
         const entity = keyframe.entities[i];
-        if (!entity.position) continue;
+        if (entity.x === undefined || entity.y === undefined) continue;
 
         const size = (entity.visual?.size ?? 1) * 20;
-        const dx = Math.abs(world.x - entity.position.x);
-        const dy = Math.abs(world.y - entity.position.y);
+        const dx = Math.abs(world.x - entity.x);
+        const dy = Math.abs(world.y - entity.y);
 
         if (dx < size && dy < size) {
           return entity;
@@ -230,9 +230,9 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
    */
   const drawEntity = useCallback(
     (ctx: CanvasRenderingContext2D, entity: SimEntityBase, isHovered: boolean) => {
-      if (!entity.position) return;
+      if (entity.x === undefined || entity.y === undefined) return;
 
-      const screen = worldToScreen(entity.position.x, entity.position.y);
+      const screen = worldToScreen(entity.x, entity.y);
       const style: SimVisualStyle = {
         color: '#4A90D9',
         size: 1,
@@ -263,10 +263,11 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
       ctx.shadowBlur = 0;
 
       // Draw label
-      if (style.label?.visible !== false && entity.label) {
+      const labelStyle = typeof style.label === 'object' ? style.label : undefined;
+      if (labelStyle?.visible !== false && entity.label) {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = style.label?.color ?? '#1e293b';
-        ctx.font = `${(style.label?.fontSize ?? 12) * localZoom}px ${style.label?.fontFamily ?? 'Inter, sans-serif'}`;
+        ctx.fillStyle = labelStyle?.color ?? '#1e293b';
+        ctx.font = `${(labelStyle?.fontSize ?? 12) * localZoom}px ${labelStyle?.fontFamily ?? 'Inter, sans-serif'}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillText(entity.label, screen.x, screen.y + scaledSize * 25);

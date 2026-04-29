@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface DomainRecord {
@@ -83,7 +83,7 @@ function statusBadgeClass(status: DomainRecord['status']): string {
     : 'bg-gray-100 text-gray-800';
 }
 
-export function DomainEditorPage(): JSX.Element {
+export function DomainEditorPage(): ReactElement {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingDomainId, setEditingDomainId] = useState<string | null>(null);

@@ -94,11 +94,11 @@ async function start() {
 
       try {
         const response = await aiService.handleTutorQuery({
-          tenantId: tenantId as unknown,
-          userId: userId as unknown,
+          tenantId: tenantId as Parameters<typeof aiService.handleTutorQuery>[0]['tenantId'],
+          userId: userId as Parameters<typeof aiService.handleTutorQuery>[0]['userId'],
           question,
           locale,
-          moduleId: moduleId as unknown,
+          moduleId: moduleId as Parameters<typeof aiService.handleTutorQuery>[0]['moduleId'],
         });
         
         return {

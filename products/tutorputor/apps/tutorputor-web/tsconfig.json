@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
@@ -17,7 +16,6 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
     "types": ["node", "react", "react-dom"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@ghatana/design-system": [
@@ -43,6 +41,7 @@
       "@tutorputor/ui/*": ["../../libs/tutorputor-ui/src/*"]
     },
     "outDir": "./dist",
+    "rootDir": "../..",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true
@@ -53,13 +52,17 @@
     "src/components/offline/**",
     "src/pages/VRLabsPage.tsx",
     "src/pages/VRSessionPage.tsx",
+    "src/pages/vr/**",
     "src/pages/StudyGroupsPage.tsx",
     "src/pages/ChatPage.tsx",
     "src/pages/StudyGroupDetailPage.tsx",
     "src/features/simulation-authoring/**",
     "src/features/simulation-tutor/**",
     "src/features/assessments/**",
+    "src/pages/SimulationStudio.tsx",
     "src/hooks/useOffline.ts",
+    "src/sw.ts",
+    "src/workers/**",
     "../../../yappc/**",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
