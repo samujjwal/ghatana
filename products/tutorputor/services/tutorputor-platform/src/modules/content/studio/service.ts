@@ -1710,7 +1710,7 @@ export function createContentStudioService(
         contradictionBlocksPublish = contradictionResult.blocksPublish;
         checks.push({
           checkId: "claim-contradiction-grader",
-          pillar: "accuracy",
+          pillar: "safety",
           name: "Claim Contradiction Check (F-011)",
           passed: !contradictionResult.blocksPublish,
           severity: contradictionResult.blocksPublish ? "error" : "info",

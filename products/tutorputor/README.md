@@ -10,6 +10,24 @@
 
 ## Quick Start
 
+### Docker Compose (recommended)
+
+```bash
+# Start all services (infra + apps)
+docker compose --profile app-stack up
+
+# Start infrastructure only (postgres + redis)
+docker compose up -d
+
+# Force rebuild after dependency or config changes
+docker compose --profile app-stack up --build --force-recreate
+
+# Clean restart (removes volumes, useful when workspace changes)
+docker compose --profile app-stack down -v && docker compose --profile app-stack up --build --force-recreate
+```
+
+### ttr CLI
+
 ```bash
 # Start development environment
 ttr dev

@@ -245,7 +245,6 @@ export default defineConfig({
       '@yappc/chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
       '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
       '@yappc/initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
-      '@yappc/development-ui': path.resolve(__dirname, '../libs/yappc-development-ui/src'),
       '@ghatana/code-editor': path.resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
       '@yappc/ide': path.resolve(__dirname, '../libs/ide/src'),
 

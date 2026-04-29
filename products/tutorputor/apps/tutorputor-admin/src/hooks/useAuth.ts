@@ -40,10 +40,9 @@ const authAtom = atom<AuthState>({
   isLoading: true,
 });
 
-// Dev tenant ID - must match TUTORPUTOR_DEFAULT_TENANT_ID or "default"
-const DEV_TENANT_ID =
-  import.meta.env.VITE_TUTORPUTOR_TENANT_ID ||
-  (import.meta.env.DEV ? "default" : null);
+// Dev tenant ID - must match TUTORPUTOR_DEFAULT_TENANT_ID
+// No fallback to "default" to prevent production misconfig
+const DEV_TENANT_ID = import.meta.env.VITE_TUTORPUTOR_TENANT_ID || null;
 
 export function useAuth() {
   const [auth, setAuth] = useAtom(authAtom);
@@ -94,7 +93,7 @@ export function useAuth() {
               lastName: "Admin",
               fullName: "Sarah Admin",
             } as UserSummary,
-            tenantId: (DEV_TENANT_ID ?? "default") as TenantId,
+            tenantId: DEV_TENANT_ID as TenantId,
             accessToken: "dev-token",
             isLoading: false,
           });
@@ -119,7 +118,7 @@ export function useAuth() {
               lastName: "Admin",
               fullName: "Sarah Admin",
             } as UserSummary,
-            tenantId: (DEV_TENANT_ID ?? "default") as TenantId,
+            tenantId: DEV_TENANT_ID as TenantId,
             accessToken: "dev-token",
             isLoading: false,
           });

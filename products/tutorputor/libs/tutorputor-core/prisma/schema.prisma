@@ -1914,6 +1914,8 @@ model Tenant {
   settings          TenantSettings?
   users             User[]
   identityProviders IdentityProvider[]
+  tenantCapabilities TenantCapability[]
+  tenantPlugins     TenantPlugin[]
 
   @@map("tenants")
   @@index([subdomain])
@@ -1935,19 +1937,22 @@ model TenantSettings {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  tenantId    String
-  email       String
+  id            String   @id @default(cuid())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String
+  email         String
   emailEncrypted String? // Encrypted PII: email
-  displayName String
-  role        String   @default("student")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  displayName   String
+  role          String   @default("student")
+  passwordHash  String?  // Scrypt-based password hash for local auth
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   ssoLinks SsoUserLink[]
   learnerProfile LearnerProfile?
   consents UserConsent[]
+  userRoles UserRole[]
 
   @@unique([tenantId, email])
   @@index([tenantId, role])
@@ -1970,6 +1975,334 @@ model UserConsent {
   @@index([tenantId, userId])
   @@index([tenantId, userId, granted])
 }
+
+// =============================================================================
+// RBAC Models
+// =============================================================================
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String   // e.g., "admin", "teacher", "student"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userRoles     UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  resource    String   // e.g., "content", "users", "settings"
+  action      String   // e.g., "read", "write", "delete"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@unique([tenantId, userId, roleId])
+  @@index([tenantId, userId])
+  @@index([tenantId, roleId])
+}
+
+model RolePermission {
+  id        String   @id @default(cuid())
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// =============================================================================
+// Capability Registry Models
+// =============================================================================
+
+model Capability {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "ai_tutor", "simulations", "vr_experiences"
+  category    String   // e.g., "ai", "content", "infrastructure"
+  description String?
+  enabled     Boolean  @default(true)
+  requiresSubscription Boolean @default(false)
+  requiresWorkerHealthy Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantCapabilities TenantCapability[]
+
+  @@unique([name])
+  @@index([category])
+  @@index([enabled])
+}
+
+model TenantCapability {
+  id           String     @id @default(cuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  capabilityId String
+  capability   Capability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+  enabled      Boolean    @default(true)
+  config       String?    // JSON config for capability overrides
+  enabledAt    DateTime?  @default(now())
+  disabledAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([tenantId, capabilityId])
+  @@index([capabilityId])
+}
+
+// =============================================================================
+// ABAC (Attribute-Based Access Control) Models
+// =============================================================================
+
+model ABACPolicy {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  enabled     Boolean  @default(true)
+  effect      String   @default("allow") // "allow" or "deny"
+  priority    Int      @default(0) // Higher priority policies evaluated first
+  conditions  String   // JSON string of policy conditions
+  actions     String[] // Array of actions this policy applies to
+  resourceTypes String[] // Array of resource types this policy applies to
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId, enabled])
+  @@index([priority])
+}
+
+model ABACAttribute {
+  id          String   @id @default(cuid())
+  tenantId    String
+  entityType  String   // "user", "resource", "environment"
+  entityId    String
+  attributeName String
+  attributeValue String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, entityType, entityId, attributeName])
+  @@index([tenantId, entityType])
+  @@index([entityType, entityId])
+}
+
+// =============================================================================
+// Audit Log Models
+// =============================================================================
+
+model AIAuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  modelId     String
+  modelName   String?
+  modelVersion String?
+  endpoint    String   // e.g., "tutor/query", "generate-questions"
+  requestPayload String? // JSON string of request (may be truncated)
+  responsePayload String? // JSON string of response (may be truncated)
+  policyDecision String? // e.g., "allowed", "blocked", "rate_limited"
+  latencyMs   Int?
+  success     Boolean  @default(true)
+  errorMessage String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([modelId, createdAt])
+  @@index([endpoint, createdAt])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Content Evaluation Models
+// =============================================================================
+
+model ContentEvaluation {
+  id          String   @id @default(cuid())
+  tenantId    String
+  moduleId    String
+  contentId   String?
+  claimId     String
+  text        String
+  isCorrect   Boolean
+  confidence  Float
+  matchedSourceId String?
+  matchedSourceType String? // "curriculum" or "citation"
+  issues      String[] // JSON array of issue strings
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, moduleId])
+  @@index([contentId])
+  @@index([isCorrect])
+}
+
+// =============================================================================
+// Golden Dataset Models
+// =============================================================================
+
+model GoldenDataset {
+  id             String   @id @default(cuid())
+  moduleId       String
+  inputType      String   // "question", "concept", "simulation"
+  input          String
+  expectedOutput String
+  qualityMetrics  String   // JSON: { clarity, accuracy, completeness }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  regressionTests RegressionTestResult[]
+
+  @@unique([moduleId, inputType, input])
+  @@index([moduleId])
+  @@index([inputType])
+}
+
+model RegressionTestResult {
+  id              String   @id @default(cuid())
+  entryId         String
+  goldenDatasetId String
+  moduleId        String
+  input           String
+  actualOutput    String
+  expectedOutput  String
+  passed          Boolean
+  qualityDiff     String   // JSON: { clarity, accuracy, completeness }
+  regressionDetected Boolean
+  timestamp       DateTime @default(now())
+
+  goldenDataset   GoldenDataset @relation(fields: [goldenDatasetId], references: [id], onDelete: Cascade)
+
+  @@index([goldenDatasetId])
+  @@index([moduleId])
+  @@index([passed])
+  @@index([regressionDetected])
+  @@index([timestamp])
+}
+
+// =============================================================================
+// Content Quality Monitoring Models
+// =============================================================================
+
+model QualityBaseline {
+  id            String   @id @default(cuid())
+  contentId     String   @unique
+  contentType   String
+  baselineMetrics String // JSON: { clarity, accuracy, completeness, engagement }
+  establishedAt DateTime @default(now())
+
+  @@index([contentType])
+}
+
+model QualityAlert {
+  id           String   @id @default(cuid())
+  contentId    String
+  contentType  String
+  metricType   String   // "clarity", "accuracy", "completeness", "engagement"
+  baselineValue Float
+  currentValue Float
+  degradation  Float
+  severity     String   // "low", "medium", "high", "critical"
+  detectedAt   DateTime @default(now())
+  resolved     Boolean  @default(false)
+  resolvedAt   DateTime?
+
+  @@index([contentId])
+  @@index([contentType])
+  @@index([severity])
+  @@index([resolved])
+  @@index([detectedAt])
+}
+
+// =============================================================================
+// Content Generation Benchmark Models
+// =============================================================================
+
+model ContentGenerationBenchmark {
+  id          String   @id @default(cuid())
+  tenantId    String
+  metrics     String   // JSON: BenchmarkMetrics
+  baseline    String?  // JSON: BenchmarkMetrics (baseline for comparison)
+  regressionDetected Boolean
+  regressionDetails String[] // JSON array of regression detail strings
+  isBaseline  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([isBaseline])
+  @@index([regressionDetected])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Compliance Evidence Models
+// =============================================================================
+
+model ComplianceEvidence {
+  id          String   @id @default(cuid())
+  tenantId    String
+  reportType  String   // "GDPR", "CCPA", "PEDAGOGICAL", "SOC2", "ISO27001"
+  evidence    String   // JSON: ComplianceEvidence
+  periodStart DateTime
+  periodEnd   DateTime
+  generatedAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([reportType])
+  @@index([generatedAt])
+}
+
+// =============================================================================
+// Plugin Marketplace Models
+// =============================================================================
+
+model TenantPlugin {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pluginId       String
+  version        String
+  status         String   // "available", "installed", "active", "inactive", "error"
+  configuration  String   // JSON: plugin configuration
+  installedAt    DateTime @default(now())
+  activatedAt    DateTime?
+  lastMigratedAt DateTime?
+
+  @@index([tenantId])
+  @@index([pluginId])
+  @@index([status])
+  @@unique([tenantId, pluginId])
+}
+
+// =============================================================================
 
 model LearnerProfile {
   id                       String                       @id @default(cuid())

@@ -138,14 +138,6 @@ try {
     'types',
     'index.d.ts'
   );
-  const developmentUiDeclIndex = path.join(
-    repoRoot,
-    'libs',
-    'development-ui',
-    'dist',
-    'types',
-    'index.d.ts'
-  );
   const configHooksDeclIndex = path.join(
     repoRoot,
     'libs',
@@ -185,10 +177,6 @@ try {
   uiTmp.compilerOptions.paths['@yappc/base-ui'] = [baseUiDeclIndex];
   uiTmp.compilerOptions.paths['@yappc/base-ui/*'] = [
     path.join(repoRoot, 'libs', 'base-ui', 'dist', 'types', '*'),
-  ];
-  uiTmp.compilerOptions.paths['@yappc/development-ui'] = [developmentUiDeclIndex];
-  uiTmp.compilerOptions.paths['@yappc/development-ui/*'] = [
-    path.join(repoRoot, 'libs', 'development-ui', 'dist', 'types', '*'),
   ];
   uiTmp.compilerOptions.paths['@yappc/config-hooks'] = [configHooksDeclIndex];
   uiTmp.compilerOptions.paths['@yappc/config-hooks/*'] = [

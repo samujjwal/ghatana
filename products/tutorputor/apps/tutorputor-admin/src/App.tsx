@@ -65,26 +65,21 @@ const ConceptManagementPage = lazy(() =>
 const ExamplesGallery = lazy(() =>
   import("./pages/ExamplesGallery").then((m) => ({
     default: m.ExamplesGallery,
-  const ExamplesGallery = lazy(() =>
-    import("./pages/ExamplesGallery").then((m) => ({
-      default: m.ExamplesGallery,
-    })),
-  );
-  const TeacherDashboardPage = lazy(() =>
-    import("./pages/TeacherDashboardPage").then((m) => ({
-      default: m.TeacherDashboardPage,
-    })),
-  );
-  const InstitutionAdminDashboardPage = lazy(() =>
-    import("./pages/InstitutionAdminDashboardPage").then((m) => ({
-      default: m.InstitutionAdminDashboardPage,
-    })),
-  );
-  const OperatorDashboardPage = lazy(() =>
-    import("./pages/OperatorDashboardPage").then((m) => ({
-      default: m.OperatorDashboardPage,
-    })),
-  );
+  })),
+);
+const TeacherDashboardPage = lazy(() =>
+  import("./pages/TeacherDashboardPage").then((m) => ({
+    default: m.TeacherDashboardPage,
+  })),
+);
+const InstitutionAdminDashboardPage = lazy(() =>
+  import("./pages/InstitutionAdminDashboardPage").then((m) => ({
+    default: m.InstitutionAdminDashboardPage,
+  })),
+);
+const OperatorDashboardPage = lazy(() =>
+  import("./pages/OperatorDashboardPage").then((m) => ({
+    default: m.OperatorDashboardPage,
   })),
 );
 

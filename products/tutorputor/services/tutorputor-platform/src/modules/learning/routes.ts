@@ -1223,17 +1223,17 @@ async function learningRoutes(
         return reply.send({
           role: "learner",
           userId,
-          moduleCount: summary.moduleCount,
+          moduleCount: (summary as any).moduleCount || 0,
           totalEvents: summary.totalEvents,
-          averageCompletionRate: summary.averageCompletionRate,
-          averageTimeSpentMinutes: summary.averageTimeSpentMinutes,
+          averageCompletionRate: (summary as any).averageCompletionRate || 0,
+          averageTimeSpentMinutes: (summary as any).averageTimeSpentMinutes || 0,
         });
       }
 
       if (role === "teacher" || role === "content_creator") {
         // Teacher: per-tenant/module aggregates, no cross-tenant comparison
         const summary = await analyticsService.getSummary({ tenantId, moduleId: moduleId as ModuleId });
-        return reply.send({ role, tenantId, moduleId, classroomId, ...summary });
+        return reply.send({ role, moduleId, classroomId, ...summary });
       }
 
       // admin / superadmin / service: full aggregates + advanced predictions
@@ -1356,7 +1356,7 @@ async function learningRoutes(
           }),
           fastify.prisma.enrollment.findFirst({
             where: { tenantId, userId, status: "IN_PROGRESS" },
-            orderBy: { lastAccessedAt: "desc" },
+            orderBy: { updatedAt: "desc" },
           }),
         ]);
 

@@ -52,8 +52,6 @@
       "@yappc/collab/*": ["libs/collab/src/*"],
       "@yappc/initialization-ui": ["libs/yappc-initialization-ui/src"],
       "@yappc/initialization-ui/*": ["libs/yappc-initialization-ui/src/*"],
-      "@yappc/development-ui": ["libs/yappc-development-ui/src"],
-      "@yappc/development-ui/*": ["libs/yappc-development-ui/src/*"],
       "@ghatana/code-editor": ["../../../../platform/typescript/code-editor/src"],
       "@ghatana/code-editor/*": ["../../../../platform/typescript/code-editor/src/*"],
       "@yappc/ide": ["libs/ide/src"],

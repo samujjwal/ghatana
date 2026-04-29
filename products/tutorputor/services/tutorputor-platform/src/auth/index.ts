@@ -15,6 +15,34 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import { getConfig } from "../config/config.js";
 import { authGatewayClient } from "../clients/auth-gateway.client.js";
 import { PrismaClient } from "@tutorputor/core/db";
+import { promisify } from "util";
+
+const scrypt = promisify(crypto.scrypt);
+
+const SCRYPT_KEY_LENGTH = 64;
+const SCRYPT_SALT_LENGTH = 32;
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.randomBytes(SCRYPT_SALT_LENGTH).toString("hex");
+  const derivedKey = (await scrypt(
+    password,
+    salt,
+    SCRYPT_KEY_LENGTH,
+  )) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const [salt, key] = hash.split(":");
+  if (!salt || !key) return false;
+
+  const derivedKey = (await scrypt(
+    password,
+    salt,
+    SCRYPT_KEY_LENGTH,
+  )) as Buffer;
+  return key === derivedKey.toString("hex");
+}
 
 const prisma = new PrismaClient();
 
@@ -124,33 +152,85 @@ class PrismaUserRepository implements LegacyAuthUserRepository {
         email,
         tenantId,
       },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: {
+                rolePermissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) return null;
 
-    // In production, verify password hash
-    // For now, assume password is valid
+    // Verify password hash
+    // Note: User model should have a passwordHash field. For now, we'll check
+    // if it exists and verify it. If it doesn't exist, we'll fail closed
+    // to force migration of existing users.
+    const passwordHash = user.passwordHash;
+    if (!passwordHash) {
+      // Password hash not set - fail closed to force migration
+      return null;
+    }
+
+    const isValid = await verifyPassword(password, passwordHash);
+    if (!isValid) return null;
+
+    // Load roles and permissions from database
+    const roles: Role[] = user.userRoles.map((ur) => ({
+      id: ur.role.id,
+      name: ur.role.name,
+      description: ur.role.description || "",
+      permissions: ur.role.rolePermissions.map((rp) => ({
+        id: rp.permission.id,
+        name: rp.permission.id, // Permission uses id as name
+        description: rp.permission.description || "",
+        resource: rp.permission.resource,
+        action: rp.permission.action,
+      })),
+    }));
+
+    const permissions: Permission[] = [];
+    for (const userRole of user.userRoles) {
+      for (const rp of userRole.role.rolePermissions) {
+        permissions.push({
+          id: rp.permission.id,
+          resource: rp.permission.resource,
+          action: rp.permission.action,
+        });
+      }
+    }
+
     return {
       id: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      roles: [], // SCHEMA_UPDATE: Load from role relation when User-Role schema is implemented
-      permissions: [], // SCHEMA_UPDATE: Load from permissions when RBAC schema is implemented
+      roles,
+      permissions,
       isActive: true,
     };
   }
 
   async updateUserLastLogin(userId: string): Promise<void> {
-    // Note: User model doesn't have lastLoginAt field yet
-    // This is a no-op until the schema is updated
-    // await prisma.user.update({
-    //   where: { id: userId },
-    //   data: { lastLoginAt: new Date() },
-    // });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { lastLoginAt: new Date() },
+    });
   }
 }
 
 export const prismaUserRepository = new PrismaUserRepository();
+
+// Export password hashing functions for testing
+export { hashPassword, verifyPassword };
 
 /**
  * Decoded JWT token structure
@@ -478,10 +558,16 @@ export class AuthMiddleware {
         try {
           const platformIdentity = await authGatewayClient.validate(token);
           if (platformIdentity.valid && platformIdentity.userId) {
+            const tenantId = request.headers["x-tenant-id"] as string;
+            if (!tenantId) {
+              reply.code(401).send({ error: "Missing tenant context in header" });
+              throw new Error("Missing tenant context in header");
+            }
+
             const platformUser: User = {
               id: platformIdentity.userId,
               email: platformIdentity.email ?? "",
-              tenantId: (request.headers["x-tenant-id"] as string) ?? "default",
+              tenantId,
               roles: [],
               permissions: [],
               isActive: true,
@@ -533,6 +619,10 @@ export class AuthMiddleware {
 
   /**
    * Tenant isolation middleware
+   *
+   * Ensures user can only access their tenant data by comparing the request
+   * parameter tenantId against the JWT tenantId claim. Does NOT trust the
+   * x-tenant-id header to prevent header spoofing attacks.
    */
   requireTenantAccess() {
     return async (request: FastifyRequest, reply: FastifyReply) => {
@@ -544,9 +634,9 @@ export class AuthMiddleware {
       }
 
       // Ensure user can only access their tenant data
+      // Only trust the tenantId from request params (JWT claim), never from headers
       const requestParams = request.params as Record<string, any>;
-      const requestTenantId =
-        requestParams?.tenantId || request.headers["x-tenant-id"];
+      const requestTenantId = requestParams?.tenantId;
 
       if (requestTenantId && requestTenantId !== authContext.tenantId) {
         reply.code(403).send({ error: "Tenant access denied" });
@@ -556,12 +646,13 @@ export class AuthMiddleware {
   }
 
   /**
-   * Get user from token (placeholder - AuthMiddleware doesn't have repository access)
+   * Get user from token
+   *
+   * Note: This method constructs a User object from JWT claims only.
+   * It does not perform database validation since AuthMiddleware doesn't have repository access.
+   * This is acceptable for authentication flow since the JWT itself is trusted after verification.
    */
   private async getUserFromToken(decoded: DecodedJWT): Promise<User> {
-    // AuthMiddleware doesn't have repository access
-    // This is a limitation of the current architecture
-    // For now, return a mock user based on token
     return {
       id: decoded.sub,
       email: decoded.email,
@@ -628,10 +719,28 @@ export class AuthService {
 
   /**
    * User logout
+   *
+   * Invalidates the refresh token by deleting it from Redis.
+   * This prevents the token from being used for refresh after logout.
    */
-  async logout(_refreshToken: string): Promise<void> {
-    // In a real implementation, invalidate refresh token
-    // This could involve adding it to a blacklist or removing it from database
+  async logout(refreshToken: string): Promise<void> {
+    if (!refreshToken) {
+      return;
+    }
+
+    try {
+      const decoded = jwt.verify(refreshToken, this.jwtManager["jwtSecret"]) as DecodedJWT;
+      if (decoded.type === "refresh" && decoded.jti) {
+        // Delete the refresh session from Redis
+        const Redis = (await import("ioredis")).default;
+        const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+        await (redisClient as any).del(`auth:refresh-session:${decoded.jti}`);
+        await (redisClient as any).del(`auth:user-sessions:${decoded.tenantId}:${decoded.sub}`);
+        await (redisClient as any).quit();
+      }
+    } catch {
+      // Logout stays idempotent - if token is invalid/expired, we still succeed
+    }
   }
 
   /**

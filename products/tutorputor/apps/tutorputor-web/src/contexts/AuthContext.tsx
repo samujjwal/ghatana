@@ -121,28 +121,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return;
     }
 
-    // Legacy path: raw tokens in URL (should no longer be emitted by the server
-    // after F-002, but kept for backwards-compatibility during transition).
-    const callbackAccessToken = params.get("accessToken");
-    const callbackRefreshToken = params.get("refreshToken");
-
-    if (callbackAccessToken) {
-      localStorage.setItem(AUTH_TOKEN_KEY, callbackAccessToken);
-    }
-    if (callbackRefreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, callbackRefreshToken);
-    }
-    if (callbackAccessToken ?? callbackRefreshToken) {
-      params.delete("accessToken");
-      params.delete("refreshToken");
-      const nextSearch = params.toString();
-      window.history.replaceState(
-        {},
-        "",
-        `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`,
-      );
-    }
-
     const token = readAccessToken();
     if (token) {
       void (async () => {
@@ -189,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     persistTokens(token);
-    localStorage.setItem(TENANT_ID_KEY, user.tenantId);
+    // tenantId is derived from JWT token on every request, no longer stored in localStorage
     
     setState({
       user,

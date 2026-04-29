@@ -103,13 +103,8 @@ export const authModule: FastifyPluginAsync = async (app) => {
       return user;
     }
 
-    return {
-      id: claims.sub,
-      email: claims.email || "unknown",
-      displayName: claims.name || "User",
-      role: claims.role || "student",
-      tenantId: claims.tenantId || "default",
-    };
+    // Fail closed if user not found - do not default to "default" tenant
+    throw new Error(`User not found: ${claims.sub}`);
   }
 
   async function storeRefreshSession(
@@ -506,8 +501,135 @@ export const authModule: FastifyPluginAsync = async (app) => {
         refreshToken: nextRefreshToken,
         user,
       });
-    } catch {
+    } catch (error) {
+      // Ensure we don't leak sensitive error details
       return reply.code(401).send({ error: "Refresh token invalid or expired" });
+    }
+  });
+
+  // GET /consents - Get user consent status
+  app.get("/consents", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      const user = await fetchSessionUser(claims);
+
+      const userWithConsents = await prisma.user.findUnique({
+        where: { id: claims.sub },
+        select: {
+          id: true,
+          email: true,
+          tenantId: true,
+          role: true,
+          consents: true,
+        },
+      });
+
+      if (!userWithConsents) {
+        return reply.code(404).send({ error: "User not found" });
+      }
+
+      const consentCategories = (userWithConsents.consents as any[]).map((c) => c.category) || [];
+
+      const consentList = [
+        {
+          id: "ai_processing",
+          name: "AI Processing",
+          description: "Allow AI to process your data for personalized learning experiences",
+          required: false,
+          granted: consentCategories.includes("ai_processing") || false,
+          grantedAt: consentCategories.includes("ai_processing") ? new Date().toISOString() : undefined,
+        },
+        {
+          id: "analytics",
+          name: "Analytics",
+          description: "Allow anonymous usage analytics to improve the platform",
+          required: false,
+          granted: consentCategories.includes("analytics") || false,
+          grantedAt: consentCategories.includes("analytics") ? new Date().toISOString() : undefined,
+        },
+        {
+          id: "essential",
+          name: "Essential",
+          description: "Essential cookies and data for platform functionality",
+          required: true,
+          granted: true,
+          grantedAt: new Date().toISOString(),
+        },
+      ];
+
+      return reply.send({ consents: consentList });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+  });
+
+  // POST /consents - Update user consent
+  app.post("/consents", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      const { consentId, granted } = req.body as {
+        consentId: string;
+        granted: boolean;
+      };
+
+      const user = await prisma.user.findUnique({
+        where: { id: claims.sub },
+        select: { consents: true },
+      });
+
+      if (!user) {
+        return reply.code(404).send({ error: "User not found" });
+      }
+
+      const currentConsents = (user.consents as any[]).map((c) => c.category) || [];
+      let updatedConsents: string[];
+
+      if (granted) {
+        updatedConsents = [...new Set([...currentConsents, consentId])];
+      } else {
+        updatedConsents = currentConsents.filter((c) => c !== consentId);
+      }
+
+      // Update consents by creating/deleting UserConsent records
+      const existingConsent = await prisma.userConsent.findFirst({
+        where: { userId: claims.sub, category: consentId },
+      });
+
+      if (granted) {
+        if (!existingConsent) {
+          await prisma.userConsent.create({
+            data: {
+              userId: claims.sub,
+              tenantId: claims.tenantId,
+              category: consentId,
+              granted: true,
+              grantedAt: new Date(),
+            },
+          });
+        } else {
+          await prisma.userConsent.update({
+            where: { id: existingConsent.id },
+            data: { granted: true, grantedAt: new Date(), revokedAt: null },
+          });
+        }
+      } else {
+        if (existingConsent) {
+          await prisma.userConsent.update({
+            where: { id: existingConsent.id },
+            data: { granted: false, revokedAt: new Date() },
+          });
+        }
+      }
+
+      return reply.send({ success: true, consents: updatedConsents });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
     }
   });
 
@@ -520,11 +642,162 @@ export const authModule: FastifyPluginAsync = async (app) => {
         const session = claims.jti ? await readRefreshSession(claims.jti) : null;
         await deleteRefreshSession(claims.jti, session ?? undefined);
       } catch {
-        // Logout stays idempotent.
+        // Logout stays idempotent - don't leak error details
       }
     }
 
     return reply.send({ success: true });
+  });
+
+  // GET /admin/users/with-roles - Get all users with their roles and permissions
+  app.get("/admin/users/with-roles", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      if (claims.role !== "admin" && claims.role !== "superadmin") {
+        return reply.code(403).send({ error: "Forbidden" });
+      }
+
+      const users = await prisma.user.findMany({
+        where: { tenantId: claims.tenantId },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          roles: true,
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const usersWithRoles = users.map((user) => ({
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        roles: user.userRoles.map((ur) => ur.role),
+        permissions: user.userRoles.flatMap((ur) =>
+          ur.role.rolePermissions.map((rp) => rp.permission),
+        ),
+      }));
+
+      return reply.send({ users: usersWithRoles });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+  });
+
+  // GET /admin/roles - Get all roles
+  app.get("/admin/roles", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      if (claims.role !== "admin" && claims.role !== "superadmin") {
+        return reply.code(403).send({ error: "Forbidden" });
+      }
+
+      const roles = await prisma.role.findMany({
+        where: { tenantId: claims.tenantId },
+        include: {
+          rolePermissions: {
+            include: {
+              permission: true,
+            },
+          },
+        },
+      });
+
+      return reply.send({ roles });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+  });
+
+  // GET /admin/permissions - Get all permissions
+  app.get("/admin/permissions", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      if (claims.role !== "admin" && claims.role !== "superadmin") {
+        return reply.code(403).send({ error: "Forbidden" });
+      }
+
+      const permissions = await prisma.permission.findMany();
+
+      return reply.send({ permissions });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+  });
+
+  // POST /admin/users/roles - Assign role to user
+  app.post("/admin/users/roles", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      if (claims.role !== "admin" && claims.role !== "superadmin") {
+        return reply.code(403).send({ error: "Forbidden" });
+      }
+
+      const { userId, roleId } = req.body as { userId: string; roleId: string };
+      const tenantId = claims.tenantId;
+
+      await prisma.userRole.create({
+        data: {
+          userId,
+          roleId,
+          tenantId,
+        },
+      });
+
+      return reply.send({ success: true });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+  });
+
+  // DELETE /admin/users/roles - Remove role from user
+  app.delete("/admin/users/roles", async (req, reply) => {
+    try {
+      const claims = jwt.verify(
+        (req.headers["authorization"] as string)?.replace("Bearer ", "") || "",
+      ) as AuthJwtClaims;
+
+      if (claims.role !== "admin" && claims.role !== "superadmin") {
+        return reply.code(403).send({ error: "Forbidden" });
+      }
+
+      const { userId, roleId } = req.body as { userId: string; roleId: string };
+
+      await prisma.userRole.deleteMany({
+        where: {
+          userId,
+          roleId,
+        },
+      });
+
+      return reply.send({ success: true });
+    } catch {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
   });
 
   /**

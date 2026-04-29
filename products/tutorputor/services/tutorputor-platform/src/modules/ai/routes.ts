@@ -25,6 +25,8 @@ import {
 import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-registry.client.js";
 import { aiQuerySchema } from "../../validation/validator.js";
 import { validateBody } from "../../validation/middleware/validation.js";
+import { createConsentEnforcement } from "../../core/middleware/consent-enforcement.js";
+import { AIAuditService } from "../audit/AIAuditService.js";
 
 type AiRegistryClient = typeof defaultAiRegistryClient;
 
@@ -127,6 +129,13 @@ export async function registerAIRoutes(
   deps: AIRouteDeps,
 ): Promise<void> {
   const aiContentService = new AIContentGenerationService(deps.aiProxyService);
+  const aiAuditService = new AIAuditService(app.prisma as any);
+
+  // Create consent enforcement middleware for AI routes
+  // AI processing requires explicit user consent for data processing
+  const consentEnforcement = createConsentEnforcement({
+    prisma: app.prisma as any,
+  });
 
   function sendRequestContextError(
     reply: FastifyReply,
@@ -152,30 +161,38 @@ export async function registerAIRoutes(
     });
   }
 
-  // AI Tutor query endpoint
+  // AI Tutor query endpoint - requires ai_processing consent
   app.post(
     "/tutor/query",
-    { preHandler: validateBody(aiQuerySchema) },
+    { preHandler: [validateBody(aiQuerySchema), consentEnforcement.preHandler] },
     async (req, reply) => {
+      const startTime = Date.now();
+      const tenantId = getTenantId(req) as TenantId;
+      const userId = getUserId(req) as UserId;
+      const { moduleId, question, locale } = req.body as {
+        moduleId?: ModuleId;
+        question: string;
+        locale?: string;
+      };
+      let modelId: string | undefined;
+      let success = true;
+      let errorMessage: string | undefined;
+      let response: any = null;
+
       try {
         if (!(await enforceAiTenantRateLimit(app, req, reply, "tutor-query"))) {
-          return;
+          success = false;
+          errorMessage = "Rate limit exceeded";
+          throw new Error("Rate limit exceeded");
         }
 
-        const tenantId = getTenantId(req) as TenantId;
-        const userId = getUserId(req) as UserId;
-        const { moduleId, question, locale } = req.body as {
-          moduleId?: ModuleId;
-          question: string;
-          locale?: string;
-        };
-
         if (!question || question.trim().length === 0) {
+          success = false;
+          errorMessage = "Question is required";
           return reply.status(400).send({ error: "Question is required" });
         }
 
         // Resolve active model from platform AI Registry for observability & routing
-        let activeModelId: string | undefined;
         if (deps.aiRegistryClient) {
           try {
             const model = await deps.aiRegistryClient.findActiveModel(
@@ -183,7 +200,7 @@ export async function registerAIRoutes(
               "tutoring-llm",
             );
             if (model) {
-              activeModelId = model.id;
+              modelId = model.id;
               app.log.debug(
                 `[AI] Active model resolved: ${model.id} (${model.name})`,
               );
@@ -205,33 +222,62 @@ export async function registerAIRoutes(
           ...(locale ? { locale } : {}),
         });
 
-        if (activeModelId) {
-          void reply.header("x-active-model-id", activeModelId);
+        if (modelId) {
+          void reply.header("x-active-model-id", modelId);
         }
-        return reply.send({ response });
+
+        // Add provenance metadata to response
+        const provenance = {
+          modelId: modelId || "unknown",
+          timestamp: new Date().toISOString(),
+          tenantId: String(tenantId),
+          userId: String(userId),
+          ...(moduleId ? { moduleId: String(moduleId) } : {}),
+          ...(locale ? { locale } : {}),
+        };
+
+        return reply.send({ response, provenance });
       } catch (error) {
+        success = false;
+        errorMessage = error instanceof Error ? error.message : "Unknown error";
         const contextErrorReply = sendRequestContextError(reply, error);
         if (contextErrorReply) {
           return contextErrorReply;
         }
-
         throw error;
+      } finally {
+        // Log AI inference for audit
+        const latencyMs = Date.now() - startTime;
+        const auditEntry: any = {
+          tenantId: String(tenantId),
+          userId: String(userId),
+          modelId: modelId || "unknown",
+          endpoint: "tutor/query",
+          requestPayload: JSON.stringify({ question, moduleId, locale }),
+          policyDecision: success ? "allowed" : "blocked",
+          latencyMs,
+          success,
+          errorMessage,
+          ipAddress: (req as any).ip,
+          userAgent: (req as any).headers["user-agent"],
+        };
+        if (success && response) {
+          auditEntry.responsePayload = JSON.stringify({ modelId });
+        }
+        void aiAuditService.logInference(auditEntry);
       }
     },
   );
 
   // AI-generated questions from module content — teacher/admin only (resource-intensive)
-  app.post("/generate-questions", async (req, reply) => {
-    try {
-      requireRole(req, ["teacher", "admin", "superadmin"]);
-
-      if (
-        !(await enforceAiTenantRateLimit(app, req, reply, "generate-questions"))
-      ) {
-        return;
-      }
-
+  // Requires ai_processing consent
+  app.post(
+    "/generate-questions",
+    { preHandler: consentEnforcement.preHandler },
+    async (req, reply) => {
+      const startTime = Date.now();
       const tenantId = getTenantId(req) as TenantId;
+      const userId = getUserId(req) as UserId;
       const {
         moduleId,
         count = 5,
@@ -241,190 +287,303 @@ export async function registerAIRoutes(
         count?: number;
         difficulty?: "easy" | "medium" | "hard";
       };
+      let success = true;
+      let errorMessage: string | undefined;
+      let response: any = null;
 
-      if (!moduleId) {
-        return reply.status(400).send({ error: "moduleId is required" });
-      }
+      try {
+        requireRole(req, ["teacher", "admin", "superadmin"]);
 
-      if (!deps.aiProxyService.generateQuestionsFromContent) {
-        return reply.status(501).send({
-          error: "Question generation not available",
-          questions: [],
+        if (
+          !(await enforceAiTenantRateLimit(app, req, reply, "generate-questions"))
+        ) {
+          success = false;
+          errorMessage = "Rate limit exceeded";
+          throw new Error("Rate limit exceeded");
+        }
+
+        if (!moduleId) {
+          success = false;
+          errorMessage = "moduleId is required";
+          return reply.status(400).send({ error: "moduleId is required" });
+        }
+
+        if (!deps.aiProxyService.generateQuestionsFromContent) {
+          success = false;
+          errorMessage = "Question generation not available";
+          return reply.status(501).send({
+            error: "Question generation not available",
+            questions: [],
+          });
+        }
+
+        const questions = await deps.aiProxyService.generateQuestionsFromContent({
+          tenantId: String(tenantId),
+          moduleId: String(moduleId),
+          count: Math.min(count, 10),
+          difficulty,
         });
-      }
 
-      const questions = await deps.aiProxyService.generateQuestionsFromContent({
-        tenantId: String(tenantId),
-        moduleId: String(moduleId),
-        count: Math.min(count, 10),
-        difficulty,
-      });
+        response = { questions };
+        return reply.send({ questions });
+      } catch (error) {
+        success = false;
+        errorMessage = error instanceof Error ? error.message : String(error);
 
-      return reply.send({ questions });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage;
 
-      // Return structured error codes for client handling
-      if (message.startsWith("AI_NOT_CONFIGURED:")) {
-        return reply.status(503).send({
-          error: "AI service not configured",
-          code: "AI_NOT_CONFIGURED",
-          details: message.replace("AI_NOT_CONFIGURED: ", ""),
-          questions: [],
-        });
-      }
+        // Return structured error codes for client handling
+        if (message.startsWith("AI_NOT_CONFIGURED:")) {
+          return reply.status(503).send({
+            error: "AI service not configured",
+            code: "AI_NOT_CONFIGURED",
+            details: message.replace("AI_NOT_CONFIGURED: ", ""),
+            questions: [],
+          });
+        }
 
-      if (message.startsWith("NO_CONTENT:")) {
-        return reply.status(422).send({
-          error: "No content available for question generation",
-          code: "NO_CONTENT",
-          details: message.replace("NO_CONTENT: ", ""),
-          questions: [],
-        });
-      }
+        if (message.startsWith("NO_CONTENT:")) {
+          return reply.status(422).send({
+            error: "No content available for question generation",
+            code: "NO_CONTENT",
+            details: message.replace("NO_CONTENT: ", ""),
+            questions: [],
+          });
+        }
 
-      if (message.startsWith("GENERATION_FAILED:")) {
+        if (message.startsWith("GENERATION_FAILED:")) {
+          return reply.status(500).send({
+            error: "Question generation failed",
+            code: "GENERATION_FAILED",
+            details: message.replace("GENERATION_FAILED: ", ""),
+            questions: [],
+          });
+        }
+
+        // Unknown error
+        const contextErrorReply = sendRequestContextError(reply, error);
+        if (contextErrorReply) {
+          return contextErrorReply;
+        }
+
         return reply.status(500).send({
-          error: "Question generation failed",
-          code: "GENERATION_FAILED",
-          details: message.replace("GENERATION_FAILED: ", ""),
+          error: message,
+          code: "UNKNOWN_ERROR",
           questions: [],
         });
+      } finally {
+        // Log AI inference for audit
+        const latencyMs = Date.now() - startTime;
+        const auditEntry: any = {
+          tenantId: String(tenantId),
+          userId: String(userId),
+          modelId: "unknown",
+          endpoint: "generate-questions",
+          requestPayload: JSON.stringify({ moduleId, count, difficulty }),
+          policyDecision: success ? "allowed" : "blocked",
+          latencyMs,
+          success,
+          errorMessage,
+          ipAddress: (req as any).ip,
+          userAgent: (req as any).headers["user-agent"],
+        };
+        if (success && response) {
+          auditEntry.responsePayload = JSON.stringify(response);
+        }
+        void aiAuditService.logInference(auditEntry);
       }
+    },
+  );
 
-      // Unknown error
-      const contextErrorReply = sendRequestContextError(reply, error);
-      if (contextErrorReply) {
-        return contextErrorReply;
-      }
-
-      return reply.status(500).send({
-        error: message,
-        code: "UNKNOWN_ERROR",
-        questions: [],
-      });
-    }
-  });
-
-  // AI-powered concept generation from name
-  app.post("/generate-concept", async (req, reply) => {
-    try {
-      if (
-        !(await enforceAiTenantRateLimit(app, req, reply, "generate-concept"))
-      ) {
-        return;
-      }
-
-      requireRole(req, ["admin"]);
+  // AI-powered concept generation from name - requires ai_processing consent
+  app.post(
+    "/generate-concept",
+    { preHandler: consentEnforcement.preHandler },
+    async (req, reply) => {
+      const startTime = Date.now();
       const tenantId = getTenantId(req) as TenantId;
+      const userId = getUserId(req) as UserId;
       const { conceptName, domain } = req.body as {
         conceptName: string;
         domain: string;
       };
+      let success = true;
+      let errorMessage: string | undefined;
+      let response: any = null;
 
-      if (!conceptName || !domain) {
-        return reply
-          .status(400)
-          .send({ error: "conceptName and domain are required" });
+      try {
+        if (
+          !(await enforceAiTenantRateLimit(app, req, reply, "generate-concept"))
+        ) {
+          success = false;
+          errorMessage = "Rate limit exceeded";
+          throw new Error("Rate limit exceeded");
+        }
+
+        requireRole(req, ["admin"]);
+
+        if (!conceptName || !domain) {
+          success = false;
+          errorMessage = "conceptName and domain are required";
+          return reply
+            .status(400)
+            .send({ error: "conceptName and domain are required" });
+        }
+
+        app.log.info(`[AI] Generating concept: ${conceptName} (${domain})`);
+
+        const generated = await aiContentService.generateConceptFromName(
+          conceptName,
+          domain,
+          String(tenantId),
+        );
+
+        response = { concept: generated };
+        return reply.send({ success: true, concept: generated });
+      } catch (error) {
+        success = false;
+        errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        if (
+          (error as { statusCode?: number }).statusCode === 403 ||
+          errorMessage.includes("Forbidden")
+        ) {
+          return reply.status(403).send({ error: errorMessage });
+        }
+
+        if (error instanceof AIContentGenerationError) {
+          return reply.status(422).send({
+            error: error.message,
+            code: error.code,
+          });
+        }
+
+        const contextErrorReply = sendRequestContextError(reply, error);
+        if (contextErrorReply) {
+          return contextErrorReply;
+        }
+
+        app.log.error(`[AI] Concept generation failed: ${errorMessage}`);
+        return reply.status(500).send({ error: errorMessage });
+      } finally {
+        // Log AI inference for audit
+        const latencyMs = Date.now() - startTime;
+        const auditEntry: any = {
+          tenantId: String(tenantId),
+          userId: String(userId),
+          modelId: "unknown",
+          endpoint: "generate-concept",
+          requestPayload: JSON.stringify({ conceptName, domain }),
+          policyDecision: success ? "allowed" : "blocked",
+          latencyMs,
+          success,
+          errorMessage,
+          ipAddress: (req as any).ip,
+          userAgent: (req as any).headers["user-agent"],
+        };
+        if (success && response) {
+          auditEntry.responsePayload = JSON.stringify(response);
+        }
+        void aiAuditService.logInference(auditEntry);
       }
+    },
+  );
 
-      app.log.info(`[AI] Generating concept: ${conceptName} (${domain})`);
-
-      const generated = await aiContentService.generateConceptFromName(
-        conceptName,
-        domain,
-        String(tenantId),
-      );
-
-      return reply.send({ success: true, concept: generated });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-
-      if (
-        (error as { statusCode?: number }).statusCode === 403 ||
-        errorMessage.includes("Forbidden")
-      ) {
-        return reply.status(403).send({ error: errorMessage });
-      }
-
-      if (error instanceof AIContentGenerationError) {
-        return reply.status(422).send({
-          error: error.message,
-          code: error.code,
-        });
-      }
-
-      const contextErrorReply = sendRequestContextError(reply, error);
-      if (contextErrorReply) {
-        return contextErrorReply;
-      }
-
-      app.log.error(`[AI] Concept generation failed: ${errorMessage}`);
-      return reply.status(500).send({ error: errorMessage });
-    }
-  });
-
-  // AI-powered simulation manifest generation
-  app.post("/generate-simulation", async (req, reply) => {
-    try {
-      if (
-        !(await enforceAiTenantRateLimit(
-          app,
-          req,
-          reply,
-          "generate-simulation",
-        ))
-      ) {
-        return;
-      }
-
-      requireRole(req, ["admin"]);
+  // AI-powered simulation manifest generation - requires ai_processing consent
+  app.post(
+    "/generate-simulation",
+    { preHandler: consentEnforcement.preHandler },
+    async (req, reply) => {
+      const startTime = Date.now();
       const tenantId = getTenantId(req) as TenantId;
+      const userId = getUserId(req) as UserId;
       const { description, conceptName, domain } = req.body as {
         description: string;
         conceptName: string;
         domain: string;
       };
+      let success = true;
+      let errorMessage: string | undefined;
+      let response: any = null;
 
-      if (!description || !conceptName || !domain) {
-        return reply.status(400).send({
-          error: "description, conceptName, and domain are required",
-        });
+      try {
+        if (
+          !(await enforceAiTenantRateLimit(
+            app,
+            req,
+            reply,
+            "generate-simulation",
+          ))
+        ) {
+          success = false;
+          errorMessage = "Rate limit exceeded";
+          throw new Error("Rate limit exceeded");
+        }
+
+        requireRole(req, ["admin"]);
+
+        if (!description || !conceptName || !domain) {
+          success = false;
+          errorMessage = "description, conceptName, and domain are required";
+          return reply.status(400).send({
+            error: "description, conceptName, and domain are required",
+          });
+        }
+
+        app.log.info(
+          `[AI] Generating simulation: ${description} for concept ${conceptName}`,
+        );
+
+        const generated = await aiContentService.generateSimulationManifest(
+          description,
+          conceptName,
+          domain,
+          String(tenantId),
+        );
+
+        response = { simulation: generated };
+        return reply.send({ success: true, simulation: generated });
+      } catch (error) {
+        success = false;
+        errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+        if (
+          (error as { statusCode?: number }).statusCode === 403 ||
+          errorMessage.includes("Forbidden")
+        ) {
+          return reply.status(403).send({ error: errorMessage });
+        }
+
+        const contextErrorReply = sendRequestContextError(reply, error);
+        if (contextErrorReply) {
+          return contextErrorReply;
+        }
+
+        app.log.error(`[AI] Simulation generation failed: ${errorMessage}`);
+        return reply.status(500).send({ error: errorMessage });
+      } finally {
+        // Log AI inference for audit
+        const latencyMs = Date.now() - startTime;
+        const auditEntry: any = {
+          tenantId: String(tenantId),
+          userId: String(userId),
+          modelId: "unknown",
+          endpoint: "generate-simulation",
+          requestPayload: JSON.stringify({ description, conceptName, domain }),
+          policyDecision: success ? "allowed" : "blocked",
+          latencyMs,
+          success,
+          errorMessage,
+          ipAddress: (req as any).ip,
+          userAgent: (req as any).headers["user-agent"],
+        };
+        if (success && response) {
+          auditEntry.responsePayload = JSON.stringify(response);
+        }
+        void aiAuditService.logInference(auditEntry);
       }
-
-      app.log.info(
-        `[AI] Generating simulation: ${description} for concept ${conceptName}`,
-      );
-
-      const generated = await aiContentService.generateSimulationManifest(
-        description,
-        conceptName,
-        domain,
-        String(tenantId),
-      );
-
-      return reply.send({ success: true, simulation: generated });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-
-      if (
-        (error as { statusCode?: number }).statusCode === 403 ||
-        errorMessage.includes("Forbidden")
-      ) {
-        return reply.status(403).send({ error: errorMessage });
-      }
-
-      const contextErrorReply = sendRequestContextError(reply, error);
-      if (contextErrorReply) {
-        return contextErrorReply;
-      }
-
-      app.log.error(`[AI] Simulation generation failed: ${errorMessage}`);
-      return reply.status(500).send({ error: errorMessage });
-    }
-  });
+    },
+  );
 
   app.log.info(
     "[AI] Routes registered: /tutor/query, /generate-questions, /generate-concept, /generate-simulation",

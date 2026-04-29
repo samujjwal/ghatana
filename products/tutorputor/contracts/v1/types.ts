@@ -453,6 +453,9 @@ export interface AnalyticsSummary {
   activeLearners: number;
   eventsByType: Record<LearningEventType, number>;
   moduleCompletions: Array<{ moduleId: ModuleId; count: number }>;
+  moduleCount?: number;
+  averageCompletionRate?: number;
+  averageTimeSpentMinutes?: number;
 }
 
 // =============================================================================
@@ -1854,7 +1857,7 @@ export function createHistoryEntry<T extends SoftDeletable>(
     changedAt: new Date().toISOString(),
     changedBy,
     operation,
-    reason,
+    ...(reason !== undefined ? { reason } : {}),
   };
 }
 

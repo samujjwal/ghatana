@@ -1362,9 +1362,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         id: created.id,
         title: created.title,
         manifest: created.manifest,
-        ...(guardrail.warnings.length > 0
+        ...(guardrail.warnings && guardrail.warnings.length > 0
           ? {
-              warnings: guardrail.warnings.map((w) => ({
+              warnings: guardrail.warnings.map((w: any) => ({
                 parameter: w.parameterName,
                 field: w.field,
                 message: w.message,
@@ -1460,9 +1460,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       });
       return reply.send({
         success: true,
-        ...(guardrail.warnings.length > 0
+        ...(guardrail.warnings && guardrail.warnings.length > 0
           ? {
-              warnings: guardrail.warnings.map((w) => ({
+              warnings: guardrail.warnings.map((w: any) => ({
                 parameter: w.parameterName,
                 field: w.field,
                 message: w.message,

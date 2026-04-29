@@ -1,3 +1,14 @@
-# This file is intentionally left empty.
-# TutorPutor is part of the parent Ghatana workspace.
-# See /pnpm-workspace.yaml for the root workspace configuration.
+packages:
+  # Tutorputor packages used by docker-compose dev environment
+  - "contracts"
+  - "libs/*"
+  - "apps/api-gateway"
+  - "apps/content-explorer"
+  - "apps/tutorputor-admin"
+  - "apps/tutorputor-web"
+  - "services/*"
+  - "tools/*"
+
+  # Platform TypeScript packages (shared foundation, tightly coupled workspace deps)
+  - "../../platform/typescript/*"
+  - "../../platform/typescript/foundation/*"

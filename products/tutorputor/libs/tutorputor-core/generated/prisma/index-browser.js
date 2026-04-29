@@ -24,12 +24,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 7.7.0
- * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
+ * Prisma Client JS version: 7.8.0
+ * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
  */
 Prisma.prismaVersion = {
-  client: "7.7.0",
-  engine: "75cbdc1eb7150937890ad5465d861175c6624711"
+  client: "7.8.0",
+  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -134,6 +134,7 @@ exports.Prisma.ModuleScalarFieldEnum = {
   authorId: 'authorId',
   updatedBy: 'updatedBy',
   publishedAt: 'publishedAt',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -183,6 +184,7 @@ exports.Prisma.EnrollmentScalarFieldEnum = {
   startedAt: 'startedAt',
   completedAt: 'completedAt',
   timeSpentSeconds: 'timeSpentSeconds',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -279,6 +281,7 @@ exports.Prisma.LearningPathScalarFieldEnum = {
   title: 'title',
   goal: 'goal',
   status: 'status',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -298,6 +301,7 @@ exports.Prisma.ClassroomScalarFieldEnum = {
   teacherId: 'teacherId',
   name: 'name',
   description: 'description',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -1166,6 +1170,8 @@ exports.Prisma.UserScalarFieldEnum = {
   emailEncrypted: 'emailEncrypted',
   displayName: 'displayName',
   role: 'role',
+  passwordHash: 'passwordHash',
+  lastLoginAt: 'lastLoginAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -1181,6 +1187,203 @@ exports.Prisma.UserConsentScalarFieldEnum = {
   version: 'version',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RoleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PermissionScalarFieldEnum = {
+  id: 'id',
+  resource: 'resource',
+  action: 'action',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.UserRoleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  roleId: 'roleId',
+  assignedAt: 'assignedAt'
+};
+
+exports.Prisma.RolePermissionScalarFieldEnum = {
+  id: 'id',
+  roleId: 'roleId',
+  permissionId: 'permissionId',
+  assignedAt: 'assignedAt'
+};
+
+exports.Prisma.CapabilityScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  category: 'category',
+  description: 'description',
+  enabled: 'enabled',
+  requiresSubscription: 'requiresSubscription',
+  requiresWorkerHealthy: 'requiresWorkerHealthy',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.TenantCapabilityScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  capabilityId: 'capabilityId',
+  enabled: 'enabled',
+  config: 'config',
+  enabledAt: 'enabledAt',
+  disabledAt: 'disabledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ABACPolicyScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  description: 'description',
+  enabled: 'enabled',
+  effect: 'effect',
+  priority: 'priority',
+  conditions: 'conditions',
+  actions: 'actions',
+  resourceTypes: 'resourceTypes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ABACAttributeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  attributeName: 'attributeName',
+  attributeValue: 'attributeValue',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AIAuditLogScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  modelId: 'modelId',
+  modelName: 'modelName',
+  modelVersion: 'modelVersion',
+  endpoint: 'endpoint',
+  requestPayload: 'requestPayload',
+  responsePayload: 'responsePayload',
+  policyDecision: 'policyDecision',
+  latencyMs: 'latencyMs',
+  success: 'success',
+  errorMessage: 'errorMessage',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ContentEvaluationScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  moduleId: 'moduleId',
+  contentId: 'contentId',
+  claimId: 'claimId',
+  text: 'text',
+  isCorrect: 'isCorrect',
+  confidence: 'confidence',
+  matchedSourceId: 'matchedSourceId',
+  matchedSourceType: 'matchedSourceType',
+  issues: 'issues',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.GoldenDatasetScalarFieldEnum = {
+  id: 'id',
+  moduleId: 'moduleId',
+  inputType: 'inputType',
+  input: 'input',
+  expectedOutput: 'expectedOutput',
+  qualityMetrics: 'qualityMetrics',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RegressionTestResultScalarFieldEnum = {
+  id: 'id',
+  entryId: 'entryId',
+  goldenDatasetId: 'goldenDatasetId',
+  moduleId: 'moduleId',
+  input: 'input',
+  actualOutput: 'actualOutput',
+  expectedOutput: 'expectedOutput',
+  passed: 'passed',
+  qualityDiff: 'qualityDiff',
+  regressionDetected: 'regressionDetected',
+  timestamp: 'timestamp'
+};
+
+exports.Prisma.QualityBaselineScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  contentType: 'contentType',
+  baselineMetrics: 'baselineMetrics',
+  establishedAt: 'establishedAt'
+};
+
+exports.Prisma.QualityAlertScalarFieldEnum = {
+  id: 'id',
+  contentId: 'contentId',
+  contentType: 'contentType',
+  metricType: 'metricType',
+  baselineValue: 'baselineValue',
+  currentValue: 'currentValue',
+  degradation: 'degradation',
+  severity: 'severity',
+  detectedAt: 'detectedAt',
+  resolved: 'resolved',
+  resolvedAt: 'resolvedAt'
+};
+
+exports.Prisma.ContentGenerationBenchmarkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  metrics: 'metrics',
+  baseline: 'baseline',
+  regressionDetected: 'regressionDetected',
+  regressionDetails: 'regressionDetails',
+  isBaseline: 'isBaseline',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ComplianceEvidenceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  reportType: 'reportType',
+  evidence: 'evidence',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  generatedAt: 'generatedAt'
+};
+
+exports.Prisma.TenantPluginScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  pluginId: 'pluginId',
+  version: 'version',
+  status: 'status',
+  configuration: 'configuration',
+  installedAt: 'installedAt',
+  activatedAt: 'activatedAt',
+  lastMigratedAt: 'lastMigratedAt'
 };
 
 exports.Prisma.LearnerProfileScalarFieldEnum = {
@@ -3108,6 +3311,23 @@ exports.Prisma.ModelName = {
   TenantSettings: 'TenantSettings',
   User: 'User',
   UserConsent: 'UserConsent',
+  Role: 'Role',
+  Permission: 'Permission',
+  UserRole: 'UserRole',
+  RolePermission: 'RolePermission',
+  Capability: 'Capability',
+  TenantCapability: 'TenantCapability',
+  ABACPolicy: 'ABACPolicy',
+  ABACAttribute: 'ABACAttribute',
+  AIAuditLog: 'AIAuditLog',
+  ContentEvaluation: 'ContentEvaluation',
+  GoldenDataset: 'GoldenDataset',
+  RegressionTestResult: 'RegressionTestResult',
+  QualityBaseline: 'QualityBaseline',
+  QualityAlert: 'QualityAlert',
+  ContentGenerationBenchmark: 'ContentGenerationBenchmark',
+  ComplianceEvidence: 'ComplianceEvidence',
+  TenantPlugin: 'TenantPlugin',
   LearnerProfile: 'LearnerProfile',
   LearnerMastery: 'LearnerMastery',
   KnowledgeGap: 'KnowledgeGap',

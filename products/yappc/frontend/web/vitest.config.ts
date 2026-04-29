@@ -42,10 +42,6 @@ export default defineConfig({
         replacement: resolve(__dirname, '../libs/yappc-initialization-ui/src'),
       },
       {
-        find: '@yappc/development-ui',
-        replacement: resolve(__dirname, '../libs/yappc-development-ui/src'),
-      },
-      {
         find: '@ghatana/code-editor',
         replacement: resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
       },

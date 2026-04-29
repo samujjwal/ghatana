@@ -50,32 +50,65 @@ export async function setupPlatform(
   assertTrustedProxyNotEnabledInProduction();
 
   // 1. Core infrastructure
-  await app.register(setupCorePlugins, {
-    jwtSecret: options.jwtSecret,
-    redisUrl: options.redisUrl,
-    prisma: options.prisma,
-    redis: options.redis,
-  });
+  const corePluginsOptions: {
+    jwtSecret?: string;
+    redisUrl?: string;
+    prisma?: PrismaClient;
+    redis?: unknown;
+  } = {};
+  if (options.jwtSecret !== undefined) {
+    corePluginsOptions.jwtSecret = options.jwtSecret;
+  }
+  if (options.redisUrl !== undefined) {
+    corePluginsOptions.redisUrl = options.redisUrl;
+  }
+  if (options.prisma !== undefined) {
+    corePluginsOptions.prisma = options.prisma;
+  }
+  if (options.redis !== undefined) {
+    corePluginsOptions.redis = options.redis;
+  }
+  await app.register(setupCorePlugins, corePluginsOptions);
 
   // 2. Content-domain modules
   await app.register(setupContentModules);
 
   // 3. Business-domain modules
-  await app.register(setupBusinessModules, {
-    startLearnerProfileGrpcServer: options.startLearnerProfileGrpcServer,
-    learnerProfileGrpcAddress: options.learnerProfileGrpcAddress,
-  });
+  const businessModulesOptions: {
+    startLearnerProfileGrpcServer?: boolean;
+    learnerProfileGrpcAddress?: string;
+  } = {};
+  if (options.startLearnerProfileGrpcServer !== undefined) {
+    businessModulesOptions.startLearnerProfileGrpcServer = options.startLearnerProfileGrpcServer;
+  }
+  if (options.learnerProfileGrpcAddress !== undefined) {
+    businessModulesOptions.learnerProfileGrpcAddress = options.learnerProfileGrpcAddress;
+  }
+  await app.register(setupBusinessModules, businessModulesOptions);
 
   // 4. Admin / platform-ops modules
   await app.register(setupAdminModules);
 
   // 5. Background workers + lifecycle cleanup
-  await app.register(setupWorkers, {
-    startContentWorker: options.startContentWorker,
-    grpcServerAddress: options.grpcServerAddress,
-    grpcUseTls: options.grpcUseTls,
-    redisUrl: options.redisUrl,
-  });
+  const workersOptions: {
+    startContentWorker?: boolean;
+    grpcServerAddress?: string;
+    grpcUseTls?: boolean;
+    redisUrl?: string;
+  } = {};
+  if (options.startContentWorker !== undefined) {
+    workersOptions.startContentWorker = options.startContentWorker;
+  }
+  if (options.grpcServerAddress !== undefined) {
+    workersOptions.grpcServerAddress = options.grpcServerAddress;
+  }
+  if (options.grpcUseTls !== undefined) {
+    workersOptions.grpcUseTls = options.grpcUseTls;
+  }
+  if (options.redisUrl !== undefined) {
+    workersOptions.redisUrl = options.redisUrl;
+  }
+  await app.register(setupWorkers, workersOptions);
 
   return app;
 }

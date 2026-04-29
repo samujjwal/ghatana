@@ -59,7 +59,6 @@
     "@ghatana/code-editor": "workspace:*",
     "@yappc/collab": "workspace:*",
     "@yappc/core": "workspace:*",
-    "@yappc/development-ui": "workspace:*",
     "@yappc/ide": "workspace:*",
     "@yappc/initialization-ui": "workspace:*",
     "@yappc/product-theme": "workspace:*",

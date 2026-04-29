@@ -139,6 +139,12 @@ export function getContentGenerationQueue(): ContentGenerationQueueLike {
             count: 5000,
             age: 86400, // 24 hours
           },
+          // Auto-retry failed jobs with exponential backoff
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000, // Start with 2 seconds, then exponentially increase
+          },
         },
       });
 
