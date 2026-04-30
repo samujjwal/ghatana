@@ -1,8 +1,10 @@
+import java.time.Instant
+
 plugins {
     id("java-module")
 }
 
-group = "com.ghatana.products.yappc"
+group = "com.ghatana.yappc"
 version = rootProject.version
 description = "YAPPC Infrastructure - Data-Cloud Integration"
 
@@ -64,8 +66,52 @@ tasks.jacocoTestReport {
     }
 }
 
-// Temporarily disable coverage verification for this module
-// TODO: Add more tests to reach minimum coverage thresholds
+// Coverage verification: re-enable when module test coverage reaches minimum threshold.
+// Tracked by YAPPC-011 — add ConfidenceScoringService tests to lift coverage.
 tasks.named("jacocoTestCoverageVerification") {
     enabled = false
+}
+
+// SBOM generation task (YAPPC-009)
+// Produces a CycloneDX-format SBOM in build/sbom/ by delegating to the cyclonedxBom Gradle plugin
+// when it is applied, or emits a build warning instructing teams to apply the plugin in CI.
+tasks.register("generateSbom") {
+    group = "security"
+    description = "Generates a CycloneDX SBOM for this module. Requires org.cyclonedx.bom plugin in CI."
+
+    doLast {
+        val cyclonedxTask = project.tasks.findByName("cyclonedxBom")
+        if (cyclonedxTask != null) {
+            // Delegate to the real CycloneDX task when the plugin is present
+            cyclonedxTask.actions.forEach { it.execute(cyclonedxTask) }
+            println("[SBOM] CycloneDX SBOM generated via cyclonedxBom task")
+        } else {
+            // In local dev, emit a warning — CI must apply the plugin for real SBOM output
+            val sbomDir = layout.buildDirectory.dir("sbom").get().asFile
+            sbomDir.mkdirs()
+            val stubFile = sbomDir.resolve("bom.json")
+            stubFile.writeText(
+                """{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "version": 1,
+  "metadata": {
+    "timestamp": "${Instant.now()}",
+    "component": {
+      "type": "library",
+      "name": "${project.name}",
+      "version": "${project.version}",
+      "description": "STUB — apply org.cyclonedx.bom plugin for production SBOM"
+    }
+  },
+  "components": []
+}"""
+            )
+            logger.warn(
+                "[SBOM][YAPPC-009] CycloneDX plugin (org.cyclonedx.bom) not applied. " +
+                "A stub SBOM was written to ${stubFile.absolutePath}. " +
+                "Apply the plugin in build.gradle.kts to generate a real dependency SBOM in CI."
+            )
+        }
+    }
 }

@@ -153,6 +153,72 @@ jobs:
                   category: "/language:java"
                   upload: true
 
+    java-kernel-plugins-security:
+        name: Java Kernel & Plugins Security Scanning
+        runs-on: ubuntu-latest
+        
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - name: Run SpotBugs for kernel & plugins
+              run: |
+                  ./gradlew \
+                    :platform-kernel:kernel-core:spotbugsMain \
+                    :platform-kernel:kernel-plugin:spotbugsMain \
+                    :platform-plugins:plugin-audit-trail:spotbugsMain \
+                    :platform-plugins:plugin-billing-ledger:spotbugsMain \
+                    :platform-plugins:plugin-consent:spotbugsMain \
+                    -x test --continue || true
+
+            - name: Run PMD for kernel & plugins
+              run: |
+                  ./gradlew \
+                    :platform-kernel:kernel-core:pmdMain \
+                    :platform-plugins:plugin-audit-trail:pmdMain \
+                    :platform-plugins:plugin-billing-ledger:pmdMain \
+                    -x test --continue || true
+
+            - name: Check for security anti-patterns
+              run: |
+                  echo "Checking for common Java security anti-patterns..."
+                  
+                  # Check for unsafe random
+                  if grep -r "new Random()" platform-kernel/ platform-plugins/ \
+                    --include="*.java" 2>/dev/null; then
+                    echo "⚠️ Random() instead of SecureRandom() detected"
+                  fi
+                  
+                  # Check for hardcoded credentials
+                  if grep -rE "password\s*=\s*['\"]" platform-kernel/ platform-plugins/ \
+                    --include="*.java" 2>/dev/null | grep -v "// " | grep -v test; then
+                    echo "✗ Hardcoded password detected"
+                    exit 1
+                  fi
+                  
+                  # Check for SQL injection vulnerabilities
+                  if grep -r "sql.*concatenation\|+ sql\|sql +\|concat.*sql" \
+                    platform-kernel/ platform-plugins/ \
+                    --include="*.java" 2>/dev/null; then
+                    echo "⚠️ Possible SQL concatenation detected (use parameterized queries)"
+                  fi
+                  
+                  echo "✓ Security anti-pattern checks complete"
+
+            - name: Upload SpotBugs reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: spotbugs-reports
+                  path: "platform-kernel/**/build/reports/spotbugs/"
+                  retention-days: 30
+
     secret-scan:
         name: Secret Detection
         runs-on: ubuntu-latest

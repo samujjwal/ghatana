@@ -17,6 +17,8 @@
 package com.ghatana.yappc.core.plugin;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -39,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PluginSandboxTest {
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testPermissiveSandbox() { // GH-90000
         Path workspace = Paths.get("/workspace");
         PluginSandbox sandbox = PluginSandbox.permissive(workspace); // GH-90000
@@ -51,6 +54,7 @@ class PluginSandboxTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testRestrictiveSandbox() { // GH-90000
         Path allowed = Paths.get("/workspace");
         PluginSandbox sandbox = PluginSandbox.restrictive(List.of(allowed)); // GH-90000
@@ -74,6 +78,7 @@ class PluginSandboxTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testIsWriteAllowedWithDeniedPaths() { // GH-90000
         Path workspace = Paths.get("/workspace");
         Path denied = workspace.resolve("restricted");
@@ -90,6 +95,7 @@ class PluginSandboxTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testIsWriteAllowedOutsideAllowedPaths() { // GH-90000
         Path workspace = Paths.get("/workspace");
         PluginSandbox sandbox = new PluginSandbox( // GH-90000

@@ -306,7 +306,7 @@ public class SecureTokenManager {
      */
     public boolean shouldRotateToken(TokenMetadata metadata) {
         Instant rotationThreshold = metadata.getExpiration().minus(ROTATION_WINDOW);
-        return Instant.now().isAfter(rotationThreshold);
+        return !Instant.now().isBefore(rotationThreshold);
     }
 
     /**

@@ -188,7 +188,25 @@ public class RunServiceImpl implements RunService {
                 .build());
         }
 
-        return ciCdAdapter.build(task);
+        try {
+            return ciCdAdapter.build(task)
+                .then(
+                    result -> Promise.of(result),
+                    ex -> Promise.of(TaskResult.builder()
+                        .taskId(task.id())
+                        .status(RunStatus.FAILED)
+                        .error(ex.getMessage())
+                        .durationMs(System.currentTimeMillis() - startTime)
+                        .build())
+                );
+        } catch (Exception ex) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error(ex.getMessage())
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
     }
 
     private Promise<TaskResult> executeTestTask(RunTask task) {
@@ -203,7 +221,25 @@ public class RunServiceImpl implements RunService {
                 .build());
         }
 
-        return ciCdAdapter.test(task);
+        try {
+            return ciCdAdapter.test(task)
+                .then(
+                    result -> Promise.of(result),
+                    ex -> Promise.of(TaskResult.builder()
+                        .taskId(task.id())
+                        .status(RunStatus.FAILED)
+                        .error(ex.getMessage())
+                        .durationMs(System.currentTimeMillis() - startTime)
+                        .build())
+                );
+        } catch (Exception ex) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error(ex.getMessage())
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
     }
 
     private Promise<TaskResult> executeDeployTask(RunTask task) {
@@ -218,7 +254,25 @@ public class RunServiceImpl implements RunService {
                     .build());
         }
 
-        return ciCdAdapter.deploy(task);
+        try {
+            return ciCdAdapter.deploy(task)
+                .then(
+                    result -> Promise.of(result),
+                    ex -> Promise.of(TaskResult.builder()
+                        .taskId(task.id())
+                        .status(RunStatus.FAILED)
+                        .error(ex.getMessage())
+                        .durationMs(System.currentTimeMillis() - startTime)
+                        .build())
+                );
+        } catch (Exception ex) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error(ex.getMessage())
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
     }
 
     private Promise<TaskResult> executeMigrateTask(RunTask task) {
@@ -233,7 +287,25 @@ public class RunServiceImpl implements RunService {
                 .build());
         }
 
-        return ciCdAdapter.migrate(task);
+        try {
+            return ciCdAdapter.migrate(task)
+                .then(
+                    result -> Promise.of(result),
+                    ex -> Promise.of(TaskResult.builder()
+                        .taskId(task.id())
+                        .status(RunStatus.FAILED)
+                        .error(ex.getMessage())
+                        .durationMs(System.currentTimeMillis() - startTime)
+                        .build())
+                );
+        } catch (Exception ex) {
+            return Promise.of(TaskResult.builder()
+                .taskId(task.id())
+                .status(RunStatus.FAILED)
+                .error(ex.getMessage())
+                .durationMs(System.currentTimeMillis() - startTime)
+                .build());
+        }
     }
 
     private Promise<RunResult> performRollback(String deploymentId, String targetVersion) {

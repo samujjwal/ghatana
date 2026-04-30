@@ -1,7 +1,7 @@
 package com.ghatana.yappc.platform;
 
-import com.ghatana.products.yappc.domain.agent.AgentRegistry;
-import com.ghatana.products.yappc.domain.workflow.*;
+import com.ghatana.yappc.domain.agent.AgentRegistry;
+import com.ghatana.yappc.domain.workflow.*;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

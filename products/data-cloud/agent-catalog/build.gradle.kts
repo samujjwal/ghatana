@@ -17,4 +17,19 @@ dependencies {
     // Jackson for YAML parsing
     implementation(libs.jackson.databind)
     implementation(libs.jackson.dataformat.yaml)
+
+    // ── Test ─────────────────────────────────────────────────────────────────
+    testImplementation(libs.bundles.testing.core)
+    testImplementation(libs.junit.jupiter.engine)
+    testImplementation(libs.assertj.core)
+}
+
+tasks.test {
+    useJUnitPlatform()
+
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = false
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }

@@ -26,7 +26,7 @@ Data-Cloud is an **independent AI/ML-native data product** for Ghatana. It:
 |---------|-----------|
 | `data-cloud/spi` | AEP, YAPPC, App-Platform |
 | `data-cloud/platform-api` | Product and platform HTTP/API consumers |
-| `data-cloud/platform-client` | Internal and product-side client integrations |
+| `data-cloud/kernel-bridge` | Kernel adapter bridge for external product integration |
 | `@ghatana/canvas` (joint with YAPPC) | YAPPC, Data-Cloud UI |
 
 ## Consumers

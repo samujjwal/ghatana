@@ -2,7 +2,7 @@ plugins {
     id("java-module")
 }
 
-group = "com.ghatana.products.yappc"
+group = "com.ghatana.yappc"
 version = rootProject.version
 
 description = "YAPPC Agent Workflow — SDLC phase step implementations (architecture, implementation, leads, requirements, enhancement, ops, testing phases)"

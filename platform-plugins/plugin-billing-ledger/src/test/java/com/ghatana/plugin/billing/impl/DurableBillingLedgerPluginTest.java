@@ -235,6 +235,133 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
         assertThat(entries.get(0).transactionId()).isEqualTo("txn-q1");
     }
 
+    // -------------------------------------------------------------------------
+    // Ledger invariants (double-entry symmetry, reconciliation)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("LDG-INV-001: total debits out of debit account must equal total credits into credit account")
+    void testDoubleEntrySymmetry() {
+        String debitAcct = "inv-debit-" + System.nanoTime();
+        String creditAcct = "inv-credit-" + System.nanoTime();
+        BigDecimal amount1 = new BigDecimal("100.00");
+        BigDecimal amount2 = new BigDecimal("250.00");
+
+        BillingTransaction tx1 = BillingTransaction.builder()
+                .transactionId("inv-txn-1-" + System.nanoTime())
+                .sourceProductId("finance")
+                .debitAccount(debitAcct)
+                .creditAccount(creditAcct)
+                .amount(amount1)
+                .currency("USD")
+                .type(BillingTransaction.TransactionType.CHARGE)
+                .build();
+        BillingTransaction tx2 = BillingTransaction.builder()
+                .transactionId("inv-txn-2-" + System.nanoTime())
+                .sourceProductId("finance")
+                .debitAccount(debitAcct)
+                .creditAccount(creditAcct)
+                .amount(amount2)
+                .currency("USD")
+                .type(BillingTransaction.TransactionType.CHARGE)
+                .build();
+
+        runPromise(() -> plugin.postTransaction(tx1));
+        runPromise(() -> plugin.postTransaction(tx2));
+
+        java.time.Instant start = java.time.Instant.now().minusSeconds(60);
+        java.time.Instant end = java.time.Instant.now().plusSeconds(60);
+
+        List<BillingLedgerPlugin.LedgerEntry> debitEntries =
+                runPromise(() -> plugin.queryEntries(debitAcct, new BillingLedgerPlugin.TimeRange(start, end)));
+        List<BillingLedgerPlugin.LedgerEntry> creditEntries =
+                runPromise(() -> plugin.queryEntries(creditAcct, new BillingLedgerPlugin.TimeRange(start, end)));
+
+        BigDecimal totalDebited = debitEntries.stream()
+                .map(BillingLedgerPlugin.LedgerEntry::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCredited = creditEntries.stream()
+                .map(BillingLedgerPlugin.LedgerEntry::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertThat(totalDebited)
+                .as("total amount debited from debit account must equal total credited to credit account")
+                .isEqualByComparingTo(totalCredited);
+        assertThat(totalDebited).isEqualByComparingTo(amount1.add(amount2));
+    }
+
+    @Test
+    @DisplayName("LDG-INV-002: reversal must neutralise the original entry — net balance is zero")
+    void testReversalNetZero() {
+        String debitAcct = "rev-net-debit-" + System.nanoTime();
+        String creditAcct = "rev-net-credit-" + System.nanoTime();
+        String txId = "txn-rev-net-" + System.nanoTime();
+
+        BillingTransaction tx = BillingTransaction.builder()
+                .transactionId(txId)
+                .sourceProductId("finance")
+                .debitAccount(debitAcct)
+                .creditAccount(creditAcct)
+                .amount(new BigDecimal("500.00"))
+                .currency("USD")
+                .type(BillingTransaction.TransactionType.CHARGE)
+                .build();
+        runPromise(() -> plugin.postTransaction(tx));
+        runPromise(() -> plugin.reverseTransaction(txId, "LDG-INV-002 test reversal"));
+
+        java.time.Instant start = java.time.Instant.now().minusSeconds(60);
+        java.time.Instant end = java.time.Instant.now().plusSeconds(60);
+
+        // debitAcct should have: 1 debit entry (+500) and 1 reversal credit entry (-500) → net 0
+        List<BillingLedgerPlugin.LedgerEntry> debitSideEntries =
+                runPromise(() -> plugin.queryEntries(debitAcct, new BillingLedgerPlugin.TimeRange(start, end)));
+        BigDecimal debitNetAmount = debitSideEntries.stream()
+                .map(e -> debitAcct.equals(e.debitAccount()) ? e.amount() : e.amount().negate())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertThat(debitNetAmount)
+                .as("net amount on debit account after reversal must be zero")
+                .isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("LDG-INV-003: entries for an account can be reconciled by summing all amounts")
+    void testReconciliation() {
+        String acct = "reconcile-acct-" + System.nanoTime();
+        String counterAcct = "reconcile-counter-" + System.nanoTime();
+        BigDecimal[] amounts = {
+            new BigDecimal("100.00"), new BigDecimal("200.00"), new BigDecimal("75.50")
+        };
+        BigDecimal expected = new BigDecimal("375.50");
+
+        for (int i = 0; i < amounts.length; i++) {
+            final int idx = i;
+            BillingTransaction tx = BillingTransaction.builder()
+                    .transactionId("rec-txn-" + idx + "-" + System.nanoTime())
+                    .sourceProductId("finance")
+                    .debitAccount(acct)
+                    .creditAccount(counterAcct)
+                    .amount(amounts[idx])
+                    .currency("USD")
+                    .type(BillingTransaction.TransactionType.CHARGE)
+                    .build();
+            runPromise(() -> plugin.postTransaction(tx));
+        }
+
+        java.time.Instant start = java.time.Instant.now().minusSeconds(60);
+        java.time.Instant end = java.time.Instant.now().plusSeconds(60);
+
+        List<BillingLedgerPlugin.LedgerEntry> entries =
+                runPromise(() -> plugin.queryEntries(acct, new BillingLedgerPlugin.TimeRange(start, end)));
+        BigDecimal reconciled = entries.stream()
+                .map(BillingLedgerPlugin.LedgerEntry::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertThat(reconciled)
+                .as("reconciled sum of all entries must match expected total")
+                .isEqualByComparingTo(expected);
+    }
+
     @Test
     @DisplayName("queryEntries outside time range must return empty list")
     void testQueryEntriesOutsideRange() { // GH-90000

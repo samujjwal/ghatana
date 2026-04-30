@@ -33,6 +33,63 @@ module.exports = {
         path: '^libs/canvas/examples/',
       },
     },
+    // ── YAPPC-018: YAPPC-specific architectural boundary rules ────────────────
+    {
+      name: 'yappc-no-web-imports-in-api',
+      severity: 'error',
+      comment:
+        'apps/api (gateway) must not import from apps/web (frontend UI) — ' +
+        'the gateway is a backend service and must stay decoupled from the UI layer.',
+      from: {
+        path: '^apps/api/',
+      },
+      to: {
+        path: '^apps/web/',
+        pathNot: '^node_modules',
+      },
+    },
+    {
+      name: 'yappc-no-packages-import-from-apps',
+      severity: 'error',
+      comment:
+        'Shared packages must not import from application code — ' +
+        'packages/*/src must only depend on other packages or node_modules.',
+      from: {
+        path: '^packages/',
+      },
+      to: {
+        path: '^apps/',
+        pathNot: '^node_modules',
+      },
+    },
+    {
+      name: 'yappc-no-cross-app-imports',
+      severity: 'error',
+      comment:
+        'Applications must not import directly from each other — ' +
+        'cross-app dependencies must go through shared packages or the gateway API.',
+      from: {
+        path: '^apps/([^/]+)/',
+      },
+      to: {
+        path: '^apps/',
+        pathNot: ['^node_modules', '^apps/$1/'],
+      },
+    },
+    {
+      name: 'yappc-no-service-layer-bypass',
+      severity: 'warn',
+      comment:
+        'Route handlers in apps/api/src/routes must not import directly from ' +
+        'infrastructure database clients — all data access must go through services.',
+      from: {
+        path: '^apps/api/src/routes/',
+      },
+      to: {
+        path: '^apps/api/src/database/',
+        pathNot: '^node_modules',
+      },
+    },
   ],
   allowed: [
     {

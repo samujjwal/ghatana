@@ -12,8 +12,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -376,6 +378,65 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
         assertThat(sorted.get(1).get("offset")).isEqualTo(2L);
         assertThat(sorted.get(2).get("offset")).isEqualTo(3L);
     }
+
+        // ─────────────────────────────────────────────────────────────────────────
+        // Sustained Replay / Load Verification (DC-A17)
+        // ─────────────────────────────────────────────────────────────────────────
+
+        @Test
+        @DisplayName("[D006][DC-A17]: sustained_replay_load_lag_distribution_remains_bounded")
+        void sustainedReplayLoadLagDistributionRemainsBounded() {
+        String consumerId = "consumer-load-001";
+        int partitions = 128;
+        long latestOffset = 1_000_000L;
+
+        List<EventCheckpointRepository.PartitionLag> lags = IntStream.range(0, partitions)
+            .mapToObj(partition -> {
+                long checkpointOffset = latestOffset - (partition % 17);
+                return EventCheckpointRepository.PartitionLag.of(partition, latestOffset, checkpointOffset);
+            })
+            .toList();
+
+        when(checkpointRepository.getConsumerLag(consumerId))
+            .thenReturn(Promise.of(lags));
+
+        List<EventCheckpointRepository.PartitionLag> actual = runPromise(() ->
+            checkpointRepository.getConsumerLag(consumerId)
+        );
+
+        assertThat(actual).hasSize(partitions);
+        assertThat(actual)
+            .allMatch(lag -> lag.currentOffset() >= lag.committedOffset());
+        assertThat(actual.stream().mapToLong(EventCheckpointRepository.PartitionLag::lag).max())
+            .hasValue(16L);
+        assertThat(actual.stream().mapToLong(EventCheckpointRepository.PartitionLag::lag).sum())
+            .isGreaterThan(0L);
+        }
+
+        @Test
+        @DisplayName("[D006][DC-A17]: replay_checkpoint_updates_are_monotonic_across_batches")
+        void replayCheckpointUpdatesAreMonotonicAcrossBatches() {
+        String consumerId = "consumer-load-002";
+        int partition = 3;
+        List<Long> committedOffsets = List.of(10_000L, 20_000L, 40_000L, 60_000L, 100_000L);
+
+        when(checkpointRepository.saveCheckpoint(eq(consumerId), eq(partition), anyLong()))
+            .thenReturn(Promise.of((Void) null));
+
+        List<Long> observed = new ArrayList<>();
+        for (Long offset : committedOffsets) {
+            runPromise(() -> checkpointRepository.saveCheckpoint(consumerId, partition, offset));
+            observed.add(offset);
+        }
+
+        verify(checkpointRepository, times(committedOffsets.size()))
+            .saveCheckpoint(eq(consumerId), eq(partition), anyLong());
+
+        assertThat(observed).containsExactlyElementsOf(committedOffsets);
+        assertThat(observed)
+            .allSatisfy(offset -> assertThat(offset).isPositive())
+            .isSorted();
+        }
 
     private static Map<String, Object> buildEvent(String type, long offset, Map<String, Object> payload) { // GH-90000
         return Map.of( // GH-90000

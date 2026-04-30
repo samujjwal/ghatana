@@ -1,0 +1,39 @@
+# ── Gradle build output ──────────────────────────────────────────────────────
+build/
+.gradle/
+# YAPPC-008: bin/ inside any Java module is Gradle processResources output.
+# Source of truth is always src/main/resources/. Never commit bin/ content.
+**/bin/
+!src/**/bin/
+
+# ── Java compiled output ──────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+out/
+
+# ── Node / TypeScript ─────────────────────────────────────────────────────────
+node_modules/
+dist/
+.cache/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+local.properties
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

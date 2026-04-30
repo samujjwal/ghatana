@@ -46,14 +46,15 @@ The following modules have been moved to `platform/java/.archived/`:
 
 ## Plugin Implementations
 
-All 6 shared plugins have concrete implementations:
+All 7 shared plugins have concrete implementations:
 
-1. **StandardBillingLedgerPlugin** - Double-entry ledger with idempotency
-2. **StandardFraudDetectionPlugin** - Rule-based fraud detection
+1. **StandardBillingLedgerPlugin** / **DurableBillingLedgerPlugin** - Double-entry ledger with idempotency
+2. **StandardFraudDetectionPlugin** - Rule-based fraud detection with explainability
 3. **StandardCompliancePlugin** - Multi-regulation compliance (SOX, HIPAA, GDPR, PCI-DSS)
-4. **StandardConsentPlugin** - Universal consent management
-5. **StandardRiskManagementPlugin** - Multi-type risk calculation
-6. **StandardAuditTrailPlugin** - Tamper-evident audit with hash chain
+4. **StandardConsentPlugin** / **DurableConsentPlugin** - Universal consent management
+5. **StandardRiskManagementPlugin** - Multi-type risk calculation with explainability
+6. **StandardAuditTrailPlugin** / **DurableAuditTrailPlugin** - Tamper-evident audit with hash chain
+7. **StandardHumanApprovalPlugin** / **DurableHumanApprovalPlugin** - Human-in-the-loop approval for regulated workflows
 
 ## Product Migration
 

@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
@@ -38,7 +40,7 @@ class ErrorProneRunnerTest {
     @BeforeEach
     void setUp() { // GH-90000
         runner = new ErrorProneRunner(); // GH-90000
-        javacPath = System.getProperty("java.home") + "/bin/javac";
+        javacPath = Path.of(System.getProperty("java.home"), "bin", "javac").toString();
     }
 
     @Test
@@ -50,6 +52,7 @@ class ErrorProneRunnerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testRunWithDefaultOptions() throws IOException { // GH-90000
         // Create a simple Java file
         Path tempDir = Files.createTempDirectory("errorprone-test");
@@ -69,6 +72,7 @@ class ErrorProneRunnerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testRunWithValidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a simple Java file
         Path srcDir = tempDir.resolve("src/main/java");
@@ -102,6 +106,7 @@ class ErrorProneRunnerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testRunWithInvalidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a Java file with an error
         Path srcDir = tempDir.resolve("src/main/java");
@@ -135,6 +140,7 @@ class ErrorProneRunnerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testRunWithWarning(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a Java file with a warning
         Path srcDir = tempDir.resolve("src/main/java");
@@ -195,6 +201,7 @@ class ErrorProneRunnerTest {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testRunWithNonexistentSourceFile() { // GH-90000
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder().javacCmd(javacPath).build(); // GH-90000

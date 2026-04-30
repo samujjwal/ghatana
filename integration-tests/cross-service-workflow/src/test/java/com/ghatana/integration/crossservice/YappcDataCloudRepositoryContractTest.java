@@ -3,7 +3,7 @@ package com.ghatana.integration.crossservice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
-import com.ghatana.products.yappc.domain.Identifiable;
+import com.ghatana.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import com.ghatana.platform.testing.activej.EventloopTestBase;

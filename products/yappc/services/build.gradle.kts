@@ -2,7 +2,7 @@ plugins {
     id("java-application")
 }
 
-group = "com.ghatana.products.yappc"
+group = "com.ghatana.yappc"
 version = rootProject.version
 
 description = "YAPPC Services - Integration test aggregator (bounded contexts: domain, infrastructure, lifecycle, scaffold)"

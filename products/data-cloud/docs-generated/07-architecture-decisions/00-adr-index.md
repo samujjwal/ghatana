@@ -1,9 +1,24 @@
 # Data Cloud Architecture Decision Records (ADRs)
 
 **Document ID:** DC-ADR-INDEX-001  
-**Version:** 1.0  
-**Date:** 2026-04-12  
+**Version:** 1.1  
+**Date:** 2026-04-29  
 **Owner:** Data Cloud Platform Team
+
+---
+
+## Verification Status Convention (DC-A11)
+
+Claims and capabilities described in these ADRs carry a verification label:
+
+| Label | Meaning |
+|-------|---------|
+| ✅ **verified-locally** | Covered by unit/integration tests in CI (H2/Testcontainers). |
+| 🔵 **integration-validated** | Covered by cross-service or live-infrastructure tests. |
+| 🟡 **deployment-validated** | Confirmed in a deployed staging or production environment. |
+| ⚪ **architecture-only** | Design intent; no automated verification exists yet. |
+
+Where a section makes a capability claim without a label it must be treated as **⚪ architecture-only** until evidence is added.
 
 ---
 

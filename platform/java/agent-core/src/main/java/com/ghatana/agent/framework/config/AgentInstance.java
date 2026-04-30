@@ -172,7 +172,9 @@ public final class AgentInstance {
     public void applyOverrides(@NotNull Overrides newOverrides) {
         Objects.requireNonNull(newOverrides, "overrides must not be null");
         activeOverrides.set(newOverrides);
-        lastUpdatedAt = Instant.now();
+        Instant now = Instant.now();
+        // Ensure timestamp is always incremented to avoid flaky comparisons
+        lastUpdatedAt = now.isAfter(lastUpdatedAt) ? now : lastUpdatedAt.plusNanos(1);
     }
 
     /** Returns the currently active overrides. */

@@ -2,6 +2,9 @@ package com.ghatana.phr.service;
 
 import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.observability.KernelTelemetryManager;
+import com.ghatana.phr.kernel.consent.ConsentAccessDeniedException;
+import com.ghatana.phr.kernel.consent.ConsentService;
+import com.ghatana.phr.kernel.policy.PhrDataClassification;
 import com.ghatana.phr.kernel.service.PhrInputSanitizationUtils;
 import com.ghatana.phr.model.PatientRecord;
 import com.ghatana.phr.model.PatientRecords;
@@ -12,13 +15,18 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Business logic service for PatientService
+ * Business logic service for PatientService.
  *
- * @doc.type record
- * @doc.purpose Business logic service for PatientService
+ * <p>All reads that touch patient records must pass through the consent gate
+ * before the repository is accessed. Access without a valid consent decision
+ * throws {@link ConsentAccessDeniedException}.</p>
+ *
+ * @doc.type class
+ * @doc.purpose Business logic service for patient record access with mandatory consent enforcement
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -28,17 +36,33 @@ public class PatientService {
     private final KernelTelemetryManager telemetry;
     private final AuditTrailService auditTrail;
     private final PatientRecordRepository recordsRepository;
+    private final ConsentService consentService;
 
     public PatientService(KernelTelemetryManager telemetry,
                          AuditTrailService auditTrail,
-                         PatientRecordRepository recordsRepository) {
+                         PatientRecordRepository recordsRepository,
+                         ConsentService consentService) {
         this.telemetry = telemetry;
         this.auditTrail = auditTrail;
         this.recordsRepository = recordsRepository;
+        this.consentService = consentService;
+    }
+
+    /**
+     * Legacy constructor without consent service — kept for backward compatibility only.
+     * @deprecated Inject {@link ConsentService} via the 4-arg constructor. This no-consent
+     *             variant will be removed once all call sites are migrated.
+     */
+    @Deprecated
+    public PatientService(KernelTelemetryManager telemetry,
+                         AuditTrailService auditTrail,
+                         PatientRecordRepository recordsRepository) {
+        this(telemetry, auditTrail, recordsRepository, null);
     }
 
     public PatientRecords getRecords(String patientId) {
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        enforceConsentForPatientRead(sanitizedPatientId);
         KernelTelemetryManager.Timer timer = telemetry.startTimer(
             "phr.patient.records.fetch",
             "patient_id", sanitizedPatientId
@@ -152,5 +176,38 @@ public class PatientService {
         return SecurityContextHolder.getContext() != null
             ? SecurityContextHolder.getContext().getTenantId()
             : "default";
+    }
+
+    /**
+     * Enforces consent for a PATIENT_READ action before the repository is accessed.
+     * Throws {@link ConsentAccessDeniedException} if access is denied or the consent
+     * service returns a deny decision.
+     *
+     * <p>When no consent service is wired (legacy callers), access is allowed with a
+     * warning log. This path will be removed once all callers are migrated.</p>
+     */
+    private void enforceConsentForPatientRead(String patientId) {
+        if (consentService == null) {
+            logger.warn("[SECURITY] PatientService.getRecords called without ConsentService — " +
+                    "consent gate bypassed for patientId={}. Migrate to 4-arg constructor.", patientId);
+            return;
+        }
+        String tenantId = getCurrentTenantId();
+        String actorId = getCurrentUserId();
+        ConsentService.ActorContext actor = new ConsentService.ActorContext(
+                actorId, ConsentService.ActorType.PROVIDER, null, actorId, null, Set.of());
+        ConsentService.TargetResource target = new ConsentService.TargetResource(
+                patientId, "PatientRecord", null, PhrDataClassification.C3);
+        ConsentService.ConsentCheckRequest req = new ConsentService.ConsentCheckRequest(
+                UUID.randomUUID().toString(), tenantId, actor, target,
+                ConsentService.ConsentAction.PATIENT_READ,
+                ConsentService.PurposeOfUse.CARE_DELIVERY, null);
+        ConsentService.ConsentAccessDecision decision = consentService.checkAccess(req).toCompletableFuture().join();
+        if (!decision.allowed()) {
+            logger.warn("[SECURITY] Consent denied for patientId={} actor={} reason={}",
+                    patientId, actorId, decision.reasonCode());
+            throw new ConsentAccessDeniedException(
+                    req.requestId(), tenantId, actorId, patientId, decision);
+        }
     }
 }

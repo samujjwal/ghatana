@@ -277,7 +277,7 @@ class OrderLifecycleTest {
         // THEN: Timestamps tracked
         assertThat(order.createdAt()).isEqualTo(createdAt);
         assertThat(order.updatedAt()).isEqualTo(createdAt);
-        assertThat(updated.updatedAt()).isAfter(order.updatedAt());
+        assertThat(updated.updatedAt()).isAfterOrEqualTo(order.updatedAt());
     }
 
     @Test

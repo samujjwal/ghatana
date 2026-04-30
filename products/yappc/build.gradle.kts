@@ -12,7 +12,7 @@ plugins {
     id("java-module")
 }
 
-group = "com.ghatana.products.yappc"
+group = "com.ghatana.yappc"
 version = rootProject.version
 description = "YAPPC - AI-Native Product Development Platform"
 

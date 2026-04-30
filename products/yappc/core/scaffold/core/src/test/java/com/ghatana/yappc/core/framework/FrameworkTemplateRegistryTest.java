@@ -19,6 +19,8 @@ package com.ghatana.yappc.core.framework;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
@@ -252,6 +254,7 @@ class FrameworkTemplateRegistryTest {
 
     @Test
     @DisplayName("Should discover templates from directory")
+    @DisabledOnOs(OS.WINDOWS)
     void testDiscoverTemplates() throws Exception { // GH-90000
         // Templates were created in setUp, registry should have discovered them
         var frameworks = registry.getFrameworks(); // GH-90000

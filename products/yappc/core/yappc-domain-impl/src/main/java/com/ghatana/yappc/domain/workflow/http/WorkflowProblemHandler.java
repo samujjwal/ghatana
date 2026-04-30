@@ -2,7 +2,7 @@ package com.ghatana.yappc.domain.workflow.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.products.yappc.domain.workflow.AiWorkflowService;
+import com.ghatana.yappc.domain.workflow.AiWorkflowService;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;

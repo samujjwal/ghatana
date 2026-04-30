@@ -103,7 +103,7 @@ public class ConfidenceScoringService {
         if (prompt.contains("code") && containsCodeBlocks(text)) {
             score += 0.15;
         }
-        if (prompt.contains("test") && containsPattern(text, "@Test|test(|assert")) {
+        if (prompt.contains("test") && containsPattern(text, "@Test|\\(test\\)|assert")) {
             score += 0.15;
         }
 

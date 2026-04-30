@@ -39,7 +39,7 @@ class PackGeneratorSnapshotTest {
         var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
 
-        Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
+        Path basePackPath = Path.of(basePackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "projectName", "test-project",
@@ -71,7 +71,7 @@ class PackGeneratorSnapshotTest {
                 getClass().getClassLoader().getResource("packs/java-service-activej-gradle");
         assertNotNull(javaPackResource, "Java service pack resource should exist"); // GH-90000
 
-        Path javaPackPath = Path.of(javaPackResource.getPath()); // GH-90000
+        Path javaPackPath = Path.of(javaPackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "serviceName", "TestService",
@@ -111,7 +111,7 @@ class PackGeneratorSnapshotTest {
         var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite");
         assertNotNull(reactPackResource, "React pack resource should exist"); // GH-90000
 
-        Path reactPackPath = Path.of(reactPackResource.getPath()); // GH-90000
+        Path reactPackPath = Path.of(reactPackResource.toURI()); // GH-90000
         Map<String, Object> variables = new HashMap<>(); // GH-90000
         variables.put("projectName", "test-react-app"); // GH-90000
         variables.put("description", "Test React application"); // GH-90000
@@ -154,7 +154,7 @@ class PackGeneratorSnapshotTest {
         var nextjsPackResource = getClass().getClassLoader().getResource("packs/ts-react-nextjs");
         assertNotNull(nextjsPackResource, "Next.js pack resource should exist"); // GH-90000
 
-        Path nextjsPackPath = Path.of(nextjsPackResource.getPath()); // GH-90000
+        Path nextjsPackPath = Path.of(nextjsPackResource.toURI()); // GH-90000
         Map<String, Object> variables = new HashMap<>(); // GH-90000
         variables.put("projectName", "test-nextjs-app"); // GH-90000
         variables.put("description", "Test Next.js application"); // GH-90000
@@ -197,7 +197,7 @@ class PackGeneratorSnapshotTest {
         var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite");
         assertNotNull(reactPackResource, "React pack resource should exist"); // GH-90000
 
-        Path reactPackPath = Path.of(reactPackResource.getPath()); // GH-90000
+        Path reactPackPath = Path.of(reactPackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "projectName", "test-react-hooks",
@@ -244,13 +244,13 @@ class PackGeneratorSnapshotTest {
                 List.of( // GH-90000
                         new GeneratorSnapshotTest.SnapshotTestConfig( // GH-90000
                                 "multi_base",
-                                Path.of(basePackResource.getPath()), // GH-90000
+                                Path.of(basePackResource.toURI()), // GH-90000
                                 Map.of("projectName", "multi-test", "author", "Test"), // GH-90000
                                 false,
                                 "Multi-pack test: Base"),
                         new GeneratorSnapshotTest.SnapshotTestConfig( // GH-90000
                                 "multi_java",
-                                Path.of(javaPackResource.getPath()), // GH-90000
+                                Path.of(javaPackResource.toURI()), // GH-90000
                                 Map.of( // GH-90000
                                         "serviceName",
                                         "MultiService",
@@ -279,7 +279,7 @@ class PackGeneratorSnapshotTest {
         var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
 
-        Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
+        Path basePackPath = Path.of(basePackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "projectName", "update-test",

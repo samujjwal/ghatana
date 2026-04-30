@@ -50,11 +50,22 @@ class SecurityServiceAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should generate SBOM")
-    void shouldGenerateSbom() { // GH-90000
+    @DisplayName("generateSbom returns valid CycloneDX stub — bomFormat and specVersion present")
+    void shouldGenerateSbomWithCycloneDxFields() { // GH-90000
         Path projectPath = Paths.get("/project");
         String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); // GH-90000
         assertThat(result).isNotNull(); // GH-90000
+        assertThat(result).contains("\"bomFormat\":\"CycloneDX\"");
+        assertThat(result).contains("\"specVersion\":\"1.4\"");
+        assertThat(result).contains("\"components\"");
+    }
+
+    @Test
+    @DisplayName("generateSbom includes project name in metadata component")
+    void shouldGenerateSbomWithProjectName() { // GH-90000
+        Path projectPath = Paths.get("/my-project");
+        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); // GH-90000
+        assertThat(result).contains("my-project");
     }
 
     @Test

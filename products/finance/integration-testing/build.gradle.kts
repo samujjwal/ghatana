@@ -9,7 +9,42 @@ plugins {
 }
 
 dependencies {
-    // Platform core dependencies
+    // ── Kernel modules (canonical; replaces legacy platform:java:kernel* modules) ──
+    implementation(project(":platform-kernel:kernel-core"))
+    implementation(project(":platform-kernel:kernel-plugin"))
+    implementation(project(":platform-kernel:kernel-persistence"))
+
+    // ── Platform plugins (canonical) ──
+    implementation(project(":platform-plugins:plugin-billing-ledger"))
+    implementation(project(":platform-plugins:plugin-audit-trail"))
+    implementation(project(":platform-plugins:plugin-consent"))
+    implementation(project(":platform-plugins:plugin-compliance"))
+    implementation(project(":platform-plugins:plugin-fraud-detection"))
+    implementation(project(":platform-plugins:plugin-risk-management"))
+    implementation(project(":platform-plugins:plugin-human-approval"))
+
+    // ── Legacy platform:java:* ─────────────────────────────────────────────────
+    // MIGRATION ALLOWLIST — these references are intentional compatibility shims
+    // that Finance integration-testing still relies upon. Each entry must be
+    // resolved before the next minor release.
+    //
+    //  platform:java:core         — owner: platform-team  expiry: 2026-07-01
+    //                               reason: FinanceEventBus and JsonUtils still import it
+    //  platform:java:domain       — owner: finance-team   expiry: 2026-07-01
+    //                               reason: DomainEntity base class referenced in OMS domain tests
+    //  platform:java:database     — owner: platform-team  expiry: 2026-07-01
+    //                               reason: JdbcTemplateUtils used in reconciliation scenario tests
+    //  platform:java:http         — owner: platform-team  expiry: 2026-07-01
+    //                               reason: HttpTestUtils referenced in integration stubs
+    //  platform:java:observability — owner: platform-team expiry: 2026-07-01
+    //                               reason: MicrometerUtils used in benchmark harness
+    //  platform:java:config       — owner: platform-team  expiry: 2026-07-01
+    //                               reason: ConfigLoader helper referenced in scenario setup
+    //  platform:java:workflow     — owner: platform-team  expiry: 2026-07-01
+    //                               reason: WorkflowEngine used in post-trade integration tests
+    //  platform:java:audit        — owner: platform-team  expiry: 2026-07-01
+    //                               reason: AuditBusPort referenced in benchmark harness
+    //                               (replace with platform-plugins:plugin-audit-trail)
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:database"))
@@ -17,9 +52,7 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:workflow"))
-    implementation(project(":platform-kernel:kernel-plugin"))
     implementation(project(":platform:java:audit"))
-    implementation(project(":platform-plugins:plugin-billing-ledger"))
 
     // Kernel modules
 

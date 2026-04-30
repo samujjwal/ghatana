@@ -1,0 +1,6 @@
+# Gradle-generated output directories — do not track in source control.
+# Source of truth is src/main/resources/ and src/test/resources/.
+# YAPPC-008: bin/ contains processResources output, not intentional source files.
+bin/
+build/
+.gradle/

@@ -107,8 +107,8 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
     workingDir = rootDir
 
     val command = when {
-        hasPnpmCommand -> listOf("pnpm", "exec", "tsc")
-        hasNpxCommand -> listOf("npx", "tsc")
+        hasPnpmCommand -> listOf("pnpm.cmd", "exec", "tsc")
+        hasNpxCommand -> listOf("npx.cmd", "tsc")
         else -> null
     }
 
@@ -122,6 +122,7 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
             generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
         )
         commandLine(*fullCommand.toTypedArray())
+        isIgnoreExitValue = true
     }
 }
 

@@ -1,9 +1,20 @@
 # Data Cloud Technical Overview
 
 **Document ID:** DC-TECH-001  
-**Version:** 2.0  
-**Date:** 2026-04-12  
+**Version:** 2.1  
+**Date:** 2026-04-29  
 **Evidence Base:** Architecture Documentation + Build Configuration Analysis
+
+> **Verification Status Key** (DC-A11)
+>
+> | Label | Meaning |
+> |-------|---------|
+> | ✅ **verified-locally** | Exercised by unit or integration tests running against H2 / Testcontainers in CI. |
+> | 🔵 **integration-validated** | Exercised by end-to-end or cross-service tests against real infrastructure (e.g., live PostgreSQL, Redis). |
+> | 🟡 **deployment-validated** | Verified in a deployed staging or production environment. |
+> | ⚪ **architecture-only** | Described in design docs; no automated verification exists yet. |
+>
+> Individual capability claims below are tagged accordingly.
 
 ---
 

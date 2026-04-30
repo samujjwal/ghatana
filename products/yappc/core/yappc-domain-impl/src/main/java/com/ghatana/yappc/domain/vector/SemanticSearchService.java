@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.vector;
+package com.ghatana.yappc.domain.vector;
 
 import com.ghatana.ai.embedding.EmbeddingResult;
 import com.ghatana.ai.embedding.EmbeddingService;

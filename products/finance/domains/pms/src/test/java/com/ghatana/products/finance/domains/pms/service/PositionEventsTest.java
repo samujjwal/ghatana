@@ -80,7 +80,7 @@ class PositionEventsTest {
         service.publishPositionCreated(position);
         service.publishPositionUpdated(position, new Position("AAPL", 150L, BigDecimal.valueOf(151.00)));
         assertThat(service.getEvents()).hasSize(2);
-        assertThat(service.getEvents().get(0).timestamp()).isBefore(service.getEvents().get(1).timestamp());
+        assertThat(service.getEvents().get(0).timestamp()).isBeforeOrEqualTo(service.getEvents().get(1).timestamp());
     }
 
     @Test

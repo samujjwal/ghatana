@@ -41,7 +41,7 @@ class PackGenerationSnapshotTest {
         var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assumePackExists(basePackResource, "Base pack"); // GH-90000
 
-        Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
+        Path basePackPath = Path.of(basePackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "projectName", "test-project",
@@ -76,7 +76,7 @@ class PackGenerationSnapshotTest {
                 getClass().getClassLoader().getResource("packs/java-service-activej-gradle");
         assumePackExists(javaPackResource, "Java service pack"); // GH-90000
 
-        Path javaPackPath = Path.of(javaPackResource.getPath()); // GH-90000
+        Path javaPackPath = Path.of(javaPackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "serviceName", "TestService",
@@ -110,7 +110,7 @@ class PackGenerationSnapshotTest {
         var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite");
         assumePackExists(reactPackResource, "React pack"); // GH-90000
 
-        Path reactPackPath = Path.of(reactPackResource.getPath()); // GH-90000
+        Path reactPackPath = Path.of(reactPackResource.toURI()); // GH-90000
         Map<String, Object> variables = new HashMap<>(); // GH-90000
         variables.put("projectName", "test-react-app"); // GH-90000
         variables.put("description", "Test React application"); // GH-90000
@@ -147,7 +147,7 @@ class PackGenerationSnapshotTest {
         var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assumePackExists(basePackResource, "Base pack for hooks test"); // GH-90000
 
-        Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
+        Path basePackPath = Path.of(basePackResource.toURI()); // GH-90000
         Map<String, Object> variables =
                 Map.of( // GH-90000
                         "projectName", "hooks-test",

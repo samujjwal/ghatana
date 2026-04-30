@@ -10,7 +10,7 @@ import java.util.Objects;
  *
  * <p>This is intentionally a thin value object — NOT a full domain model.
  * The canonical project domain model lives in {@code libs/java/yappc-domain}
- * ({@code com.ghatana.products.yappc.domain.model.Project}).
+ * ({@code com.ghatana.yappc.domain.model.Project}).
  *
  * @doc.type class
  * @doc.purpose Lightweight project descriptor for plugin contracts

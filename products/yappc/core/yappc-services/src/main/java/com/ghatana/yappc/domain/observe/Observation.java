@@ -1,6 +1,5 @@
 package com.ghatana.yappc.domain.observe;
 
-import com.ghatana.products.yappc.domain.observe.Metric;
 import java.time.Instant;
 import java.util.List;
 

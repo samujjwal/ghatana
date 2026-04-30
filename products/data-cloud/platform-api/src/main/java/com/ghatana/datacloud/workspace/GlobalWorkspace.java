@@ -512,7 +512,11 @@ public class GlobalWorkspace {
 
         return contextGateway.store(ctx)
                 .map(v -> (Void) null)
-                .whenException(ex -> log.warn("Failed to store context document: {}", ex.getMessage()));
+            .whenException(ex -> log.warn("Failed to store context document: {}", ex.getMessage()))
+            .then(
+                value -> Promise.of(value),
+                ex -> Promise.complete()
+            );
     }
 
     private Promise<Void> emitLearningSignal(SpotlightItem item, String action) {
@@ -536,7 +540,11 @@ public class GlobalWorkspace {
 
         return signalStore.store(signal)
                 .map(v -> (Void) null)
-                .whenException(ex -> log.warn("Failed to store learning signal: {}", ex.getMessage()));
+            .whenException(ex -> log.warn("Failed to store learning signal: {}", ex.getMessage()))
+            .then(
+                value -> Promise.of(value),
+                ex -> Promise.complete()
+            );
     }
 
     private void recordMetrics(String action, SpotlightItem item) {

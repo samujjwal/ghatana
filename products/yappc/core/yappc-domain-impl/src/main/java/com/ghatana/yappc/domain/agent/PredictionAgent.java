@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.agent;
+package com.ghatana.yappc.domain.agent;
 
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;

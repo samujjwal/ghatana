@@ -4,7 +4,7 @@
  */
 package com.ghatana.yappc.ai.prompt;
 
-import com.ghatana.products.yappc.domain.Identifiable;
+import com.ghatana.yappc.domain.Identifiable;
 import java.time.Instant;
 import java.util.UUID;
 

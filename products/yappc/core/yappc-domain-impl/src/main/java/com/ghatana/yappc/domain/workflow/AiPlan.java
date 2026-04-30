@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.workflow;
+package com.ghatana.yappc.domain.workflow;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

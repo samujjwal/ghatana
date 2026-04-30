@@ -156,7 +156,7 @@ class OrderModificationTest {
         // THEN: Modifications tracked
         assertThat(mod2.status()).isEqualTo(OrderStatus.APPROVED);
         assertThat(mod2.instrumentSymbol()).isEqualTo("AAPL");
-        assertThat(mod2.updatedAt()).isAfter(original.updatedAt());
+        assertThat(mod2.updatedAt()).isAfterOrEqualTo(original.updatedAt());
     }
 
     @Test

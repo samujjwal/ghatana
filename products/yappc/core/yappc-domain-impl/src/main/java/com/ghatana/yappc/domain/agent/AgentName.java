@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.agent;
+package com.ghatana.yappc.domain.agent;
 
 /**
  * Registry of all AI agent names.

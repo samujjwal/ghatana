@@ -189,6 +189,46 @@ jobs:
           path: platform-kernel/kernel-core/build/reports/tests/**
           retention-days: 7
 
+  # ── 6. ArchUnit dependency-direction boundary enforcement ────────────────────
+  architecture-boundary-checks:
+    name: Architecture Boundary Checks (ArchUnit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Run kernel architecture boundary tests
+        run: |
+          ./gradlew \
+            :platform-kernel:kernel-core:test \
+            --tests "com.ghatana.kernel.arch.KernelArchitectureBoundaryTest" \
+            --no-daemon
+
+      - name: Run plugin architecture boundary tests
+        run: |
+          ./gradlew \
+            :platform-plugins:plugin-audit-trail:test \
+            --tests "com.ghatana.plugin.arch.PluginsArchitectureBoundaryTest" \
+            --no-daemon
+
+      - name: Upload architecture test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-boundary-reports
+          path: |
+            platform-kernel/kernel-core/build/reports/tests/**
+            platform-plugins/plugin-audit-trail/build/reports/tests/**
+          retention-days: 7
+
   # ── Summary gate — all jobs must pass ───────────────────────────────────────
   plugin-contracts-summary:
     name: All Plugin Contract Gates Passed
@@ -199,6 +239,7 @@ jobs:
       - plugin-isolation-tests
       - plugin-integration-tests
       - observability-baseline
+      - architecture-boundary-checks
     runs-on: ubuntu-latest
     steps:
       - name: Check all jobs succeeded
@@ -207,7 +248,8 @@ jobs:
              [[ "${{ needs.kernel-bridge-tests.result }}" != "success" ]] ||
              [[ "${{ needs.plugin-isolation-tests.result }}" != "success" ]] ||
              [[ "${{ needs.plugin-integration-tests.result }}" != "success" ]] ||
-             [[ "${{ needs.observability-baseline.result }}" != "success" ]]; then
+             [[ "${{ needs.observability-baseline.result }}" != "success" ]] ||
+             [[ "${{ needs.architecture-boundary-checks.result }}" != "success" ]]; then
             echo "One or more plugin contract gates failed."
             exit 1
           fi

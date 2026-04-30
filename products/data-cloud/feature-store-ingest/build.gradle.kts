@@ -13,13 +13,9 @@ dependencies {
     // EventLogStore SPI — required to subscribe to platform event streams
     implementation(project(":products:data-cloud:spi"))
 
-    // WarmTierEventLogStore is used for the postgres ingest mode (postgres backend).
-    // NOTE (FINDING-DC-M2): This transitive dependency on platform-launcher brings in
-    // heavyweight storage plugins (Kafka, S3, Redis, etc.) that are not needed here.
-    // Mitigation: Once the platform-launcher split (DC-H2 Phase 2) is complete and
-    // WarmTierEventLogStore is extracted to a dedicated module, this dep should be
-    // replaced with the lighter-weight extracted module.
-    implementation(project(":products:data-cloud:platform-launcher"))
+    // WarmTierEventLogStore extracted to platform-event-store (DC-A10). This eliminates
+    // the heavyweight platform-launcher transitive pull-in (Redis, S3, Iceberg plugins).
+    implementation(project(":products:data-cloud:platform-event-store"))
 
     // Metrics, tracing, and structured logging
     implementation(project(":platform:java:observability"))

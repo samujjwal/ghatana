@@ -3,7 +3,7 @@ plugins {
     id("protobuf-module")
 }
 
-group = "com.ghatana.products.yappc.refactorer"
+group = "com.ghatana.yappc"
 version = rootProject.version
 
 description = "Refactorer API - Unified API, adapters & infrastructure (merged: refactorer-api + refactorer-adapters + refactorer-infra)"

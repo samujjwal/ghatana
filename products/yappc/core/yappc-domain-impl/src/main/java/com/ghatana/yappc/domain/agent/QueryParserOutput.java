@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.agent;
+package com.ghatana.yappc.domain.agent;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

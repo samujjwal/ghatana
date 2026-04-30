@@ -4,7 +4,7 @@ plugins {
 
 import org.gradle.external.javadoc.CoreJavadocOptions
 
-group = "com.ghatana.products.yappc"
+group = "com.ghatana.yappc"
 version = rootProject.version
 
 description = "YAPPC AI Module - Consolidated AI capabilities (merged: ai + canvas-ai + ai-requirements)"

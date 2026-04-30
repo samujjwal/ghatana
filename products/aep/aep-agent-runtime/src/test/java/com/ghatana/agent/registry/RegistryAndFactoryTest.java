@@ -124,8 +124,7 @@ class RegistryAndFactoryTest {
             assertThat(resolved.descriptor().getAgentId()).isEqualTo("a1");
         }
 
-        @Disabled("size() and contains() methods not in AgentRegistry SPI")
-        @Test void containsAndSize() { // GH-90000
+        @Test void resolveReturnsRegisteredAgent() { // GH-90000
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
             StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
             StubTypedAgent a2 = new StubTypedAgent("a2", AgentType.PROBABILISTIC, Map.of()); // GH-90000
@@ -133,9 +132,19 @@ class RegistryAndFactoryTest {
             runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
             runOnEventloop(() -> registry.register(a2, configFor("a2", AgentType.PROBABILISTIC))); // GH-90000
 
-            // assertThat(registry.size()).isEqualTo(2); // GH-90000
-            // assertThat(registry.contains("a1")).isTrue();
-            // assertThat(registry.contains("a3")).isFalse();
+            // Assert that registered agents can be resolved
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> resolvedA1 =
+                    runOnEventloop(() -> registry.resolve("a1"));
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> resolvedA2 =
+                    runOnEventloop(() -> registry.resolve("a2"));
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> resolvedA3 =
+                    runOnEventloop(() -> registry.resolve("a3"));
+
+            assertThat(resolvedA1).isPresent().hasValueSatisfying(a ->
+                assertThat(a.descriptor().getAgentId()).isEqualTo("a1"));
+            assertThat(resolvedA2).isPresent().hasValueSatisfying(a ->
+                assertThat(a.descriptor().getAgentId()).isEqualTo("a2"));
+            assertThat(resolvedA3).isEmpty();
         }
 
         @Test void duplicateRegistrationReplaces() { // GH-90000
@@ -154,17 +163,17 @@ class RegistryAndFactoryTest {
             assertThat(resolved.get()).isSameAs(a2); // GH-90000
         }
 
-        @Disabled("Lifecycle methods not in AgentRegistry SPI")
-        @Test void unregisterRemovesAndShutdown() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
+        @Test void agentLifecycleViaDirectInitializeAndShutdown() { // GH-90000
+            // Test actual SPI: agents have lifecycle methods directly, not via registry
             StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
 
-            runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
-            // runOnEventloop(() -> registry.initialize("a1"));
-            // runOnEventloop(() -> registry.unregister("a1"));
+            // Initialize directly via agent's SPI method
+            runOnEventloop(() -> a1.initialize(configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
+            assertThat(a1.wasInitialized()).isTrue(); // GH-90000
 
-            // assertThat(registry.contains("a1")).isFalse();
-            // assertThat(registry.size()).isEqualTo(0); // GH-90000
+            // Shutdown directly via agent's SPI method
+            runOnEventloop(() -> a1.shutdown()); // GH-90000
+            assertThat(a1.wasShutdown()).isTrue(); // GH-90000
         }
 
         @Test void resolveUnknownReturnsEmpty() { // GH-90000
@@ -174,25 +183,8 @@ class RegistryAndFactoryTest {
             assertThat(resolved).isEmpty(); // GH-90000
         }
 
-        @Disabled("Query methods not in AgentRegistry SPI")
-        @Test void findByType() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
-            StubTypedAgent d1 = new StubTypedAgent("d1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-            StubTypedAgent d2 = new StubTypedAgent("d2", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-            StubTypedAgent p1 = new StubTypedAgent("p1", AgentType.PROBABILISTIC, Map.of()); // GH-90000
-
-            runOnEventloop(() -> registry.register(d1, configFor("d1", AgentType.DETERMINISTIC))); // GH-90000
-            runOnEventloop(() -> registry.register(d2, configFor("d2", AgentType.DETERMINISTIC))); // GH-90000
-            runOnEventloop(() -> registry.register(p1, configFor("p1", AgentType.PROBABILISTIC))); // GH-90000
-
-            // List<AgentDescriptor> dets = runOnEventloop(() -> registry.findByType(AgentType.DETERMINISTIC)); // GH-90000
-            // assertThat(dets).hasSize(2); // GH-90000
-            // assertThat(dets).extracting(AgentDescriptor::getAgentId) // GH-90000
-            //         .containsExactlyInAnyOrder("d1", "d2"); // GH-90000
-        }
-
-        @Disabled("Returns List<String> not List<AgentDescriptor> in SPI")
-        @Test void findByCapability() { // GH-90000
+        @Test void findByCapabilityReturnsAgentIds() { // GH-90000
+            // Test actual SPI: findByCapability returns List<String> of agent IDs
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
             StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of(), "fraud-detection"); // GH-90000
             StubTypedAgent a2 = new StubTypedAgent("a2", AgentType.PROBABILISTIC, Map.of(), "fraud-detection", "scoring"); // GH-90000
@@ -202,94 +194,65 @@ class RegistryAndFactoryTest {
             runOnEventloop(() -> registry.register(a2, configFor("a2", AgentType.PROBABILISTIC))); // GH-90000
             runOnEventloop(() -> registry.register(a3, configFor("a3", AgentType.REACTIVE))); // GH-90000
 
-            List<String> fraud = runOnEventloop(() -> registry.findByCapability("fraud-detection"));
-            assertThat(fraud).hasSize(2); // GH-90000
+            // SPI returns List<String> of agent IDs, not List<AgentDescriptor>
+            List<String> fraudIds = runOnEventloop(() -> registry.findByCapability("fraud-detection"));
+            assertThat(fraudIds).hasSize(2).containsExactlyInAnyOrder("a1", "a2"); // GH-90000
+
+            List<String> scoringIds = runOnEventloop(() -> registry.findByCapability("scoring"));
+            assertThat(scoringIds).hasSize(1).containsExactly("a2"); // GH-90000
+
+            List<String> monitoringIds = runOnEventloop(() -> registry.findByCapability("monitoring"));
+            assertThat(monitoringIds).hasSize(1).containsExactly("a3"); // GH-90000
+
+            List<String> unknownIds = runOnEventloop(() -> registry.findByCapability("unknown"));
+            assertThat(unknownIds).isEmpty(); // GH-90000
         }
 
-        @Disabled("Not in AgentRegistry SPI")
-        @Test void listAll() { // GH-90000
+        @Test void listAgentIdsReturnsAllRegisteredAgentIds() { // GH-90000
+            // Test actual SPI: listAgentIds returns Set<String> of all registered agent IDs
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
             StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
             StubTypedAgent a2 = new StubTypedAgent("a2", AgentType.PROBABILISTIC, Map.of()); // GH-90000
 
-            runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
-            runOnEventloop(() -> registry.register(a2, configFor("a2", AgentType.PROBABILISTIC))); // GH-90000
-
-            // List<AgentDescriptor> all = runOnEventloop(registry::listAll); // GH-90000
-            // assertThat(all).hasSize(2); // GH-90000
-        }
-
-        @Disabled("Lifecycle methods not in AgentRegistry SPI")
-        @Test void initializeAgent() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
-            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-
-            runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
-            // runOnEventloop(() -> registry.initialize("a1"));
-
-            // assertThat(a1.wasInitialized()).isTrue(); // GH-90000
-        }
-
-        @Disabled("Lifecycle methods not in AgentRegistry SPI")
-        @Test void healthCheck() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
-            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-
-            runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
-            // runOnEventloop(() -> registry.initialize("a1"));
-
-            // HealthStatus status = runOnEventloop(() -> registry.healthCheck("a1"));
-            // assertThat(status).isEqualTo(HealthStatus.HEALTHY); // GH-90000
-        }
-
-        @Disabled("Lifecycle methods not in AgentRegistry SPI")
-        @Test void initializeAll() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
-            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-            StubTypedAgent a2 = new StubTypedAgent("a2", AgentType.PROBABILISTIC, Map.of()); // GH-90000
+            // Initially empty
+            Set<String> emptySet = runOnEventloop(() -> registry.listAgentIds());
+            assertThat(emptySet).isEmpty(); // GH-90000
 
             runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
             runOnEventloop(() -> registry.register(a2, configFor("a2", AgentType.PROBABILISTIC))); // GH-90000
-            // runOnEventloop(registry::initializeAll); // GH-90000
 
-            // assertThat(a1.wasInitialized()).isTrue(); // GH-90000
-            // assertThat(a2.wasInitialized()).isTrue(); // GH-90000
+            Set<String> allIds = runOnEventloop(() -> registry.listAgentIds());
+            assertThat(allIds).hasSize(2).containsExactlyInAnyOrder("a1", "a2"); // GH-90000
         }
 
-        @Disabled("Lifecycle methods not in AgentRegistry SPI")
-        @Test void shutdownAll() { // GH-90000
+        @Test void agentReconfigurationReplacesInstance() { // GH-90000
+            // Test actual SPI: re-registering with same ID replaces the agent instance
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
-            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-            StubTypedAgent a2 = new StubTypedAgent("a2", AgentType.PROBABILISTIC, Map.of()); // GH-90000
+            StubTypedAgent originalAgent = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of("version", 1)); // GH-90000
+            StubTypedAgent replacementAgent = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of("version", 2)); // GH-90000
 
-            runOnEventloop(() -> registry.register(a1, configFor("a1", AgentType.DETERMINISTIC))); // GH-90000
-            runOnEventloop(() -> registry.register(a2, configFor("a2", AgentType.PROBABILISTIC))); // GH-90000
-            // runOnEventloop(registry::initializeAll); // GH-90000
-            // runOnEventloop(registry::shutdownAll); // GH-90000
-
-            // assertThat(a1.wasShutdown()).isTrue(); // GH-90000
-            // assertThat(a2.wasShutdown()).isTrue(); // GH-90000
-        }
-
-        @Disabled("Lifecycle methods not in AgentRegistry SPI")
-        @Test void hotReload() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
-            StubTypedAgent a1 = new StubTypedAgent("a1", AgentType.DETERMINISTIC, Map.of()); // GH-90000
-
-            AgentConfig original = configFor("a1", AgentType.DETERMINISTIC); // GH-90000
-            AgentConfig updated = AgentConfig.builder() // GH-90000
+            AgentConfig originalConfig = configFor("a1", AgentType.DETERMINISTIC); // GH-90000
+            AgentConfig updatedConfig = AgentConfig.builder() // GH-90000
                     .agentId("a1")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .timeout(Duration.ofSeconds(10)) // GH-90000
                     .build(); // GH-90000
 
-            runOnEventloop(() -> registry.register(a1, original)); // GH-90000
-            // runOnEventloop(() -> registry.initialize("a1"));
+            // Register original
+            runOnEventloop(() -> registry.register(originalAgent, originalConfig)); // GH-90000
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> firstResolve =
+                    runOnEventloop(() -> registry.resolve("a1"));
+            assertThat(firstResolve).isPresent().hasValue(originalAgent); // GH-90000
 
-            // Hot-reload should call reconfigure
-            // runOnEventloop(() -> registry.reload("a1", updated)); // GH-90000
-            // Agent should still be registered
-            // assertThat(registry.contains("a1")).isTrue();
+            // Re-register with same ID (hot-reload pattern via re-registration)
+            runOnEventloop(() -> registry.register(replacementAgent, updatedConfig)); // GH-90000
+            Optional<TypedAgent<Map<String, Object>, Map<String, Object>>> secondResolve =
+                    runOnEventloop(() -> registry.resolve("a1"));
+            assertThat(secondResolve).isPresent().hasValue(replacementAgent); // GH-90000
+
+            // Verify replacement happened
+            assertThat(secondResolve.get()).isNotEqualTo(originalAgent); // GH-90000
+            assertThat(secondResolve.get()).isEqualTo(replacementAgent); // GH-90000
         }
     }
 
@@ -301,15 +264,17 @@ class RegistryAndFactoryTest {
     @DisplayName("AgentOperatorFactory")
     class FactoryTests {
 
-        @Disabled("Uses initialize not in AgentRegistry SPI")
-        @Test void createTreeFromRegisteredAgent() { // GH-90000
+        @Test void createTreeFromRegistryRegisteredAgent() { // GH-90000
+            // Test actual SPI: create tree from agent registered in registry
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
             StubTypedAgent agent = new StubTypedAgent("op-agent", AgentType.DETERMINISTIC, // GH-90000
                     Map.of("result", "processed")); // GH-90000
 
+            // Register in registry (no initialize needed for registration)
             runOnEventloop(() -> registry.register(agent, configFor("op-agent", AgentType.DETERMINISTIC))); // GH-90000
 
             AgentOperatorFactory factory = new AgentOperatorFactory(registry); // GH-90000
+            // Factory resolves agent from registry by ID
             AgentOperatorFactory.OperatorTree tree = runOnEventloop(() -> // GH-90000
                     factory.createOperatorTree("op-agent"));
 
@@ -317,13 +282,16 @@ class RegistryAndFactoryTest {
             assertThat(tree.getOperators()).hasSize(1); // GH-90000
         }
 
-        @Disabled("Uses initialize not in AgentRegistry SPI")
-        @Test void executeOperatorTree() { // GH-90000
+        @Test void executeTreeWithPreInitializedAgent() { // GH-90000
+            // Test actual SPI: execute tree when agent is pre-initialized
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
             StubTypedAgent agent = new StubTypedAgent("exec-agent", AgentType.DETERMINISTIC, // GH-90000
                     Map.of("data", "hello")); // GH-90000
 
+            // Register in registry
             runOnEventloop(() -> registry.register(agent, configFor("exec-agent", AgentType.DETERMINISTIC))); // GH-90000
+            // Initialize agent directly (actual SPI)
+            runOnEventloop(() -> agent.initialize(configFor("exec-agent", AgentType.DETERMINISTIC))); // GH-90000
 
             AgentOperatorFactory factory = new AgentOperatorFactory(registry); // GH-90000
             AgentOperatorFactory.OperatorTree tree = runOnEventloop(() -> // GH-90000
@@ -354,13 +322,15 @@ class RegistryAndFactoryTest {
             assertThat(result.isSuccess()).isTrue(); // GH-90000
         }
 
-        @Disabled("Uses initialize not in AgentRegistry SPI")
-        @Test void customMappingPerAgentId() { // GH-90000
+        @Test void customMappingWithPreInitializedAgent() { // GH-90000
+            // Test actual SPI: custom mapping with pre-initialized agent
             InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
             StubTypedAgent agent = new StubTypedAgent("custom", AgentType.DETERMINISTIC, // GH-90000
                     Map.of("raw", true)); // GH-90000
 
+            // Register and initialize agent directly (actual SPI)
             runOnEventloop(() -> registry.register(agent, configFor("custom", AgentType.DETERMINISTIC))); // GH-90000
+            runOnEventloop(() -> agent.initialize(configFor("custom", AgentType.DETERMINISTIC))); // GH-90000
 
             AgentOperatorFactory factory = new AgentOperatorFactory(registry); // GH-90000
 

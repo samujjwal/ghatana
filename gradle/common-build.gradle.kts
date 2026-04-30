@@ -15,6 +15,14 @@ subprojects {
     apply(plugin = "pmd")
     apply(plugin = "jacoco")
     apply(plugin = "com.diffplug.spotless")
+    
+    // Apply JaCoCo coverage thresholds for target modules (platform-kernel, platform-plugins, products)
+    if (project.path.startsWith(":platform-kernel") ||
+        project.path.startsWith(":platform-plugins") ||
+        project.path.startsWith(":products:phr") ||
+        project.path == ":products:finance:integration-testing") {
+        apply(from = rootProject.file("gradle/jacoco-thresholds.gradle.kts"))
+    }
 
     // The shared Jacoco conventions plugin wires additional task dependencies
     // around compileJava. For :contracts:proto this currently results in a

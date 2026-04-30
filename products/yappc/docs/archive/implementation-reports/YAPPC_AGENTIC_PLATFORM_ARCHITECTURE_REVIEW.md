@@ -89,8 +89,8 @@ YAPPC currently runs as five independent processes, each with its own I/O, DI mo
 | `backend/deployment` | `com.ghatana.yappc.api.deployment.*` | **Declared** — DTO-level only, rollback/monitor/metrics DTOs present |
 | `backend/auth` | `com.ghatana.yappc.api.auth.*` | **Partially wired** — PersonaMapping implemented, HTTP filter wiring incomplete |
 | `infrastructure/datacloud` | `com.ghatana.yappc.infrastructure.datacloud.*` | **Partially wired** — adapters exist, `DEFAULT_TENANT` hardcoded |
-| `infrastructure/persistence` | `com.ghatana.products.yappc.infrastructure.persistence.*` | **JPA-backed** — Widget, Dashboard JPA repositories with tests |
-| `libs/java/yappc-domain` | `com.ghatana.products.yappc.domain.*` | **Implemented** — full domain model: User, Project, Deployment, Pipeline, SecurityAlert, etc. |
+| `infrastructure/persistence` | `com.ghatana.yappc.infrastructure.persistence.*` | **JPA-backed** — Widget, Dashboard JPA repositories with tests |
+| `libs/java/yappc-domain` | `com.ghatana.yappc.domain.*` | **Implemented** — full domain model: User, Project, Deployment, Pipeline, SecurityAlert, etc. |
 
 ### Data Stores and Repository Map
 

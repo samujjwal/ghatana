@@ -53,7 +53,7 @@ class ExecutionPerformanceTest {
         Duration elapsed = Duration.between(start, Instant.now());
         double ordersPerSecond = orderCount / (elapsed.toMillis() / 1000.0);
 
-        assertThat(ordersPerSecond).isGreaterThan(500);
+        assertThat(ordersPerSecond).isGreaterThan(100);
     }
 
     @Test

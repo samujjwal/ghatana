@@ -99,6 +99,13 @@ class InMemoryConversationManagerTest extends EventloopTestBase {
                 .content("Start")
                 .build()));
 
+        // Ensure reply has a later timestamp
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         AgentMessage reply = first.reply("Reply").from("bob").build();
         runPromise(() -> manager.send(reply));
 

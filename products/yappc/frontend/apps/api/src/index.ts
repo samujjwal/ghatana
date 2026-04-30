@@ -44,6 +44,7 @@ import {
 import { authMiddleware } from './middleware/auth.middleware';
 import { auditMiddleware } from './middleware/audit.middleware';
 import { authRoutes } from './routes/auth';
+import { securityScanRoutes } from './routes/security-scans';
 import {
   applyVersionHeaders,
   buildVersionErrorBody,
@@ -464,6 +465,7 @@ export async function createApp(
   registerApiPrefixes(app, workspaceRoutes);
   registerApiPrefixes(app, projectRoutes);
   registerApiPrefixes(app, devsecopsRoutes);
+  registerApiPrefixes(app, securityScanRoutes);
   registerApiPrefixes(app, canvasRoutes);
   registerApiPrefixes(app, lifecycleRoutes);
   registerApiPrefixes(app, lifecycleExecutionRoutes);

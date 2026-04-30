@@ -3,7 +3,7 @@ package com.ghatana.yappc.domain.workflow.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.products.yappc.domain.workflow.*;
+import com.ghatana.yappc.domain.workflow.*;
 import io.activej.http.HttpHeader;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;

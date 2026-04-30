@@ -2,7 +2,7 @@ plugins {
     id("java-module")
 }
 
-group = "com.ghatana.products.yappc"
+group = "com.ghatana.yappc"
 version = rootProject.version
 
 description = "YAPPC Agent Runtime — base types, contracts, dispatch, coordination, tools and prompt templates"

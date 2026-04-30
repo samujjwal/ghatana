@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.vector;
+package com.ghatana.yappc.domain.vector;
 
 import com.ghatana.ai.llm.ChatMessage;
 import com.ghatana.ai.llm.CompletionRequest;

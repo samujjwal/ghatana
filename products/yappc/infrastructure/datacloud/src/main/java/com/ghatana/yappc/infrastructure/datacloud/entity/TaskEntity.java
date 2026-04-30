@@ -5,7 +5,7 @@
 package com.ghatana.yappc.infrastructure.datacloud.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.ghatana.products.yappc.domain.Identifiable;
+import com.ghatana.yappc.domain.Identifiable;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;

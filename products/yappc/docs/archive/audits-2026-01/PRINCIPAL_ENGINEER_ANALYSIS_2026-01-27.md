@@ -497,7 +497,7 @@ Java Modules:
 
 Java Packages:
 - com.ghatana.yappc.ai       ✅ lowercase
-- com.ghatana.products.yappc ✅ lowercase
+- com.ghatana.yappc ✅ lowercase
 
 Frontend Libraries:
 - @yappc/design-tokens       ✅ kebab-case

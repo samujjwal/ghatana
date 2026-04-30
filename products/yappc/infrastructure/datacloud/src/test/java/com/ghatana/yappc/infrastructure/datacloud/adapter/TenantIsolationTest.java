@@ -5,7 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.products.yappc.domain.Identifiable;
+import com.ghatana.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;

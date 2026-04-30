@@ -29,16 +29,35 @@ public final class AgentDefinitionValidator {
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
     
-    // Valid enum values
-    private static final Set<String> VALID_AGENT_TYPES = Set.of("deterministic", "adaptive", "probabilistic", "hybrid");
-    private static final Set<String> VALID_SUBTYPES = Set.of("rule-based", "ml-based", "hybrid", "orchestrated");
-    private static final Set<String> VALID_DETERMINISM_GUARANTEES = Set.of("full", "partial", "none");
-    private static final Set<String> VALID_STATE_MUTABILITY = Set.of("stateless", "internal-state", "external-state");
-    private static final Set<String> VALID_FAILURE_MODES = Set.of("fail-fast", "graceful-degradation", "best-effort", "circuit-breaker");
-    private static final Set<String> VALID_CRITICALITY_LEVELS = Set.of("low", "medium", "high", "critical");
-    private static final Set<String> VALID_AUTONOMY_LEVELS = Set.of("manual", "semi-autonomous", "autonomous", "fully-autonomous");
+    // Valid enum values - must match platform enum definitions
+    private static final Set<String> VALID_AGENT_TYPES = Set.of(
+        "deterministic", "probabilistic", "stream_processor", "planning",
+        "hybrid", "adaptive", "composite", "reactive", "custom"
+    );
+    private static final Set<String> VALID_SUBTYPES = Set.of(
+        "rule-based", "ml-based", "hybrid", "orchestrated",
+        "bandit", "rule+llm", "parameter-optimization", "threshold",
+        "workflow", "ingestion"
+    );
+    private static final Set<String> VALID_DETERMINISM_GUARANTEES = Set.of(
+        "full", "config_scoped", "config-scoped", "none", "eventual"
+    );
+    private static final Set<String> VALID_STATE_MUTABILITY = Set.of(
+        "stateless", "local_state", "local-state", "external_state", "external-state", "hybrid_state"
+    );
+    private static final Set<String> VALID_FAILURE_MODES = Set.of(
+        "fail_fast", "fail-fast", "retry", "fallback", "skip", "dead_letter", "dead-letter", "circuit_breaker", "circuit-breaker"
+    );
+    private static final Set<String> VALID_CRITICALITY_LEVELS = Set.of(
+        "low", "medium", "high", "critical", "mission-critical"
+    );
+    private static final Set<String> VALID_AUTONOMY_LEVELS = Set.of(
+        "manual", "semi-autonomous", "autonomous", "fully-autonomous", "assisted"
+    );
     private static final Set<String> VALID_STATUS = Set.of("active", "deprecated", "experimental", "draft");
-    private static final Set<String> VALID_MEMORY_TYPES = Set.of("NONE", "WORKING", "EPISODIC", "LONG_TERM");
+    private static final Set<String> VALID_MEMORY_TYPES = Set.of(
+        "NONE", "WORKING", "EPISODIC", "LONG_TERM", "SEMANTIC"
+    );
     private static final Set<String> VALID_MEMORY_RETENTION = Set.of("none", "short", "medium", "long", "permanent");
     private static final Set<String> VALID_TOOL_TYPES = Set.of("SERVICE", "DATABASE", "FILE", "EXTERNAL_API", "PLUGIN");
 

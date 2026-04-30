@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.workflow;
+package com.ghatana.yappc.domain.workflow;
 
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;

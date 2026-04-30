@@ -29,7 +29,7 @@ class GlobTest {
         Files.writeString(root.resolve("a/b/three.yaml"), "a: 1\n");
 
         List<Path> jsons = Glob.find(root, "**/*.json"); // GH-90000
-        assertThat(jsons.stream().map(p -> root.relativize(p).toString()).toList()) // GH-90000
+        assertThat(jsons.stream().map(p -> root.relativize(p).toString().replace('\\', '/')).toList()) // GH-90000
                 .containsExactlyInAnyOrder("a/one.json", "a/b/two.json"); // GH-90000
     }
 

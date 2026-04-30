@@ -63,7 +63,7 @@ sdk                  ──imports──▶  contracts/openapi
 ui                   ──imports──▶  sdk  (via REST)
 agent-registry       ──imports──▶  platform-launcher
 feature-store-ingest ──imports──▶  platform-launcher
-products:aep:*       ──imports──▶  products:data-cloud:spi / platform-client / public APIs
+products:aep:*       ──imports──▶  products:data-cloud:spi / public APIs
 ```
 
 **Forbidden edges:**

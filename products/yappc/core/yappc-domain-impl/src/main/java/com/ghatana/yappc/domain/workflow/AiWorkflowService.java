@@ -1,10 +1,10 @@
-package com.ghatana.products.yappc.domain.workflow;
+package com.ghatana.yappc.domain.workflow;
 
-import com.ghatana.products.yappc.domain.agent.AgentRegistry;
-import com.ghatana.products.yappc.domain.agent.AIAgent;
-import com.ghatana.products.yappc.domain.agent.AIAgentContext;
-import com.ghatana.products.yappc.domain.agent.AgentName;
-import com.ghatana.products.yappc.domain.agent.WorkflowRouterAgent;
+import com.ghatana.yappc.domain.agent.AgentRegistry;
+import com.ghatana.yappc.domain.agent.AIAgent;
+import com.ghatana.yappc.domain.agent.AIAgentContext;
+import com.ghatana.yappc.domain.agent.AgentName;
+import com.ghatana.yappc.domain.agent.WorkflowRouterAgent;
 import com.ghatana.platform.core.exception.ResourceNotFoundException;
 import com.ghatana.platform.core.exception.ServiceException;
 import io.activej.promise.Promise;

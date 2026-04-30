@@ -5,11 +5,11 @@
 package com.ghatana.yappc.api.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.products.yappc.domain.vector.RagService;
-import com.ghatana.products.yappc.domain.vector.SemanticSearchService;
-import com.ghatana.products.yappc.domain.workflow.AiPlan;
-import com.ghatana.products.yappc.domain.workflow.AiWorkflowInstance;
-import com.ghatana.products.yappc.domain.workflow.AiWorkflowService;
+import com.ghatana.yappc.domain.vector.RagService;
+import com.ghatana.yappc.domain.vector.SemanticSearchService;
+import com.ghatana.yappc.domain.workflow.AiPlan;
+import com.ghatana.yappc.domain.workflow.AiWorkflowInstance;
+import com.ghatana.yappc.domain.workflow.AiWorkflowService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;

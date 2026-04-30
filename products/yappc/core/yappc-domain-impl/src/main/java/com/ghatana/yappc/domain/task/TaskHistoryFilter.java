@@ -1,4 +1,4 @@
-package com.ghatana.products.yappc.domain.task;
+package com.ghatana.yappc.domain.task;
 
 import org.jetbrains.annotations.Nullable;
 

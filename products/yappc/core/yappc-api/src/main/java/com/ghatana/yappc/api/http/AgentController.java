@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
-import com.ghatana.products.yappc.domain.agent.*;
+import com.ghatana.yappc.domain.agent.*;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;

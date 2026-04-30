@@ -1,0 +1,178 @@
+name: Product Capability Manifest Validation
+
+on:
+  pull_request:
+    paths:
+      - 'products/**/domain-pack-manifest.yaml'
+      - 'platform-kernel/**'
+      - '.github/workflows/manifest-validation.yml'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'products/**/domain-pack-manifest.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: manifest-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Verify required manifests exist ────────────────────────────────────
+  manifest-existence-check:
+    name: Required Manifests Present
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify PHR manifest exists
+        run: |
+          if [[ ! -f "products/phr/domain-pack-manifest.yaml" ]]; then
+            echo "ERROR: products/phr/domain-pack-manifest.yaml is missing"
+            exit 1
+          fi
+          echo "✓ PHR manifest found"
+
+      - name: Verify Finance manifest exists
+        run: |
+          if [[ ! -f "products/finance/domain-pack-manifest.yaml" ]]; then
+            echo "ERROR: products/finance/domain-pack-manifest.yaml is missing"
+            exit 1
+          fi
+          echo "✓ Finance manifest found"
+
+  # ── 2. Validate manifest structure and required fields ────────────────────
+  manifest-structure-check:
+    name: Manifest Structure Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: manifest-existence-check
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq for YAML parsing
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Validate PHR manifest required fields
+        run: |
+          MANIFEST="products/phr/domain-pack-manifest.yaml"
+          fail=0
+
+          check_field() {
+            local field=$1
+            local value=$(yq e "$field" "$MANIFEST" 2>/dev/null)
+            if [[ -z "$value" || "$value" == "null" ]]; then
+              echo "ERROR: Missing required field '$field' in $MANIFEST"
+              fail=1
+            else
+              echo "✓ $field = $value"
+            fi
+          }
+
+          check_field ".pack.id"
+          check_field ".pack.name"
+          check_field ".pack.version"
+          check_field ".pack.domain.type"
+          check_field ".pack.capabilities"
+          check_field ".pack.requires"
+
+          # Verify kernel-required plugin capabilities are declared
+          REQUIRED_PLUGINS="audit.immutable-trail tenant.isolation"
+          for plugin in $REQUIRED_PLUGINS; do
+            if ! yq e ".pack.requires[]" "$MANIFEST" | grep -q "$plugin"; then
+              echo "ERROR: PHR manifest missing required kernel capability: $plugin"
+              fail=1
+            else
+              echo "✓ Required kernel capability declared: $plugin"
+            fi
+          done
+
+          exit $fail
+
+      - name: Validate Finance manifest required fields
+        run: |
+          MANIFEST="products/finance/domain-pack-manifest.yaml"
+          fail=0
+
+          check_field() {
+            local field=$1
+            local value=$(yq e "$field" "$MANIFEST" 2>/dev/null)
+            if [[ -z "$value" || "$value" == "null" ]]; then
+              echo "ERROR: Missing required field '$field' in $MANIFEST"
+              fail=1
+            else
+              echo "✓ $field = $value"
+            fi
+          }
+
+          check_field ".pack.id"
+          check_field ".pack.name"
+          check_field ".pack.version"
+          check_field ".pack.domain.type"
+          check_field ".pack.capabilities"
+          check_field ".pack.requires"
+
+          # Verify kernel-required plugin capabilities are declared
+          REQUIRED_PLUGINS="audit.immutable-trail tenant.isolation"
+          for plugin in $REQUIRED_PLUGINS; do
+            if ! yq e ".pack.requires[]" "$MANIFEST" | grep -q "$plugin"; then
+              echo "ERROR: Finance manifest missing required kernel capability: $plugin"
+              fail=1
+            else
+              echo "✓ Required kernel capability declared: $plugin"
+            fi
+          done
+
+          exit $fail
+
+  # ── 3. Verify no new regulated products added without a manifest ──────────
+  no-unmanifested-products:
+    name: All Regulated Products Have Manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: manifest-existence-check
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check every product directory has a manifest
+        run: |
+          fail=0
+          # Regulated products that must have manifests
+          REGULATED_PRODUCTS="phr finance"
+          for product in $REGULATED_PRODUCTS; do
+            if [[ ! -f "products/$product/domain-pack-manifest.yaml" ]]; then
+              echo "ERROR: Regulated product '$product' has no domain-pack-manifest.yaml"
+              fail=1
+            else
+              echo "✓ $product has a manifest"
+            fi
+          done
+          exit $fail
+
+  # ── Summary gate ──────────────────────────────────────────────────────────
+  manifest-validation-summary:
+    name: All Manifest Gates Passed
+    if: always()
+    needs:
+      - manifest-existence-check
+      - manifest-structure-check
+      - no-unmanifested-products
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all gates succeeded
+        run: |
+          if [[ "${{ needs.manifest-existence-check.result }}" != "success" ]] ||
+             [[ "${{ needs.manifest-structure-check.result }}" != "success" ]] ||
+             [[ "${{ needs.no-unmanifested-products.result }}" != "success" ]]; then
+            echo "One or more manifest validation gates failed."
+            exit 1
+          fi
+          echo "All manifest validation gates passed."

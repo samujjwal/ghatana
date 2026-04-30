@@ -4,10 +4,10 @@
  */
 package com.ghatana.yappc.infrastructure.datacloud.entity;
 
-import com.ghatana.products.yappc.domain.AggregateRoot;
-import com.ghatana.products.yappc.domain.events.ProjectCompletedEvent;
-import com.ghatana.products.yappc.domain.events.ProjectCreatedEvent;
-import com.ghatana.products.yappc.domain.events.ProjectStageAdvancedEvent;
+import com.ghatana.yappc.domain.AggregateRoot;
+import com.ghatana.yappc.domain.events.ProjectCompletedEvent;
+import com.ghatana.yappc.domain.events.ProjectCreatedEvent;
+import com.ghatana.yappc.domain.events.ProjectStageAdvancedEvent;
 
 import java.time.Instant;
 import java.util.Map;

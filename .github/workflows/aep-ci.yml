@@ -72,16 +72,59 @@ jobs:
     needs: contracts-validate
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-      
+
       - name: Run Orchestrator Tests
         run: ./gradlew :products:aep:orchestrator:test --rerun-tasks
         timeout-minutes: 15
+
+  # ==================== Gate 2b: Pinned Critical Regression Tests (AEP-A2, AEP-A8) ====================
+  pinned-openapi-drift-test:
+    name: Pinned - OpenAPI Surface Drift Test
+    runs-on: ubuntu-latest
+    needs: contracts-validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run AepOpenApiSurfaceDriftTest (Hard Failure on Regression)
+        run: |
+          ./gradlew :products:aep:server:test \
+            --no-daemon \
+            --tests com.ghatana.aep.server.http.AepOpenApiSurfaceDriftTest \
+            --rerun-tasks
+        timeout-minutes: 10
+
+  pinned-agent-execution-guard-test:
+    name: Pinned - Agent Execution Guard Test
+    runs-on: ubuntu-latest
+    needs: contracts-validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run AgentExecutionServiceTest (Hard Failure on Regression)
+        run: |
+          ./gradlew :products:aep:orchestrator:test \
+            --no-daemon \
+            --tests com.ghatana.aep.engine.registry.AgentExecutionServiceTest \
+            --rerun-tasks
+        timeout-minutes: 10
 
   server-test:
     name: Server Verification Tests
@@ -255,7 +298,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [contracts-validate, platform-test, orchestrator-test, server-test, coverage-report, ui-build, gateway-build, contract-drift, helm-k8s-drift]
+    needs: [contracts-validate, platform-test, orchestrator-test, pinned-openapi-drift-test, pinned-agent-execution-guard-test, server-test, coverage-report, ui-build, gateway-build, contract-drift, helm-k8s-drift]
     if: always()
     steps:
       - name: Report Status
@@ -264,16 +307,20 @@ jobs:
           echo "Contracts Validation: ${{ needs.contracts-validate.result }}"
           echo "Platform Tests: ${{ needs.platform-test.result }}"
           echo "Orchestrator Tests: ${{ needs.orchestrator-test.result }}"
+          echo "Pinned OpenAPI Drift Test: ${{ needs.pinned-openapi-drift-test.result }}"
+          echo "Pinned Agent Execution Guard Test: ${{ needs.pinned-agent-execution-guard-test.result }}"
           echo "Server Verification Tests: ${{ needs.server-test.result }}"
           echo "Coverage Report: ${{ needs.coverage-report.result }}"
           echo "UI Build: ${{ needs.ui-build.result }}"
           echo "Gateway Build: ${{ needs.gateway-build.result }}"
           echo "Contract Drift: ${{ needs.contract-drift.result }}"
           echo "Helm/K8s Drift: ${{ needs.helm-k8s-drift.result }}"
-          
+
           if [[ "${{ needs.contracts-validate.result }}" == "success" && \
                 "${{ needs.platform-test.result }}" == "success" && \
                 "${{ needs.orchestrator-test.result }}" == "success" && \
+                "${{ needs.pinned-openapi-drift-test.result }}" == "success" && \
+                "${{ needs.pinned-agent-execution-guard-test.result }}" == "success" && \
                 "${{ needs.server-test.result }}" == "success" && \
                 "${{ needs.coverage-report.result }}" == "success" && \
                 "${{ needs.ui-build.result }}" == "success" && \

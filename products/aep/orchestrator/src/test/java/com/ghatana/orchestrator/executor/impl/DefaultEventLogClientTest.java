@@ -523,7 +523,8 @@ class DefaultEventLogClientTest extends EventloopTestBase {
         void concurrentPublishes() throws Exception { // GH-90000
             int threadCount = 10;
             ExecutorService pool = Executors.newFixedThreadPool(threadCount); // GH-90000
-            DefaultEventLogClient concurrentClient = new DefaultEventLogClient(eventCloud, objectMapper, pool); // GH-90000
+            ExecutorService clientExecutor = Executors.newVirtualThreadPerTaskExecutor(); // GH-90000
+            DefaultEventLogClient concurrentClient = new DefaultEventLogClient(eventCloud, objectMapper, clientExecutor); // GH-90000
 
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
             AtomicInteger failures = new AtomicInteger(); // GH-90000
@@ -548,6 +549,7 @@ class DefaultEventLogClientTest extends EventloopTestBase {
             assertThat(eventCloud.getEvents("concurrent-tenant")).hasSize(threadCount);
 
             pool.shutdown(); // GH-90000
+            clientExecutor.shutdown(); // GH-90000
         }
     }
 

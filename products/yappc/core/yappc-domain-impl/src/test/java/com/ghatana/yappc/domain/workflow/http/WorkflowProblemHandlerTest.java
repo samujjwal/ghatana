@@ -2,8 +2,8 @@ package com.ghatana.yappc.domain.workflow.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.products.yappc.domain.workflow.AiWorkflowInstance;
-import com.ghatana.products.yappc.domain.workflow.AiWorkflowService;
+import com.ghatana.yappc.domain.workflow.AiWorkflowInstance;
+import com.ghatana.yappc.domain.workflow.AiWorkflowService;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;

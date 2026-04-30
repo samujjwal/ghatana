@@ -131,8 +131,8 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
         scores.put(entityId + ":" + type, riskScore);
         scoreHistory.computeIfAbsent(entityId, k -> new ArrayList<>()).add(riskScore);
 
-        // Check against limits
-        checkLimits(entityId, type, riskScore);
+        // Check against limits using original factors
+        checkLimits(entityId, type, riskScore, factors);
 
         LOG.info("Calculated {} risk for {}: score={:.2f}, level={}",
             type, entityId, normalizedScore, level);
@@ -156,11 +156,11 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
     @Override
     public Promise<RiskReport> generateReport(String entityId, TimeRange range) {
         List<RiskScore> relevantScores = scoreHistory.getOrDefault(entityId, Collections.emptyList()).stream()
-            .filter(s -> s.calculatedAt().isAfter(range.start()) && s.calculatedAt().isBefore(range.end()))
+            .filter(s -> s.calculatedAt().isAfter(range.start()) && s.calculatedAt().isBefore(range.end().plusMillis(1)))
             .collect(Collectors.toList());
 
         List<RiskAlert> relevantAlerts = alerts.getOrDefault(entityId, Collections.emptyList()).stream()
-            .filter(a -> a.triggeredAt().isAfter(range.start()) && a.triggeredAt().isBefore(range.end()))
+            .filter(a -> a.triggeredAt().isAfter(range.start()) && a.triggeredAt().isBefore(range.end().plusMillis(1)))
             .collect(Collectors.toList());
 
         Map<String, Object> summary = buildSummary(relevantScores, relevantAlerts);
@@ -259,24 +259,62 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
         return RiskScore.RiskLevel.LOW;
     }
 
-    private void checkLimits(String entityId, RiskType type, RiskScore score) {
+    private void checkLimits(String entityId, RiskType type, RiskScore score, Map<String, Object> factors) {
         RiskLimits entityLimits = limits.get(entityId);
         if (entityLimits == null) return;
 
-        // Check various limits based on risk type
+        List<RiskAlert> newAlerts = new ArrayList<>();
+
+        if (type == RiskType.MARKET) {
+            // Check position limits against original factor values
+            for (Map.Entry<String, Object> entry : factors.entrySet()) {
+                String factor = entry.getKey();
+                Object value = entry.getValue();
+
+                if (value instanceof Number) {
+                    double numValue = ((Number) value).doubleValue();
+
+                    // Check portfolio notional limit
+                    if (factor.equals("position_value") || factor.equals("position_size")) {
+                        if (numValue > entityLimits.maxPortfolioNotional().doubleValue()) {
+                            newAlerts.add(new RiskAlert(
+                                UUID.randomUUID().toString(),
+                                entityId,
+                                "HIGH_MARKET_RISK",
+                                "Market risk exceeds threshold: " + String.format("%.2f", score.score()),
+                                0.9,
+                                Instant.now()
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Also check if risk level is HIGH or CRITICAL
         boolean isHighOrCritical = score.level() == RiskScore.RiskLevel.HIGH
                 || score.level() == RiskScore.RiskLevel.CRITICAL;
         if (type == RiskType.MARKET && isHighOrCritical) {
-            RiskAlert alert = new RiskAlert(
-                UUID.randomUUID().toString(),
-                entityId,
-                "HIGH_MARKET_RISK",
-                "Market risk exceeds threshold: " + String.format("%.2f", score.score()),
-                score.score(),
-                Instant.now()
-            );
-            alerts.computeIfAbsent(entityId, k -> new ArrayList<>()).add(alert);
-            LOG.warn("Risk limit exceeded for {}: {}", entityId, alert.message());
+            // Avoid duplicate alerts if limit breach already generated one
+            boolean hasAlert = newAlerts.stream().anyMatch(a -> a.alertType().equals("HIGH_MARKET_RISK"));
+            if (!hasAlert) {
+                newAlerts.add(new RiskAlert(
+                    UUID.randomUUID().toString(),
+                    entityId,
+                    "HIGH_MARKET_RISK",
+                    "Market risk exceeds threshold: " + String.format("%.2f", score.score()),
+                    score.score(),
+                    Instant.now()
+                ));
+            }
+        }
+
+        // Add all new alerts
+        if (!newAlerts.isEmpty()) {
+            alerts.computeIfAbsent(entityId, k -> new ArrayList<>()).addAll(newAlerts);
+            for (RiskAlert alert : newAlerts) {
+                LOG.warn("Risk limit exceeded for {}: {}", entityId, alert.message());
+            }
         }
     }
 

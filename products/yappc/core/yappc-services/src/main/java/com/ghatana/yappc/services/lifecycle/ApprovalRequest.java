@@ -150,4 +150,83 @@ public record ApprovalRequest(
         return new ApprovalRequest(id, projectId, requestingAgentId, approvalType,
                 context, ApprovalStatus.REJECTED, tenantId, createdAt, Instant.now(), decidedBy, expiresAt);
     }
+
+    /** Builder for creating ApprovalRequest instances. */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String id;
+        private String projectId;
+        private String requestingAgentId;
+        private ApprovalType approvalType;
+        private ApprovalContext context;
+        private ApprovalStatus status = ApprovalStatus.PENDING;
+        private String tenantId;
+        private Instant createdAt = Instant.now();
+        private Instant decidedAt;
+        private String decidedBy;
+        private Instant expiresAt;
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder projectId(String projectId) {
+            this.projectId = projectId;
+            return this;
+        }
+
+        public Builder requestingAgentId(String requestingAgentId) {
+            this.requestingAgentId = requestingAgentId;
+            return this;
+        }
+
+        public Builder approvalType(ApprovalType approvalType) {
+            this.approvalType = approvalType;
+            return this;
+        }
+
+        public Builder context(ApprovalContext context) {
+            this.context = context;
+            return this;
+        }
+
+        public Builder status(ApprovalStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder tenantId(String tenantId) {
+            this.tenantId = tenantId;
+            return this;
+        }
+
+        public Builder createdAt(Instant createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Builder decidedAt(Instant decidedAt) {
+            this.decidedAt = decidedAt;
+            return this;
+        }
+
+        public Builder decidedBy(String decidedBy) {
+            this.decidedBy = decidedBy;
+            return this;
+        }
+
+        public Builder expiresAt(Instant expiresAt) {
+            this.expiresAt = expiresAt;
+            return this;
+        }
+
+        public ApprovalRequest build() {
+            return new ApprovalRequest(id, projectId, requestingAgentId, approvalType,
+                    context, status, tenantId, createdAt, decidedAt, decidedBy, expiresAt);
+        }
+    }
 }

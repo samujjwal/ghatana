@@ -1,9 +1,13 @@
 # Data Cloud Engineering Caveats
 
 **Document ID:** DC-CAVEATS-001  
-**Version:** 2.0  
-**Date:** 2026-04-12  
+**Version:** 2.1  
+**Date:** 2026-04-29  
 **Evidence Base:** Architecture Documentation Suite + Risk Analysis
+
+> **Verification Status** (DC-A11): Claims in this document are tagged as follows:
+> ✅ **verified-locally** · 🔵 **integration-validated** · 🟡 **deployment-validated** · ⚪ **architecture-only**
+> See [01-technical-overview.md](./01-technical-overview.md) for the full key.
 
 ---
 

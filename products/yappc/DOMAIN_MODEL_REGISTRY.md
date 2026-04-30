@@ -10,7 +10,7 @@ YAPPC has two domain packages serving different bounded contexts:
 | Location | Package | Context | Style | Count |
 |---|---|---|---|---|
 | `backend/api/domain/` | `com.ghatana.yappc.api.domain` | Project Management | ActiveJ POJOs | 25 |
-| `libs/java/yappc-domain/` | `com.ghatana.products.yappc.domain` | Cloud Security | JPA + Lombok | 30 |
+| `libs/java/yappc-domain/` | `com.ghatana.yappc.domain` | Cloud Security | JPA + Lombok | 30 |
 
 ## Canonical Source Map
 

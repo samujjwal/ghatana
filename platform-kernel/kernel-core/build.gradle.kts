@@ -6,6 +6,7 @@ description = "Platform Kernel Core - module lifecycle and context abstractions"
 
 dependencies {
     api(project(":platform:java:core"))  // JsonUtils and core utilities
+    api(project(":platform:java:observability"))  // OpenTelemetry API for tracing
     api(libs.bundles.activej.core)
     api(libs.bundles.jackson.json)
     implementation(libs.bundles.jackson.yaml)

@@ -7,7 +7,7 @@ import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import com.ghatana.yappc.infrastructure.datacloud.entity.ProjectEntity;
 import com.ghatana.yappc.infrastructure.security.EncryptionService;
-import com.ghatana.products.yappc.domain.Identifiable;
+import com.ghatana.yappc.domain.Identifiable;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.AfterEach;

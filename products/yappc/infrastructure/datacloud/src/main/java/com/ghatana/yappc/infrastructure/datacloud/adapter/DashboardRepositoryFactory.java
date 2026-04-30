@@ -1,7 +1,7 @@
 package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import com.ghatana.datacloud.DataCloudClient;
-import com.ghatana.products.yappc.domain.repository.DashboardRepository;
+import com.ghatana.yappc.domain.repository.DashboardRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import org.jetbrains.annotations.NotNull;
 

@@ -12,6 +12,8 @@ import com.ghatana.platform.plugin.PluginContext;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Map;
 
@@ -42,10 +44,11 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     private PluginContext mockContext;
 
     private DurableAuditTrailPlugin plugin;
+    private JdbcDataSource ds;
 
     @BeforeEach
     void setUp() { // GH-90000
-        JdbcDataSource ds = new JdbcDataSource(); // GH-90000
+        ds = new JdbcDataSource(); // GH-90000
         // Unique DB per test to ensure isolation between tests
         ds.setURL("jdbc:h2:mem:audit_test_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1"); // GH-90000
         plugin = new DurableAuditTrailPlugin(ds); // GH-90000
@@ -222,5 +225,64 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> plugin.exportTrail("entity-pdf", AuditTrailPlugin.ExportFormat.PDF, out))) // GH-90000
             .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+    }
+
+    // -------------------------------------------------------------------------
+    // KP-011: Hash-chain mutation detection (direct DB tamper)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("KP-011 — verifyIntegrity must detect a directly tampered hash in the chain")
+    void testVerifyIntegrityDetectsTamperedHash() throws Exception {
+        String entityId = "entity-tamper-" + System.nanoTime();
+        runPromise(() -> plugin.logEvent(entityId, "STEP1", Map.of("actorId", "u1")));
+        runPromise(() -> plugin.logEvent(entityId, "STEP2", Map.of("actorId", "u1")));
+        runPromise(() -> plugin.logEvent(entityId, "STEP3", Map.of("actorId", "u1")));
+
+        // Confirm chain is intact before mutation
+        AuditTrailPlugin.VerificationResult before = runPromise(() -> plugin.verifyIntegrity(entityId));
+        assertThat(before.valid()).isTrue();
+
+        // Directly corrupt the hash of the first entry in the chain
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "UPDATE plugin_audit_entries SET entry_hash = 'TAMPERED_HASH_VALUE' " +
+                 "WHERE entity_id = ? ORDER BY entry_ts ASC LIMIT 1")) {
+            ps.setString(1, entityId);
+            int rows = ps.executeUpdate();
+            assertThat(rows).as("At least one row must be updated by the tamper mutation").isGreaterThan(0);
+        }
+
+        // After mutation, verifyIntegrity must report failure
+        AuditTrailPlugin.VerificationResult after = runPromise(() -> plugin.verifyIntegrity(entityId));
+        assertThat(after.valid())
+                .as("verifyIntegrity must detect tampering and report invalid chain")
+                .isFalse();
+        assertThat(after.violations())
+                .as("violations list must be non-empty after tamper")
+                .isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("KP-011 — verifyIntegrity must detect a directly tampered previousHash link")
+    void testVerifyIntegrityDetectsTamperedPreviousHash() throws Exception {
+        String entityId = "entity-prevtamper-" + System.nanoTime();
+        runPromise(() -> plugin.logEvent(entityId, "A", Map.of("actorId", "u1")));
+        runPromise(() -> plugin.logEvent(entityId, "B", Map.of("actorId", "u1")));
+        runPromise(() -> plugin.logEvent(entityId, "C", Map.of("actorId", "u1")));
+
+        // Corrupt the previousHash of the third entry (breaks the back-link from C → B)
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "UPDATE plugin_audit_entries SET previous_hash = 'BROKEN_LINK' " +
+                 "WHERE entity_id = ? ORDER BY timestamp DESC LIMIT 1")) {
+            ps.setString(1, entityId);
+            ps.executeUpdate();
+        }
+
+        AuditTrailPlugin.VerificationResult result = runPromise(() -> plugin.verifyIntegrity(entityId));
+        assertThat(result.valid())
+                .as("broken previousHash link must cause integrity check to fail")
+                .isFalse();
     }
 }

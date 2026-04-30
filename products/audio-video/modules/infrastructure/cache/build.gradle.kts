@@ -38,4 +38,6 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Exclude integration tests (ending in IT) as they require Docker/Testcontainers
+    exclude("**/*IT.class", "**/*IT$*.class")
 }

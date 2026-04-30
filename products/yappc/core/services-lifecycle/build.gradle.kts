@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.spotbugs)
 }
 
-group = "com.ghatana.products.yappc.services"
+group = "com.ghatana.yappc"
 version = rootProject.version.toString()
 base.archivesName.set("yappc-services-lifecycle")
 

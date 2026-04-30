@@ -2,7 +2,7 @@ package com.ghatana.yappc.services.observe;
 
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.products.yappc.domain.observe.Metric;
+import com.ghatana.yappc.domain.observe.Metric;
 import com.ghatana.yappc.common.ServiceObservability;
 import com.ghatana.yappc.domain.observe.LogEntry;
 import com.ghatana.yappc.domain.observe.Observation;

@@ -4,7 +4,7 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.resilience.RetryPolicy;
-import com.ghatana.products.yappc.domain.Identifiable;
+import com.ghatana.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import com.ghatana.yappc.infrastructure.cache.EntityCache;
 import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginatedResult;

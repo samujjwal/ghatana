@@ -2,7 +2,7 @@ plugins {
     id("java-module")
 }
 
-group = "com.ghatana.products.yappc.refactorer"
+group = "com.ghatana.yappc"
 version = rootProject.version
 
 description = "Refactorer Engine - Unified core, engine & language support (merged: refactorer-core + refactorer-engine + refactorer-languages)"

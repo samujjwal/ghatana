@@ -106,8 +106,9 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
         }
 
         long startTime = System.currentTimeMillis();
-        log.info("Executing build task: {} via GitHub Actions", task.id());
+        log.info("Build task: {} requested via GitHub Actions", task.id());
 
+        // FAIL-CLOSED: Return NOT_IMPLEMENTED until real GitHub Actions integration is complete
         // TODO: Implement actual GitHub Actions workflow trigger
         // This would involve:
         // 1. POST to /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches
@@ -116,8 +117,9 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
 
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-                .output("Build executed via GitHub Actions (TODO: implement actual workflow trigger)")
+                .status(RunStatus.NOT_READY)
+                .error("GitHub Actions build integration not implemented")
+                .output("[NOT_IMPLEMENTED] Build via GitHub Actions is not yet available. Real GitHub Actions workflow trigger needs to be implemented.")
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -129,15 +131,17 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
         }
 
         long startTime = System.currentTimeMillis();
-        log.info("Executing test task: {} via GitHub Actions", task.id());
+        log.info("Test task: {} requested via GitHub Actions", task.id());
 
+        // FAIL-CLOSED: Return NOT_IMPLEMENTED until real GitHub Actions integration is complete
         // TODO: Implement actual GitHub Actions workflow trigger for tests
         // This would trigger test workflow and collect test results/coverage
 
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-                .output("Test suite executed via GitHub Actions (TODO: implement actual workflow trigger)")
+                .status(RunStatus.NOT_READY)
+                .error("GitHub Actions test integration not implemented")
+                .output("[NOT_IMPLEMENTED] Test execution via GitHub Actions is not yet available. Real GitHub Actions workflow trigger needs to be implemented.")
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -153,15 +157,17 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
                 : "production";
 
         long startTime = System.currentTimeMillis();
-        log.info("Executing deploy task: {} to environment: {} via GitHub Actions", task.id(), targetEnvironment);
+        log.info("Deploy task: {} to environment: {} requested via GitHub Actions", task.id(), targetEnvironment);
 
+        // FAIL-CLOSED: Return NOT_IMPLEMENTED until real GitHub Actions integration is complete
         // TODO: Implement actual GitHub Actions workflow trigger for deployment
         // This would trigger deploy workflow with environment parameter
 
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-                .output("Deployment to " + targetEnvironment + " executed via GitHub Actions (TODO: implement actual workflow trigger)")
+                .status(RunStatus.NOT_READY)
+                .error("GitHub Actions deploy integration not implemented")
+                .output("[NOT_IMPLEMENTED] Deployment to " + targetEnvironment + " via GitHub Actions is not yet available. Real GitHub Actions workflow trigger needs to be implemented.")
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -173,15 +179,17 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
         }
 
         long startTime = System.currentTimeMillis();
-        log.info("Executing migrate task: {} via GitHub Actions", task.id());
+        log.info("Migrate task: {} requested via GitHub Actions", task.id());
 
+        // FAIL-CLOSED: Return NOT_IMPLEMENTED until real GitHub Actions integration is complete
         // TODO: Implement actual GitHub Actions workflow trigger for migrations
         // This would trigger migration workflow and track schema version
 
         return Promise.of(TaskResult.builder()
                 .taskId(task.id())
-                .status(RunStatus.SUCCESS)
-                .output("Database migration executed via GitHub Actions (TODO: implement actual workflow trigger)")
+                .status(RunStatus.NOT_READY)
+                .error("GitHub Actions migrate integration not implemented")
+                .output("[NOT_IMPLEMENTED] Database migration via GitHub Actions is not yet available. Real GitHub Actions workflow trigger needs to be implemented.")
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }
@@ -199,15 +207,17 @@ public class GitHubActionsCiCdAdapter implements CiCdPort {
         }
 
         long startTime = System.currentTimeMillis();
-        log.info("Executing rollback for deployment: {} to version: {} via GitHub Actions", deploymentId, targetVersion);
+        log.info("Rollback for deployment: {} to version: {} requested via GitHub Actions", deploymentId, targetVersion);
 
+        // FAIL-CLOSED: Return NOT_IMPLEMENTED until real GitHub Actions integration is complete
         // TODO: Implement actual GitHub Actions workflow trigger for rollback
         // This would trigger rollback workflow with target version
 
         return Promise.of(TaskResult.builder()
                 .taskId(deploymentId)
-                .status(RunStatus.SUCCESS)
-                .output("Rollback to " + targetVersion + " executed via GitHub Actions (TODO: implement actual workflow trigger)")
+                .status(RunStatus.NOT_READY)
+                .error("GitHub Actions rollback integration not implemented")
+                .output("[NOT_IMPLEMENTED] Rollback to " + targetVersion + " via GitHub Actions is not yet available. Real GitHub Actions workflow trigger needs to be implemented.")
                 .durationMs(System.currentTimeMillis() - startTime)
                 .build());
     }

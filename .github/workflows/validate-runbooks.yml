@@ -1,0 +1,228 @@
+name: Validate Incident Runbooks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/runbooks/**'
+      - '.github/workflows/validate-runbooks.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/runbooks/**'
+      - '.github/workflows/validate-runbooks.yml'
+
+jobs:
+  runbook-existence-check:
+    name: Check Required Runbooks Exist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check core runbooks exist
+        run: |
+          REQUIRED_RUNBOOKS=(
+            "docs/runbooks/README.md"
+            "docs/runbooks/phr-consent-breach-incident.md"
+            "docs/runbooks/finance-ledger-imbalance-incident.md"
+            "docs/runbooks/audit-trail-tampering-incident.md"
+            "docs/runbooks/tenant-isolation-breach-incident.md"
+          )
+          
+          for runbook in "${REQUIRED_RUNBOOKS[@]}"; do
+            if [ ! -f "$runbook" ]; then
+              echo "✗ Missing required runbook: $runbook"
+              exit 1
+            fi
+            echo "✓ Found $runbook"
+          done
+
+  runbook-content-validation:
+    name: Validate Runbook Content
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc
+
+      - name: Validate runbook structure
+        run: |
+          RUNBOOKS=$(find docs/runbooks -name "*.md" -type f | grep -v README)
+          
+          for runbook in $RUNBOOKS; do
+            echo "Validating: $runbook"
+            
+            # Check for required sections
+            REQUIRED_SECTIONS=(
+              "1. Detection"
+              "2. Immediate Actions"
+              "3. Investigation"
+              "4. Remediation"
+              "5. Verification"
+              "6. Escalation"
+              "7. Communication"
+              "8. Post-Incident"
+            )
+            
+            for section in "${REQUIRED_SECTIONS[@]}"; do
+              if ! grep -q "$section" "$runbook"; then
+                echo "✗ Missing section: $section in $runbook"
+                exit 1
+              fi
+              echo "  ✓ Found section: $section"
+            done
+            
+            # Check markdown syntax (pandoc)
+            if ! pandoc "$runbook" > /dev/null 2>&1; then
+              echo "✗ Markdown syntax error in $runbook"
+              exit 1
+            fi
+            echo "  ✓ Markdown syntax valid"
+          done
+
+      - name: Check for executable scripts
+        run: |
+          # Verify that referenced scripts in runbooks exist or are documented as templates
+          RUNBOOKS=$(find docs/runbooks -name "*incident.md" -type f)
+          
+          for runbook in $RUNBOOKS; do
+            # Extract script references (./scripts/incident/...)
+            SCRIPTS=$(grep -o '\./scripts/incident/[a-z0-9_-]*\.sh' "$runbook" | sort | uniq)
+            
+            # For now, just document them (scripts will be implemented as part of ops infrastructure)
+            if [ -n "$SCRIPTS" ]; then
+              echo "Scripts referenced in $runbook:"
+              echo "$SCRIPTS" | sed 's/^/  /'
+            fi
+          done
+
+      - name: Validate runbook metadata
+        run: |
+          RUNBOOKS=$(find docs/runbooks -name "*incident.md" -type f)
+          
+          for runbook in $RUNBOOKS; do
+            echo "Checking metadata in: $runbook"
+            
+            # Check for required metadata
+            if ! head -10 "$runbook" | grep -q "Incident Type:"; then
+              echo "✗ Missing 'Incident Type:' metadata in $runbook"
+              exit 1
+            fi
+            
+            if ! head -10 "$runbook" | grep -q "Severity:"; then
+              echo "✗ Missing 'Severity:' metadata in $runbook"
+              exit 1
+            fi
+            
+            if ! head -10 "$runbook" | grep -q "Compliance Impact:"; then
+              echo "✗ Missing 'Compliance Impact:' metadata in $runbook"
+              exit 1
+            fi
+            
+            if ! head -10 "$runbook" | grep -q "SLO:"; then
+              echo "✗ Missing 'SLO:' (Service Level Objective) in $runbook"
+              exit 1
+            fi
+            
+            echo "  ✓ All metadata fields present"
+          done
+
+  contact-list-validation:
+    name: Validate Contact Lists
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check contact lists in runbooks
+        run: |
+          RUNBOOKS=$(find docs/runbooks -name "*incident.md" -type f)
+          CONTACT_ERROR=0
+          
+          for runbook in $RUNBOOKS; do
+            if ! grep -q "Key Contacts" "$runbook"; then
+              echo "✗ Missing 'Key Contacts' section in $runbook"
+              CONTACT_ERROR=1
+              continue
+            fi
+            
+            # Verify contact table has required columns
+            if ! grep -q "Role.*Name.*Phone.*Email" "$runbook"; then
+              echo "✗ Invalid contact table format in $runbook (missing Role/Name/Phone/Email)"
+              CONTACT_ERROR=1
+              continue
+            fi
+            
+            echo "✓ Valid contact list in $runbook"
+          done
+          
+          if [ $CONTACT_ERROR -eq 1 ]; then
+            exit 1
+          fi
+
+  runbook-availability:
+    name: Publish Runbook Availability Report
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate runbook index
+        run: |
+          echo "# Incident Runbooks — Availability Report" > runbook_report.md
+          echo "Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> runbook_report.md
+          echo "" >> runbook_report.md
+          
+          echo "## Available Runbooks" >> runbook_report.md
+          echo "" >> runbook_report.md
+          
+          find docs/runbooks -name "*.md" -type f | sort | while read runbook; do
+            if [ "$(basename "$runbook")" != "README.md" ]; then
+              TITLE=$(head -1 "$runbook" | sed 's/^# //')
+              INCIDENT_TYPE=$(grep "^**Incident Type:**" "$runbook" | cut -d: -f2- | xargs)
+              SEVERITY=$(grep "^**Severity:**" "$runbook" | cut -d: -f2- | xargs)
+              
+              echo "### $TITLE" >> runbook_report.md
+              echo "- **Type:** $INCIDENT_TYPE" >> runbook_report.md
+              echo "- **Severity:** $SEVERITY" >> runbook_report.md
+              echo "- **Location:** $runbook" >> runbook_report.md
+              echo "" >> runbook_report.md
+            fi
+          done
+          
+          cat runbook_report.md
+
+      - name: Upload runbook report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runbook-availability-report
+          path: runbook_report.md
+          retention-days: 30
+
+  runbooks-validation-summary:
+    name: Runbooks Validation Summary
+    runs-on: ubuntu-latest
+    needs: [runbook-existence-check, runbook-content-validation, contact-list-validation, runbook-availability]
+    if: always()
+    steps:
+      - name: Check validation results
+        run: |
+          if [ "${{ needs.runbook-existence-check.result }}" = "failure" ]; then
+            echo "✗ Runbook existence check failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.runbook-content-validation.result }}" = "failure" ]; then
+            echo "✗ Runbook content validation failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.contact-list-validation.result }}" = "failure" ]; then
+            echo "✗ Contact list validation failed"
+            exit 1
+          fi
+          
+          echo "✓ All runbook validations passed"

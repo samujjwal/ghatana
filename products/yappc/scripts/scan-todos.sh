@@ -61,16 +61,35 @@ QUALITY_FILE="$REPORT_DIR/todos-quality.txt"
 
 TODO_PATTERN='TODO|FIXME|XXX|HACK'
 
-# Java TODO scan
+# Directories to prune from all scans — generated, vendor, build output, binary artifacts
+PRUNE_DIRS=( "node_modules" "dist" "build" ".gradle" ".git" "bin" ".cache" "coverage" ".nyc_output" "vendor" "out" "target" )
+
+# Build a prune expression compatible with POSIX find
+build_prune_expr() {
+    local base_dir="$1"
+    local expr=()
+    for d in "${PRUNE_DIRS[@]}"; do
+        expr+=( -path "$base_dir/*/$d" -prune -o )
+    done
+    echo "${expr[@]}"
+}
+
+# Java TODO scan — excludes generated/vendor/build dirs
 if [[ -d "$YAPPC_ROOT/core" ]]; then
-    find "$YAPPC_ROOT/core" -type f -name "*.java" -exec grep -EnH "$TODO_PATTERN" {} + > "$JAVA_FILE" || true
+    eval find "$YAPPC_ROOT/core" \
+        $(build_prune_expr "$YAPPC_ROOT/core") \
+        -type f -name "*.java" -print \
+        | xargs grep -EnH "$TODO_PATTERN" 2>/dev/null > "$JAVA_FILE" || true
 else
     : > "$JAVA_FILE"
 fi
 
-# TypeScript TODO scan
+# TypeScript TODO scan — excludes node_modules, dist, build, generated dirs
 if [[ -d "$YAPPC_ROOT/frontend" ]]; then
-    find "$YAPPC_ROOT/frontend" -type f \( -name "*.ts" -o -name "*.tsx" \) -exec grep -EnH "$TODO_PATTERN" {} + > "$TS_FILE" || true
+    eval find "$YAPPC_ROOT/frontend" \
+        $(build_prune_expr "$YAPPC_ROOT/frontend") \
+        -type f \( -name "*.ts" -o -name "*.tsx" \) -print \
+        | xargs grep -EnH "$TODO_PATTERN" 2>/dev/null > "$TS_FILE" || true
 else
     : > "$TS_FILE"
 fi

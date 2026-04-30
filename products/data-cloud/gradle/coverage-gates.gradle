@@ -15,7 +15,8 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
-// Coverage targets for all modules (DC-P1-3: 0.50 instruction, 0.30 branch)
+// Coverage targets for all active Gradle modules (DC-A2: platform-client and platform removed — both were deleted)
+// Active module set mirrors products/data-cloud/settings.gradle.kts includes.
 def coverageTargets = [
     'launcher': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-api': [line: 0.50, branch: 0.30, method: 0.50],
@@ -23,15 +24,16 @@ def coverageTargets = [
     'platform-entity': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-event': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-config': [line: 0.50, branch: 0.30, method: 0.50],
-    'platform-client': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-launcher': [line: 0.50, branch: 0.30, method: 0.50],
     'platform-plugins': [line: 0.50, branch: 0.30, method: 0.50],
-    'feature-store-ingest': [line: 0.50, branch: 0.30, method: 0.50],
+    'feature-store-ingest':   [line: 0.50, branch: 0.30, method: 0.50],
+    'platform-event-store':   [line: 0.60, branch: 0.40, method: 0.60],
     'agent-registry': [line: 0.50, branch: 0.30, method: 0.50],
+    'kernel-bridge': [line: 0.50, branch: 0.30, method: 0.50],
+    'agent-catalog': [line: 0.50, branch: 0.30, method: 0.50],
     'spi': [line: 0.50, branch: 0.30, method: 0.50],
     'api': [line: 0.50, branch: 0.30, method: 0.50],
-    'sdk': [line: 0.50, branch: 0.30, method: 0.50],
-    'platform': [line: 0.50, branch: 0.30, method: 0.50]
+    'sdk': [line: 0.50, branch: 0.30, method: 0.50]
 ]
 
 // Exclusions for generated code, dead code (to be removed), and framework boilerplate
@@ -45,9 +47,39 @@ def jacocoExclusions = [
     '**/build/**'
 ]
 
+// DC-A3: CI enforcement — fail if coverage-gates.gradle references a module directory that does not exist.
+// This task must be wired into the CI 'check' lifecycle via: check.dependsOn validateCoverageModules
+tasks.register('validateCoverageModules') {
+    group = 'verification'
+    description = 'Fail if coverage-gates.gradle lists a module whose directory does not exist on disk. (DC-A3 CI guard)'
+
+    doLast {
+        // Resolve the data-cloud product root: two levels up from this script's parent (gradle/).
+        def productRoot = file("${projectDir}").parentFile
+
+        def missing = []
+        coverageTargets.keySet().each { moduleName ->
+            def moduleDir = new File(productRoot, moduleName)
+            if (!moduleDir.isDirectory()) {
+                missing << moduleName
+            }
+        }
+
+        if (!missing.isEmpty()) {
+            throw new GradleException(
+                "DC-A3: coverage-gates.gradle references module(s) that do not exist on disk. " +
+                "Remove or redirect the stale entries before merging:\n  ${missing.join('\n  ')}"
+            )
+        }
+
+        println("DC-A3 coverage module validation passed. All ${coverageTargets.size()} referenced modules exist on disk.")
+    }
+}
+
 tasks.register('jacocoReport') {
     group = 'coverage'
     description = 'Generate JaCoCo coverage report for Data Cloud'
+    dependsOn 'validateCoverageModules'
 }
 
 tasks.register('jacocoVerify') {

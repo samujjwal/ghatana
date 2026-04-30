@@ -11,20 +11,30 @@
  * @doc.pattern Proxy/Adapter
  */
 
-import { ApiClient } from '@ghatana/api';
 import type { AuthTokens, AuthUser, LoginCredentials, RegisterData } from './auth.service';
 
 // Java lifecycle service URL - configurable via env
 const LIFECYCLE_SERVICE_URL = process.env.LIFECYCLE_SERVICE_URL ?? 'http://localhost:8082';
 
-// Reuse shared platform API client
-const apiClient = new ApiClient({
-  baseUrl: LIFECYCLE_SERVICE_URL,
-  timeoutMs: 10000,
-  defaultHeaders: {
-    'Content-Type': 'application/json',
-  },
-});
+// Helper function to make HTTP requests to Java lifecycle service
+async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> {
+  const url = `${LIFECYCLE_SERVICE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return { data };
+}
 
 /**
  * Proxy Auth Service
@@ -37,14 +47,15 @@ export class ProxyAuthService {
    * Authenticate user credentials via Java lifecycle service
    */
   async login(credentials: LoginCredentials): Promise<{ user: AuthUser; tokens: AuthTokens }> {
-    const response = await apiClient.post<{
+    const response = await makeRequest<{
       user: AuthUser;
       tokens: AuthTokens;
     }>('/api/auth/login', {
-      body: {
+      method: 'POST',
+      body: JSON.stringify({
         email: credentials.email,
         password: credentials.password,
-      },
+      }),
     });
 
     if (!response.data) {
@@ -58,7 +69,7 @@ export class ProxyAuthService {
    * Validate access token via Java lifecycle service
    */
   async validateAccessToken(token: string): Promise<AuthUser> {
-    const response = await apiClient.get<AuthUser>('/api/auth/me', {
+    const response = await makeRequest<AuthUser>('/api/auth/me', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -75,8 +86,9 @@ export class ProxyAuthService {
    * Refresh tokens via Java lifecycle service
    */
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
-    const response = await apiClient.post<AuthTokens>('/api/auth/refresh', {
-      body: { refreshToken },
+    const response = await makeRequest<AuthTokens>('/api/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.data) {
@@ -90,8 +102,9 @@ export class ProxyAuthService {
    * Logout via Java lifecycle service
    */
   async logout(refreshToken: string): Promise<void> {
-    await apiClient.post('/api/auth/logout', {
-      body: { refreshToken },
+    await makeRequest('/api/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
     });
   }
 
@@ -108,7 +121,7 @@ export class ProxyAuthService {
       );
     }
 
-    const response = await apiClient.get<AuthUser>(`/api/auth/users/${userId}`, {
+    const response = await makeRequest<AuthUser>(`/api/auth/users/${userId}`, {
       headers: {
         'X-API-Key': apiKey,
       },

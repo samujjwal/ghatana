@@ -2,7 +2,7 @@ package com.ghatana.yappc.domain.workflow.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.products.yappc.domain.workflow.AiWorkflowService;
+import com.ghatana.yappc.domain.workflow.AiWorkflowService;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;

@@ -101,9 +101,15 @@ public class CommandExecutor {
                     "Command not in allowlist: " + baseCommand));
         }
 
-        // Execute via shell
-        List<String> fullCommand = List.of("/bin/sh", "-c", shellCommand);
+        // Execute via shell (cross-platform)
+        List<String> fullCommand = isWindows()
+                ? List.of("cmd.exe", "/c", shellCommand)
+                : List.of("/bin/sh", "-c", shellCommand);
         return executeInternal(fullCommand);
+    }
+
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
     }
 
     private Promise<CommandResult> executeInternal(List<String> command) {

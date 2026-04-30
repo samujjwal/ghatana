@@ -36,7 +36,7 @@ class CiSnapshotRunnerTest {
         CiSnapshotRunner.PackTestCase testCase =
                 new CiSnapshotRunner.PackTestCase( // GH-90000
                         "base",
-                        basePackResource.getPath(), // GH-90000
+                        Path.of(basePackResource.toURI()).toString(), // GH-90000
                         Map.of("projectName", "ci-base-test", "author", "CI Test"), // GH-90000
                         false,
                         List.of(".gitignore", "README.md") // Expected files // GH-90000
@@ -99,13 +99,13 @@ class CiSnapshotRunnerTest {
                 List.of( // GH-90000
                         new CiSnapshotRunner.PackTestCase( // GH-90000
                                 "base",
-                                basePackResource.getPath(), // GH-90000
+                                Path.of(basePackResource.toURI()).toString(), // GH-90000
                                 Map.of("projectName", "multi-base", "author", "Multi Test"), // GH-90000
                                 false,
                                 List.of(".gitignore")),
                         new CiSnapshotRunner.PackTestCase( // GH-90000
                                 "java-service",
-                                javaPackResource.getPath(), // GH-90000
+                                Path.of(javaPackResource.toURI()).toString(), // GH-90000
                                 Map.of( // GH-90000
                                         "serviceName",
                                         "MultiService",

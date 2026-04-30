@@ -19,6 +19,8 @@ dependencies {
     api(project(":products:data-cloud:platform-config"))
     api(project(":products:data-cloud:platform-analytics"))
     api(project(":products:data-cloud:spi"))
+    // WarmTierEventLogStore extracted to platform-event-store (DC-A10)
+    api(project(":products:data-cloud:platform-event-store"))
     implementation(project(":products:data-cloud:platform-plugins"))
     api(project(":platform:java:audit"))
 
