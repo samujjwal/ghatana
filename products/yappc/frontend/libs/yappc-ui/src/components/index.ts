@@ -231,8 +231,8 @@ export {
   ShortcutHelper,
   useKeyboardShortcuts,
   shortcutRegistry,
-} from '@yappc/shortcuts';
-export { CommandPalette as defaultCommandPalette } from '@yappc/shortcuts';
+} from 'yappc-shortcuts';
+export { CommandPalette as defaultCommandPalette } from 'yappc-shortcuts';
 export type {
   Command,
   CommandPaletteProps,
@@ -241,20 +241,20 @@ export type {
   ShortcutContext,
   UseKeyboardShortcutsOptions,
   UseKeyboardShortcutsReturn,
-} from '@yappc/shortcuts';
+} from 'yappc-shortcuts';
 export {
   Breadcrumb,
   TabNavigation,
   StageNavigation,
   stageNavigationStyles,
-} from '@yappc/ui/navigation-ui';
+} from 'yappc-ui/navigation-ui';
 export type {
   BreadcrumbItemType,
   BreadcrumbProps,
   TabNavigationItem,
   TabNavigationProps,
   StageNavigationProps,
-} from '@yappc/ui/navigation-ui';
+} from 'yappc-ui/navigation-ui';
 
 // Error Boundary
 export { ErrorBoundary } from './components/ErrorBoundary';
@@ -286,19 +286,19 @@ export type {
 } from './patterns/ResponsiveLayout';
 
 // Select Components
-export { SelectTailwind, SelectOption, SelectGroup } from '@yappc/ui/base-ui';
+export { SelectTailwind, SelectOption, SelectGroup } from 'yappc-ui/base-ui';
 export type {
   SelectProps as SelectTailwindProps,
   SelectOptionProps,
   SelectGroupProps,
-} from '@yappc/ui/base-ui';
-export { Popover, PopoverTrigger, PopoverClose } from '@yappc/ui/base-ui';
-export type { PopoverProps, PopoverPlacement } from '@yappc/ui/base-ui';
+} from 'yappc-ui/base-ui';
+export { Popover, PopoverTrigger, PopoverClose } from 'yappc-ui/base-ui';
+export type { PopoverProps, PopoverPlacement } from 'yappc-ui/base-ui';
 export {
   StoryCard,
   VelocityChart,
   BurndownChart,
-} from '@yappc/ui/development-ui';
+} from 'yappc-ui/development-ui';
 export type {
   Story,
   StoryType,
@@ -312,8 +312,8 @@ export type {
   VelocityChartProps,
   BurndownDataPoint,
   BurndownChartProps,
-} from '@yappc/ui/development-ui';
-export { PresetCard, ResourcesList } from '@yappc/ui/initialization-ui';
+} from 'yappc-ui/development-ui';
+export { PresetCard, ResourcesList } from 'yappc-ui/initialization-ui';
 export type {
   PresetCategory,
   TechStack,
@@ -328,7 +328,7 @@ export type {
   Resource,
   ResourceAction,
   ResourcesListProps,
-} from '@yappc/ui/initialization-ui';
+} from 'yappc-ui/initialization-ui';
 
 // Action Components
 export { BulkActionBar } from './components/Actions/BulkActionBar';
@@ -372,7 +372,7 @@ export {
   useBatchGlobalStateUpdate,
   useGlobalStateKeys,
   useGlobalStateStatistics,
-} from '@yappc/state';
+} from 'yappc-state';
 export {
   configQueryKeys,
   usePersonas,
@@ -385,14 +385,14 @@ export {
   useWorkflow,
   useTasks,
   useTask,
-} from '@yappc/state/config-hooks';
+} from 'yappc-state/config-hooks';
 export type {
   PersonaConfig,
   TaskDomain,
   TaskTemplate,
   TaskData,
   WorkflowConfig,
-} from '@yappc/state/config-hooks';
+} from 'yappc-state/config-hooks';
 
 export {
   EnhancedThemeProvider,
@@ -520,7 +520,7 @@ export * from './config';
 // ============================================================================
 
 console.warn(
-  '[DEPRECATED] @ghatana/yappc-ui is deprecated. Use @yappc/ui instead. ' +
+  '[DEPRECATED] @ghatana/yappc-ui is deprecated. Use yappc-ui instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'
 );
 

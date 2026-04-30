@@ -184,46 +184,32 @@ public class JdbcHumanApprovalService extends HumanApprovalService {
 
     /**
      * Returns PENDING requests from the database (cross-instance safe).
+     *
+     * @throws SQLException if database query fails - caller must implement circuit breaker
      */
     @Override
     public List<ApprovalRequest> pendingFor(String tenantId, String projectId) {
-        // For in-memory fallback (e.g., during tests), delegate to parent if no DB available.
-        // In production, prefer the DB query for cross-instance consistency.
-        try {
-            return queryPendingFor(tenantId, projectId);
-        } catch (Exception e) {
-            log.warn("[tenant={}] DB query failed for pendingFor, falling back to in-memory: {}",
-                    tenantId, e.getMessage());
-            return super.pendingFor(tenantId, projectId);
-        }
+        return queryPendingFor(tenantId, projectId);
     }
 
     /**
      * Returns all PENDING requests from the database (cross-instance safe).
+     *
+     * @throws SQLException if database query fails - caller must implement circuit breaker
      */
     @Override
     public List<ApprovalRequest> allPending(String tenantId) {
-        try {
-            return queryAllPending(tenantId);
-        } catch (Exception e) {
-            log.warn("[tenant={}] DB query failed for allPending, falling back to in-memory: {}",
-                    tenantId, e.getMessage());
-            return super.allPending(tenantId);
-        }
+        return queryAllPending(tenantId);
     }
 
     /**
      * Finds a request by ID from the database.
+     *
+     * @throws SQLException if database query fails - caller must implement circuit breaker
      */
     @Override
     public Optional<ApprovalRequest> findById(String tenantId, String requestId) {
-        try {
-            return queryById(tenantId, requestId);
-        } catch (Exception e) {
-            log.warn("[tenant={}] DB query failed for findById id={}, falling back to in-memory: {}",
-                    tenantId, requestId, e.getMessage());
-            return super.findById(tenantId, requestId);
-        }
+        return queryById(tenantId, requestId);
     }
 
     // ─── JDBC helpers ─────────────────────────────────────────────────────────

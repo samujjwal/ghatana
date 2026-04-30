@@ -1,6 +1,6 @@
 /**
  * @doc.type test
- * @doc.purpose Verify that config-hooks are properly exported from @yappc/state
+ * @doc.purpose Verify that config-hooks are properly exported from yappc-state
  * @doc.layer package-verification
  */
 import { describe, it, expect } from 'vitest';

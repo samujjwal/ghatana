@@ -40,14 +40,14 @@ import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 import { Dialog } from '@ghatana/design-system';
 
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@yappc/ui';
+} from 'yappc-ui';
 
 // =============================================================================
 // Types

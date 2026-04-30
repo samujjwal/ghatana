@@ -42,6 +42,7 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(DataCloudRuntimePluginManager.class);
     private static final String WORKFLOW_PLUGIN_ID = "workflow-execution";
     private static final String REPORT_PLUGIN_ID = "reporting";
+    private static final int WORKFLOW_RETRY_MAX_ATTEMPTS = 3;
 
     private final PluginRegistry registry = new PluginRegistry();
     private final PluginContext context = new DefaultPluginContext(registry, Map.of());
@@ -342,13 +343,67 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
 
         @Override
         public Promise<ExecutionSnapshot> retryExecution(String tenantId, String executionId) {
-            // TODO: Implement retry execution logic
             return getExecution(tenantId, executionId).then(optionalSnapshot -> {
                 if (optionalSnapshot.isEmpty()) {
                     return Promise.ofException(new IllegalArgumentException("Execution not found: " + executionId));
                 }
-                return Promise.of(optionalSnapshot.get());
+
+                ExecutionSnapshot previous = optionalSnapshot.get();
+                Map<String, Object> retryInput = previous.output() instanceof Map<?, ?> output
+                    ? coerceToStringKeyMap(output.get("input"))
+                    : Map.of();
+                if (retryInput.isEmpty()) {
+                    retryInput = Map.of("retriedFromExecutionId", executionId);
+                }
+                final Map<String, Object> finalRetryInput = retryInput;
+
+                return executeWithBoundedRetries(tenantId, previous.workflowId(), finalRetryInput, WORKFLOW_RETRY_MAX_ATTEMPTS)
+                    .map(retried -> {
+                        ExecutionLogEntry retryLog = new ExecutionLogEntry(
+                            Instant.now().toString(),
+                            "info",
+                            "Execution retried",
+                            null,
+                            Map.of(
+                                "retriedFromExecutionId", executionId,
+                                "newExecutionId", retried.id()
+                            )
+                        );
+                        persistExecutionLogs(
+                            retried.id(),
+                            tenantId,
+                            retried.workflowId(),
+                            appendExecutionLog(buildLogs(retried, finalRetryInput), retryLog)
+                        ).whenException(e -> log.warn(
+                            "Failed to persist retry log for execution {} -> {}: {}",
+                            executionId,
+                            retried.id(),
+                            e.getMessage()));
+                        return retried;
+                    });
             });
+        }
+
+        private Promise<ExecutionSnapshot> executeWithBoundedRetries(
+                String tenantId,
+                String workflowId,
+                Map<String, Object> input,
+                int remainingAttempts) {
+            return execute(tenantId, workflowId, input)
+                .then(
+                    Promise::of,
+                    error -> {
+                        if (remainingAttempts <= 1) {
+                            return Promise.ofException(error);
+                        }
+                        log.warn("Retry execution failed for workflow {} (tenant {}), remaining attempts: {}",
+                            workflowId,
+                            tenantId,
+                            remainingAttempts - 1,
+                            error);
+                        return executeWithBoundedRetries(tenantId, workflowId, input, remainingAttempts - 1);
+                    }
+                );
         }
 
         @Override
@@ -408,6 +463,17 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
         private Promise<Void> persistExecutionSnapshot(ExecutionSnapshot snapshot) {
             return client.save(snapshot.tenantId(), EXECUTIONS_COLLECTION, toExecutionRecord(snapshot))
                 .map(ignored -> null);
+        }
+
+        private static Map<String, Object> coerceToStringKeyMap(Object value) {
+            if (!(value instanceof Map<?, ?> mapValue) || mapValue.isEmpty()) {
+                return Map.of();
+            }
+            Map<String, Object> result = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : mapValue.entrySet()) {
+                result.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            return Map.copyOf(result);
         }
 
         private Promise<Void> persistExecutionLogs(String executionId, String tenantId, String workflowId, List<ExecutionLogEntry> logs) {

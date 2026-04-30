@@ -1,5 +1,5 @@
 /**
- * @yappc/initialization-ui
+ * yappc-initialization-ui
  *
  * YAPPC initialization wizard and progress UI components.
  * Provides typed domain primitives and React components for the

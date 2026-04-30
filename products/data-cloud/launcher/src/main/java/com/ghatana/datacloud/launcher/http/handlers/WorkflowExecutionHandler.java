@@ -338,6 +338,9 @@ public final class WorkflowExecutionHandler {
                 "timestamp", Instant.now().toString()
             )));
         }
+        if (client == null) {
+            return Promise.of(http.errorResponse(503, "Rollback checkpoint persistence is not available"));
+        }
 
         return request.loadBody().then(buf -> {
             try {
@@ -347,7 +350,66 @@ public final class WorkflowExecutionHandler {
                 List<String> targetSteps = (List<String>) body.getOrDefault("targetSteps", List.of());
                 boolean dryRun = Boolean.TRUE.equals(body.get("dryRun"));
 
-                return Promise.of(http.errorResponse(501, "Rollback not yet implemented"));
+                return client.query(tenantId, "dc_execution_checkpoints",
+                        DataCloudClient.Query.builder()
+                            .filters(List.of(
+                                DataCloudClient.Filter.eq("executionId", executionId),
+                                DataCloudClient.Filter.eq("status", "completed")
+                            ))
+                            .sorts(List.of(DataCloudClient.Sort.desc("stepIndex")))
+                            .build())
+                    .map(entities -> {
+                        if (entities.isEmpty()) {
+                            return http.errorResponse(404, "No completed checkpoints found for execution: " + executionId);
+                        }
+
+                        List<Map<String, Object>> rollbackPlan = new ArrayList<>();
+                        for (DataCloudClient.Entity entity : entities) {
+                            Map<String, Object> checkpoint = entity.data();
+                            String stepId = String.valueOf(checkpoint.getOrDefault("stepId", "unknown-step"));
+                            if (!targetSteps.isEmpty() && !targetSteps.contains(stepId)) {
+                                continue;
+                            }
+                            Map<String, Object> stepPlan = new LinkedHashMap<>();
+                            stepPlan.put("checkpointId", entity.id());
+                            stepPlan.put("stepId", stepId);
+                            stepPlan.put("stepIndex", checkpoint.getOrDefault("stepIndex", 0));
+                            stepPlan.put("compensatingAction", "rollback-" + stepId);
+                            stepPlan.put("state", checkpoint.getOrDefault("state", Map.of()));
+                            stepPlan.put("status", dryRun ? "simulated" : "queued");
+                            rollbackPlan.add(stepPlan);
+                        }
+
+                        if (rollbackPlan.isEmpty()) {
+                            return http.errorResponse(404, "No checkpoints matched requested rollback target steps");
+                        }
+
+                        Map<String, Object> result = new LinkedHashMap<>();
+                        result.put("tenantId", tenantId);
+                        result.put("executionId", executionId);
+                        result.put("dryRun", dryRun);
+                        result.put("rollbackPlan", rollbackPlan);
+                        result.put("rollbackSteps", rollbackPlan.size());
+                        result.put("status", dryRun ? "ROLLBACK_SIMULATED" : "ROLLBACK_QUEUED");
+                        result.put("requestedAt", Instant.now().toString());
+
+                        if (!dryRun) {
+                            client.appendEvent(tenantId,
+                                DataCloudClient.Event.of("execution.rollback", Map.of(
+                                    "executionId", executionId,
+                                    "rollbackSteps", rollbackPlan.size(),
+                                    "targetSteps", targetSteps,
+                                    "requestedAt", Instant.now().toString()
+                                )))
+                                .whenException(e -> log.warn("Failed to emit rollback event tenant={} exec={}: {}",
+                                    tenantId, executionId, e.getMessage()));
+                        }
+                        return http.jsonResponse(result);
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("Rollback request failed tenant={} exec={}: {}", tenantId, executionId, e.getMessage(), e);
+                        return Promise.of(http.errorResponse(500, "Rollback request failed: " + e.getMessage()));
+                    });
             } catch (Exception e) {
                 return Promise.of(http.errorResponse(400, "Malformed request body: " + e.getMessage()));
             }

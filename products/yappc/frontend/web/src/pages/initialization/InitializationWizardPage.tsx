@@ -27,7 +27,7 @@ import {
   Provider,
   CostEstimates,
   Environment,
-} from '@yappc/initialization-ui';
+} from 'yappc-initialization-ui';
 
 // ============================================================================
 // Types

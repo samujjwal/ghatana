@@ -723,6 +723,63 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
+    @DisplayName("Global tenant enforcement")
+    class GlobalTenantEnforcementTests {
+
+        @Test
+        @DisplayName("principal without tenant returns 400 when enforcing=true")
+        void missingTenantPrincipal_returnsBadRequest_whenEnforcing() {
+            // A principal whose tenantId is blank (e.g., empty-string claim in JWT)
+            // must be rejected at the filter boundary so handlers never see a request
+            // with no tenant context.
+            Principal noTenantPrincipal = new Principal("svc-admin", List.of("admin"), "");
+            ApiKeyResolver noTenantResolver = mock(ApiKeyResolver.class);
+            when(noTenantResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(noTenantPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(noTenantResolver)
+                    .enforcing(true)
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = getWithKey(INTERNAL_PATH, VALID_API_KEY);
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(400);
+        }
+
+        @Test
+        @DisplayName("principal without tenant is allowed through when not enforcing (audit-only)")
+        void missingTenantPrincipal_allowed_whenNotEnforcing() {
+            Principal noTenantPrincipal = new Principal("svc-admin", List.of("admin"), "");
+            ApiKeyResolver noTenantResolver = mock(ApiKeyResolver.class);
+            when(noTenantResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(noTenantPrincipal));
+
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(noTenantResolver)
+                    .enforcing(false)
+                    .build();
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest req = getWithKey(INTERNAL_PATH, VALID_API_KEY);
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
+        }
+
+        @Test
+        @DisplayName("principal with valid tenant passes through the global tenant check")
+        void principalWithTenant_passesGlobalCheck_whenEnforcing() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest req = getWithKey(INTERNAL_PATH, VALID_API_KEY);
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
+        }
+    }
+
+    @Nested
     @DisplayName("Builder validation")
     class BuilderTests {
 

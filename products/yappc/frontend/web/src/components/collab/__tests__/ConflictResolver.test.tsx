@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ConflictResolver } from '../ConflictResolver';
-import type { Conflict, ResolutionSuggestion } from '@yappc/collab/crdt';
+import type { Conflict, ResolutionSuggestion } from 'yappc-collab/crdt';
 
 function makeConflict(): Conflict {
   return {

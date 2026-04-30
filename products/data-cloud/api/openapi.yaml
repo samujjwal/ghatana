@@ -5206,7 +5206,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
-        "501": { description: AI suggestion surface not yet implemented }
+        "403": { description: Capability not enabled for this tenant. }
 
   /api/v1/ai/suggestions/{id}/apply:
     post:
@@ -5220,7 +5220,14 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "501": { description: AI suggestion apply is not yet implemented }
+        "200":
+          description: Suggestion accepted and queued for manual execution.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "403": { description: Capability not enabled for this tenant. }
+        "404": { description: Suggestion not found. }
 
   /api/v1/ai/correlations:
     get:
@@ -5328,7 +5335,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FreeformObject"
-        "501": { description: Workflow advisory not yet implemented }
+        "404": { description: Workflow not found. }
 
   /api/v1/ai/advisories/quality/{collectionId}:
     get:
@@ -5361,7 +5368,14 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "501": { description: Fabric advisory not yet implemented }
+        "200":
+          description: AI fabric tier placement advisory for the collection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "403": { description: Capability not enabled for this tenant. }
+        "404": { description: Collection not found. }
 
   # ── AI/ML Model registry (DC-11) ────────────────────────────────────────
 

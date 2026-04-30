@@ -22,7 +22,7 @@ import {
 import { Settings as SettingsIcon, Star as StarIcon } from 'lucide-react';
 import React from 'react';
 
-import type { Workspace } from '@yappc/core/types';
+import type { Workspace } from 'yappc-core/types';
 
 export interface WorkspaceCardProps {
   workspace: Workspace;

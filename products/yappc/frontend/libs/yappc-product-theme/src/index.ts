@@ -1,5 +1,5 @@
 /**
- * @yappc/product-theme
+ * yappc-product-theme
  *
  * YAPPC-specific theme layer on top of the shared @ghatana platform.
  *

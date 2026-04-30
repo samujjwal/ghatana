@@ -80,18 +80,18 @@ import {
   sprintBoardAtom,
   selectedStoryAtom,
   sprintStoriesAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-import { DialogHeader, DialogTrigger } from '@yappc/ui';
-import { ScrollArea } from '@yappc/ui';
-import { AvatarFallback, AvatarImage } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+import { DialogHeader, DialogTrigger } from 'yappc-ui';
+import { ScrollArea } from 'yappc-ui';
+import { AvatarFallback, AvatarImage } from 'yappc-ui';
 
 // =============================================================================
 // Types

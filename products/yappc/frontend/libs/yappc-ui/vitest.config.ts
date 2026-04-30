@@ -14,10 +14,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@yappc/core': resolve(__dirname, '../yappc-core/src'),
-      '@yappc/core/*': resolve(__dirname, '../yappc-core/src/*'),
-      '@yappc/state': resolve(__dirname, '../yappc-state/src'),
-      '@yappc/state/*': resolve(__dirname, '../yappc-state/src/*'),
+      'yappc-core': resolve(__dirname, '../yappc-core/src'),
+      'yappc-core/*': resolve(__dirname, '../yappc-core/src/*'),
+      'yappc-state': resolve(__dirname, '../yappc-state/src'),
+      'yappc-state/*': resolve(__dirname, '../yappc-state/src/*'),
       '@ghatana/platform-utils': resolve(
         __dirname,
         '../../../../../platform/typescript/platform-utils/src'
@@ -36,7 +36,7 @@ export default defineConfig({
         '../../../../../platform/typescript/design-system/src'
       ),
       // Stub @tanstack/react-query — not installed in the workspace but pulled in
-      // transitively by @yappc/state barrel exports (hooks/useConfigData).
+      // transitively by yappc-state barrel exports (hooks/useConfigData).
       '@tanstack/react-query': resolve(
         __dirname,
         './src/components/test/__stubs__/react-query.stub.ts'

@@ -1,1 +1,1 @@
-export * from '@yappc/state';
+export * from 'yappc-state';

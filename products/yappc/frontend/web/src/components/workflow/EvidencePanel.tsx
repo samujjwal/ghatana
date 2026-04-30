@@ -20,7 +20,7 @@ import {
     showAISuggestionsAtom,
 } from '../../stores/workflow.store';
 
-import type { WorkflowAuditEntry } from '@yappc/core/types';
+import type { WorkflowAuditEntry } from 'yappc-core/types';
 type AuditAction =
     | 'CREATED'
     | 'STEP_STARTED'

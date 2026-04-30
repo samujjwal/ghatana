@@ -10,7 +10,7 @@ import { useAtom, type WritableAtom } from 'jotai';
 import { atom } from 'jotai';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-import { StateManager } from '@yappc/state';
+import { StateManager } from 'yappc-state';
 
 type Theme = 'light' | 'dark' | 'system';
 type ThemeWithoutSystem = 'light' | 'dark';

@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/auth",
+  "name": "yappc-auth",
   "version": "1.0.0",
   "description": "YAPPC authentication and security library",
   "main": "./dist/index.js",

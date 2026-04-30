@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { IntentConfig } from '@yappc/config-schema';
+import type { IntentConfig } from 'yappc-config-schema';
 
 /**
  * @doc.type service

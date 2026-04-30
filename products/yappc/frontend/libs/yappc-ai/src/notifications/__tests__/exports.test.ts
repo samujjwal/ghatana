@@ -1,6 +1,6 @@
 /**
  * @doc.type test
- * @doc.purpose Verify that notifications components and hooks are properly exported from @yappc/ai
+ * @doc.purpose Verify that notifications components and hooks are properly exported from yappc-ai
  * @doc.layer package-verification
  */
 import { describe, it, expect } from 'vitest';

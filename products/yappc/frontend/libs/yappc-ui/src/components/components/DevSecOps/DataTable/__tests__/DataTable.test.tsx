@@ -11,7 +11,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { DataTable } from './DataTable';
 
 import type { DataTableColumn } from './types';
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 
 describe('DataTable', () => {
   const mockData: Item[] = [

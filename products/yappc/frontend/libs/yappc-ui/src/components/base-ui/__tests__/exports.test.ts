@@ -1,6 +1,6 @@
 /**
  * @doc.type test
- * @doc.purpose Verify that base-ui components are properly exported from @yappc/ui and @yappc/base-ui
+ * @doc.purpose Verify that base-ui components are properly exported from yappc-ui and @yappc/base-ui
  * @doc.layer package-verification
  */
 import { describe, it, expect } from 'vitest';

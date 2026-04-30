@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'jotai';
-import type { Workspace } from '@yappc/core/types';
+import type { Workspace } from 'yappc-core/types';
 
 import {
   workspacesAtom,

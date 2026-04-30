@@ -1,6 +1,6 @@
-import { Badge } from '@yappc/ui/components/ui/badge';
+import { Badge } from 'yappc-ui/components/ui/badge';
 import { InfoCircledIcon, BrainIcon, GearIcon } from '@radix-ui/react-icons';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@yappc/ui/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from 'yappc-ui/components/ui/tooltip';
 
 /**
  * AI type chip component to distinguish rule-based vs model-backed AI features

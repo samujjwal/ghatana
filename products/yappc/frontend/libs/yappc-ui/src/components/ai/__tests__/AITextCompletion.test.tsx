@@ -12,7 +12,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { AITextCompletion } from '../AITextCompletion';
 
-import type { IAIService, CompletionResponse } from '@yappc/ai/core';
+import type { IAIService, CompletionResponse } from 'yappc-ai/core';
 
 // Mock AI Service
 const createMockAIService = (overrides?: Partial<IAIService>): IAIService => ({

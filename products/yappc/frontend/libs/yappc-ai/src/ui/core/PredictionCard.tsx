@@ -48,7 +48,7 @@ import type {
   Prediction,
   PredictionType,
   ContributingFactor,
-} from '@yappc/core/types';
+} from 'yappc-core/types';
 
 /**
  * PredictionCard props

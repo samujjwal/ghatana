@@ -29,7 +29,7 @@ vi.mock('../../../services/storage', () => ({
 }));
 
 // useFeatureFlag: return true so discovery is enabled in all tests
-vi.mock('@yappc/core/config/features/feature-flags', () => ({
+vi.mock('yappc-core/config/features/feature-flags', () => ({
   useFeatureFlag: () => true,
 }));
 

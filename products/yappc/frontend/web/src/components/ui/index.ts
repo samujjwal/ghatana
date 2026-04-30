@@ -11,21 +11,21 @@ export {
   // YAPPC-specific types/utilities
   resolveMuiColor,
   getPaletteMain,
-} from '@yappc/ui';
-export { usePersonas } from '@yappc/state/config-hooks';
+} from 'yappc-ui';
+export { usePersonas } from 'yappc-state/config-hooks';
 export {
   CommandPalette,
   ShortcutHelper,
   useKeyboardShortcuts,
   type Command,
-} from '@yappc/shortcuts';
+} from 'yappc-shortcuts';
 export {
   Breadcrumb,
   TabNavigation,
   StageNavigation,
   type TabNavigationItem,
   type StageNavigationProps,
-} from '@yappc/ui/navigation-ui';
+} from 'yappc-ui/navigation-ui';
 
 /**
  * UI Components Index

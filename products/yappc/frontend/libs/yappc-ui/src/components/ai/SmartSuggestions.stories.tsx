@@ -12,7 +12,7 @@ import type {
   IAIService,
   CompletionResponse,
   Suggestion,
-} from '@yappc/ai/core';
+} from 'yappc-ai/core';
 
 // Mock AI Service
 const createMockAIService = (delay = 800): IAIService => ({

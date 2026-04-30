@@ -18,8 +18,8 @@ import {
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
-import { IntentParser } from '@yappc/config-compiler';
-import type { IntentConfig } from '@yappc/config-schema';
+import { IntentParser } from 'yappc-config-compiler';
+import type { IntentConfig } from 'yappc-config-schema';
 
 /**
  * @doc.type component

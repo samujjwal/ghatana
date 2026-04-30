@@ -19,7 +19,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@yappc/core': path.resolve(__dirname, '../yappc-core/src'),
+      'yappc-core': path.resolve(__dirname, '../yappc-core/src'),
     },
   },
 });

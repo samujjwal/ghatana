@@ -151,14 +151,7 @@ function parseEndpointsFromCode(code: string): ApiSpecData {
     endpoints:
       endpoints.length > 0
         ? endpoints
-        : [
-            {
-              method: 'GET',
-              path: '/api/placeholder',
-              description:
-                'Placeholder endpoint - update with actual API details',
-            },
-          ],
+        : [],
   };
 }
 

@@ -11,7 +11,7 @@ import { KanbanBoard } from './KanbanBoard';
 
 import type { KanbanColumn, KanbanItemMoveEvent } from './types';
 import type { Meta, StoryObj } from '@storybook/react';
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 
 // Mock data
 const mockItems: Item[] = [

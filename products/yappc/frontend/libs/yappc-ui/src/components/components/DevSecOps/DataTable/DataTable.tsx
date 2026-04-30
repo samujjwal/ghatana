@@ -22,7 +22,7 @@ import { useMemo, useState } from 'react';
 
 import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
 
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 
 import type { DataTableProps, DataTableColumn, SortConfig } from './types';
 import { DataTableUtils } from './utils';

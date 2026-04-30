@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { ViewModeSwitcher } from './ViewModeSwitcher';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { ViewMode } from '@yappc/core/types/devsecops';
+import type { ViewMode } from 'yappc-core/types/devsecops';
 
 const meta: Meta<typeof ViewModeSwitcher> = {
   title: 'DevSecOps/ViewModeSwitcher',

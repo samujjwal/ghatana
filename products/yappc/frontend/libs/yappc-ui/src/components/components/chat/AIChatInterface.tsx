@@ -55,15 +55,15 @@ import {
   conversationHistoryAtom,
   inputModeAtom,
   aiAgentStateAtom,
-} from '@yappc/state';
-import { Textarea } from '@yappc/ui';
+} from 'yappc-state';
+import { Textarea } from 'yappc-ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

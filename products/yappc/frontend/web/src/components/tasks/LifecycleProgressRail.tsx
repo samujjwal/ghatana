@@ -14,7 +14,7 @@
 import React from 'react';
 import { Box, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Typography, Chip, LinearProgress, Tooltip, Badge } from '@ghatana/design-system';
 import { Lightbulb as IntentIcon, Hash as ContextIcon, ClipboardList as PlanIcon, Code as ExecuteIcon, Bug as VerifyIcon, HeartPulse as ObserveIcon, LineChart as LearnIcon, Library as InstitutionalizeIcon, CheckCircle as CompleteIcon, Lock as LockedIcon, PlayCircle as ActiveIcon } from 'lucide-react';
-import type { LifecycleStage } from '@yappc/core/types/tasks';
+import type { LifecycleStage } from 'yappc-core/types/tasks';
 
 // ============================================================================
 // Types

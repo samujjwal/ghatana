@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/initialization-ui",
+  "name": "yappc-initialization-ui",
   "version": "1.0.0",
   "description": "YAPPC initialization wizard and progress UI components",
   "main": "./src/index.tsx",
@@ -14,7 +14,7 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
-    "@yappc/core": "workspace:*"
+    "yappc-core": "workspace*"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

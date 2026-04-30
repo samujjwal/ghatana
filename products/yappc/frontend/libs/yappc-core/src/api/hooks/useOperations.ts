@@ -25,7 +25,7 @@ import {
   onCallScheduleAtom,
   serviceHealthAtom,
   metricsAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_INCIDENT,
   LIST_INCIDENTS as GET_INCIDENTS,

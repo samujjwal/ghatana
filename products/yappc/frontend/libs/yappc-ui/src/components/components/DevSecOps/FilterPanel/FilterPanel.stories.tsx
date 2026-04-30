@@ -19,7 +19,7 @@ import { useState } from 'react';
 import { FilterPanel } from './FilterPanel';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { ItemFilter } from '@yappc/core/types/devsecops';
+import type { ItemFilter } from 'yappc-core/types/devsecops';
 
 const meta: Meta<typeof FilterPanel> = {
   title: 'DevSecOps/FilterPanel',

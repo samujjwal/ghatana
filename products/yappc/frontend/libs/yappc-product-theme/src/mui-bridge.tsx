@@ -2,7 +2,7 @@
  * YAPPC MUI bridge — adapts @ghatana/theme (CSS variables) to a MUI ThemeProvider.
  *
  * This is product-specific because:
- * - it imports YAPPC MUI theme objects (lightTheme, darkTheme) from @yappc/ui
+ * - it imports YAPPC MUI theme objects (lightTheme, darkTheme) from yappc-ui
  * - it merges platform @ghatana/theme resolved values into MUI palette overrides
  *
  * Consumers: app-theme.tsx in @yappc/web-app
@@ -18,7 +18,7 @@ import type { Theme as MuiTheme } from '@mui/material/styles';
 import { useTheme as useGhatanaTheme } from '@ghatana/theme';
 import React, { useMemo } from 'react';
 
-import { lightTheme, darkTheme } from '@yappc/ui';
+import { lightTheme, darkTheme } from 'yappc-ui';
 
 /**
  * Reads the resolved theme from @ghatana/theme and syncs a MUI theme accordingly.

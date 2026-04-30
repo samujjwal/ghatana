@@ -15,7 +15,7 @@
  * @example
  * ```typescript
  * import { DesignAgent, ReviewAgent, AgentOrchestrator } from '@ghatana/yappc-ai-core/agents';
- * import { OpenAIProvider } from '@yappc/ai';
+ * import { OpenAIProvider } from 'yappc-ai';
  *
  * const aiService = new OpenAIProvider({ apiKey: '...' });
  *

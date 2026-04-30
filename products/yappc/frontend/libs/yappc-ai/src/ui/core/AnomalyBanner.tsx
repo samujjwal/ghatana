@@ -48,7 +48,7 @@ import type {
   AnomalyAlert,
   AnomalySeverity,
   AnomalyType,
-} from '@yappc/core/types';
+} from 'yappc-core/types';
 
 /**
  * AnomalyBanner props

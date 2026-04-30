@@ -6,7 +6,7 @@ import type {
   WorkflowAgent,
   WorkflowAgentRole,
   WorkflowAnalytics,
-} from '@yappc/core/types/devsecops/workflow-automation';
+} from 'yappc-core/types/devsecops/workflow-automation';
 
 interface AgentExecutionRequest {
   agentId: string;

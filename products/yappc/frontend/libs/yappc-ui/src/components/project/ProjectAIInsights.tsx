@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
-import type { AIInsight } from '@yappc/state/aiAtoms';
+import type { AIInsight } from 'yappc-state/aiAtoms';
 
 type Severity = 'error' | 'warning' | 'info' | 'success';
 

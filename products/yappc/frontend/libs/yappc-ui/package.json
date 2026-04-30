@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/ui",
+  "name": "yappc-ui",
   "version": "1.0.0",
   "description": "YAPPC UI Components - Consolidated UI and base-ui components",
   "main": "./dist/index.js",
@@ -56,8 +56,8 @@
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
-    "@yappc/core": "workspace:*",
-    "@yappc/state": "workspace:*",
+    "yappc-core": "workspace:*",
+    "yappc-state": "workspace*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",

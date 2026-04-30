@@ -30,6 +30,7 @@ import {
 import { apiClient } from '../lib/api/client';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
 import { aiOperationsService, type AiFabricAdvisory } from '../api/ai-operations.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { dataFabricMetricsBoundary } from '../components/common/unsupportedSurfaceRegistry';
@@ -70,15 +71,7 @@ async function fetchFabricMetrics(): Promise<FabricMetricsResponse> {
   return apiClient.get<FabricMetricsResponse>('/data-fabric/metrics');
 }
 
-function derivePlacementRecommendation(metrics: FabricMetricsResponse | undefined): PlacementRecommendation {
-  if (!metrics || metrics.tiers.length === 0) {
-    return {
-      targetTier: 'WARM',
-      confidence: 0.35,
-      rationale: 'No live metrics available. Keep workloads on WARM tier until fabric telemetry is connected.',
-      evidence: ['No data-fabric tier metrics returned by API.', 'Recommendation is heuristic fallback only.'],
-    };
-  }
+function derivePlacementRecommendation(metrics: FabricMetricsResponse): PlacementRecommendation {
 
   const hotTier = metrics.tiers.find((tier) => tier.tier === 'HOT');
   const warmTier = metrics.tiers.find((tier) => tier.tier === 'WARM');
@@ -293,10 +286,27 @@ function TierLegend(): React.ReactElement {
  * @doc.pattern Page
  */
 export function DataFabricPage(): React.ReactElement {
+  const { data: capabilityRegistry } = useCapabilityRegistry();
+  const dataFabricMetricsCapability = getCapabilitySignal(capabilityRegistry?.capabilities, [
+    'data_fabric_metrics',
+    'dataFabricMetrics',
+    'data.fabric.metrics',
+  ]);
+  const isFabricMetricsAvailable =
+    dataFabricMetricsCapability?.status === 'active' || dataFabricMetricsCapability?.status === 'degraded';
+  const aiFabricAdvisoryCapability = getCapabilitySignal(capabilityRegistry?.capabilities, [
+    'ai_fabric_advisory',
+    'ai.fabric.advisory',
+    'ai_assist',
+    'ai.assist',
+  ]);
+  const isAiFabricAdvisoryAvailable = aiFabricAdvisoryCapability?.status !== 'unavailable';
+
   // Fabric metrics from DC API (preview — live data not yet connected)
   const { data: fabricMetrics } = useQuery<FabricMetricsResponse>({
     queryKey: ['data-fabric', 'metrics'],
     queryFn: fetchFabricMetrics,
+    enabled: isFabricMetricsAvailable,
     staleTime: 60_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: false,
@@ -320,16 +330,17 @@ export function DataFabricPage(): React.ReactElement {
   });
 
   // AI-backed topology advisories — backend-first, heuristic fallback when ML platform is unavailable.
+  // Gated on ai_fabric_advisory / ai_assist capability signal.
   const { data: fabricAdvisories } = useQuery<AiFabricAdvisory, Error>({
     queryKey: ['ai', 'advisories', 'fabric', 'topology'],
     queryFn: () => aiOperationsService.getFabricAdvisories('topology'),
+    enabled: isAiFabricAdvisoryAvailable,
     staleTime: 5 * 60_000,
     retry: false,
     refetchOnWindowFocus: false,
   });
 
   const placementRecommendation = useMemo(() => {
-    // Prefer ML-backed advisory when available; fall back to deterministic heuristic.
     const topAdvisory = fabricAdvisories?.advisories[0];
     if (topAdvisory) {
       return {
@@ -338,7 +349,10 @@ export function DataFabricPage(): React.ReactElement {
         evidence: topAdvisory.suggestedAction ? [topAdvisory.suggestedAction] : [],
       };
     }
-    return derivePlacementRecommendation(fabricMetrics);
+    if (fabricMetrics) {
+      return derivePlacementRecommendation(fabricMetrics);
+    }
+    return null;
   }, [fabricAdvisories, fabricMetrics]);
 
   const initialNodes = useMemo<FlowNode[]>(
@@ -390,16 +404,18 @@ export function DataFabricPage(): React.ReactElement {
         </div>
       </div>
 
-      <div className="mx-6 mt-4">
-        <AIAssistSuggestion
-          headingLabel="Placement recommendation"
-          suggestion={placementRecommendation.rationale}
-          confidence={placementRecommendation.confidence}
-          evidence={placementRecommendation.evidence}
-          canApply={false}
-          data-testid="fabric-placement-recommendation"
-        />
-      </div>
+      {placementRecommendation && (
+        <div className="mx-6 mt-4">
+          <AIAssistSuggestion
+            headingLabel="Placement recommendation"
+            suggestion={placementRecommendation.rationale}
+            confidence={placementRecommendation.confidence}
+            evidence={placementRecommendation.evidence}
+            canApply={false}
+            data-testid="fabric-placement-recommendation"
+          />
+        </div>
+      )}
 
       {/* B10: Tier migration inline panel */}
       {migrateOpen && (

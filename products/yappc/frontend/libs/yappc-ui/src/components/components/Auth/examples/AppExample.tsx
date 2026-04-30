@@ -227,7 +227,7 @@ export function initializeApp() {
  * ```tsx
  * import { createBrowserRouter } from 'react-router-dom';
  * import { App } from './App';
- * import { LoginPage, DashboardPage } from '@yappc/ui';
+ * import { LoginPage, DashboardPage } from 'yappc-ui';
  *
  * const customRouter = createBrowserRouter([
  *   { path: '/login', element: <LoginPage /> },

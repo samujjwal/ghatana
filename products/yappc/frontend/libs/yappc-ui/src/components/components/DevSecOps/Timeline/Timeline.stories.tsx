@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Timeline } from './Timeline';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { Item, Milestone, Phase } from '@yappc/core/types/devsecops';
+import type { Item, Milestone, Phase } from 'yappc-core/types/devsecops';
 
 const meta: Meta<typeof Timeline> = {
   title: 'DevSecOps/Timeline',

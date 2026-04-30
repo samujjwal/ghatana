@@ -4,7 +4,7 @@ import type {
   SentimentAnalyzer,
   SentimentResult,
   SentimentOptions,
-} from '@yappc/ai/core';
+} from 'yappc-ai/core';
 
 /**
  * Sentiment hook state

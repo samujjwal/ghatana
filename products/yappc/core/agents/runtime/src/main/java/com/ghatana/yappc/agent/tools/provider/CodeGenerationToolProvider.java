@@ -225,10 +225,12 @@ public class CodeGenerationToolProvider implements ToolProvider {
     return String.format("""
         /**
          * %s
+         * TODO: Implement method logic based on the documentation above.
+         * This is a generated stub - replace with actual implementation.
          */
         %s {
-            // Note: Method logic implementation not yet complete
-            throw new UnsupportedOperationException("Not implemented yet");
+            // Method implementation to be completed
+            throw new IllegalStateException("Method not implemented - generated stub requires manual implementation");
         }
         """, docs, signature);
   }

@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
 // ---------------------------------------------------------------------------
-// Mock @yappc/collab
+// Mock yappc-collab
 // ---------------------------------------------------------------------------
 const mockManagerInstance = vi.hoisted(() => ({
   connect: vi.fn().mockResolvedValue(true),
@@ -26,7 +26,7 @@ const MockProviderManager = vi.hoisted(() =>
   }),
 );
 
-vi.mock('@yappc/collab', () => ({
+vi.mock('yappc-collab', () => ({
   ProviderManager: MockProviderManager,
 }));
 

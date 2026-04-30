@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/devsecops",
+  "name": "yappc-devsecops",
   "version": "1.0.0",
   "description": "YAPPC DevSecOps-specific API concerns",
   "main": "./dist/index.js",
@@ -19,7 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@yappc/core": "workspace:*"
+    "yappc-core": "workspace*"
   },
   "devDependencies": {
     "typescript": "^6.0.2",

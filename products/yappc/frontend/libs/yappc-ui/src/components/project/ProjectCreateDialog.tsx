@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
-import type { ProjectType } from '@yappc/core/types';
+import type { ProjectType } from 'yappc-core/types';
 
 const PROJECT_TYPES: ProjectType[] = [
   'FULL_STACK',

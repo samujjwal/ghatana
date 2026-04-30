@@ -2,7 +2,7 @@
  * CopilotChat
  *
  * AI copilot conversation panel. Renders the message thread and input box.
- * Delegates data-fetching and sending to `useCopilot` from `@yappc/state`.
+ * Delegates data-fetching and sending to `useCopilot` from `yappc-state`.
  *
  * @doc.type component
  * @doc.purpose AI copilot chat interface
@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import type { CopilotMessage, CopilotSession } from '@yappc/state/aiAtoms';
+import type { CopilotMessage, CopilotSession } from 'yappc-state/aiAtoms';
 
 export interface CopilotChatProps {
   /** Current copilot session (managed by useCopilot hook) */

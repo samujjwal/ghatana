@@ -7,7 +7,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
 import { ConfigEditor } from '../ConfigEditor';
 import { YamlEditor } from '../YamlEditor';

@@ -17,7 +17,7 @@ import {
   IntentConfigSchema,
   RequirementConfigSchema,
   type PageConfig,
-} from '@yappc/config-schema';
+} from 'yappc-config-schema';
 import { CodeGenerator } from './CodeGenerator';
 import { CanvasGenerator } from './CanvasGenerator';
 

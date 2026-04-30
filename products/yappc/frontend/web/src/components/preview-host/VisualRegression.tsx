@@ -21,7 +21,7 @@ import {
 } from '@ghatana/design-system';
 import React, { useState, useCallback, useRef } from 'react';
 
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
 /**
  * @doc.type component

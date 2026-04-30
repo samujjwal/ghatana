@@ -32,7 +32,7 @@ import {
   Typography,
 } from '@ghatana/design-system';
 
-import type { ItemStatus, Priority } from '@yappc/core/types/devsecops';
+import type { ItemStatus, Priority } from 'yappc-core/types/devsecops';
 
 import type { FilterPanelProps } from './types';
 

@@ -7,10 +7,10 @@ import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.governance.TenantQuotaService;
 import com.ghatana.datacloud.governance.QuotaCheckResult;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
-import com.ghatana.platform.domain.eventstore.EventLogStore;
-import com.ghatana.platform.domain.eventstore.TenantContext;
 import com.ghatana.datacloud.workspace.GlobalWorkspace;
 import com.ghatana.datacloud.workspace.SpotlightItem;
 import com.ghatana.platform.types.identity.Offset;
@@ -191,52 +191,42 @@ public class SseStreamingHandler {
                 "connectedAt", Instant.now().toString()
         ))));
 
-        // TODO: Fix TenantContext type mismatch - spi.TenantContext vs platform.domain.eventstore.TenantContext
-        // EventLogStore eventLogStore = client.eventLogStore();
-        // return eventLogStore.tail(TenantContext.of(tenantId), Offset.of(fromOffsetVal), entry -> {
-        //     if (!entityEventTypes.contains(entry.eventType())) return;
-        //     try {
-        //         Map<String, Object> payloadMap = entry.payload();
-        //         Map<String, Object> frame = new LinkedHashMap<>();
-        //         frame.put("collection", collection);
-        //         frame.put("operation", payloadMap.getOrDefault("operation", "unknown"));
-        //         frame.put("eventType", entry.eventType());
-        //         frame.put("tenantId", tenantId);
-        //         frame.put("timestamp", entry.timestamp().toString());
-        //         if (payloadMap.containsKey("id"))      frame.put("id",      payloadMap.get("id"));
-        //         if (payloadMap.containsKey("ids"))     frame.put("ids",     payloadMap.get("ids"));
-        //         if (payloadMap.containsKey("version")) frame.put("version", payloadMap.get("version"));
-        //         if (payloadMap.containsKey("count"))   frame.put("count",   payloadMap.get("count"));
-        //
-        //         byte[] sseFrame = buildSseFrame("entity-change", frame);
-        //         if (!queue.offer(Optional.of(sseFrame), 100L, TimeUnit.MILLISECONDS)) {
-        //             log.warn("[CDC] queue full for tenant={} collection={}, dropping change event", tenantId, collection);
-        //         }
-        //     } catch (InterruptedException ie) {
-        //         Thread.currentThread().interrupt();
-        //     } catch (Exception ex) {
-        //         log.warn("[CDC] frame build error for tenant={} collection={}: {}", tenantId, collection, ex.getMessage());
-        //     }
-        // }).map(subscription -> {
-        //     sseSubscriptions.add(subscription);
-        //     ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
-        //         if (subscription.isCancelled()) return Promise.of(null);
-        //         try {
-        //             if (subscription.isCancelled()) return Promise.of(null);
-        //             Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
-        //             if (item.isEmpty()) {
-        //                 return Promise.of(ByteBuf.wrap(buildSseFrame("heartbeat", Map.of())));
-        //             }
-        //             return Promise.of(ByteBuf.wrap(item.get()));
-        //         } catch (InterruptedException ie) {
-        //             Thread.currentThread().interrupt();
-        //             return Promise.of(null);
-        //         }
-        //     });
-        //     return http.sseResponse(bodyStream, subscription::cancel);
-        // });
+        EventLogStore eventLogStore = client.eventLogStore();
+        return eventLogStore.tail(TenantContext.of(tenantId), Offset.of(fromOffsetVal), entry -> {
+            if (!entityEventTypes.contains(entry.eventType())) return;
+            try {
+                byte[] payloadBytes = new byte[entry.payload().remaining()];
+                entry.payload().duplicate().get(payloadBytes);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payloadMap = objectMapper.readValue(payloadBytes, Map.class);
 
-        return Promise.of(http.errorResponse(501, "SSE streaming temporarily disabled due to TenantContext type mismatch"));
+                String payloadCollection = String.valueOf(payloadMap.getOrDefault("collection", ""));
+                if (!collection.equals(payloadCollection)) return;
+
+                Map<String, Object> frame = new LinkedHashMap<>();
+                frame.put("collection", collection);
+                frame.put("operation", payloadMap.getOrDefault("operation", "unknown"));
+                frame.put("eventType", entry.eventType());
+                frame.put("tenantId", tenantId);
+                frame.put("timestamp", entry.timestamp().toString());
+                if (payloadMap.containsKey("id")) frame.put("id", payloadMap.get("id"));
+                if (payloadMap.containsKey("ids")) frame.put("ids", payloadMap.get("ids"));
+                if (payloadMap.containsKey("version")) frame.put("version", payloadMap.get("version"));
+                if (payloadMap.containsKey("count")) frame.put("count", payloadMap.get("count"));
+
+                byte[] sseFrame = buildSseFrame("entity-change", frame);
+                if (!queue.offer(Optional.of(sseFrame), 100L, TimeUnit.MILLISECONDS)) {
+                    log.warn("[CDC] queue full for tenant={} collection={}, dropping change event", tenantId, collection);
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Exception ex) {
+                log.warn("[CDC] frame build error for tenant={} collection={}: {}", tenantId, collection, ex.getMessage());
+            }
+        }).map(subscription -> {
+            sseSubscriptions.add(subscription);
+            return buildSseChannelResponse(queue, subscription, tenantId, collection);
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -280,8 +270,22 @@ public class SseStreamingHandler {
         ))));
 
         TenantContext tenant = TenantContext.of(tenantId);
-        // TODO: Fix EventLogStore type mismatch - temporarily disabled
-        return Promise.of(http.errorResponse(501, "SSE streaming temporarily disabled due to EventLogStore type mismatch"));
+        return client.eventLogStore().tail(tenant, Offset.of(fromOffsetVal), entry -> {
+            if (!eventTypesFilter.isEmpty() && !eventTypesFilter.contains(entry.eventType())) {
+                return;
+            }
+            try {
+                byte[] frame = buildEventSseFrame(entry);
+                if (!queue.offer(Optional.of(frame), 100L, TimeUnit.MILLISECONDS)) {
+                    log.warn("[SSE] queue full for tenant={}, dropping event type={}", tenantId, entry.eventType());
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        }).map(subscription -> {
+            sseSubscriptions.add(subscription);
+            return buildSseChannelResponse(queue, subscription, tenantId, "*");
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -518,22 +522,39 @@ public class SseStreamingHandler {
             "entity.batch-saved", "entity.batch-deleted");
 
         if (follow) {
-            // TODO: Fix TenantContext type mismatch - spi.TenantContext vs platform.domain.eventstore.TenantContext
-            // return client.eventLogStore()
-            //     .tail(TenantContext.of(tenantId), Offset.of(fromOffsetVal), entry -> {
-            //         if (!entityEventTypes.contains(entry.eventType())) return;
-            //         try {
-            //             byte[] payloadBytes = new byte[entry.payload().remaining()];
-            //             entry.payload().duplicate().get(payloadBytes);
-            //             String payloadStr = new String(payloadBytes, StandardCharsets.UTF_8);
-            //             @SuppressWarnings("unchecked")
-            //             Map<String, Object> payloadMap = objectMapper.readValue(payloadStr, Map.class);
-            //             if (!collection.equals(payloadMap.get("collection"))) return;
-            //
-            //             Map<String, Object> frame = new LinkedHashMap<>();
-            //             frame.put("collection",  collection);
-            //             frame.put("operation",   payloadMap.getOrDefault("operation", "unknown"));
-            return Promise.of(http.errorResponse(501, "SSE streaming temporarily disabled due to TenantContext type mismatch"));
+            return client.eventLogStore()
+                .tail(TenantContext.of(tenantId), Offset.of(fromOffsetVal), entry -> {
+                    if (!entityEventTypes.contains(entry.eventType())) return;
+                    try {
+                        byte[] payloadBytes = new byte[entry.payload().remaining()];
+                        entry.payload().duplicate().get(payloadBytes);
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payloadMap = objectMapper.readValue(payloadBytes, Map.class);
+                        if (!collection.equals(String.valueOf(payloadMap.getOrDefault("collection", "")))) return;
+
+                        Map<String, Object> frame = new LinkedHashMap<>();
+                        frame.put("collection", collection);
+                        frame.put("operation", payloadMap.getOrDefault("operation", "unknown"));
+                        frame.put("eventType", entry.eventType());
+                        frame.put("tenantId", tenantId);
+                        frame.put("timestamp", entry.timestamp().toString());
+                        frame.put("payload", payloadMap);
+
+                        byte[] updateFrame = buildSseFrame("query-update", frame);
+                        if (!queue.offer(Optional.of(updateFrame), 100L, TimeUnit.MILLISECONDS)) {
+                            log.warn("[query-stream] queue full for tenant={} collection={}, dropping live event", tenantId, collection);
+                        }
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    } catch (Exception ex) {
+                        log.warn("[query-stream] live frame build error tenant={} collection={}: {}", tenantId, collection, ex.getMessage());
+                    }
+                })
+                .then(subscription -> snapshotPromise.map(qr -> {
+                    sseSubscriptions.add(subscription);
+                    enqueueSnapshot(queue, qr, collection, tenantId, q);
+                    return buildSseChannelResponse(queue, subscription, tenantId, collection);
+                }));
         }
 
         // Return static result without streaming

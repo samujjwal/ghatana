@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { useWebSocketData, useWebSocket } from '@yappc/collab/websocket';
+import { useWebSocketData, useWebSocket } from 'yappc-collab/websocket';
 
 import type { FilterCriteria, SearchResult } from '../../components/Search';
 

@@ -5,7 +5,7 @@
  * editing surface and surfaces save state, sync state, AI activity,
  * collab session info, and preview mode in a persistent status bar.
  *
- * Consumes builder atoms from `@yappc/state`. Does not own the document model
+ * Consumes builder atoms from `yappc-state`. Does not own the document model
  * itself — callers supply the editing surface as `children`.
  *
  * @doc.type component
@@ -39,7 +39,7 @@ import {
   builderHasUnsavedChangesAtom,
   type AutosaveStatus,
   type BuilderCollabSession,
-} from '@yappc/state';
+} from 'yappc-state';
 import type { PreviewMode } from '@ghatana/ui-builder';
 
 // ─── Status chip ──────────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ export interface BuilderEditorShellProps {
 /**
  * BuilderEditorShell wraps the canvas editing surface and adds a persistent
  * status bar surfacing save state, collaboration presence, AI review count,
- * and current preview policy. State is driven by builder atoms in `@yappc/state`.
+ * and current preview policy. State is driven by builder atoms in `yappc-state`.
  */
 export const BuilderEditorShell: React.FC<BuilderEditorShellProps> = ({
   children,

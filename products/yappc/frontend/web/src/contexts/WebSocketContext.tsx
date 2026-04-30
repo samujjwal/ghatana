@@ -10,12 +10,12 @@
 import {
     useWebSocket,
     useWebSocketStatus
-} from '@yappc/state/crdt/websocket';
+} from 'yappc-state/crdt/websocket';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import type {
     UseWebSocketReturn
-} from '@yappc/state/crdt/websocket';
+} from 'yappc-state/crdt/websocket';
 
 /**
  *

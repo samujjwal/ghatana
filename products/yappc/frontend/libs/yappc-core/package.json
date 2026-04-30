@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/core",
+  "name": "yappc-core",
   "version": "1.0.0",
   "description": "YAPPC Core Utilities - Consolidated core, types, and utilities",
   "main": "./dist/index.js",

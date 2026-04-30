@@ -30,6 +30,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
+import java.net.InetSocketAddress;
 import java.util.regex.Pattern;
 import java.util.function.Supplier;
 
@@ -323,6 +324,7 @@ public class DataCloudHttpServer {
      * When {@code null}, federated queries fall back to the local analytics engine.
      */
     private String trinoUrl;
+    private String listenHost;
 
     // ==================== Extracted Handler Delegates ====================
     private HttpHandlerSupport httpSupport;
@@ -704,6 +706,16 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withTrinoUrl(String trinoUrl) {
         this.trinoUrl = trinoUrl;
+        return this;
+    }
+
+    /**
+     * Configures the interface/host used by the embedded HTTP listener.
+     *
+     * <p>When unset, the server binds using the existing port-only behavior.
+     */
+    public DataCloudHttpServer withListenHost(String listenHost) {
+        this.listenHost = listenHost;
         return this;
     }
 
@@ -1297,10 +1309,14 @@ public class DataCloudHttpServer {
 
         rootServlet = new RequestObservationFilter(httpSupport, businessMetrics, traceExportService, traceSamplingRate).apply(rootServlet);
 
-        server = HttpServer.builder(eventloop,
-                corsFilter(rateLimitFilter(rootServlet)))
-            .withListenPort(port)
-            .build();
+        HttpServer.Builder serverBuilder = HttpServer.builder(eventloop,
+            corsFilter(rateLimitFilter(rootServlet)));
+        if (listenHost != null && !listenHost.isBlank()) {
+            serverBuilder.withListenAddress(new InetSocketAddress(listenHost.trim(), port));
+        } else {
+            serverBuilder.withListenPort(port);
+        }
+        server = serverBuilder.build();
 
         CountDownLatch startupLatch = new CountDownLatch(1);
         java.util.concurrent.atomic.AtomicReference<Exception> startupFailure = new java.util.concurrent.atomic.AtomicReference<>();

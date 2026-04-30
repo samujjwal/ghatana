@@ -1,7 +1,7 @@
 /**
  * @ghatana/sso-client — RBAC sub-module
  *
- * Platform-level Role-Based Access Control utilities migrated from `@yappc/auth`.
+ * Platform-level Role-Based Access Control utilities migrated from `yappc-auth`.
  *
  * @doc.type module
  * @doc.purpose Role definitions, permissions, and authorization utilities

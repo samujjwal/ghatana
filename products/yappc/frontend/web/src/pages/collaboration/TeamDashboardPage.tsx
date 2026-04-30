@@ -49,7 +49,7 @@ import {
   type UserPresence,
   type Activity as ActivityType,
   type TeamRole,
-} from '@yappc/api';
+} from 'yappc-api';
 
 // ============================================================================
 // Types

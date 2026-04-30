@@ -16,7 +16,7 @@ import type {
   PaginationConfig,
 } from './types';
 import type { Meta, StoryObj } from '@storybook/react';
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 
 const meta: Meta<typeof DataTable> = {
   title: 'DevSecOps/DataTable',

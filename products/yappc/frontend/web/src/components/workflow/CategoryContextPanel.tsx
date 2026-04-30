@@ -29,7 +29,7 @@ function alpha(color: string, opacity: number): string {
   return color;
 }
 
-import type { WorkflowCategory, WorkflowStep } from '@yappc/core/types';
+import type { WorkflowCategory, WorkflowStep } from 'yappc-core/types';
 
 // ============================================================================
 // TYPES

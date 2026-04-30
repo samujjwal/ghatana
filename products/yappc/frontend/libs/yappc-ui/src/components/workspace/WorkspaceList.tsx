@@ -12,7 +12,7 @@
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import React from 'react';
 
-import type { Workspace } from '@yappc/core/types';
+import type { Workspace } from 'yappc-core/types';
 
 import { WorkspaceCard } from './WorkspaceCard';
 

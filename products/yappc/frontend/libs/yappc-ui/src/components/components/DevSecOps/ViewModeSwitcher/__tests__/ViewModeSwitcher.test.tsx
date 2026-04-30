@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ViewModeSwitcher } from '../ViewModeSwitcher';
 import type { ViewModeSwitcherProps } from '../types';
-import type { ViewMode } from '@yappc/core/types/devsecops';
+import type { ViewMode } from 'yappc-core/types/devsecops';
 
 /**
  * ViewModeSwitcher Component Unit Tests

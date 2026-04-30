@@ -18,6 +18,7 @@ import { collectionsApi } from '../lib/api/collections';
 import { useSelection } from '../hooks/useSelection';
 import { logActivity } from '../lib/api/user-activity';
 import { RBACGuard } from '../components/security/RBACGuard';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import { Check, Mic, Trash2 } from 'lucide-react';
 
 // =============================================================================
@@ -462,6 +463,10 @@ export function EntityBrowserPage(): React.ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [aiDismissed, setAiDismissed] = useState(false);
 
+  const { data: capabilityRegistry } = useCapabilityRegistry();
+  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai_assist', 'ai.assist', 'assist']);
+  const isAiAssistAvailable = aiAssistCapability?.status !== 'unavailable';
+
   const { data: namespaces = [], isLoading: nsLoading } = useQuery({
     queryKey: ['dc', 'entities', 'namespaces'],
     queryFn: () => listNamespaces(),
@@ -487,11 +492,12 @@ export function EntityBrowserPage(): React.ReactElement {
     [entityList?.entities, namespace],
   );
 
-  // AI suggestions: fetched per-namespace, non-blocking (graceful fallback)
+  // AI suggestions: fetched per-namespace, non-blocking (graceful fallback).
+  // Gated on ai_assist capability signal so unavailable AI doesn't generate spurious 4xx logs.
   const { data: suggestResponse, isFetching: suggestLoading } = useQuery({
     queryKey: ['dc', 'entity-suggest', namespace],
     queryFn: () => fetchEntitySuggestions(namespace),
-    enabled: !!namespace && !aiDismissed,
+    enabled: !!namespace && !aiDismissed && isAiAssistAvailable,
     staleTime: 300_000, // suggestions are stable for 5 minutes
     retry: false,       // never retry — AI service unavailability is graceful
   });

@@ -12,4 +12,4 @@ export {
   type ListProps,
   Code,
   type CodeProps,
-} from '@yappc/ui';
+} from 'yappc-ui';

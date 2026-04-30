@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/product-theme",
+  "name": "yappc-product-theme",
   "version": "1.0.0",
   "description": "YAPPC product-specific theme presets, lifecycle semantic tokens, and MUI bridge",
   "main": "./dist/index.js",
@@ -28,7 +28,7 @@
   "dependencies": {
     "@ghatana/tokens": "workspace:*",
     "@ghatana/theme": "workspace:*",
-    "@yappc/ui": "workspace:*"
+    "yappc-ui": "workspace*"
   },
   "peerDependencies": {
     "@mui/material": "^9.0.0",

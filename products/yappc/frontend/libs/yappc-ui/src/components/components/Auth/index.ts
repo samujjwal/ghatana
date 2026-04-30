@@ -51,7 +51,7 @@ export type {
 /**
  * @example Login Page
  *
- * import { LoginForm } from '@yappc/ui';
+ * import { LoginForm } from 'yappc-ui';
  *
  * function LoginPage() {
  *   const navigate = useNavigate();
@@ -71,7 +71,7 @@ export type {
 /**
  * @example Register Page
  *
- * import { RegisterForm } from '@yappc/ui';
+ * import { RegisterForm } from 'yappc-ui';
  *
  * function RegisterPage() {
  *   const navigate = useNavigate();
@@ -91,7 +91,7 @@ export type {
 /**
  * @example Password Reset Flow
  *
- * import { PasswordResetRequest, PasswordResetConfirm } from '@yappc/ui';
+ * import { PasswordResetRequest, PasswordResetConfirm } from 'yappc-ui';
  *
  * function ResetPasswordPage() {
  *   const [searchParams] = useSearchParams();

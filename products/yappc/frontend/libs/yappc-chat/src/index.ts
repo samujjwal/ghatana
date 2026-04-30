@@ -1,5 +1,5 @@
 /**
- * @yappc/chat — Public API exports for YAPPC chat and messaging.
+ * yappc-chat — Public API exports for YAPPC chat and messaging.
  *
  * @doc.type module
  * @doc.purpose Chat and messaging exports for YAPPC

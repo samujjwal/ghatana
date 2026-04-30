@@ -33,7 +33,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type { Notification, NotificationType, NotificationPriority, NotificationStatus } from '@yappc/api';
+import type { Notification, NotificationType, NotificationPriority, NotificationStatus } from 'yappc-api';
 
 export interface NotificationNodeData {
   notification: Notification;

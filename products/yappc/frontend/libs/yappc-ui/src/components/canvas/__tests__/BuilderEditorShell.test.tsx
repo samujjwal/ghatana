@@ -22,7 +22,7 @@ import {
   builderCollabSessionAtom,
   type AutosaveStatus,
   type BuilderCollabSession,
-} from '@yappc/state';
+} from 'yappc-state';
 
 import { BuilderEditorShell } from '../BuilderEditorShell';
 

@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@ghatana/design-system';
 
-import type { IAIService } from '@yappc/ai/core';
+import type { IAIService } from 'yappc-ai/core';
 
 import { useAICompletion } from './hooks/useAICompletion';
 

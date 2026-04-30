@@ -14,7 +14,7 @@ import React from 'react';
 
 import { Box, Typography, Button } from '@ghatana/design-system';
 
-import { selectedDomainIdAtom } from '@yappc/state';
+import { selectedDomainIdAtom } from 'yappc-state';
 
 import { useTaskDomains } from '../../hooks/useConfig';
 

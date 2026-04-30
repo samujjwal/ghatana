@@ -29,7 +29,7 @@ import {
   securityScoreAtom,
   securityAlertsAtom,
   auditLogsAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_VULNERABILITY,
   GET_VULNERABILITIES,
@@ -57,7 +57,7 @@ import {
   type Vulnerability,
   type VulnerabilityInput,
   type VulnerabilityFilters,
-} from '@yappc/core/api';
+} from 'yappc-core/api';
 
 // =============================================================================
 // Vulnerability Hooks

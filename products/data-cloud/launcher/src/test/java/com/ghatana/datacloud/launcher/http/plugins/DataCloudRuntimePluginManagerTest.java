@@ -139,6 +139,45 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         manager.close(); // GH-90000
     }
 
+    @Test
+    @DisplayName("retryExecution creates a new execution and persists retry log")
+    void retryExecutionCreatesNewExecutionAndRetryLog() {
+        InMemoryDataCloudClient client = new InMemoryDataCloudClient();
+        runPromise(() -> client.save(TENANT_ID, "dc_pipelines", Map.of(
+            "id", PIPELINE_ID,
+            "name", "Order Ingestion",
+            "nodes", List.of(
+                Map.of("id", "extract", "type", "EXTRACT", "label", "Extract"),
+                Map.of("id", "publish", "type", "PUBLISH", "label", "Publish")
+            )
+        )));
+
+        DataCloudRuntimePluginManager manager = new DataCloudRuntimePluginManager();
+        manager.registerWorkflowPlugin(client);
+
+        WorkflowExecutionCapability capability = manager.findCapability(WorkflowExecutionCapability.class)
+            .orElseThrow(() -> new AssertionError("workflow capability missing"));
+
+        WorkflowExecutionCapability.ExecutionSnapshot created = runPromise(() -> capability.execute(
+            TENANT_ID,
+            PIPELINE_ID,
+            Map.of("dryRun", true)
+        ));
+        WorkflowExecutionCapability.ExecutionSnapshot retried = runPromise(() -> capability.retryExecution(TENANT_ID, created.id()));
+
+        List<WorkflowExecutionCapability.ExecutionLogEntry> retryLogs = runPromise(() -> capability.getExecutionLogs(TENANT_ID, retried.id()));
+        List<WorkflowExecutionCapability.ExecutionSnapshot> executions = runPromise(() -> capability.listExecutions(TENANT_ID, PIPELINE_ID));
+
+        assertThat(retried.id()).isNotEqualTo(created.id());
+        assertThat(retried.workflowId()).isEqualTo(created.workflowId());
+        assertThat(retryLogs).extracting(WorkflowExecutionCapability.ExecutionLogEntry::message)
+            .contains("Execution retried");
+        assertThat(executions).extracting(WorkflowExecutionCapability.ExecutionSnapshot::id)
+            .contains(created.id(), retried.id());
+
+        manager.close();
+    }
+
     private static final class InMemoryDataCloudClient implements DataCloudClient {
 
         private final Map<String, Map<String, Entity>> recordsByCollection = new ConcurrentHashMap<>(); // GH-90000

@@ -1,5 +1,5 @@
 /**
- * @yappc/ai notifications — real-time notification functionality
+ * yappc-ai notifications — real-time notification functionality
  */
 export { useNotificationBackend } from './hooks/useNotificationBackend';
 export type {

@@ -45,7 +45,7 @@ import {
   Stack,
 } from '@ghatana/design-system';
 
-import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
+import type { Item, ItemStatus } from 'yappc-core/types/devsecops';
 
 import { KanbanBoard } from './KanbanBoard';
 import type { KanbanBoardProps, KanbanColumn } from './types';

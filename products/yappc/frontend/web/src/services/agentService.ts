@@ -13,7 +13,7 @@ import {
   type IAgent,
   type AgentTask,
   type TaskResult
-} from '@yappc/ai/agents';
+} from 'yappc-ai/agents';
 
 /**
  * Service for managing agents and their interactions
@@ -34,7 +34,7 @@ class AgentService {
    */
   private async initializeAgents(): Promise<void> {
     try {
-      // Import AI service (placeholder - would be injected)
+      // AI service should be injected via configuration or environment
       const aiService = this.getAIService();
 
       // Create Design Agent
@@ -80,22 +80,47 @@ class AgentService {
       console.log('[AgentService] YAPPC agents initialized successfully');
     } catch (error) {
       console.error('[AgentService] Failed to initialize agents:', error);
+      throw error;
     }
   }
 
   /**
-   * Get AI service (placeholder - would be injected or configured)
+   * Get AI service from platform configuration
+   * Uses the real AI service configured in the environment
    */
   private getAIService(): { generateText: (prompt: string) => Promise<string>; generateCode: (prompt: string) => Promise<string> } {
-    // In a real implementation, this would get the configured AI service
-    // For now, return a mock that implements the required interface
+    // In production, this should use the configured AI service from platform/ai-integration
+    // For now, delegate to the backend API which handles AI provider selection
     return {
       generateText: async (prompt: string) => {
-        // Mock AI response
-        return `AI response for: ${prompt}`;
+        const response = await fetch('/api/ai/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.getAuthToken()}`,
+          },
+          body: JSON.stringify({ prompt, type: 'text' }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to generate text via AI service');
+        }
+        const data = await response.json();
+        return data.text || data.result || '';
       },
       generateCode: async (prompt: string) => {
-        return `// Generated code for: ${prompt}\nconsole.log('Hello World');`;
+        const response = await fetch('/api/ai/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.getAuthToken()}`,
+          },
+          body: JSON.stringify({ prompt, type: 'code' }),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to generate code via AI service');
+        }
+        const data = await response.json();
+        return data.code || data.result || '';
       }
     };
   }

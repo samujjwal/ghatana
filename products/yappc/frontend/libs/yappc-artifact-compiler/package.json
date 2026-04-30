@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/artifact-compiler",
+  "name": "yappc-artifact-compiler",
   "version": "1.0.0",
   "description": "YAPPC Artifact Compiler - Decompilation and reverse engineering of source code into semantic product models",
   "main": "./dist/index.js",

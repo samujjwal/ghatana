@@ -2,7 +2,7 @@
  * Minimal @mui/material/styles mock for Vitest.
  *
  * The web app test environment only needs these exports to satisfy
- * @yappc/ui theme re-exports while shared MUI providers are mocked out.
+ * yappc-ui theme re-exports while shared MUI providers are mocked out.
  */
 
 import React from 'react';

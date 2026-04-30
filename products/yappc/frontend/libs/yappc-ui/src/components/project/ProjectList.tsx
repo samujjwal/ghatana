@@ -12,7 +12,7 @@
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 import React from 'react';
 
-import type { Project } from '@yappc/core/types';
+import type { Project } from 'yappc-core/types';
 
 import { ProjectCard } from './ProjectCard';
 

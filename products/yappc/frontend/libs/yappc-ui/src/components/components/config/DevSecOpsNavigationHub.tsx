@@ -47,14 +47,14 @@ import {
 import { MenuItem } from '@ghatana/design-system';
 
 // Config hooks and state
-import type { PersonaType } from '@yappc/core/types/devsecops';
+import type { PersonaType } from 'yappc-core/types/devsecops';
 import {
   configViewModeAtom,
   selectedDomainIdAtom,
   selectedPhaseIdAtom,
   selectedWorkflowIdAtom,
-} from '@yappc/state';
-import { usePersonas } from '@yappc/state/config-hooks';
+} from 'yappc-state';
+import { usePersonas } from 'yappc-state/config-hooks';
 
 import {
   useTaskDomains,

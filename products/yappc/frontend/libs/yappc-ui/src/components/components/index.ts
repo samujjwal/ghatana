@@ -279,7 +279,7 @@ export type {
  * ```tsx
  * import { Button, Card } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { Form } from '@yappc/ui';
+import { Form } from 'yappc-ui';
  *
  * function MyComponent() {
  *   return (

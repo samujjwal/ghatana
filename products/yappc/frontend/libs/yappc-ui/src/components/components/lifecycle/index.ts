@@ -15,7 +15,7 @@ export {
   StageNavigation,
   stageNavigationStyles,
   type StageNavigationProps,
-} from '@yappc/ui/navigation-ui';
+} from 'yappc-ui/navigation-ui';
 
 // Hooks (from parent directory)
 export {

@@ -29,7 +29,7 @@ import {
   onCallScheduleAtom,
   serviceHealthAtom,
   metricsAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_INCIDENT,
   GET_INCIDENTS,
@@ -59,7 +59,7 @@ import {
   LOG_STREAM_SUBSCRIPTION,
   type Incident,
   type IncidentInput,
-} from '@yappc/core/api';
+} from 'yappc-core/api';
 
 // =============================================================================
 // Incident Hooks

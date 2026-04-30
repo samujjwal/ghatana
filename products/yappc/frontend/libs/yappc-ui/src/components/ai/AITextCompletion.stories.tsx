@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { AITextCompletion } from './AITextCompletion';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import type { IAIService, CompletionResponse } from '@yappc/ai/core';
+import type { IAIService, CompletionResponse } from 'yappc-ai/core';
 
 // Mock AI Service for Storybook
 const createMockAIService = (delay = 1000): IAIService => ({

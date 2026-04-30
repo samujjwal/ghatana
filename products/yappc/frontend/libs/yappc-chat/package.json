@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/chat",
+  "name": "yappc-chat",
   "version": "1.0.0",
   "description": "YAPPC chat and messaging library",
   "main": "./dist/index.js",

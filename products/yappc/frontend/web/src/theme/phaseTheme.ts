@@ -1,5 +1,5 @@
 /**
- * Phase theme re-export — canonical source is `@yappc/product-theme`.
+ * Phase theme re-export — canonical source is `yappc-product-theme`.
  * Import from this barrel to avoid direct product-lib coupling in app code.
  *
  * @doc.type utility
@@ -14,4 +14,4 @@ export {
   getPhaseIcon,
   type LifecyclePhase,
   type PhaseTheme,
-} from '@yappc/product-theme';
+} from 'yappc-product-theme';

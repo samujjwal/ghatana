@@ -267,6 +267,17 @@ public final class DataCloudSecurityFilter {
         String method = request.getMethod().name();
         String path = request.getPath();
         String requestId = ensureRequestId(request, null);
+
+        // DC-SEC-TENANT: Global tenant presence check — enforced before any handler.
+        // Principals without a tenant are rejected at the filter boundary so handlers
+        // cannot accidentally serve a request with a missing tenant context.
+        String principalTenantId = principal.getTenantId();
+        if ((principalTenantId == null || principalTenantId.isBlank()) && enforcing) {
+            log.warn("[DC-SEC] Rejecting request: authenticated principal has no tenant identifier principal={} method={} path={} requestId={}",
+                    principal.getName(), method, path, requestId);
+            return Promise.of(missingTenantResponse(requestId));
+        }
+
         AccessLevel requiredAccess = requiredAccess(method, path, sensitivity);
         if (!hasRequiredAccess(principal, requiredAccess)) {
             log.warn("Forbidden request: principal={} method={} path={} requiredAccess={}",
@@ -523,6 +534,16 @@ public final class DataCloudSecurityFilter {
             + "\"message\":\"Request blocked by governance policy\","
             + "\"requestId\":\"" + requestId + "\"}}";
         return HttpResponse.ofCode(403)
+            .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
+            .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
+    }
+
+    private static HttpResponse missingTenantResponse(String requestId) {
+        String body = "{\"error\":{\"code\":\"TENANT_REQUIRED\","
+            + "\"message\":\"X-Tenant-Id header is required\","
+            + "\"requestId\":\"" + requestId + "\"}}";
+        return HttpResponse.ofCode(400)
             .withHeader(HttpHeaders.CONTENT_TYPE, io.activej.http.HttpHeaderValue.of("application/json"))
             .withBody(body.getBytes(java.nio.charset.StandardCharsets.UTF_8))
             .build();

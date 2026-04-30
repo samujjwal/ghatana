@@ -33,8 +33,8 @@ import { Badge } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
-import { Textarea } from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { Textarea } from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

@@ -1448,8 +1448,17 @@ public class LifecycleServiceModule extends AbstractModule {
     @Provides
     com.ghatana.yappc.services.lifecycle.gdpr.GdprDataService gdprDataService() {
         logger.info("Creating GdprDataService");
-        // Register in-memory stubs for all YAPPC data collections.
-        // Each real storage adapter should be injected here once JDBC collections are finalized.
+        // Register in-memory stubs for all YAPPC data collections in dev mode only.
+        // In production, real storage adapters must be injected to avoid conflicts with JDBC variants.
+        String profile = System.getenv(YappcEnvironmentConfig.PROFILE_ENV);
+        boolean isProduction = "production".equals(profile) || "prod".equals(profile);
+        if (isProduction) {
+            throw new IllegalStateException(
+                "GdprDataService requires real storage adapters in production mode (YAPPC_PROFILE=" + profile + "). " +
+                "In-memory stubs are not allowed in production as they would conflict with JDBC variants."
+            );
+        }
+        logger.warn("GdprDataService using in-memory stubs - suitable for dev mode only");
         return new com.ghatana.yappc.services.lifecycle.gdpr.GdprDataService();
     }
 

@@ -25,7 +25,7 @@ import {
   securityScoreAtom,
   securityAlertsAtom,
   auditLogsAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_VULNERABILITY,
   LIST_VULNERABILITIES as GET_VULNERABILITIES,

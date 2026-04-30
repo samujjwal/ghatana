@@ -27,14 +27,14 @@ import React, { useMemo } from 'react';
 import { cn } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
-import type { BootstrapPhase } from '@yappc/state';
+import type { BootstrapPhase } from 'yappc-state';
 import {
   currentPhaseAtom,
   confidenceScoreAtom,
   questionsAnsweredAtom,
   totalQuestionsAtom,
-} from '@yappc/state';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+} from 'yappc-state';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/ai",
+  "name": "yappc-ai",
   "version": "1.0.0",
   "description": "YAPPC AI Components - Consolidated AI and chat functionality",
   "main": "./dist/index.js",
@@ -46,8 +46,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@yappc/core": "workspace:*",
-    "@yappc/ui": "workspace:*",
+    "yappc-core": "workspace:*",
+    "yappc-ui": "workspace*",
     "@ghatana/ui-builder": "workspace:*",
     "@ghatana/platform-events": "workspace:*",
     "openai": "^6.34.0",

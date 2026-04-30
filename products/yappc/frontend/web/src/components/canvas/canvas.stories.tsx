@@ -1,8 +1,8 @@
-import { seedScenarios } from '@yappc/core/testing/mocks/seed-canvas';
+import { seedScenarios } from 'yappc-core/testing/mocks/seed-canvas';
 import { Provider, useSetAtom } from 'jotai';
 import React, { useEffect } from 'react';
 
-import { canvasStateAtom } from '@yappc/state';
+import { canvasStateAtom } from 'yappc-state';
 import CanvasScene from '../../routes/app/project/canvas/CanvasScene';
 
 import type { Meta, StoryObj } from '@storybook/react';

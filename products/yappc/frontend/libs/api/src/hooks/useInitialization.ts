@@ -28,7 +28,7 @@ import {
   environmentsAtom,
   costEstimateAtom,
   teamInvitesAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_INITIALIZATION_PROJECT as GET_WIZARD_STATE,
   GET_INFRASTRUCTURE_STATUS as GET_INFRASTRUCTURE_OPTIONS,

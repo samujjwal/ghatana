@@ -3,9 +3,9 @@
  *
  * Re-exports vector-clock, conflict-resolution, and IDE-integration
  * CRDT utilities. Consumers that previously imported from @yappc/crdt
- * should migrate to @yappc/collab/crdt.
+ * should migrate to yappc-collab/crdt.
  *
- * @deprecated @yappc/crdt — Use @yappc/collab/crdt instead
+ * @deprecated @yappc/crdt — Use yappc-collab/crdt instead
  */
 export { CRDTCore } from './core/index.js';
 export type {

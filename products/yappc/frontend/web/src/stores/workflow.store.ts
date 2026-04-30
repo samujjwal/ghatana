@@ -18,7 +18,7 @@ import type {
     AIMode,
     WorkflowSteps,
     WorkflowAuditEntry,
-} from '@yappc/core/types';
+} from 'yappc-core/types';
 
 // Removed: import { sampleWorkflows } from './workflow.sample-data';
 // Workflows are now loaded from the API via TanStack Query

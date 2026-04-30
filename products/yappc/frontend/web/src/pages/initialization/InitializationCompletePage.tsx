@@ -12,7 +12,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
-import { ResourcesList, type Resource } from '@yappc/ui/initialization-ui';
+import { ResourcesList, type Resource } from 'yappc-initialization-ui';
 
 // ============================================================================
 // Types

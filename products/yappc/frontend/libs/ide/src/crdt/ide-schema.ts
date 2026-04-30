@@ -11,7 +11,7 @@
 
 import type * as Y from 'yjs';
 
-import type { CRDTState } from '@yappc/state/crdt/core';
+import type { CRDTState } from 'yappc-state/crdt/core';
 
 import type { IDEFile, IDEFolder, IDEPresence } from '../types';
 

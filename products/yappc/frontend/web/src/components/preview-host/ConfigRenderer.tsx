@@ -9,7 +9,7 @@
 import { Box, Stack, Typography, Alert } from '@ghatana/design-system';
 import React, { useMemo } from 'react';
 
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
 // Placeholder for ComponentRenderer - in production this would import from yappc-ui
 // For now, we'll create a simple renderer that displays the component structure

@@ -2,7 +2,7 @@
  * Minimal @mui/material mock for the web app test environment.
  *
  * The web app uses @ghatana/design-system, not MUI directly.
- * This mock prevents resolution failures when loading @yappc/product-theme/mui-bridge
+ * This mock prevents resolution failures when loading yappc-product-theme/mui-bridge
  * (which wraps MUI ThemeProvider) during unit tests.
  */
 

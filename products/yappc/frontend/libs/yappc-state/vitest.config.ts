@@ -16,8 +16,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@yappc/state': resolve(__dirname, './src'),
-      '@yappc/core': resolve(__dirname, '../yappc-core/src'),
+      'yappc-state': resolve(__dirname, './src'),
+      'yappc-core': resolve(__dirname, '../yappc-core/src'),
       '@ghatana/ui-builder': resolve(
         __dirname,
         '../../../../../platform/typescript/ui-builder/src',

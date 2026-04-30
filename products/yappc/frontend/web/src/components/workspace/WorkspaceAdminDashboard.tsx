@@ -28,13 +28,13 @@ import type {
     PersonaType,
     Workspace,
     WorkspacePermission,
-} from '@yappc/auth/rbac';
+} from 'yappc-auth/rbac';
 import {
     WorkspaceRole,
     ROLE_PERMISSIONS,
     hasPermission,
     canManageRole,
-} from '@yappc/auth/rbac';
+} from 'yappc-auth/rbac';
 import { AuditTrail } from '../audit';
 
 // ============================================================================

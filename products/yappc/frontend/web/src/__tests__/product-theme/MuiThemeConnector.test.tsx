@@ -17,12 +17,12 @@ vi.mock('@mui/material', () => ({
   CssBaseline: () => null,
 }));
 
-vi.mock('@yappc/ui', () => ({
+vi.mock('yappc-ui', () => ({
   lightTheme: { palette: { mode: 'light' } },
   darkTheme: { palette: { mode: 'dark' } },
 }));
 
-import { MuiThemeConnector } from '@yappc/product-theme/mui-bridge';
+import { MuiThemeConnector } from 'yappc-product-theme/mui-bridge';
 
 describe('MuiThemeConnector', () => {
   it('renders children without crashing', () => {

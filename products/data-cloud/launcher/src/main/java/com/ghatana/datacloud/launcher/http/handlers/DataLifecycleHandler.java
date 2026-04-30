@@ -7,6 +7,7 @@ import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.TraceSpanSupport;
 import com.ghatana.datacloud.spi.EntityStore;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
@@ -1402,15 +1403,51 @@ public class DataLifecycleHandler {
      * Helper method to require EventLogStore for governance operations.
      */
     private EventLogStore requireEventLogStore() {
-        // TODO: Fix EventLogStore type mismatch - spi.EventLogStore vs platform.domain.eventstore.EventLogStore
-        throw new IllegalStateException("EventLogStore temporarily disabled due to type mismatch");
+        return EventLogStoreAdapters.toPlatformStore(client.eventLogStore());
     }
 
     private Promise<HttpResponse> logGovernanceEvent(TenantContext tenantContext, String requestId,
                                                      String eventType, String collection,
                                                      Map<String, Object> payload) {
-        // TODO: Fix EventLogStore type mismatch - temporarily disabled
-        return Promise.of(http.errorResponse(501, "Governance event logging temporarily disabled due to EventLogStore type mismatch"));
+        EventLogStore eventLogStore = requireEventLogStore();
+        Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("requestId", requestId);
+        envelope.put("collection", collection);
+        envelope.put("eventType", eventType);
+        envelope.put("payload", payload);
+        envelope.put("timestamp", Instant.now().toString());
+
+        try {
+            EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(eventType)
+                .eventVersion("1.0.0")
+                .timestamp(Instant.now())
+                .payload(objectMapper.writeValueAsBytes(envelope))
+                .contentType("application/json")
+                .headers(Map.of(
+                    "stream", "governance",
+                    "tenantId", tenantContext.tenantId(),
+                    "collection", collection,
+                    "requestId", requestId
+                ))
+                .build();
+
+            com.ghatana.platform.domain.eventstore.TenantContext platformTenant =
+                EventLogStoreAdapters.toPlatformTenantContext(tenantContext)
+                    .withMetadata("stream", "governance")
+                    .withMetadata("requestId", requestId);
+
+            return eventLogStore.append(platformTenant, entry)
+                .map(offset -> (HttpResponse) null)
+                .whenException(error ->
+                    log.warn("[DC-E5] governance event append failed eventType={} collection={} requestId={} tenant={}: {}",
+                        eventType, collection, requestId, tenantContext.tenantId(), error.getMessage()));
+        } catch (Exception exception) {
+            log.warn("[DC-E5] governance event serialization failed eventType={} collection={} requestId={} tenant={}: {}",
+                eventType, collection, requestId, tenantContext.tenantId(), exception.getMessage());
+            return Promise.of((HttpResponse) null);
+        }
     }
 
     private AuditService requireAuditService() {

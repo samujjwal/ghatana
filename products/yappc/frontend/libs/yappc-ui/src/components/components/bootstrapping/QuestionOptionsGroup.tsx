@@ -27,7 +27,7 @@ import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 
-import { Textarea } from '@yappc/ui';
+import { Textarea } from 'yappc-ui';
 
 // =============================================================================
 // Types

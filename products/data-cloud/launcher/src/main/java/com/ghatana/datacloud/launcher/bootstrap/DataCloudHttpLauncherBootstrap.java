@@ -28,6 +28,7 @@ import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
+import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.DefaultAutonomyController;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -154,8 +155,7 @@ public final class DataCloudHttpLauncherBootstrap {
             String jwtTenantClaim = env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id");
             AutonomyController autonomyController = sovereignProfile ? new DefaultAutonomyController() : null;
 
-                // TODO: Fix EventLogStore type mismatch - spi.EventLogStore vs platform.domain.eventstore.EventLogStore
-                // EventLogStore eventLogStore = client.eventLogStore();
+                EventLogStore eventLogStore = EventLogStoreAdapters.toPlatformStore(client.eventLogStore());
                 DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
                     .withReportService(reportService)
                     .withAiModelManager(aiModelManager)
@@ -179,13 +179,12 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withAutonomyController(autonomyController);
                 }
 
-                // TODO: Fix EventLogStore type mismatch - spi.EventLogStore vs platform.domain.eventstore.EventLogStore
-                // if (eventLogStore != null) {
-                //     httpServer
-                //         .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
-                //         .withEventLogStore(eventLogStore)
-                //         .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
-                // }
+                if (eventLogStore != null) {
+                    httpServer
+                        .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
+                        .withEventLogStore(eventLogStore)
+                        .withHealthSubsystem("event_store", new EventStoreHealthProbe(eventLogStore, 500));
+                }
 
                 // P3.9.1: Entity lineage tracking via LineagePlugin
                 LineagePlugin lineagePlugin = new LineagePlugin();
@@ -203,6 +202,7 @@ public final class DataCloudHttpLauncherBootstrap {
                 // Security check: enforce authentication by default in production
                 boolean insecureMode = Boolean.parseBoolean(env.getOrDefault("DATACLOUD_INSECURE_MODE", "false"));
                 boolean hasAuthConfigured = apiKeyResolver != null || jwtProvider != null;
+                String configuredBindHost = env.getOrDefault("DATACLOUD_BIND_HOST", "").trim();
                 
                 if (!insecureMode && !hasAuthConfigured && !embeddedProfile) {
                     throw new IllegalStateException(
@@ -217,6 +217,22 @@ public final class DataCloudHttpLauncherBootstrap {
                     log.warn("[DC-E2] No authentication configured in embedded/local profile. " +
                         "Set DATACLOUD_API_KEYS or DATACLOUD_JWT_SECRET to enable authentication. " +
                         "To allow insecure mode, set DATACLOUD_INSECURE_MODE=true.");
+                }
+
+                if (embeddedProfile && insecureMode && !hasAuthConfigured) {
+                    if (configuredBindHost.isBlank()) {
+                        configuredBindHost = "127.0.0.1";
+                        log.warn("[DC-E2] DATACLOUD_BIND_HOST not set while running insecure embedded mode; forcing loopback bind host {}", configuredBindHost);
+                    }
+                    if (!isLoopbackHost(configuredBindHost)) {
+                        throw new IllegalStateException(
+                            "SECURITY ERROR: Insecure embedded mode requires loopback binding. " +
+                            "Set DATACLOUD_BIND_HOST to 127.0.0.1 or localhost, or configure authentication.");
+                    }
+                }
+
+                if (!configuredBindHost.isBlank()) {
+                    httpServer.withListenHost(configuredBindHost);
                 }
 
             startTransport(
@@ -320,6 +336,14 @@ public final class DataCloudHttpLauncherBootstrap {
         log.info("[DC-E1] JWT authentication enabled (tenant claim: {})",
                 env.getOrDefault("DATACLOUD_JWT_TENANT_CLAIM", "tenant_id"));
         return JwtTokenProviders.fromSharedSecret(secret, validityMs);
+    }
+
+    static boolean isLoopbackHost(String host) {
+        try {
+            return InetAddress.getByName(host).isLoopbackAddress();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private static DataSource buildDatabaseDataSource() {

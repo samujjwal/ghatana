@@ -1,5 +1,5 @@
 /**
- * @yappc/config-schema
+ * yappc-config-schema
  *
  * Declarative configuration schemas for data-driven product development.
  * Provides Zod-based validation for IntentConfig, RequirementConfig, PageConfig,

@@ -1,7 +1,7 @@
 /**
- * Messaging module — use @yappc/chat directly.
+ * Messaging module — use yappc-chat directly.
  *
- * @deprecated Use @yappc/chat for chat functionality. This re-export module is no longer functional.
+ * @deprecated Use yappc-chat for chat functionality. This re-export module is no longer functional.
  */
 export type {
   UseChatBackendConfig,
@@ -21,7 +21,7 @@ export { ChatMessage as ChatMessageComponent } from './chat/index';
 export type { ChatMessageProps } from './chat/index';
 
 // Notifications
-// NOTE: Consolidated to @yappc/ai/notifications - re-exporting from canonical location
+// NOTE: Consolidated to yappc-ai/notifications - re-exporting from canonical location
 export { useNotificationBackend } from '../notifications/index';
 export type {
   UseNotificationBackendConfig,

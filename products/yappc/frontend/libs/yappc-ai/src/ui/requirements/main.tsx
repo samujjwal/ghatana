@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { BrowserRouter } from 'react-router-dom';
-import { ErrorBoundary } from '@yappc/ui';
+import { ErrorBoundary } from 'yappc-ui';
 
 import App from './App.tsx';
 import { apolloClient } from './services/apollo.ts';

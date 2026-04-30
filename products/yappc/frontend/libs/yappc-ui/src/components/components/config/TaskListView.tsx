@@ -22,7 +22,7 @@ import {
   Skeleton,
 } from '@ghatana/design-system';
 
-import { selectedDomainIdAtom } from '@yappc/state';
+import { selectedDomainIdAtom } from 'yappc-state';
 
 import { useDomainById } from '../../hooks/useConfig';
 

@@ -9,8 +9,8 @@ import { Provider, createStore } from 'jotai';
 import { EvidencePanel } from '../EvidencePanel';
 import { workflowAuditAtom, showAISuggestionsAtom, currentAISuggestionAtom } from '../../../stores/workflow.store';
 
-// Mock @yappc/core/types
-vi.mock('@yappc/core/types', () => ({}));
+// Mock yappc-core/types
+vi.mock('yappc-core/types', () => ({}));
 
 // Mock the workflow store atoms
 vi.mock('../../../stores/workflow.store', () => ({

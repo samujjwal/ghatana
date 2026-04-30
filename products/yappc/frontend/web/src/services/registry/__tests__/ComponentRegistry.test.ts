@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 
 import { ComponentRegistry } from '../ComponentRegistry';
 
-import type { ComponentDefinition } from '@yappc/core/types';
+import type { ComponentDefinition } from 'yappc-core/types';
 
 describe('ComponentRegistry', () => {
   beforeEach(() => {

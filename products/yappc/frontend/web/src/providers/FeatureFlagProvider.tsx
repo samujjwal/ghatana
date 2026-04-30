@@ -59,6 +59,9 @@ export enum FeatureFlag {
   // Admin Pages (hidden by default until backend wired)
   ADMIN_BILLING = 'admin-billing',
   
+  // Lifecycle Phases (hidden until backend integration complete)
+  PHASE_RUN = 'phase-run',
+  
   // Experimental
   CANVAS_3D_MODE = 'canvas-3d-mode',
   VOICE_COMMANDS = 'voice-commands',
@@ -102,6 +105,9 @@ const DEFAULT_FEATURES: Record<FeatureFlag, boolean> = {
   
   // Admin Pages - disabled by default until backend wired
   [FeatureFlag.ADMIN_BILLING]: false,
+  
+  // Lifecycle Phases - disabled until backend integration complete
+  [FeatureFlag.PHASE_RUN]: false,  // GitHub Actions CI/CD integration not complete
   
   // Experimental - disabled by default
   [FeatureFlag.CANVAS_3D_MODE]: false,

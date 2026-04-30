@@ -55,8 +55,8 @@ import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 import { Tabs } from '@ghatana/design-system';
 
-import { incidentsAtom, alertsAtom, activeIncidentAtom } from '@yappc/state';
-import { AvatarFallback, AvatarImage } from '@yappc/ui';
+import { incidentsAtom, alertsAtom, activeIncidentAtom } from 'yappc-state';
+import { AvatarFallback, AvatarImage } from 'yappc-ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,11 +64,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-import { CardTitle } from '@yappc/ui';
-import { ScrollArea } from '@yappc/ui';
-import { TabsContent, TabsList, TabsTrigger } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+import { CardTitle } from 'yappc-ui';
+import { ScrollArea } from 'yappc-ui';
+import { TabsContent, TabsList, TabsTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

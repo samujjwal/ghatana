@@ -19,8 +19,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@yappc/config-schema': path.resolve(__dirname, '../config-schema/src'),
-      '@yappc/core': path.resolve(__dirname, '../yappc-core/src'),
+      'yappc-config-schema': path.resolve(__dirname, '../config-schema/src'),
+      'yappc-core': path.resolve(__dirname, '../yappc-core/src'),
     },
   },
 });

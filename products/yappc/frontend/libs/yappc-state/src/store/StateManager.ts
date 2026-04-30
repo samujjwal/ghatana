@@ -32,7 +32,7 @@ import {
   type AtomMetadata as PlatformAtomMetadata,
 } from '@ghatana/state';
 
-// Re-export AsyncState so existing consumers of @yappc/state continue to work
+// Re-export AsyncState so existing consumers of yappc-state continue to work
 export type { AsyncState };
 
 // ============================================================================

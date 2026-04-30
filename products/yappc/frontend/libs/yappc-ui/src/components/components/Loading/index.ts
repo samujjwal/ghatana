@@ -42,7 +42,7 @@ export type {
 /**
  * @example Basic Spinner
  *
- * import { Spinner } from '@yappc/ui';
+ * import { Spinner } from 'yappc-ui';
  *
  * function LoadingState() {
  *   return <Spinner size="lg" centered />;
@@ -52,7 +52,7 @@ export type {
 /**
  * @example Loading Button
  *
- * import { LoadingButton } from '@yappc/ui';
+ * import { LoadingButton } from 'yappc-ui';
  *
  * function SaveButton() {
  *   const [saving, setSaving] = useState(false);
@@ -78,7 +78,7 @@ export type {
 /**
  * @example Skeleton Loading
  *
- * import { SkeletonCard } from '@yappc/ui';
+ * import { SkeletonCard } from 'yappc-ui';
  *
  * function LoadingCard() {
  *   return <SkeletonCard showAvatar lines={3} />;
@@ -88,7 +88,7 @@ export type {
 /**
  * @example Skeleton Table
  *
- * import { SkeletonTable } from '@yappc/ui';
+ * import { SkeletonTable } from 'yappc-ui';
  *
  * function LoadingTable() {
  *   return <SkeletonTable rows={5} columns={4} showHeader />;

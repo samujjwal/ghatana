@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
 export interface PreviewHostProps {
   config: PageConfig;

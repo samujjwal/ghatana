@@ -15,7 +15,7 @@ import type {
   IntegrationConfig,
   JiraIntegration,
   SonarQubeIntegration,
-} from '@yappc/core/types/devsecops';
+} from 'yappc-core/types/devsecops';
 
 import type {
   GitHubAdapter,

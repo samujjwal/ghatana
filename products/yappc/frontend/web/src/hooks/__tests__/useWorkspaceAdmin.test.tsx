@@ -7,13 +7,13 @@ import { createStore, Provider } from 'jotai';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 
-// Mock @yappc/auth/rbac
+// Mock yappc-auth/rbac
 const mockRolePermissions = vi.hoisted(() => ({
   admin: ['read', 'write', 'delete', 'invite'],
   member: ['read', 'write'],
   viewer: ['read'],
 }));
-vi.mock('@yappc/auth/rbac', () => ({
+vi.mock('yappc-auth/rbac', () => ({
   WorkspaceRole: { ADMIN: 'admin', MEMBER: 'member', VIEWER: 'viewer' },
   ROLE_PERMISSIONS: mockRolePermissions,
 }));

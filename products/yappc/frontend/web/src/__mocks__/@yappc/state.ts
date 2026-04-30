@@ -1,5 +1,5 @@
 /**
- * Mock for @yappc/state package
+ * Mock for yappc-state package
  * Provides jotai atoms without importing StateProvider (which causes oxc transform errors in tests)
  */
 import { atom } from 'jotai';

@@ -31,6 +31,6 @@ export * from './results/result';
 // ============================================================================
 
 console.warn(
-  '[DEPRECATED] @ghatana/yappc-config is deprecated. Use @yappc/core/config instead. ' +
+  '[DEPRECATED] @ghatana/yappc-config is deprecated. Use yappc-core/config instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'
 );

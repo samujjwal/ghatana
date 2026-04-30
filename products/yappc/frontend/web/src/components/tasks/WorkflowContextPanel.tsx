@@ -14,7 +14,7 @@
 import React from 'react';
 import { Box, Typography, IconButton, Divider, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemButton, Chip, LinearProgress, Accordion, AccordionSummary, AccordionDetails, Avatar, AvatarGroup, Tooltip, Badge, Tabs, Tab } from '@ghatana/design-system';
 import { X as CloseIcon, ChevronDown as ExpandIcon, CheckCircle as CompletedIcon, FileText as DocumentIcon, Code as CodeIcon, Image as ImageIcon, Braces as DataIcon, Folder as FolderIcon, Clock as TimeIcon, User as PersonIcon, TrendingUp as ProgressIcon, Package as ArtifactsIcon, ClipboardList as TasksIcon } from 'lucide-react';
-import type { LifecycleStage } from '@yappc/core/types/tasks';
+import type { LifecycleStage } from 'yappc-core/types/tasks';
 
 // ============================================================================
 // Types

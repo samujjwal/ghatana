@@ -7,9 +7,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
-vi.mock('@yappc/config-schema', () => ({
+vi.mock('yappc-config-schema', () => ({
     PageConfigSchema: { parse: vi.fn((x: unknown) => x) },
 }));
 

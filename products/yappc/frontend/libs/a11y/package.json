@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/a11y",
+  "name": "yappc-a11y",
   "version": "0.1.0",
   "description": "Accessibility (WCAG 2.1 AA) utilities for YAPPC canvas and components",
   "private": false,

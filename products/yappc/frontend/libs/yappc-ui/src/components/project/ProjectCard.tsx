@@ -22,7 +22,7 @@ import {
 import { Settings as SettingsIcon, Brain as BrainIcon } from 'lucide-react';
 import React from 'react';
 
-import type { Project, ProjectStatus } from '@yappc/core/types';
+import type { Project, ProjectStatus } from 'yappc-core/types';
 
 const STATUS_COLORS: Record<
   ProjectStatus,

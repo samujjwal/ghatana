@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { PageConfig, ComponentInstance } from '@yappc/config-schema';
+import type { PageConfig, ComponentInstance } from 'yappc-config-schema';
 import type { GeneratedArtifact } from '../types';
 
 /**
@@ -76,7 +76,7 @@ export class CodeGenerator {
     }
 
     if (options.includeImports !== false) {
-      lines.push(`import { ${component.type} } from '@yappc/ui';`);
+      lines.push(`import { ${component.type} } from 'yappc-ui';`);
       lines.push('');
     }
 

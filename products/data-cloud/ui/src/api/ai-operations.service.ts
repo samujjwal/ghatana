@@ -386,3 +386,16 @@ export class AiOperationsService {
 }
 
 export const aiOperationsService = new AiOperationsService();
+
+// ── Workflow / pipeline AI helpers ────────────────────────────────────────────
+// Re-exported here so pages import from the canonical service rather than
+// the internal lib/api/ai module directly (P2-01 migration).
+export {
+  getPipelineOptimisationHints,
+  generateWorkflowDraft,
+  aiQueryKeys,
+} from '../lib/api/ai';
+export type {
+  WorkflowDraft,
+  PipelineOptimisationHint,
+} from '../contracts/schemas';

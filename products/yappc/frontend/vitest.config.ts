@@ -140,24 +140,24 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './web/src'),
-      '@yappc/api': resolve(__dirname, './libs/api/src'),
-      '@yappc/ai': resolve(__dirname, './libs/yappc-ai/src'),
-      '@yappc/devsecops': resolve(__dirname, './libs/yappc-devsecops/src'),
-      '@yappc/auth': resolve(__dirname, './libs/yappc-auth/src'),
-      '@yappc/auth/rbac': resolve(__dirname, './libs/yappc-auth/src/auth/rbac'),
-      '@yappc/chat': resolve(__dirname, './libs/yappc-chat/src'),
-      '@yappc/collab': resolve(__dirname, './libs/collab/src'),
-      '@yappc/core/testing/mocks/faker-shim': resolve(
+      'yappc-api': resolve(__dirname, './libs/api/src'),
+      'yappc-ai': resolve(__dirname, './libs/yappc-ai/src'),
+      'yappc-devsecops': resolve(__dirname, './libs/yappc-devsecops/src'),
+      'yappc-auth': resolve(__dirname, './libs/yappc-auth/src'),
+      'yappc-auth/rbac': resolve(__dirname, './libs/yappc-auth/src/auth/rbac'),
+      'yappc-chat': resolve(__dirname, './libs/yappc-chat/src'),
+      'yappc-collab': resolve(__dirname, './libs/collab/src'),
+      'yappc-core/testing/mocks/faker-shim': resolve(
         __dirname,
         './test-utils/faker-shim.ts'
       ),
-      '@yappc/core': resolve(__dirname, './libs/yappc-core/src'),
+      'yappc-core': resolve(__dirname, './libs/yappc-core/src'),
       '@yappc/ide': resolve(__dirname, './libs/ide/src'),
-      '@yappc/initialization-ui': resolve(__dirname, './libs/yappc-initialization-ui/src'),
+      'yappc-initialization-ui': resolve(__dirname, './libs/yappc-initialization-ui/src'),
       '@yappc/development-ui': resolve(__dirname, './libs/yappc-development-ui/src'),
-      '@yappc/product-theme': resolve(__dirname, './libs/yappc-product-theme/src'),
-      '@yappc/state': resolve(__dirname, './libs/yappc-state/src'),
-      '@yappc/ui': resolve(__dirname, './libs/yappc-ui/src'),
+      'yappc-product-theme': resolve(__dirname, './libs/yappc-product-theme/src'),
+      'yappc-state': resolve(__dirname, './libs/yappc-state/src'),
+      'yappc-ui': resolve(__dirname, './libs/yappc-ui/src'),
       '@ghatana/canvas': resolve(__dirname, '../../../platform/typescript/canvas/src'),
       '@ghatana/code-editor': resolve(__dirname, '../../../platform/typescript/code-editor/src'),
       '@ghatana/design-system': resolve(

@@ -29,17 +29,10 @@ public class PhaseEventPublisher {
     /**
      * Constructor with event publisher.
      *
-     * @param eventPublisher AEP event publisher implementation
+     * @param eventPublisher AEP event publisher implementation (must be durable in production)
      */
     public PhaseEventPublisher(AepEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
-
-    /**
-     * Default constructor with in-memory publisher.
-     */
-    public PhaseEventPublisher() {
-        this(new InMemoryEventPublisher());
+        this.eventPublisher = Objects.requireNonNull(eventPublisher, "AepEventPublisher must not be null");
     }
 
     /**

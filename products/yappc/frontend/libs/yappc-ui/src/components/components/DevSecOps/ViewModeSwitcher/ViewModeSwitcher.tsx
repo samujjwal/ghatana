@@ -19,7 +19,7 @@ import {
   Tooltip,
 } from '@ghatana/design-system';
 
-import type { ViewMode } from '@yappc/core/types/devsecops';
+import type { ViewMode } from 'yappc-core/types/devsecops';
 
 import type { ViewModeSwitcherProps, ViewModeMetadata } from './types';
 

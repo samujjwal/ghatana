@@ -104,7 +104,7 @@ export class CodeGenerator {
     const code: string[] = [];
 
     // Add component import
-    imports.push(`import { ${componentType} } from '@yappc/ui';`);
+    imports.push(`import { ${componentType} } from 'yappc-ui';`);
 
     // Add React import
     if (opts.includeDataBinding || opts.includeEvents) {

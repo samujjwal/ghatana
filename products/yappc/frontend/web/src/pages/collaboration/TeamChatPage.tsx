@@ -62,7 +62,7 @@ import {
   type Reaction,
   type Thread,
   type UserPresence,
-} from '@yappc/api';
+} from 'yappc-api';
 
 // ============================================================================
 // Types

@@ -1,5 +1,5 @@
 /**
- * @yappc/ai chat — real-time chat functionality
+ * yappc-ai chat — real-time chat functionality
  */
 export { useChatBackend } from './hooks/useChatBackend';
 export type {

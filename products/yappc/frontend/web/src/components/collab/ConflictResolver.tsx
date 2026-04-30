@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 
-import type { Conflict, ResolutionSuggestion } from '@yappc/collab/crdt';
+import type { Conflict, ResolutionSuggestion } from 'yappc-collab/crdt';
 
 export interface ManualConflictResolution {
   conflictId: string;

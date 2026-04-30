@@ -24,21 +24,21 @@ export default defineConfig({
         find: '@ghatana/design-system',
         replacement: resolve(__dirname, '../../../../platform/typescript/design-system/src'),
       },
-      { find: '@yappc/core', replacement: resolve(__dirname, '../libs/yappc-core/src') },
-      { find: '@yappc/api', replacement: resolve(__dirname, '../libs/api/src') },
+      { find: 'yappc-core', replacement: resolve(__dirname, '../libs/yappc-core/src') },
+      { find: 'yappc-api', replacement: resolve(__dirname, '../libs/api/src') },
       {
-        find: '@yappc/devsecops',
+        find: 'yappc-devsecops',
         replacement: resolve(__dirname, '../libs/yappc-devsecops/src'),
       },
-      { find: '@yappc/auth', replacement: resolve(__dirname, '../libs/yappc-auth/src') },
+      { find: 'yappc-auth', replacement: resolve(__dirname, '../libs/yappc-auth/src') },
       {
-        find: '@yappc/auth/rbac',
+        find: 'yappc-auth/rbac',
         replacement: resolve(__dirname, '../libs/yappc-auth/src/auth/rbac'),
       },
-      { find: '@yappc/chat', replacement: resolve(__dirname, '../libs/yappc-chat/src') },
-      { find: '@yappc/collab', replacement: resolve(__dirname, '../libs/collab/src') },
+      { find: 'yappc-chat', replacement: resolve(__dirname, '../libs/yappc-chat/src') },
+      { find: 'yappc-collab', replacement: resolve(__dirname, '../libs/collab/src') },
       {
-        find: '@yappc/initialization-ui',
+        find: 'yappc-initialization-ui',
         replacement: resolve(__dirname, '../libs/yappc-initialization-ui/src'),
       },
       {
@@ -46,8 +46,8 @@ export default defineConfig({
         replacement: resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
       },
       {
-        find: '@yappc/state',
-        replacement: resolve(__dirname, 'src/__mocks__/@yappc/state.ts'),
+        find: 'yappc-state',
+        replacement: resolve(__dirname, 'src/__mocks__/yappc-state.ts'),
       },
       {
         find: '@ghatana/platform-utils',
@@ -105,18 +105,18 @@ export default defineConfig({
         replacement: resolve(__dirname, 'src/__mocks__/@monaco-editor/react.ts'),
       },
       {
-        find: '@yappc/product-theme/lifecycle-presets',
+        find: 'yappc-product-theme/lifecycle-presets',
         replacement: resolve(
           __dirname,
           '../libs/yappc-product-theme/src/lifecycle-presets.ts'
         ),
       },
       {
-        find: '@yappc/product-theme/mui-bridge',
+        find: 'yappc-product-theme/mui-bridge',
         replacement: resolve(__dirname, '../libs/yappc-product-theme/src/mui-bridge.tsx'),
       },
       {
-        find: '@yappc/product-theme',
+        find: 'yappc-product-theme',
         replacement: resolve(__dirname, '../libs/yappc-product-theme/src/index.ts'),
       },
       {
@@ -135,7 +135,7 @@ export default defineConfig({
         find: '@ghatana/ui-builder',
         replacement: resolve(__dirname, '../../../../platform/typescript/ui-builder/src/index.ts'),
       },
-      { find: '@yappc/ui', replacement: resolve(__dirname, '../libs/yappc-ui/src/index.ts') },
+      { find: 'yappc-ui', replacement: resolve(__dirname, '../libs/yappc-ui/src/index.ts') },
       {
         find: '@capacitor/core',
         replacement: resolve(__dirname, 'src/__mocks__/@capacitor/core.ts'),

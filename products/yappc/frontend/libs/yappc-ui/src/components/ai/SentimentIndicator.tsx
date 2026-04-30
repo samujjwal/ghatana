@@ -44,8 +44,8 @@ import {
   Collapse,
 } from '@ghatana/design-system';
 
-import type { SentimentAnalyzer } from '@yappc/ai/core';
-import { type SentimentResult } from '@yappc/ai/core';
+import type { SentimentAnalyzer } from 'yappc-ai/core';
+import { type SentimentResult } from 'yappc-ai/core';
 
 import { resolveMuiColor } from '../utils/safePalette';
 

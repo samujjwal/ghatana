@@ -212,8 +212,53 @@ tasks.register<CheckDataCloudOpenApiRouterSync>("checkDataCloudOpenApiSync") {
     routerSource.set(file("src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java"))
 }
 
+abstract class CheckForbiddenLauncherMarkers : DefaultTask() {
+
+    @get:InputDirectory
+    abstract val sourceDir: DirectoryProperty
+
+    @TaskAction
+    fun check() {
+        val patterns = listOf(
+            Regex("temporarily disabled due to .*type mismatch", RegexOption.IGNORE_CASE),
+            Regex("TODO:\\s*Fix\\s+.*type mismatch", RegexOption.IGNORE_CASE)
+        )
+
+        val violations = mutableListOf<String>()
+        sourceDir.get().asFile
+            .walkTopDown()
+            .filter { it.isFile && it.extension == "java" }
+            .forEach { file ->
+                file.readLines().forEachIndexed { index, line ->
+                    if (patterns.any { it.containsMatchIn(line) }) {
+                        val relativePath = file.relativeTo(project.rootDir).path
+                        violations.add("$relativePath:${index + 1}: ${line.trim()}")
+                    }
+                }
+            }
+
+        if (violations.isNotEmpty()) {
+            val report = buildString {
+                appendLine("Forbidden temporary-disable/type-mismatch markers found in production launcher source:")
+                violations.sorted().forEach { appendLine(" - $it") }
+                appendLine("Remove these markers by implementing capability gates or production code paths.")
+            }
+            throw GradleException(report)
+        }
+
+        logger.lifecycle("✓ No forbidden temporary-disable/type-mismatch markers found in launcher production source")
+    }
+}
+
+tasks.register<CheckForbiddenLauncherMarkers>("checkForbiddenLauncherMarkers") {
+    group = "verification"
+    description = "Fails build if forbidden temporary-disable or type-mismatch TODO markers are present in launcher production source."
+    sourceDir.set(layout.projectDirectory.dir("src/main/java"))
+}
+
 tasks.named("check") {
     dependsOn("checkDataCloudOpenApiSync")
+    dependsOn("checkForbiddenLauncherMarkers")
 }
 
 spotbugs {

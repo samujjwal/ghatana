@@ -1,5 +1,5 @@
 /**
- * @yappc/chat — Chat library
+ * yappc-chat — Chat library
  *
  * Provides real-time chat hooks and components.
  *

@@ -6,7 +6,7 @@
  * @module DevSecOps/Timeline/utils
  */
 
-import type { Item, Milestone } from '@yappc/core/types/devsecops';
+import type { Item, Milestone } from 'yappc-core/types/devsecops';
 
 import type {
   TimelineScale,

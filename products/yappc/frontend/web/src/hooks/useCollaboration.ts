@@ -23,7 +23,7 @@ import {
   type ConnectionState,
   type ProviderConfig,
   type ProviderEvent,
-} from '@yappc/collab';
+} from 'yappc-collab';
 import type { Presence, User } from '../services/collaboration/types';
 
 export interface UseCollaborationOptions {

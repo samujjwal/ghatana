@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-import type { IAIService, CompletionOptions } from '@yappc/ai/core';
+import type { IAIService, CompletionOptions } from 'yappc-ai/core';
 
 /**
  * AI completion state

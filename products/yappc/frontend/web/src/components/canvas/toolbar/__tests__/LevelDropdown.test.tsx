@@ -19,7 +19,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { LevelDropdown } from '../LevelDropdown';
-import type { AbstractionLevel } from '@yappc/core/types/abstractionLevel';
+import type { AbstractionLevel } from 'yappc-core/types/abstractionLevel';
 
 describe('LevelDropdown', () => {
     const defaultProps = {

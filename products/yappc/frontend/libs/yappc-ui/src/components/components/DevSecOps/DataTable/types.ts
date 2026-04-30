@@ -4,7 +4,7 @@
  * @module DevSecOps/DataTable/types
  */
 
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 
 /**
  * Sort direction

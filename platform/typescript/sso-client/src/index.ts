@@ -416,16 +416,16 @@ export function tokenTtlSeconds(token: string): number {
 }
 
 // ─── OAuth sub-module ──────────────────────────────────────────────────────
-// Migrated from `@yappc/auth` oauth/.
+// Migrated from `yappc-auth` oauth/.
 // Provides OAuth 2.0 provider configuration, utilities, and the useOAuth hook.
 export * from './oauth';
 
 // ─── RBAC sub-module ───────────────────────────────────────────────────────
-// Migrated from `@yappc/auth` rbac/.
+// Migrated from `yappc-auth` rbac/.
 // Provides platform-level role definitions, permissions, and workspace persona types.
 export * from './rbac';
 
 // ─── Security utilities ────────────────────────────────────────────────────
-// Migrated from `@yappc/auth` security/.
+// Migrated from `yappc-auth` security/.
 // Provides CSP header construction, nonce generation, and Fastify/Express middleware.
 export * from './security';

@@ -41,7 +41,7 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-} from '@yappc/ui';
+} from 'yappc-ui';
 
 // =============================================================================
 // Types

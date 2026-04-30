@@ -26,8 +26,8 @@ import type {
     WorkspaceMember,
     PersonaType,
     WorkspacePermission,
-} from '@yappc/auth/rbac';
-import { WorkspaceRole, ROLE_PERMISSIONS } from '@yappc/auth/rbac';
+} from 'yappc-auth/rbac';
+import { WorkspaceRole, ROLE_PERMISSIONS } from 'yappc-auth/rbac';
 import { getWorkspaceService } from '../state/atoms';
 
 // ============================================================================

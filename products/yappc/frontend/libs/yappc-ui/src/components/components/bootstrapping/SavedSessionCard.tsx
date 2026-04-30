@@ -42,8 +42,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

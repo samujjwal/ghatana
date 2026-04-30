@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'jotai';
-import type { Project } from '@yappc/core/types';
+import type { Project } from 'yappc-core/types';
 
 import {
   projectsAtom,

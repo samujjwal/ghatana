@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
-import type { Project } from '@yappc/core/types';
+import type { Project } from 'yappc-core/types';
 
 export interface NavItem {
   id: string;

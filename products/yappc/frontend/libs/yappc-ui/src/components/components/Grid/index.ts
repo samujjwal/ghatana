@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { Grid as GlobalGrid } from '@ghatana/design-system';
 
-import type { GridProps as GlobalGridProps } from '@yappc/ui';
+import type { GridProps as GlobalGridProps } from 'yappc-ui';
 
 export interface GridProps extends Omit<
   GlobalGridProps,

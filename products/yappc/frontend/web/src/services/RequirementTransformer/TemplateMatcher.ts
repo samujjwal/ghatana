@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 import { dashboardTemplate } from './templates/dashboard';
 import { formTemplate } from './templates/form';
 import { tableTemplate } from './templates/table';

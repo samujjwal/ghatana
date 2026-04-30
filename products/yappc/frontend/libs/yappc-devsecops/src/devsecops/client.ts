@@ -12,7 +12,7 @@ import type {
   Phase,
   User,
   BulkOperationResult,
-} from '@yappc/core/types/devsecops';
+} from 'yappc-core/types/devsecops';
 
 /**
  * DevSecOps API Client

@@ -14,7 +14,7 @@ import { ThemeProvider as GhatanaThemeProvider } from '@ghatana/theme';
 import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
 
-import { MuiThemeConnector } from '@yappc/product-theme/mui-bridge';
+import { MuiThemeConnector } from 'yappc-product-theme/mui-bridge';
 
 interface AppThemeProviderProps {
   children: React.ReactNode;

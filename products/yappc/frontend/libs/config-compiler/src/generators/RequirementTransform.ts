@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { IntentConfig, RequirementConfig } from '@yappc/config-schema';
+import type { IntentConfig, RequirementConfig } from 'yappc-config-schema';
 
 /**
  * Requirement Transform implementation

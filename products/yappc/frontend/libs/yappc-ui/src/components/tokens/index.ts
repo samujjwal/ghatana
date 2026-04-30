@@ -1,7 +1,7 @@
 /**
  * Design tokens index — delegates to @ghatana/tokens (platform canonical source).
  * YAPPC-specific tokens are added on top.
- * Consumers should import from @yappc/ui (or @yappc/ui/components) to access these.
+ * Consumers should import from yappc-ui (or yappc-ui/components) to access these.
  */
 
 // YAPPC token modules consumed by the local theme implementation.

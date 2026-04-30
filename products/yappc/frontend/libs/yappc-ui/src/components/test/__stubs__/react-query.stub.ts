@@ -1,7 +1,7 @@
 /**
  * Minimal stub for @tanstack/react-query — used in test environments
  * where the real package is not installed but the module is pulled in
- * transitively via @yappc/state barrel exports.
+ * transitively via yappc-state barrel exports.
  *
  * Only stubs the subset of exports that appear in the codebase.
  */

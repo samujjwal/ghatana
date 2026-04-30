@@ -39,7 +39,7 @@ import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 
-import { validationStateAtom } from '@yappc/state';
+import { validationStateAtom } from 'yappc-state';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,10 +47,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@yappc/ui';
-import { ScrollArea } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'yappc-ui';
+import { ScrollArea } from 'yappc-ui';
 
 // =============================================================================
 // Types

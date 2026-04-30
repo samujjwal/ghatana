@@ -16,7 +16,7 @@ import type {
   Prediction,
   AnomalyAlert,
   RecommendationSuggestion,
-} from '@yappc/core/types';
+} from 'yappc-core/types';
 
 /**
  * Copilot chat message

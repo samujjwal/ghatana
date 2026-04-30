@@ -2,7 +2,7 @@
 /* Use native crypto.randomUUID to avoid uuid dependency in tests */
 const uuidv4 = () => crypto.randomUUID();
 
-import { faker } from '@yappc/core/testing/mocks/faker-shim';
+import { faker } from 'yappc-core/testing/mocks/faker-shim';
 
 /**
  *

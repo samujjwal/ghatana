@@ -22,17 +22,10 @@ public class YappcArtifactRepository {
     /**
      * Constructor with artifact store.
      *
-     * @param store Artifact store implementation (InMemoryArtifactStore for dev, DataCloudArtifactStore for prod)
+     * @param store Artifact store implementation (DataCloudArtifactStore for production)
      */
     public YappcArtifactRepository(ArtifactStore store) {
-        this.store = store;
-    }
-
-    /**
-     * Default constructor with in-memory store.
-     */
-    public YappcArtifactRepository() {
-        this(new InMemoryArtifactStore());
+        this.store = Objects.requireNonNull(store, "ArtifactStore must not be null");
     }
 
     /**

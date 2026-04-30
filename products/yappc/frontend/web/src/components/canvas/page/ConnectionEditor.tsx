@@ -25,7 +25,7 @@ import type {
   EventConnection,
   DataConnection,
   NavigationConnection,
-} from '@yappc/config-schema';
+} from 'yappc-config-schema';
 
 /**
  * @doc.type component

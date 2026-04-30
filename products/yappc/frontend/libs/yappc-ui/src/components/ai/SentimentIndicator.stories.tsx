@@ -3,7 +3,7 @@
  */
 
 import { Box, Typography, TextField, Stack } from '@ghatana/design-system';
-import { SentimentAnalyzer, type SentimentResult } from '@yappc/ai/core';
+import { SentimentAnalyzer, type SentimentResult } from 'yappc-ai/core';
 import { useState } from 'react';
 
 import { SentimentIndicator } from './SentimentIndicator';

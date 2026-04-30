@@ -52,7 +52,7 @@ import {
   LinearProgress,
 } from '@ghatana/design-system';
 
-import type { Recommendation, RecommendationType } from '@yappc/core/types';
+import type { Recommendation, RecommendationType } from 'yappc-core/types';
 
 /**
  * RecommendationList props

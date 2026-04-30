@@ -28,7 +28,7 @@ import {
   updateStoryStatusAction,
   moveStoryToSprintAction,
   toggleFeatureFlagAction,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_SPRINT,
   LIST_SPRINTS,

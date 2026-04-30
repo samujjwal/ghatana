@@ -22,7 +22,7 @@ import {
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
 import { ConfigEditor } from '../components/config-editor/ConfigEditor';
 

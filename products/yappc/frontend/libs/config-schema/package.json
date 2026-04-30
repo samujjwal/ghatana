@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/config-schema",
+  "name": "yappc-config-schema",
   "version": "1.0.0",
   "description": "YAPPC Config Schema - Declarative configuration schemas for data-driven product development",
   "main": "./dist/index.js",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "zod": "^3.22.4",
-    "@yappc/core": "workspace:*"
+    "yappc-core": "workspace*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

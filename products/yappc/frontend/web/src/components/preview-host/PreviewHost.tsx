@@ -18,7 +18,7 @@ import {
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
-import type { PageConfig } from '@yappc/config-schema';
+import type { PageConfig } from 'yappc-config-schema';
 
 import { ConfigRenderer } from './ConfigRenderer';
 import { MockDataManager } from './MockDataManager';

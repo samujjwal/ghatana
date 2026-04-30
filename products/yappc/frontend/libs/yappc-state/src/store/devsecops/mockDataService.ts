@@ -8,12 +8,12 @@
  * @module state/devsecops/mockDataService
  */
 
-import type { Item, Phase, Milestone } from '@yappc/core/types/devsecops';
+import type { Item, Phase, Milestone } from 'yappc-core/types/devsecops';
 import {
   generateDevSecOpsItems,
   devsecopsPhases,
   devsecopsMilestones,
-} from '@yappc/core/types/devsecops/fixtures';
+} from 'yappc-core/types/devsecops/fixtures';
 
 /**
  * Generate mock items for testing.

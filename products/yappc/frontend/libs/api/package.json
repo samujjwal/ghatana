@@ -1,5 +1,5 @@
 {
-    "name": "@yappc/api",
+    "name": "yappc-api",
     "private": true,
     "version": "0.0.0",
     "type": "module",
@@ -25,7 +25,7 @@
     },
     "dependencies": {
         "@ghatana/api": "workspace:*",
-        "@yappc/core": "workspace:*",
-        "@yappc/state": "workspace:*"
+        "yappc-core": "workspace:*",
+        "yappc-state": "workspace*"
     }
 }

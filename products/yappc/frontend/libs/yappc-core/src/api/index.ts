@@ -1,7 +1,7 @@
 /**
- * @yappc/core — API sub-module
+ * yappc-core — API sub-module
  *
- * YAPPC-specific API layer migrated from `@yappc/api`:
+ * YAPPC-specific API layer migrated from `yappc-api`:
  * Apollo/GraphQL client, GraphQL operations, AI client, AuthService, and hooks.
  *
  * @doc.type module

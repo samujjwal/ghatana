@@ -37,7 +37,7 @@ import type {
   Question,
   InputMode,
   AgentStatus,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   currentPhaseAtom,
   conversationHistoryAtom,
@@ -47,13 +47,13 @@ import {
   agentStatusMessageAtom,
   inputModeAtom,
   confidenceScoreAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@yappc/ui';
+} from 'yappc-ui';
 
 import { AIChatInterface } from '../chat/AIChatInterface';
 

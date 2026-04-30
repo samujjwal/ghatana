@@ -17,7 +17,7 @@
 import { useAtom } from 'jotai';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
-import { authUserAtom, authTokenAtom } from '@yappc/state';
+import { authUserAtom, authTokenAtom } from 'yappc-state';
 
 // ============================================================================
 // Types

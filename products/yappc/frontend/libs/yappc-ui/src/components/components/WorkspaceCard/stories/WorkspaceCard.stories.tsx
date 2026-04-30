@@ -1,7 +1,7 @@
 import {
   StorybookProvider,
   storybookWorkspacesAtom,
-} from '@yappc/state/storybook';
+} from 'yappc-state/storybook';
 import { useAtom } from 'jotai';
 import React from 'react';
 import { action } from 'storybook/actions';

@@ -11,7 +11,7 @@
  */
 
 import { useMemo } from 'react';
-import { usePersonas } from '@yappc/state/config-hooks';
+import { usePersonas } from 'yappc-state/config-hooks';
 import { getPersonaIcon } from '../utils/personaIcons';
 import type { PersonaType, PersonaCategory } from '../types/persona';
 

@@ -23,7 +23,7 @@ import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { smartWorkflowGenerationBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import SessionBootstrap from '../lib/auth/session';
-import { generateWorkflowDraft, type WorkflowDraft } from '../lib/api/ai';
+import { generateWorkflowDraft, type WorkflowDraft } from '../api/ai-operations.service';
 import { workflowsApi, type WorkflowEdge, type WorkflowNode } from '../lib/api/workflows';
 import {
   Sparkles,

@@ -10,7 +10,7 @@ import { clsx } from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import type { Notification as NotificationType } from '@yappc/core/types';
+import type { Notification as NotificationType } from 'yappc-core/types';
 
 interface NotificationAction {
   label: string;

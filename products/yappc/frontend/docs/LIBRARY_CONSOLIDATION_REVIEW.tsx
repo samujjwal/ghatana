@@ -70,16 +70,16 @@ const PHASE_1_COMPONENTS = [
 
 const PHASE_2_COMPONENTS = [
   // Component | Current Location | Target Location | Status
-  ['PropertyPanels', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['OutlinePanel', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['MinimapPanel', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['GroupingToolbar', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['TestGenToolbar', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['OperationsToolbar', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['ContextMenu', 'ide', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['SplitPanel', 'ide', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['ResizablePanel', 'canvas', '@yappc/ui', 'NOT_EXTRACTED'],
-  ['LoadingStates', 'ide', '@yappc/ui', 'NOT_EXTRACTED'],
+  ['PropertyPanels', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['OutlinePanel', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['MinimapPanel', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['GroupingToolbar', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['TestGenToolbar', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['OperationsToolbar', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['ContextMenu', 'ide', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['SplitPanel', 'ide', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['ResizablePanel', 'canvas', 'yappc-ui', 'NOT_EXTRACTED'],
+  ['LoadingStates', 'ide', 'yappc-ui', 'NOT_EXTRACTED'],
 ];
 
 // =============================================================================

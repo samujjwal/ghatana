@@ -1,5 +1,5 @@
 /**
- * @yappc/state — State Management Library
+ * yappc-state — State Management Library
  *
  * Complete Jotai-based state management system with type-safe hooks and persistence.
  *

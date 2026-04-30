@@ -71,8 +71,8 @@ import {
   complianceStatusAtom,
   securityScoreAtom,
   securityAlertsAtom,
-} from '@yappc/state';
-import { CardDescription, CardTitle } from '@yappc/ui';
+} from 'yappc-state';
+import { CardDescription, CardTitle } from 'yappc-ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,11 +80,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-import { ScrollArea } from '@yappc/ui';
-import { TabsContent, TabsList, TabsTrigger } from '@yappc/ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
+import { ScrollArea } from 'yappc-ui';
+import { TabsContent, TabsList, TabsTrigger } from 'yappc-ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

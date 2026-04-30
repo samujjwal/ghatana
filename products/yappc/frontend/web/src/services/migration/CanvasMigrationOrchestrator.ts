@@ -12,7 +12,7 @@ import {
 import { UnifiedRegistry } from '../registry/UnifiedRegistry';
 import { logger } from '../../utils/Logger';
 
-import type { ComponentDefinition } from '@yappc/core/types';
+import type { ComponentDefinition } from 'yappc-core/types';
 
 /**
  *

@@ -20,8 +20,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { UnifiedCanvasToolbar } from '../UnifiedCanvasToolbar';
-import type { CanvasMode } from '@yappc/core/types/canvasMode';
-import type { AbstractionLevel } from '@yappc/core/types/abstractionLevel';
+import type { CanvasMode } from 'yappc-core/types/canvasMode';
+import type { AbstractionLevel } from 'yappc-core/types/abstractionLevel';
 
 describe('UnifiedCanvasToolbar', () => {
     const defaultProps = {

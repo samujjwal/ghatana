@@ -25,7 +25,7 @@ import {
   MenuItem,
 } from '@ghatana/design-system';
 
-import { selectedWorkflowIdAtom } from '@yappc/state';
+import { selectedWorkflowIdAtom } from 'yappc-state';
 
 import { useWorkflows } from '../../hooks/useConfig';
 

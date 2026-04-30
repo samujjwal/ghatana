@@ -2,4 +2,4 @@ export {
   TabNavigation,
   type TabNavigationItem,
   type TabNavigationProps,
-} from '@yappc/ui/navigation-ui';
+} from 'yappc-ui/navigation-ui';

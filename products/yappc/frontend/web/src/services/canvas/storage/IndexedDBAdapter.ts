@@ -1,10 +1,9 @@
-// @ts-nocheck
 /**
  * IndexedDB Storage Adapter
- * 
+ *
  * High-performance storage adapter using IndexedDB for unlimited canvas storage.
  * Supports compression, quota management, and efficient querying.
- * 
+ *
  * @doc.type service
  * @doc.purpose IndexedDB-based persistent storage
  * @doc.layer product
@@ -42,15 +41,6 @@ export class IndexedDBAdapter implements StorageAdapter {
     constructor(options: { enableCompression?: boolean } = {}) {
         this.enableCompression = options.enableCompression ?? true;
         this.compressionService = new CompressionService();
-    }
-    saveSnapshot(snapshot: CanvasSnapshot): Promise<void> {
-        throw new Error('Method not implemented.');
-    }
-    loadSnapshot(id: string): Promise<CanvasSnapshot | null> {
-        throw new Error('Method not implemented.');
-    }
-    listSnapshots(projectId: string, canvasId: string): Promise<CanvasSnapshot[]> {
-        throw new Error('Method not implemented.');
     }
 
     /**
@@ -94,30 +84,37 @@ export class IndexedDBAdapter implements StorageAdapter {
     }
 
     /**
-     * S// Compress snapshot data before saving
+     * Save a snapshot to IndexedDB
+     */
+    public async saveSnapshot(snapshot: CanvasSnapshot): Promise<void> {
+        await this.ensureInitialized();
+
+        // Compress snapshot data before saving
         const dataToSave = this.enableCompression
             ? await this.compressSnapshot(snapshot)
             : snapshot;
-        
+
         return new Promise((resolve, reject) => {
             const transaction = this.db!.transaction([this.SNAPSHOT_STORE], 'readwrite');
             const store = transaction.objectStore(this.SNAPSHOT_STORE);
-            const request = store.put(dataToSavetion([this.SNAPSHOT_STORE], 'readwrite');
-            const store = transaction.objectStore(this.SNAPSHOT_STORE);
-            
-            // Compress snapshot data before saving
-            const compressed = this.compressSnapshot(snapshot);
-            const request = store.put(compressed);
-            
+            const request = store.put(dataToSave);
+
             request.onsuccess = () => resolve();
             request.onerror = () => reject(new Error(`Failed to save snapshot: ${request.error}`));
         });
     }
-    async (resolve, reject) => {
+
+    /**
+     * Load a snapshot by ID
+     */
+    public async loadSnapshot(id: string): Promise<CanvasSnapshot | null> {
+        await this.ensureInitialized();
+
+        return new Promise((resolve, reject) => {
             const transaction = this.db!.transaction([this.SNAPSHOT_STORE], 'readonly');
             const store = transaction.objectStore(this.SNAPSHOT_STORE);
             const request = store.get(id);
-            
+
             request.onsuccess = async () => {
                 if (request.result) {
                     try {
@@ -125,29 +122,28 @@ export class IndexedDBAdapter implements StorageAdapter {
                         resolve(decompressed);
                     } catch (error) {
                         reject(new Error(`Failed to decompress snapshot: ${error}`));
-                    }ransaction([this.SNAPSHOT_STORE], 'readonly');
-            const store = transaction.objectStore(this.SNAPSHOT_STORE);
-            const request = store.get(id);
-            
-            request.onsuccess = () => {
-                if (request.result) {
-                    const decompressed = this.decompressSnapshot(request.result);
-                    resolve(decompressed);
+                    }
                 } else {
                     resolve(null);
                 }
             };
-            
+
             request.onerror = () => reject(new Error(`Failed to load snapshot: ${request.error}`));
         });
     }
-    
-    /**async (resolve, reject) => {
+
+    /**
+     * List all snapshots for a project and canvas
+     */
+    public async listSnapshots(projectId: string, canvasId: string): Promise<CanvasSnapshot[]> {
+        await this.ensureInitialized();
+
+        return new Promise((resolve, reject) => {
             const transaction = this.db!.transaction([this.SNAPSHOT_STORE], 'readonly');
             const store = transaction.objectStore(this.SNAPSHOT_STORE);
             const index = store.index('project_canvas');
             const request = index.getAll([projectId, canvasId]);
-            
+
             request.onsuccess = async () => {
                 try {
                     const decompressPromises = request.result.map(s => this.decompressSnapshot(s));
@@ -157,19 +153,13 @@ export class IndexedDBAdapter implements StorageAdapter {
                     resolve(snapshots);
                 } catch (error) {
                     reject(new Error(`Failed to decompress snapshots: ${error}`));
-                }etAll([projectId, canvasId]);
-            
-            request.onsuccess = () => {
-                const snapshots = request.result.map(s => this.decompressSnapshot(s));
-                // Sort by timestamp descending (newest first)
-                snapshots.sort((a, b) => b.timestamp - a.timestamp);
-                resolve(snapshots);
+                }
             };
-            
+
             request.onerror = () => reject(new Error(`Failed to list snapshots: ${request.error}`));
         });
     }
-    
+
     /**
      * Delete a snapshot
      */
@@ -227,6 +217,15 @@ export class IndexedDBAdapter implements StorageAdapter {
     }
 
     /**
+     * Ensure database is initialized
+     */
+    private async ensureInitialized(): Promise<void> {
+        if (!this.db) {
+            await this.init();
+        }
+    }
+
+    /**
      * Compress snapshot data using CompressionService
      */
     private async compressSnapshot(snapshot: CanvasSnapshot): Promise<unknown> {
@@ -244,7 +243,7 @@ export class IndexedDBAdapter implements StorageAdapter {
     private async decompressSnapshot(compressed: unknown): Promise<CanvasSnapshot> {
         // Check if snapshot is compressed
         if (!compressed.metadata?.compressed && !compressed._compressed) {
-            return compressed; // Not compressed, return as-is
+            return compressed as CanvasSnapshot; // Not compressed, return as-is
         }
 
         // Use compression service if available
@@ -253,7 +252,7 @@ export class IndexedDBAdapter implements StorageAdapter {
         }
 
         // Legacy compressed format - return as-is (minus metadata)
-        const { _compressed, ...snapshot } = compressed;
+        const { _compressed, ...snapshot } = compressed as any;
         return snapshot;
     }
 

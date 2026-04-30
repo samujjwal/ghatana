@@ -24,8 +24,8 @@ import {
   authTokenAtom,
   authLoadingAtom,
   authErrorAtom,
-} from '@yappc/state';
-import type { User } from '@yappc/core/types';
+} from 'yappc-state';
+import type { User } from 'yappc-core/types';
 
 export { createDemoUser, useAuth } from './useAuth';
 export type { LoginCredentials, RegisterData } from './useAuth';

@@ -27,7 +27,7 @@ import {
 import { History as HistoryIcon, RotateCcw as RestoreIcon } from 'lucide-react';
 import React, { useState } from 'react';
 
-import type { CanvasVersion } from '@yappc/core/types';
+import type { CanvasVersion } from 'yappc-core/types';
 
 export interface CanvasVersionHistoryProps {
   versions: CanvasVersion[];

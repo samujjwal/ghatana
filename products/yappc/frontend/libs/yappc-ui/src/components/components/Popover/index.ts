@@ -4,4 +4,4 @@ export {
   PopoverClose,
   type PopoverProps,
   type PopoverPlacement,
-} from '@yappc/ui/base-ui';
+} from 'yappc-ui/base-ui';

@@ -313,8 +313,8 @@ function resolveWorkspaceImport(
 ): string | null {
   // Map workspace imports to actual paths
   const mappings: Record<string, string> = {
-    '@yappc/core': 'products/yappc/frontend/libs/yappc-core',
-    '@yappc/ui': 'products/yappc/frontend/libs/yappc-ui',
+    'yappc-core': 'products/yappc/frontend/libs/yappc-core',
+    'yappc-ui': 'products/yappc/frontend/libs/yappc-ui',
     '@ghatana/design-system': 'platform/typescript/design-system',
   };
 

@@ -28,7 +28,7 @@ import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Web Speech API Types (for environments without native types)

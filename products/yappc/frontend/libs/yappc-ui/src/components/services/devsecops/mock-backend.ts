@@ -21,7 +21,7 @@ import type {
   Phase,
   SortConfig,
   User,
-} from '@yappc/core/types/devsecops';
+} from 'yappc-core/types/devsecops';
 
 /**
  * Mock data generator utilities

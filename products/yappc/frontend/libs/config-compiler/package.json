@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/config-compiler",
+  "name": "yappc-config-compiler",
   "version": "1.0.0",
   "description": "YAPPC Config Compiler - Compiles declarative configs into React code and canvas scenes",
   "main": "./dist/index.js",
@@ -34,8 +34,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@yappc/config-schema": "workspace:*",
-    "@yappc/core": "workspace:*"
+    "yappc-config-schema": "workspace:*",
+    "yappc-core": "workspace*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

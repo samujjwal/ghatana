@@ -27,7 +27,7 @@
 import { Box, CssBaseline, Toolbar } from '@mui/material';
 import React, { useState } from 'react';
 
-import type { Workspace, Project } from '@yappc/core/types';
+import type { Workspace, Project } from 'yappc-core/types';
 
 import { Header, type HeaderUser } from './Header';
 import { Sidebar, type NavItem } from './Sidebar';

@@ -4,7 +4,7 @@
  * @module DevSecOps/FilterPanel/types
  */
 
-import type { ItemFilter } from '@yappc/core/types/devsecops';
+import type { ItemFilter } from 'yappc-core/types/devsecops';
 
 /**
  * Props for the FilterPanel component

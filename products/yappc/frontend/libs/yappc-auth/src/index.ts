@@ -1,5 +1,5 @@
 /**
- * @yappc/auth — DEPRECATED thin re-export.
+ * yappc-auth — DEPRECATED thin re-export.
  *
  * @deprecated This package is superseded by `@ghatana/sso-client`.
  * All OAuth, RBAC, and security utilities have been migrated to

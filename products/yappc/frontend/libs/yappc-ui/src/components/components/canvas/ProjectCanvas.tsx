@@ -87,7 +87,7 @@ import {
   canvasNodesAtom,
   canvasEdgesAtom,
   selectedCanvasNodeAtom,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,8 +95,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@yappc/ui';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+} from 'yappc-ui';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // =============================================================================
 // Types

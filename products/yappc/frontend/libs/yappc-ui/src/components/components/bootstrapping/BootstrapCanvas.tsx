@@ -35,7 +35,7 @@ import { Tooltip } from '@ghatana/design-system';
 import type {
   BootstrapPhase,
   CanvasNode as BootstrapNode,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   currentPhaseAtom,
   canvasNodesAtom,
@@ -45,8 +45,8 @@ import {
   canvasViewportAtom,
   validationReportAtom,
   commandSuggestionsAtom,
-} from '@yappc/state';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+} from 'yappc-state';
+import { TooltipContent, TooltipTrigger } from 'yappc-ui';
 
 // Reuse existing canvas component
 import { ProjectCanvas, type ProjectCanvasRef } from '../canvas/ProjectCanvas';

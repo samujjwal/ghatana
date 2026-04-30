@@ -1,5 +1,5 @@
 /**
- * @yappc/product-theme — lifecycle-presets unit tests
+ * yappc-product-theme — lifecycle-presets unit tests
  *
  * Covers PHASE_THEMES shape, getPhaseTheme, getPhaseLabel, getPhaseIcon.
  */

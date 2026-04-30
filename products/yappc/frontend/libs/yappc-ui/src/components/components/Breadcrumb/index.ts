@@ -10,4 +10,4 @@ export {
   Breadcrumb,
   type BreadcrumbItemType,
   type BreadcrumbProps,
-} from '@yappc/ui/navigation-ui';
+} from 'yappc-ui/navigation-ui';

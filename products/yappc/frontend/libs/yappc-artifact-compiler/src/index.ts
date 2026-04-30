@@ -1,5 +1,5 @@
 /**
- * @fileoverview @yappc/artifact-compiler - Bidirectional artifact-to-model pipeline.
+ * @fileoverview yappc-artifact-compiler - Bidirectional artifact-to-model pipeline.
  *
  * @doc.type package
  * @doc.purpose Provides ArtifactGraph indexing, SemanticProductModel synthesis,

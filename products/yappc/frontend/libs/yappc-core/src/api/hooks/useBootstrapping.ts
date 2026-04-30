@@ -26,7 +26,7 @@ import {
   removeCanvasNodeAction,
   undoCanvasAction as undoAction,
   redoCanvasAction as redoAction,
-} from '@yappc/state';
+} from 'yappc-state';
 import {
   GET_BOOTSTRAP_SESSION,
   LIST_BOOTSTRAP_SESSIONS,

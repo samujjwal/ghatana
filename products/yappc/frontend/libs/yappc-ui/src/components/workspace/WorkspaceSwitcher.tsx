@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 
-import type { Workspace } from '@yappc/core/types';
+import type { Workspace } from 'yappc-core/types';
 
 export interface WorkspaceSwitcherProps {
   workspaces: Workspace[];

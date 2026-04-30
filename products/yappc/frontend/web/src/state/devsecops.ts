@@ -5,9 +5,9 @@ import type {
   Phase,
   ActivityLog,
   PersonaDashboardSummary,
-} from '@yappc/core/types/devsecops';
-import { createDevSecOpsOverview } from '@yappc/core/types/devsecops/fixtures';
-import { devsecopsClient } from '@yappc/api/devsecops/client';
+} from 'yappc-core/types/devsecops';
+import { createDevSecOpsOverview } from 'yappc-core/types/devsecops/fixtures';
+import { devsecopsClient } from 'yappc-api/devsecops/client';
 
 // ---------------------------------------------------------------------------
 // Local store atoms (migrated from @ghatana/yappc-store/devsecops → inline)

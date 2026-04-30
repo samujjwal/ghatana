@@ -229,22 +229,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
 
       // Library aliases (matching tsconfig.base.json)
-      '@yappc/ui': path.resolve(__dirname, '../libs/yappc-ui/src'),
-      '@yappc/state': path.resolve(__dirname, '../libs/yappc-state/src'),
-      '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
-      '@yappc/ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
-      '@yappc/api': path.resolve(__dirname, '../libs/api/src'),
-      '@yappc/core': path.resolve(__dirname, '../libs/yappc-core/src'),
-      '@yappc/core/api': path.resolve(__dirname, '../libs/yappc-core/src/api'),
-      '@yappc/devsecops': path.resolve(__dirname, '../libs/yappc-devsecops/src'),
-      '@yappc/auth/rbac': path.resolve(
+      'yappc-ui': path.resolve(__dirname, '../libs/yappc-ui/src'),
+      'yappc-state': path.resolve(__dirname, '../libs/yappc-state/src'),
+      'yappc-shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
+      'yappc-ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
+      'yappc-api': path.resolve(__dirname, '../libs/api/src'),
+      'yappc-core': path.resolve(__dirname, '../libs/yappc-core/src'),
+      'yappc-core/api': path.resolve(__dirname, '../libs/yappc-core/src/api'),
+      'yappc-devsecops': path.resolve(__dirname, '../libs/yappc-devsecops/src'),
+      'yappc-auth/rbac': path.resolve(
         __dirname,
         '../libs/yappc-auth/dist/auth/rbac/index.js'
       ),
-      '@yappc/auth': path.resolve(__dirname, '../libs/yappc-auth/dist'),
-      '@yappc/chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
-      '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
-      '@yappc/initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
+      'yappc-auth': path.resolve(__dirname, '../libs/yappc-auth/dist'),
+      'yappc-chat': path.resolve(__dirname, '../libs/yappc-chat/src'),
+      'yappc-collab': path.resolve(__dirname, '../libs/collab/src'),
+      'yappc-initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
       '@ghatana/code-editor': path.resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
       '@yappc/ide': path.resolve(__dirname, '../libs/ide/src'),
 

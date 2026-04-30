@@ -41,7 +41,7 @@ import {
 import { SearchFilterBar } from '../components/common/SearchFilterBar';
 import { LoadingState, EmptyState, NotFoundState } from '../components/common/AsyncStates';
 import { TrustBadge } from '../components/governance/TrustSignal';
-import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../lib/api/ai';
+import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../api/ai-operations.service';
 import { aiOperationsService } from '../api/ai-operations.service';
 import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import {

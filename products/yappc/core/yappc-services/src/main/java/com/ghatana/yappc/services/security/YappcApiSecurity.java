@@ -6,12 +6,14 @@ import com.ghatana.platform.http.security.filter.RateLimitFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.rbac.InMemoryPolicyRepository;
+import com.ghatana.platform.security.rbac.PolicyRepository;
 import com.ghatana.platform.security.rbac.PolicyService;
 import io.activej.http.AsyncServlet;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,8 +43,38 @@ public final class YappcApiSecurity {
      *
      * @param apiServlet API servlet to secure
      * @param resource RBAC resource name (for example, yappc:lifecycle-api)
+     * @param policyRepository Durable policy repository (required for production)
      * @return read/write secured servlet pair
      */
+    public static SecurityRoutes secureApi(AsyncServlet apiServlet, String resource, PolicyRepository policyRepository) {
+        int rateLimitMax = parseIntEnv("YAPPC_RATE_LIMIT_MAX", 100);
+        long rateLimitWindow = parseLongEnv("YAPPC_RATE_LIMIT_WINDOW", 60L);
+
+        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
+        ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
+
+        PolicyService policyService = buildPolicyService(resource, policyRepository);
+        RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
+        RBACFilter writeFilter = new RBACFilter(policyService, "write", resource);
+
+        AsyncServlet readSecured = authFilter.secure(readFilter.secure(rateLimitFilter.wrap(apiServlet)));
+        AsyncServlet writeSecured = authFilter.secure(writeFilter.secure(rateLimitFilter.wrap(apiServlet)));
+
+        return new SecurityRoutes(readSecured, writeSecured);
+    }
+
+    /**
+     * Secures an API servlet with consistent YAPPC authn/authz controls.
+     *
+     * <p><b>Deprecated:</b> This version uses in-memory policy storage which is non-durable across restarts.
+     * Use {@link #secureApi(AsyncServlet, String, PolicyRepository)} with a durable PolicyRepository for production.</p>
+     *
+     * @param apiServlet API servlet to secure
+     * @param resource RBAC resource name (for example, yappc:lifecycle-api)
+     * @return read/write secured servlet pair
+     * @deprecated Use {@link #secureApi(AsyncServlet, String, PolicyRepository)} with durable storage
+     */
+    @Deprecated
     public static SecurityRoutes secureApi(AsyncServlet apiServlet, String resource) {
         int rateLimitMax = parseIntEnv("YAPPC_RATE_LIMIT_MAX", 100);
         long rateLimitWindow = parseLongEnv("YAPPC_RATE_LIMIT_WINDOW", 60L);
@@ -50,7 +82,7 @@ public final class YappcApiSecurity {
         RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
         ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
 
-        PolicyService policyService = buildPolicyService(resource);
+        PolicyService policyService = buildPolicyService(resource, new InMemoryPolicyRepository());
         RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
         RBACFilter writeFilter = new RBACFilter(policyService, "write", resource);
 
@@ -65,15 +97,40 @@ public final class YappcApiSecurity {
      *
      * @param endpoint servlet to secure
      * @param resource RBAC resource name (for example, yappc:lifecycle-metrics)
+     * @param policyRepository Durable policy repository (required for production)
      * @return endpoint secured with API key auth, RBAC read permission, and rate limiting
      */
+    public static AsyncServlet secureReadEndpoint(AsyncServlet endpoint, String resource, PolicyRepository policyRepository) {
+        int rateLimitMax = parseIntEnv("YAPPC_RATE_LIMIT_MAX", 100);
+        long rateLimitWindow = parseLongEnv("YAPPC_RATE_LIMIT_WINDOW", 60L);
+
+        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
+        ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
+        PolicyService policyService = buildPolicyService(resource, policyRepository);
+        RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
+
+        return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));
+    }
+
+    /**
+     * Secures a non-API endpoint that should be read-only (for example, metrics).
+     *
+     * <p><b>Deprecated:</b> This version uses in-memory policy storage which is non-durable across restarts.
+     * Use {@link #secureReadEndpoint(AsyncServlet, String, PolicyRepository)} with a durable PolicyRepository for production.</p>
+     *
+     * @param endpoint servlet to secure
+     * @param resource RBAC resource name (for example, yappc:lifecycle-metrics)
+     * @return endpoint secured with API key auth, RBAC read permission, and rate limiting
+     * @deprecated Use {@link #secureReadEndpoint(AsyncServlet, String, PolicyRepository)} with durable storage
+     */
+    @Deprecated
     public static AsyncServlet secureReadEndpoint(AsyncServlet endpoint, String resource) {
         int rateLimitMax = parseIntEnv("YAPPC_RATE_LIMIT_MAX", 100);
         long rateLimitWindow = parseLongEnv("YAPPC_RATE_LIMIT_WINDOW", 60L);
 
         RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
         ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
-        PolicyService policyService = buildPolicyService(resource);
+        PolicyService policyService = buildPolicyService(resource, new InMemoryPolicyRepository());
         RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
 
         return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));
@@ -84,6 +141,7 @@ public final class YappcApiSecurity {
      *
      * @param endpoint servlet to secure
      * @param resource RBAC resource name
+     * @param policyRepository Policy repository (use InMemoryPolicyRepository for tests)
      * @param apiKeys comma-separated list of valid API keys
      * @param tenantMap API key to tenant mapping (key1=tenant1;key2=tenant2)
      * @param roleMap API key to role mapping (key1=role1|role2)
@@ -94,6 +152,7 @@ public final class YappcApiSecurity {
     public static AsyncServlet secureReadEndpoint(
             AsyncServlet endpoint,
             String resource,
+            PolicyRepository policyRepository,
             String apiKeys,
             String tenantMap,
             String roleMap,
@@ -102,7 +161,7 @@ public final class YappcApiSecurity {
         RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
         ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(
                 buildApiKeyResolver(apiKeys, tenantMap, roleMap, "admin"));
-        PolicyService policyService = buildPolicyService(resource);
+        PolicyService policyService = buildPolicyService(resource, policyRepository);
         RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
 
         return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));
@@ -159,8 +218,8 @@ public final class YappcApiSecurity {
         };
     }
 
-    private static PolicyService buildPolicyService(String resource) {
-        PolicyService service = new PolicyService(new InMemoryPolicyRepository());
+    private static PolicyService buildPolicyService(String resource, PolicyRepository policyRepository) {
+        PolicyService service = new PolicyService(Objects.requireNonNull(policyRepository, "PolicyRepository must not be null"));
 
         // Admins get full access. Editors and agents can read/write. Viewers are read-only.
         service.createPolicy("yappc-admin-" + resource, "YAPPC admin policy", "admin", resource, Set.of("*"));

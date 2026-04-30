@@ -1,5 +1,5 @@
 /**
- * @yappc/devsecops — YAPPC DevSecOps API client.
+ * yappc-devsecops — YAPPC DevSecOps API client.
  *
  * @doc.type module
  * @doc.purpose DevSecOps-specific API client and integrations

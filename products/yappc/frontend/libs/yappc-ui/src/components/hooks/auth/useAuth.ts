@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   authStateAtom,
   type AuthState,
-} from '@yappc/state';
-import type { User } from '@yappc/core/types';
+} from 'yappc-state';
+import type { User } from 'yappc-core/types';
 
 interface AuthUserProfile extends User {
   avatar?: string;

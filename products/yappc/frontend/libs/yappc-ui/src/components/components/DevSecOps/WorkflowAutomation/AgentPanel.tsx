@@ -51,13 +51,13 @@ import {
   useAgentExecution,
   useWorkflowAnalytics,
 } from '../../../hooks/agent/useWorkflowAgents';
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 import type {
   WorkflowAgent,
   WorkflowAgentRole,
   AgentExecutionResult,
   AgentCapability,
-} from '@yappc/core/types/devsecops/workflow-automation';
+} from 'yappc-core/types/devsecops/workflow-automation';
 
 // ============================================================================
 // TYPES

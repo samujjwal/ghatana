@@ -42,7 +42,7 @@ import {
   Alert,
 } from '@ghatana/design-system';
 
-import type { Item } from '@yappc/core/types/devsecops';
+import type { Item } from 'yappc-core/types/devsecops';
 
 import { DataTable } from './DataTable';
 import type { DataTableProps, FilterConfig, FilterValue } from './types';

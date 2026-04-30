@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { PageConfig, RequirementConfig } from '@yappc/config-schema';
+import type { PageConfig, RequirementConfig } from 'yappc-config-schema';
 
 import { TemplateMatcher } from './TemplateMatcher';
 

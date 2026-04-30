@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import type { RequirementConfig } from '@yappc/config-schema';
+import type { RequirementConfig } from 'yappc-config-schema';
 
 /**
  * @doc.type service
