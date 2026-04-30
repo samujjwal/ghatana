@@ -38,7 +38,6 @@ import { useAiSuggestions } from '@/components/monitoring/AiSuggestionsPanel';
 import { useSelection } from '@/hooks/useSelection';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { useConsent } from '@/components/privacy/ConsentManager';
-import { useSpeechSynthesis } from '@audio-video/ui';
 import { Button } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
@@ -103,8 +102,6 @@ export function MonitoringDashboardPage() {
 
   const { data: runs = [], isLoading: runsLoading } = useLivePipelineRuns(30);
   const cancelRun = useCancelRun();
-  const { speak } = useSpeechSynthesis();
-  const { consentGranted: voiceConsent } = useConsent('voice_processing');
 
   // AI suggestions surfaced per run row instead of a separate panel (TASK-M6)
   const { suggestions: aiSuggestions = [] } = useAiSuggestions(tenantId);
@@ -144,9 +141,6 @@ export function MonitoringDashboardPage() {
     onSuccess: () => {
       deselectAll();
       qc.invalidateQueries({ queryKey: ['aep', 'runs', tenantId] });
-      if (voiceConsent) {
-        speak(`Cancelled ${selectedIds.size} pipeline runs`);
-      }
     },
   });
 

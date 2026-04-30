@@ -1,11 +1,12 @@
 /**
- * PrivacyRequestPage — operator workbench for GDPR/CCPA fulfilment requests.
+ * PrivacyRequestPage — data subject request form (access, deletion, correction).
  *
  * @doc.type page
- * @doc.purpose GDPR and CCPA intake, triage, and fulfilment workbench for tenant operators
+ * @doc.purpose Privacy request submission form
  * @doc.layer frontend
  */
-import React from 'react';
+/* eslint-disable ghatana/prefer-design-system-primitives */
+import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import {

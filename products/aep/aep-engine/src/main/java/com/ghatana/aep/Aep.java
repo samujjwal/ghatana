@@ -629,14 +629,22 @@ public final class Aep {
                         continue;
                     }
 
-                    waitForDependencies(step.dependsOn(), completedSteps);
+                    waitForDependenciesWithNotify(step.dependsOn(), completedSteps);
                     executePipelineStep(tenantId, pipeline.id(), step);
                     completedSteps.put(stepId, true);
+                    // Notify waiting threads that this step completed
+                    synchronized (completedSteps) {
+                        completedSteps.notifyAll();
+                    }
                 } catch (Exception exception) {
                     logger.error("Failed to execute step {} in pipeline {}: {}",
                         stepId, pipeline.id(), exception.getMessage(), exception);
                     errors.add(exception);
                     completedSteps.put(stepId, false);
+                    // Notify waiting threads even on failure
+                    synchronized (completedSteps) {
+                        completedSteps.notifyAll();
+                    }
                 }
             }
 
@@ -648,6 +656,35 @@ public final class Aep {
                     new RuntimeException(
                         "Pipeline execution failed with " + errors.size() + " errors: " + allErrors,
                         errors.get(0)));
+            }
+        }
+
+        private void waitForDependenciesWithNotify(List<String> dependencies, Map<String, Boolean> completedSteps) {
+            if (dependencies.isEmpty()) return;
+            
+            // Use proper wait/notify coordination instead of polling
+            synchronized (completedSteps) {
+                long startTime = System.currentTimeMillis();
+                long maxWait = 10000; // 10 seconds
+                
+                while (true) {
+                    boolean allComplete = dependencies.stream()
+                        .allMatch(dep -> completedSteps.containsKey(dep) && completedSteps.get(dep));
+                    
+                    if (allComplete) return;
+                    
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    if (elapsed >= maxWait) {
+                        throw new RuntimeException("Timeout waiting for dependencies: " + dependencies);
+                    }
+                    
+                    try {
+                        completedSteps.wait(maxWait - elapsed);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Interrupted while waiting for dependencies", e);
+                    }
+                }
             }
         }
 
@@ -693,31 +730,6 @@ public final class Aep {
             }
             
             return result;
-        }
-
-        private void waitForDependencies(List<String> dependencies, Map<String, Boolean> completedSteps) {
-            if (dependencies.isEmpty()) return;
-            
-            // Poll for completion (simple implementation)
-            // In production, this should use proper async coordination
-            int maxWait = 10000; // 10 seconds
-            int waited = 0;
-            while (waited < maxWait) {
-                boolean allComplete = dependencies.stream()
-                    .allMatch(dep -> completedSteps.containsKey(dep) && completedSteps.get(dep));
-                
-                if (allComplete) return;
-                
-                try {
-                    Thread.sleep(50);
-                    waited += 50;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrupted while waiting for dependencies", e);
-                }
-            }
-            
-            throw new RuntimeException("Timeout waiting for dependencies: " + dependencies);
         }
 
         @Override

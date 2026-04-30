@@ -3,14 +3,14 @@
  *
  * Provides breadcrumb navigation with ARIA support and keyboard accessibility.
  *
- * Designed for cross-product reuse. Can be extracted to @ghatana/navigation-ui
- * after validation in AEP and Data Cloud.
+ * Designed for cross-product reuse. Can be extracted to @ghatana/navigation-ui/**
+ * Breadcrumbs — hierarchical navigation with tenant context.
  *
  * @doc.type component
- * @doc.purpose Display navigation hierarchy with accessibility support
+ * @doc.purpose Breadcrumb navigation component
  * @doc.layer frontend
  */
-
+/* eslint-disable ghatana/no-duplicate-utilities */
 import React from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 

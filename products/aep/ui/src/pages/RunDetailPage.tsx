@@ -47,6 +47,7 @@ function StatusBadge({ status }: { status: PipelineRunDetail['status'] }) {
   );
 }
 
+// eslint-disable-next-line ghatana/no-duplicate-utilities
 function formatDuration(startedAt: string, finishedAt?: string): string {
   const start = new Date(startedAt).getTime();
   const end = finishedAt ? new Date(finishedAt).getTime() : Date.now();

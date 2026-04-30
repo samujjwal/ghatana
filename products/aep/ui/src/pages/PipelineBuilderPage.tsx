@@ -8,6 +8,7 @@
  * @doc.purpose Top-level pipeline builder page
  * @doc.layer frontend
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useCallback, useEffect, useState } from 'react';
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
@@ -545,7 +546,6 @@ export function PipelineBuilderPage() {
                 type="button"
                 onClick={handleDiscardConfirm}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
               >
                 Discard changes

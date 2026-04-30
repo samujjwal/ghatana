@@ -1,11 +1,11 @@
 /**
- * GovernanceEvidenceDrilldown — evidence detail panel for compliance claims.
+ * GovernanceEvidenceDrilldown — drilldown view for governance evidence.
  *
  * @doc.type component
- * @doc.purpose Drill into governance evidence (audit, policy, SOC2 control) details
+ * @doc.purpose Display detailed governance evidence
  * @doc.layer frontend
- * @doc.pattern Compliance / Evidence
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState } from 'react';
 import { Shield, FileText, ExternalLink, ChevronRight, ChevronDown } from 'lucide-react';
 

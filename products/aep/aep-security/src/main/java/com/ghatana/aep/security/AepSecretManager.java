@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Production-grade multi-source secret manager for AEP.
@@ -83,6 +86,9 @@ public final class AepSecretManager {
     /** Default Vault KV v2 secret path. */
     static final String DEFAULT_VAULT_PATH = "secret/data/aep";
 
+    /** Default secret rotation check interval: 5 minutes. */
+    static final long DEFAULT_ROTATION_CHECK_INTERVAL_MS = 300_000L;
+
     // -------------------------------------------------------------------------
     //  Configuration
     // -------------------------------------------------------------------------
@@ -91,6 +97,7 @@ public final class AepSecretManager {
     private final String vaultAddr;
     private final String vaultToken;
     private final String vaultSecretPath;
+    private final long rotationCheckIntervalMs;
 
     // -------------------------------------------------------------------------
     //  Vault response cache
@@ -98,9 +105,45 @@ public final class AepSecretManager {
     private final ConcurrentHashMap<String, CachedSecret> vaultCache = new ConcurrentHashMap<>();
 
     // -------------------------------------------------------------------------
+    //  Secret rotation tracking
+    // -------------------------------------------------------------------------
+    private final ConcurrentHashMap<String, SecretVersion> secretVersions = new ConcurrentHashMap<>();
+
+    // -------------------------------------------------------------------------
     //  HTTP client for Vault (lazily initialised to avoid cost when Vault unused)
     // -------------------------------------------------------------------------
     private volatile HttpClient httpClient;
+
+    // -------------------------------------------------------------------------
+    //  Rotation scheduler
+    // -------------------------------------------------------------------------
+    private volatile ScheduledExecutorService rotationScheduler;
+
+    // =========================================================================
+    //  Internal types (defined early to avoid forward reference issues)
+    // =========================================================================
+
+    /**
+     * Vault cache entry with TTL expiry.
+     *
+     * @param value       cached secret value
+     * @param expiresAtMs wall-clock ms timestamp after which this entry is stale
+     */
+    private record CachedSecret(String value, long expiresAtMs) {
+        boolean isValid() {
+            return System.currentTimeMillis() < expiresAtMs;
+        }
+    }
+
+    /**
+     * Secret version metadata for rotation detection.
+     *
+     * @param lastModifiedMs file last modification timestamp
+     * @param fileSize       file size in bytes
+     */
+    private record SecretVersion(long lastModifiedMs, long fileSize) {
+        // Used to detect file changes for K8s secret rotation
+    }
 
     // =========================================================================
     //  Factory methods
@@ -113,12 +156,23 @@ public final class AepSecretManager {
      * @return system-backed secret manager
      */
     public static AepSecretManager fromSystem() {
+        return fromSystem(DEFAULT_ROTATION_CHECK_INTERVAL_MS);
+    }
+
+    /**
+     * Creates a secret manager backed by the real system environment and standard
+     * K8s / Vault configuration, with a custom rotation check interval.
+     *
+     * @param rotationCheckIntervalMs interval in milliseconds between rotation checks
+     * @return system-backed secret manager with automated rotation
+     */
+    public static AepSecretManager fromSystem(long rotationCheckIntervalMs) {
         Map<String, String> env = System.getenv();
         Path secretsDir = Path.of(env.getOrDefault("AEP_SECRETS_DIR", DEFAULT_SECRETS_DIR));
         String vaultAddr        = env.get("VAULT_ADDR");
         String vaultToken       = env.get("VAULT_TOKEN");
         String vaultSecretPath  = env.getOrDefault("VAULT_SECRET_PATH", DEFAULT_VAULT_PATH);
-        return new AepSecretManager(env, secretsDir, vaultAddr, vaultToken, vaultSecretPath);
+        return new AepSecretManager(env, secretsDir, vaultAddr, vaultToken, vaultSecretPath, rotationCheckIntervalMs);
     }
 
     /**
@@ -130,7 +184,7 @@ public final class AepSecretManager {
      */
     public static AepSecretManager forTesting(Map<String, String> envOverrides) {
         return new AepSecretManager(envOverrides, Path.of("/nonexistent-test-secrets"),
-                null, null, DEFAULT_VAULT_PATH);
+                null, null, DEFAULT_VAULT_PATH, Long.MAX_VALUE); // Disable rotation in tests
     }
 
     /**
@@ -138,11 +192,21 @@ public final class AepSecretManager {
      */
     AepSecretManager(Map<String, String> envSource, Path secretsDir,
                      String vaultAddr, String vaultToken, String vaultSecretPath) {
+        this(envSource, secretsDir, vaultAddr, vaultToken, vaultSecretPath, DEFAULT_ROTATION_CHECK_INTERVAL_MS);
+    }
+
+    /**
+     * Package-private full constructor with custom rotation interval.
+     */
+    AepSecretManager(Map<String, String> envSource, Path secretsDir,
+                     String vaultAddr, String vaultToken, String vaultSecretPath,
+                     long rotationCheckIntervalMs) {
         this.envSource       = Objects.requireNonNull(envSource, "envSource");
         this.secretsDir      = Objects.requireNonNull(secretsDir, "secretsDir");
         this.vaultAddr       = vaultAddr;
         this.vaultToken      = vaultToken;
         this.vaultSecretPath = vaultSecretPath != null ? vaultSecretPath : DEFAULT_VAULT_PATH;
+        this.rotationCheckIntervalMs = rotationCheckIntervalMs;
     }
 
     // =========================================================================
@@ -165,6 +229,8 @@ public final class AepSecretManager {
         Optional<String> fromFile = readFromFile(key);
         if (fromFile.isPresent()) {
             log.debug("Secret '{}' resolved from K8s volume", key);
+            // Track version for rotation detection
+            trackSecretVersion(key);
             return fromFile;
         }
 
@@ -233,6 +299,133 @@ public final class AepSecretManager {
         log.info("All secret cache entries invalidated");
     }
 
+    /**
+     * Starts automated secret rotation checking.
+     *
+     * <p>When enabled, the secret manager will periodically check for secret changes
+     * and automatically invalidate cached values when rotation is detected. This is
+     * particularly useful for K8s secret volumes and Vault secrets that are rotated
+     * externally.</p>
+     *
+     * @return this secret manager for chaining
+     */
+    public AepSecretManager startRotationChecker() {
+        if (rotationScheduler != null && !rotationScheduler.isShutdown()) {
+            log.info("Secret rotation checker already running");
+            return this;
+        }
+
+        rotationScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "secret-rotation-checker");
+            t.setDaemon(true);
+            return t;
+        });
+
+        rotationScheduler.scheduleAtFixedRate(
+            this::checkForRotations,
+            rotationCheckIntervalMs,
+            rotationCheckIntervalMs,
+            TimeUnit.MILLISECONDS
+        );
+
+        log.info("Secret rotation checker started with interval {} ms", rotationCheckIntervalMs);
+        return this;
+    }
+
+    /**
+     * Stops automated secret rotation checking.
+     *
+     * @return this secret manager for chaining
+     */
+    public AepSecretManager stopRotationChecker() {
+        if (rotationScheduler != null && !rotationScheduler.isShutdown()) {
+            rotationScheduler.shutdown();
+            try {
+                if (!rotationScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    rotationScheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                rotationScheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            log.info("Secret rotation checker stopped");
+        }
+        return this;
+    }
+
+    /**
+     * Checks for secret rotations and invalidates cache when changes are detected.
+     *
+     * <p>This method is called periodically by the rotation scheduler. It compares
+     * current secret values with previously cached versions and triggers cache
+     * invalidation when changes are detected.</p>
+     */
+    private void checkForRotations() {
+        try {
+            // Check K8s file-based secrets for changes
+            checkK8sSecretRotations();
+            
+            // Check Vault secrets for changes (cache expiry handles most cases)
+            checkVaultSecretRotations();
+        } catch (Exception e) {
+            log.warn("Error during secret rotation check: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Checks K8s secret file modifications by comparing file modification times.
+     */
+    private void checkK8sSecretRotations() {
+        if (!Files.isDirectory(secretsDir)) {
+            return;
+        }
+
+        try {
+            Files.list(secretsDir)
+                .filter(Files::isRegularFile)
+                .forEach(file -> {
+                    String key = file.getFileName().toString();
+                    try {
+                        long lastModified = Files.getLastModifiedTime(file).toMillis();
+                        SecretVersion currentVersion = new SecretVersion(lastModified, Files.size(file));
+                        
+                        SecretVersion previousVersion = secretVersions.get(key);
+                        if (previousVersion != null && !previousVersion.equals(currentVersion)) {
+                            log.info("Secret '{}' rotation detected (file modified), invalidating cache", key);
+                            invalidate(key);
+                        }
+                        
+                        secretVersions.put(key, currentVersion);
+                    } catch (IOException e) {
+                        log.debug("Could not check rotation for secret '{}': {}", key, e.getMessage());
+                    }
+                });
+        } catch (IOException e) {
+            log.debug("Could not list secrets directory: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Checks Vault secrets for changes by comparing cached values with fresh reads.
+     */
+    private void checkVaultSecretRotations() {
+        if (vaultAddr == null || vaultAddr.isBlank()) {
+            return;
+        }
+
+        // For Vault, we rely on cache expiry (VAULT_CACHE_TTL_MS) to handle most rotations
+        // This method performs a proactive check for secrets that are about to expire
+        long now = Instant.now().toEpochMilli();
+        long expiryThreshold = now + (VAULT_CACHE_TTL_MS / 2); // Check at half TTL
+
+        vaultCache.forEach((key, cached) -> {
+            if (cached.expiresAtMs < expiryThreshold) {
+                log.debug("Secret '{}' cache nearing expiry, pre-fetching from Vault", key);
+                invalidate(key); // Force re-fetch on next access
+            }
+        });
+    }
+
     // =========================================================================
     //  Tier implementations
     // =========================================================================
@@ -240,7 +433,7 @@ public final class AepSecretManager {
     /**
      * Reads a secret from the Kubernetes projected volume mount.
      *
-     * <p>Files are re-read on every calll so that secret rotation writes take
+     * <p>Files are re-read on every call so that secret rotation writes take
      * effect without a restart.
      */
     private Optional<String> readFromFile(String key) {
@@ -254,6 +447,23 @@ public final class AepSecretManager {
         } catch (IOException e) {
             log.warn("Failed to read K8s secret file for key '{}': {}", key, e.getMessage());
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Tracks the version of a secret for rotation detection.
+     */
+    private void trackSecretVersion(String key) {
+        Path secretFile = secretsDir.resolve(key);
+        if (!Files.isReadable(secretFile)) {
+            return;
+        }
+        try {
+            long lastModified = Files.getLastModifiedTime(secretFile).toMillis();
+            long fileSize = Files.size(secretFile);
+            secretVersions.put(key, new SecretVersion(lastModified, fileSize));
+        } catch (IOException e) {
+            // Ignore tracking errors
         }
     }
 
@@ -350,21 +560,5 @@ public final class AepSecretManager {
             }
         }
         return httpClient;
-    }
-
-    // =========================================================================
-    //  Internal types
-    // =========================================================================
-
-    /**
-     * Vault cache entry with TTL expiry.
-     *
-     * @param value       cached secret value
-     * @param expiresAtMs wall-clock ms timestamp after which this entry is stale
-     */
-    private record CachedSecret(String value, long expiresAtMs) {
-        boolean isValid() {
-            return System.currentTimeMillis() < expiresAtMs;
-        }
     }
 }

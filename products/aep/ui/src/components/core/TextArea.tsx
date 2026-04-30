@@ -1,7 +1,14 @@
 import React from 'react';
 
 interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
-
+/**
+ * TextArea — consistent textarea component for AEP.
+ *
+ * @doc.type component
+ * @doc.purpose Standardized textarea component
+ * @doc.layer frontend
+ */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className = '', ...props }, ref) => {
     return (

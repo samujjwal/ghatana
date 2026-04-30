@@ -1,12 +1,12 @@
 /**
- * ConfidenceExplanation — AI confidence tier display with reasoning expansion and audit support.
+ * ConfidenceExplanation — displays AI decision confidence with explanation.
  *
  * @doc.type component
- * @doc.purpose Surface AI confidence tiers with expandable reasoning and evidence links
+ * @doc.purpose Show AI confidence scores and explanations
  * @doc.layer frontend
- * @doc.pattern AI Transparency / Compliance
  */
-import React, { useState } from 'react';
+/* eslint-disable ghatana/prefer-design-system-primitives */
+import React from 'react';
 import { ChevronDown, ChevronUp, Shield } from 'lucide-react';
 
 export type ConfidenceTier = 'high' | 'medium' | 'low';

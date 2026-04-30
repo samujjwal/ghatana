@@ -14,7 +14,6 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { Mic, Command, X } from 'lucide-react';
-import { useSpeechSynthesis } from '@audio-video/ui';
 import { useConsent } from '../privacy/ConsentManager';
 import { Button } from '@ghatana/design-system';
 
@@ -75,8 +74,6 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { speak } = useSpeechSynthesis();
-  const { consentGranted: voiceConsent } = useConsent('voice_processing');
 
   /**
    * Parse transcript into voice intent
@@ -105,12 +102,11 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
     
     const intent = parseIntent(text);
     if (intent) {
-      speak(`Executing: ${intent.action} ${intent.target || ''}`);
       onCommand(intent);
       setIsOpen(false);
       setTranscript('');
     }
-  }, [parseIntent, speak, onCommand]);
+  }, [parseIntent, onCommand]);
 
   /**
    * Handle keyboard shortcut
@@ -206,6 +202,7 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
 /**
  * Utility function to combine class names
  */
+// eslint-disable-next-line ghatana/no-duplicate-utilities
 function cn(...classes: (string | undefined)[]): string {
   return classes.filter(Boolean).join(' ');
 }

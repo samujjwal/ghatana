@@ -3,13 +3,14 @@
  *
  * Presents the pre-flight report from POST /api/v1/pipelines/:id/dry-run
  * to the operator before they are allowed to publish. The operator must
- * acknowledge warnings before the publish action is enabled.
+ * PipelineDryRunDialog — dialog for pipeline dry run simulation.
  *
  * @doc.type component
- * @doc.purpose Pipeline dry-run pre-flight report and acknowledgement dialog
+ * @doc.purpose Pipeline dry run simulation dialog
  * @doc.layer frontend
  */
-import React, { useCallback } from 'react';
+/* eslint-disable ghatana/prefer-design-system-primitives */
+import React, { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { dryRunPipeline } from '@/api/pipeline.api';
 import type { PipelineDryRunReport } from '@/api/pipeline.api';

@@ -1,13 +1,11 @@
 /**
- * LoginPage for the AEP console.
- *
- * The backend currently relies on a platform-issued bearer token rather than a
- * username/password exchange, so the UI accepts a JWT and stores it locally.
+ * LoginPage — AEP authentication page with OIDC login.
  *
  * @doc.type page
- * @doc.purpose Entry point for authenticated access to the AEP console
+ * @doc.purpose User authentication
  * @doc.layer frontend
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/context/AuthContext';

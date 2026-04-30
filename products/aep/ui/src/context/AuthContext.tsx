@@ -318,7 +318,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearClientAuthState();
       },
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [authTokenState, clearClientAuthState, fetchVerifiedRoles, hasAnyRole, hasRole, isBootstrappingSession, isVerifyingAuth, roles, sessionTokenState],
   );
 

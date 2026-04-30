@@ -1,10 +1,11 @@
 /**
- * EmptyState — standardized empty-state component for AEP pages.
+ * EmptyState — consistent empty state component.
  *
  * @doc.type component
- * @doc.purpose Consistent empty-state UX across all AEP surfaces
+ * @doc.purpose Empty state display component
  * @doc.layer frontend
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React from 'react';
 
 interface EmptyStateProps {

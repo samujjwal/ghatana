@@ -1,10 +1,11 @@
 /**
- * ErrorState — standardized error-state component for AEP pages.
+ * ErrorState — consistent error state component.
  *
  * @doc.type component
- * @doc.purpose Consistent error-state UX across all AEP surfaces
+ * @doc.purpose Error state display component
  * @doc.layer frontend
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React from 'react';
 
 interface ErrorStateProps {

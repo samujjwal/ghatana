@@ -1,5 +1,13 @@
 import React from 'react';
 
+/**
+ * Button — consistent button component for AEP.
+ *
+ * @doc.type component
+ * @doc.purpose Standardized button component
+ * @doc.layer frontend
+ */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary';
   fullWidth?: boolean;

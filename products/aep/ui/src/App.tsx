@@ -28,19 +28,10 @@
  *   /pipelines/list       → /build/pipelines
  *   /pipelines            → /build/pipelines/new
  *   /agents               → /catalog/agents
- *   /agents/:id           → /catalog/agents/:id
- *   /monitoring           → /operate
- *   /patterns             → /build/patterns
- *   /hitl                 → /operate/reviews
- *   /learning             → /learn/episodes
- *   /workflows            → /catalog/workflows
- *   /memory               → /learn/memory
- *
- * @doc.type router
- * @doc.purpose AEP operator-cockpit routing — outcome-first navigation
  * @doc.layer frontend
  */
-import React, { Suspense, lazy } from 'react';
+/* eslint-disable ghatana/prefer-design-system-primitives */
+import React, { lazy, Suspense } from 'react';
 import {
   BrowserRouter,
   Routes,

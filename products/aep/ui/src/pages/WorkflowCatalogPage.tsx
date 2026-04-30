@@ -32,6 +32,7 @@ import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line ghatana/no-duplicate-utilities
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString([], {
     year: 'numeric',

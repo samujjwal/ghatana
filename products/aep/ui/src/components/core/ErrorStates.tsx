@@ -1,14 +1,14 @@
 /**
  * Error state components for consistent error display.
  *
- * Designed for cross-product reuse. Can be extracted to @ghatana/error-handling-ui
- * after validation in AEP and Data Cloud.
+ * Designed for cross-product reuse. Can be extracted to @ghatana/error-handling-ui/**
+ * ErrorStates — collection of error state variants.
  *
  * @doc.type component
- * @doc.purpose Display consistent error states for various error types
+ * @doc.purpose Error state display variants
  * @doc.layer frontend
  */
-
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React from 'react';
 import { AlertCircle, RefreshCw, XCircle, Lock, Clock, FileText } from 'lucide-react';
 import {

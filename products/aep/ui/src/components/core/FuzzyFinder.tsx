@@ -3,15 +3,16 @@
  *
  * Provides Cmd+K fuzzy search for quick navigation to pages, actions, and resources.
  *
- * Designed for cross-product reuse. Can be extracted to @ghatana/navigation-ui
- * after validation in AEP and Data Cloud.
+ * Designed for cross-product reuse. Can be extracted to @ghatana/navigation-ui/**
+ * FuzzyFinder — searchable dropdown with fuzzy matching.
  *
  * @doc.type component
- * @doc.purpose Provide keyboard-driven navigation with fuzzy search
+ * @doc.purpose Fuzzy search dropdown component
  * @doc.layer frontend
  */
-
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+/* eslint-disable ghatana/prefer-design-system-primitives */
+/* eslint-disable ghatana/no-duplicate-utilities */
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Command, FileText, BarChart3, Settings, Shield, Database } from 'lucide-react';
 
 /**

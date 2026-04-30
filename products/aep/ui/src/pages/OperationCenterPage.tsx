@@ -21,11 +21,9 @@ export function OperationCenterPage(): React.ReactElement {
       <OperationCenter
         maxRows={25}
         onRetry={(id) => {
-          // eslint-disable-next-line no-console
           console.info('Retry operation', id);
         }}
         onCancel={(id) => {
-          // eslint-disable-next-line no-console
           console.info('Cancel operation', id);
         }}
       />

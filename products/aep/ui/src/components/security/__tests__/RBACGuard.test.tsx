@@ -1,11 +1,13 @@
 /**
  * Tests for RBACGuard component
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RBACGuard, usePermission, usePermissions } from '../RBACGuard';
 import { createAepTestWrapper } from '@/__tests__/test-utils/wrapper';
+import React from 'react';
 
 vi.mock('@/lib/http-client', () => ({
   apiClient: {

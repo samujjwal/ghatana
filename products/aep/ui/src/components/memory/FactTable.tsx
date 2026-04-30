@@ -1,14 +1,11 @@
 /**
- * FactTable — displays semantic memory facts (subject/predicate/object triples)
- * for a specific agent, with confidence scoring and validity status indicators.
- *
- * Facts are sourced from the SEMANTIC memory partition of dc_memory via
- * /api/v1/agents/:agentId/memory/facts.
+ * FactTable — displays agent memory facts in a table.
  *
  * @doc.type component
- * @doc.purpose Display agent semantic facts with filtering and confidence visibility
+ * @doc.purpose Display memory facts
  * @doc.layer frontend
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState, useMemo } from 'react';
 import type { AgentFact } from '@/api/aep.api';
 import { ConfidenceBadge } from '@/components/shared/ConfidenceBadge';

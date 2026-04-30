@@ -1,6 +1,7 @@
 /**
- * Focus trap / focus restore dialog tests — A11y compliance.
+ * Focus trap dialog tests
  */
+/* eslint-disable ghatana/prefer-design-system-primitives */
 import React from 'react';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';

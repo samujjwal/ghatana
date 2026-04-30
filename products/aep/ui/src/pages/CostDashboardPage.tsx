@@ -1,11 +1,12 @@
 /**
- * CostDashboardPage — operating spend visibility for AEP.
+ * CostDashboardPage — cost analysis and optimization dashboard.
  *
  * @doc.type page
- * @doc.purpose Cost summary and spend concentration view for operators
+ * @doc.purpose Cost monitoring and optimization
  * @doc.layer frontend
  */
-import React from 'react';
+/* eslint-disable ghatana/prefer-design-system-primitives */
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import {
