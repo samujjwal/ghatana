@@ -86,6 +86,16 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     iconName: 'Database',
     description: 'Explore and manage data collections',
   },
+  connectors: {
+    path: '/connectors',
+    label: 'Connectors',
+    minimumShellRole: 'operator',
+    lifecycle: 'active',
+    capabilities: ['data-connectors', 'external-data-sources'],
+    discoverable: true,
+    iconName: 'Network',
+    description: 'Manage external data source connectors',
+  },
   pipelines: {
     path: '/pipelines',
     label: 'Pipelines',

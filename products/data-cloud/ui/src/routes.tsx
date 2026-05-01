@@ -14,7 +14,7 @@
 
 import React from 'react';
 import type { RouteObject } from 'react-router';
-import { Navigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
@@ -101,6 +101,18 @@ const DataFabricPage = React.lazy(() =>
 const AgentPluginManagerPage = React.lazy(() =>
   import('./pages/AgentPluginManagerPage').then((m) => ({ default: m.AgentPluginManagerPage }))
 );
+const DataConnectorsPage = React.lazy(() =>
+  import('./features/data-fabric/components/DataConnectorsPage').then((m) => ({ default: m.DataConnectorsPage }))
+);
+
+// Wrapper component to provide required props to DataConnectorsPage
+const DataConnectorsPageWrapper: React.FC = () => {
+  const navigate = useNavigate();
+  return React.createElement(DataConnectorsPage, {
+    onCreateClick: () => navigate('/connectors/new'),
+    onEditClick: (connector: any) => navigate(`/connectors/${connector.id}/edit`),
+  });
+};
 
 // Compatibility alias pages (kept for deep-link continuity)
 const CreateCollectionPage = React.lazy(() =>
@@ -353,6 +365,12 @@ export const routes: RouteObject[] = [
             element: withSuspense(PluginDetailsPage),
           },
         ],
+      },
+
+      // Connectors - Data source connector management
+      {
+        path: 'connectors',
+        element: <LazyLoadErrorBoundary><React.Suspense fallback={<PageLoader />}><DataConnectorsPageWrapper /></React.Suspense></LazyLoadErrorBoundary>,
       },
 
       // =========================================

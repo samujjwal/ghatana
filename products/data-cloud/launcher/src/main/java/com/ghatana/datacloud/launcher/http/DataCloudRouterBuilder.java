@@ -300,6 +300,8 @@ public class DataCloudRouterBuilder {
     public DataCloudRouterBuilder withSseRoutes(SseStreamingHandler sseHandler) {
         builder
             .with(HttpMethod.GET, "/events/stream", sseHandler::handleSseStream)
+            .with(HttpMethod.GET, "/api/v1/events/notifications", sseHandler::handleNotificationsStream)
+            .with(HttpMethod.GET, "/events/notifications", sseHandler::handleNotificationsStream)
             .with(HttpMethod.GET, "/api/v1/learning/stream", sseHandler::handleLearningStream);
         return this;
     }
@@ -531,9 +533,11 @@ public class DataCloudRouterBuilder {
 
     /**
      * Adds connector registry endpoints for external data sources (P1.1).
+     * Includes both /api/v1/connectors and /data-fabric/connectors routes for frontend compatibility.
      */
     public DataCloudRouterBuilder withConnectorRoutes(DataSourceRegistryHandler dataSourceRegistryHandler, HttpHandlerSupport httpSupport) {
         if (dataSourceRegistryHandler != null) {
+            // /api/v1/connectors routes (canonical API)
             builder
                 .with(HttpMethod.GET,  "/api/v1/connectors", dataSourceRegistryHandler::handleListConnections)
                 .with(HttpMethod.POST, "/api/v1/connectors", dataSourceRegistryHandler::handleRegisterConnection)
@@ -545,8 +549,20 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/health", dataSourceRegistryHandler::handleGetHealth)
                 .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/schema", dataSourceRegistryHandler::handleGetSchema)
                 .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
-                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/sync/status", dataSourceRegistryHandler::handleGetSyncStatus);
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/sync/status", dataSourceRegistryHandler::handleGetSyncStatus)
+                // /data-fabric/connectors routes (frontend compatibility - aliases)
+                .with(HttpMethod.GET,  "/data-fabric/connectors", dataSourceRegistryHandler::handleListConnections)
+                .with(HttpMethod.POST, "/data-fabric/connectors", dataSourceRegistryHandler::handleRegisterConnection)
+                .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleGetConnection)
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/test", dataSourceRegistryHandler::handleTestConnection)
+                .with(HttpMethod.PUT,  "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleRegisterConnection)
+                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(501, "Delete connector not implemented")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
+                .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId/statistics", dataSourceRegistryHandler::handleGetSyncStatus)
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection);
         } else {
+            // /api/v1/connectors routes - 503 when handler not available
             builder
                 .with(HttpMethod.GET,  "/api/v1/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
                 .with(HttpMethod.POST, "/api/v1/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
@@ -558,7 +574,18 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/health", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
                 .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/schema", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
                 .with(HttpMethod.POST, "/api/v1/connectors/:connectionId/sync", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/sync/status", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")));
+                .with(HttpMethod.GET,  "/api/v1/connectors/:connectionId/sync/status", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                // /data-fabric/connectors routes - 503 when handler not available
+                .with(HttpMethod.GET,  "/data-fabric/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/data-fabric/connectors", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/test", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.PUT,  "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/sync", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId/statistics", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/enable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")));
         }
         return this;
     }
@@ -638,12 +665,22 @@ public class DataCloudRouterBuilder {
     }
 
     /**
+     * Adds user-activity tracking endpoints.
+     */
+    public DataCloudRouterBuilder withUserActivityRoutes(UserActivityHandler userActivityHandler) {
+        builder
+            .with(HttpMethod.GET,  "/api/v1/user-activity/recent", userActivityHandler::handleGetRecentActivity)
+            .with(HttpMethod.POST, "/api/v1/user-activity/log",    userActivityHandler::handleLogActivity);
+        return this;
+    }
+
+    /**
      * Builds the routing servlet.
      *
      * @return the configured routing servlet
      */
     public RoutingServlet build() {
-        log.info("Data-Cloud router built with {} route groups", 28);
+        log.info("Data-Cloud router built with {} route groups", 29);
         return builder.build();
     }
 }

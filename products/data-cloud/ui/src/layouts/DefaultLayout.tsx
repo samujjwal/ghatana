@@ -100,6 +100,7 @@ const navSections: NavSection[] = [
         items: [
             { to: '/', label: 'Home', icon: <Home className="h-4 w-4" />, exact: true },
             { to: '/data', label: 'Data', icon: <Database className="h-4 w-4" /> },
+            { to: '/connectors', label: 'Connectors', icon: <Network className="h-4 w-4" />, minimumShellRole: 'operator' },
             { to: '/pipelines', label: 'Pipelines', icon: <Workflow className="h-4 w-4" /> },
             { to: '/query', label: 'Query', icon: <Terminal className="h-4 w-4" /> },
         ],
@@ -130,7 +131,7 @@ const navSections: NavSection[] = [
 export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
     const discoverable = getDiscoverableRoutes(shellRole);
 
-    const corePaths = new Set(['/', '/data', '/pipelines', '/query']);
+    const corePaths = new Set(['/', '/data', '/connectors', '/pipelines', '/query']);
     const intelPaths = new Set(['/insights', '/trust', '/events', '/alerts']);
     const managePaths = new Set(['/plugins', '/operations']);
 

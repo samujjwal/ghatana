@@ -230,7 +230,7 @@ public final class AepSecurityFilter implements AsyncServlet {
                     }
 
                     // ── 4. Delegate to router with security headers applied ──
-                    return next.serve(request).map(this::addSecurityHeaders);
+                    return next.serve(request).map(response -> addSecurityHeaders(response, request));
                 },
                 e -> {
                     // loadBody failed — body exceeded the size limit
@@ -258,7 +258,7 @@ public final class AepSecurityFilter implements AsyncServlet {
      * promise pipeline ensures the original response is not recycled before this method
      * completes.
      */
-    private HttpResponse addSecurityHeaders(HttpResponse response) {
+    private HttpResponse addSecurityHeaders(HttpResponse response, HttpRequest request) {
         int code = response.getCode();
 
         // Retrieve body defensively — ActiveJ throws if no body was set
@@ -277,6 +277,26 @@ public final class AepSecurityFilter implements AsyncServlet {
             builder.withHeader(entry.getKey(), entry.getValue());
         }
 
+        // Determine the actual origin for CORS (use specific origin when credentials are enabled)
+        String corsOrigin = allowedOrigins;
+        boolean allowCredentials = false;
+        
+        // When credentials are expected (cookies, auth headers), use the specific origin from request
+        // instead of "*" to satisfy CORS spec requirements
+        String requestOrigin = request.getHeader(HttpHeaders.ORIGIN);
+        if ("*".equals(allowedOrigins) && requestOrigin != null && !requestOrigin.isEmpty()) {
+            // For development, use the actual origin from the request when credentials are enabled
+            corsOrigin = requestOrigin;
+            allowCredentials = true;
+        } else if ("*".equals(allowedOrigins)) {
+            // No origin in request or wildcard configured - no credentials
+            corsOrigin = "*";
+            allowCredentials = false;
+        } else {
+            // When specific origins are configured, allow credentials
+            allowCredentials = true;
+        }
+
         // Inject OWASP-recommended security headers
         builder
             .withHeader(HttpHeaders.of("X-Content-Type-Options"),       HttpHeaderValue.of("nosniff"))
@@ -286,7 +306,8 @@ public final class AepSecurityFilter implements AsyncServlet {
             .withHeader(HttpHeaders.of("Referrer-Policy"),             HttpHeaderValue.of(REFERRER_VALUE))
             .withHeader(HttpHeaders.of("Permissions-Policy"),          HttpHeaderValue.of(PERMISSIONS_VALUE))
             .withHeader(HttpHeaders.of("Strict-Transport-Security"),   HttpHeaderValue.of(HSTS_VALUE))
-            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(allowedOrigins))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsOrigin))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of(allowCredentials ? "true" : "false"))
             .withHeader(HttpHeaders.of("Cache-Control"),               HttpHeaderValue.of("no-store"))
             .withHeader(HttpHeaders.of("X-Request-Id"),
                         HttpHeaderValue.of(java.util.UUID.randomUUID().toString()));
@@ -306,15 +327,26 @@ public final class AepSecurityFilter implements AsyncServlet {
     private HttpResponse corsPreflightResponse(HttpRequest request) {
         String requestedHeaders = request.getHeader(
                 HttpHeaders.of("Access-Control-Request-Headers"));
+        String requestOrigin = request.getHeader(HttpHeaders.ORIGIN);
+        
+        // When credentials are enabled, use the specific origin from the request
+        // instead of "*" to satisfy CORS spec requirements
+        String corsOrigin = allowedOrigins;
+        if ("*".equals(allowedOrigins) && requestOrigin != null && !requestOrigin.isEmpty()) {
+            corsOrigin = requestOrigin;
+        }
+        
         return HttpResponse.ofCode(204)
             .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
-                        HttpHeaderValue.of(allowedOrigins))
+                        HttpHeaderValue.of(corsOrigin))
             .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"),
-                        HttpHeaderValue.of("GET, POST, PUT, DELETE, OPTIONS"))
+                        HttpHeaderValue.of("GET, POST, PUT, DELETE, OPTIONS, PATCH"))
             .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"),
                         HttpHeaderValue.of(requestedHeaders != null
                             ? requestedHeaders
-                            : "Content-Type, Authorization, X-Tenant-Id"))
+                            : "Content-Type, Authorization, X-Tenant-Id, X-User-ID, X-Session-ID, X-API-Key, Idempotency-Key"))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                        HttpHeaderValue.of("true"))
             .withHeader(HttpHeaders.of("Access-Control-Max-Age"),
                         HttpHeaderValue.of("86400"))
             .build();

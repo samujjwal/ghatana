@@ -14,11 +14,11 @@ export const colors = {
     contrastText: '#ffffff',
   },
 
-  // Secondary colors
+  // Secondary colors - Purple (better contrast than teal)
   secondary: {
-    main: '#9c27b0',
-    light: '#ba68c8',
-    dark: '#7b1fa2',
+    main: '#7c3aed',
+    light: '#a855f7',
+    dark: '#5b21b6',
     contrastText: '#ffffff',
   },
 
@@ -33,9 +33,9 @@ export const colors = {
   // Warning colors
   warning: {
     main: '#ed6c02',
-    light: '#ff9800',
+    light: '#ffb74d',
     dark: '#e65100',
-    contrastText: '#ffffff',
+    contrastText: '#000000de', // Better contrast
   },
 
   // Info colors
@@ -86,9 +86,9 @@ export const colors = {
     disabledDark: 'rgba(255, 255, 255, 0.38)',
   },
 
-  // Divider colors
-  divider: 'rgba(0, 0, 0, 0.12)',
-  dividerDark: 'rgba(255, 255, 255, 0.12)',
+  // Divider colors - Increased opacity for accessibility
+  divider: 'rgba(0, 0, 0, 0.2)',
+  dividerDark: 'rgba(255, 255, 255, 0.2)',
 
   // Action colors
   action: {

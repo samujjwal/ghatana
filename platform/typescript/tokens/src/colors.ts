@@ -25,18 +25,18 @@ export const palette = {
     contrastText: '#ffffff',
   },
 
-  // Secondary colors - Teal
+  // Secondary colors - Purple (better contrast than teal)
   secondary: {
-    50: '#e0f2f1',
-    100: '#b2dfdb',
-    200: '#80cbc4',
-    300: '#4db6ac',
-    400: '#26a69a',
-    500: '#009688', // Main secondary color
-    600: '#00897b',
-    700: '#00796b',
-    800: '#00695c',
-    900: '#004d40',
+    50: '#f3e8ff',
+    100: '#d8b4fe',
+    200: '#c084fc',
+    300: '#a855f7',
+    400: '#9333ea',
+    500: '#7c3aed', // Main secondary color - WCAG AA compliant
+    600: '#6d28d9',
+    700: '#5b21b6',
+    800: '#4c1d95',
+    900: '#3b0764',
     contrastText: '#ffffff',
   },
 
@@ -165,9 +165,9 @@ export const lightColors = {
     icon: 'rgba(0, 0, 0, 0.54)',
   },
 
-  // UI elements
-  divider: 'rgba(0, 0, 0, 0.12)',
-  border: 'rgba(0, 0, 0, 0.12)',
+  // UI elements - Increased opacity for better visibility
+  divider: 'rgba(0, 0, 0, 0.2)',
+  border: 'rgba(0, 0, 0, 0.2)',
 
   // Action states
   action: {
@@ -206,9 +206,9 @@ export const darkColors = {
     icon: '#8b949e',      // Icon color
   },
 
-  // UI elements - Visible but subtle borders
-  divider: '#30363d',     // Divider lines
-  border: '#30363d',      // Border color
+  // UI elements - Increased visibility for accessibility
+  divider: '#484f58',     // Divider lines - increased contrast
+  border: '#484f58',      // Border color - increased contrast
 
   // Action states
   action: {
@@ -220,8 +220,8 @@ export const darkColors = {
     disabled: '#484f58',
     disabledBackground: 'rgba(110, 118, 129, 0.1)',
     disabledOpacity: 0.38,
-    focus: 'rgba(88, 166, 255, 0.4)',  // Blue focus ring
-    focusOpacity: 0.4,
+    focus: 'rgba(56, 139, 253, 0.6)',  // Blue focus ring - increased visibility
+    focusOpacity: 0.6,
     activatedOpacity: 0.24,
   },
 } as const;

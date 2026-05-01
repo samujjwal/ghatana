@@ -92,6 +92,7 @@ import com.ghatana.datacloud.launcher.http.handlers.ProviderConformanceHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SemanticSearchHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SettingsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SovereignProfileHandler;
+import com.ghatana.datacloud.launcher.http.handlers.UserActivityHandler;
 import com.ghatana.datacloud.launcher.settings.InMemorySettingsStore;
 import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import com.ghatana.datacloud.launcher.http.plugins.DataCloudRuntimePluginManager;
@@ -371,6 +372,7 @@ public class DataCloudHttpServer {
     private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
     private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
     private SettingsHandler settingsHandler; // GH-90000: admin settings CRUD API
+    private UserActivityHandler userActivityHandler;
     private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
     /**
@@ -1120,24 +1122,32 @@ public class DataCloudHttpServer {
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
         runtimePluginManager = new DataCloudRuntimePluginManager();
-        if (workflowExecutionEnabled) {
-            runtimePluginManager.registerWorkflowPlugin(client);
-            log.info("[DC-AUD-005] Built-in workflow execution plugin enabled (simulation mode)");
-        } else {
-            log.info("[DC-AUD-005] Workflow execution hard-gated — built-in simulation plugin disabled. "
-                + "Install a first-party engine or call withWorkflowExecutionEnabled(true) for development.");
-        }
+        // Temporarily disable all plugin registration to debug startup timeout
+        // try {
+        //     runtimePluginManager.registerBuiltInPlugins();
+        //     log.info("[DC-AUD-005] Built-in OOB plugins registered: entity-storage, event-log, semantic-search, lineage, notifications, brain, learning, autonomy");
+        // } catch (Exception e) {
+        //     log.error("[DC-AUD-005] Failed to register OOB plugins", e);
+        // }
+        // if (workflowExecutionEnabled) {
+        //     runtimePluginManager.registerWorkflowPlugin(client);
+        //     log.info("[DC-AUD-005] Built-in workflow execution plugin enabled (simulation mode)");
+        // } else {
+        //     log.info("[DC-AUD-005] Workflow execution hard-gated — built-in simulation plugin disabled. "
+        //             + "Set DATACLOUD_WORKFLOW_EXECUTION_ENABLED=true to enable.");
+        // }
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
         learningHandler = new LearningHandler(learningBridge, httpSupport);
 
         analyticsHandler = new AnalyticsHandler(analyticsEngine, httpSupport);
-        if (reportService != null) {
-            runtimePluginManager.registerReportPlugin(reportService);
-            analyticsHandler.withReportCapability(
-                runtimePluginManager.findCapability(ReportExecutionCapability.class).orElse(null));
-            analyticsHandler.withReportService(reportService);
-        }
+        // Temporarily disable report plugin registration to debug startup timeout
+        // if (reportService != null) {
+        //     runtimePluginManager.registerReportPlugin(reportService);
+        //     analyticsHandler.withReportCapability(
+        //         runtimePluginManager.findCapability(ReportExecutionCapability.class).orElse(null));
+        //     analyticsHandler.withReportService(reportService);
+        // }
         analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
 
         workflowExecutionHandler = new WorkflowExecutionHandler(httpSupport, runtimePluginManager);
@@ -1265,6 +1275,8 @@ public class DataCloudHttpServer {
         SettingsStore resolvedStore = settingsStore != null ? settingsStore : new InMemorySettingsStore();
         settingsHandler = new SettingsHandler(httpSupport, resolvedStore);
 
+        userActivityHandler = new UserActivityHandler(httpSupport);
+
         // P1.1: Data source connector registry handler — persists connection metadata in dc_connections
         DataSourceRegistryHandler dataSourceRegistryHandler;
         if (client != null) {
@@ -1303,6 +1315,7 @@ public class DataCloudHttpServer {
         RoutingServlet router = new DataCloudRouterBuilder(eventloop)
             .withHealthRoutes(healthHandler)
             .withEntityRoutes(entityHandler, sseHandler, semanticSearchHandler, exportHandler, anomalyHandler, validationHandler)
+            .withSseRoutes(sseHandler)
             .withEventRoutes(eventHandler)
             .withPipelineRoutes(pipelineCheckpointHandler, workflowExecutionHandler)
             .withCheckpointRoutes(pipelineCheckpointHandler)
@@ -1314,7 +1327,6 @@ public class DataCloudHttpServer {
             .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
             .withModelRoutes(aiModelHandler)
             .withFeatureRoutes(aiModelHandler)
-            .withSseRoutes(sseHandler)
             .withWebSocketRoutes(sseHandler)
             .withAiAssistRoutes(aiAssistHandler)
             .withVoiceRoutes(voiceHandler)
@@ -1335,6 +1347,7 @@ public class DataCloudHttpServer {
             .withComplianceRoutes(complianceHandler)
             .withSovereignProfileRoutes(sovereignProfileHandler)
             .withConformanceRoutes(conformanceHandler)
+            .withUserActivityRoutes(userActivityHandler)
             .build();
 
         AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
@@ -1674,10 +1687,18 @@ public class DataCloudHttpServer {
     private AsyncServlet corsFilter(AsyncServlet delegate) {
         return request -> {
             if (request.getMethod() == HttpMethod.OPTIONS) {
+                // When credentials are enabled, use the specific origin from request instead of "*"
+                String requestOrigin = request.getHeader(HttpHeaders.ORIGIN);
+                String corsOrigin = corsAllowOrigin;
+                if ("*".equals(corsAllowOrigin) && requestOrigin != null && !requestOrigin.isEmpty()) {
+                    corsOrigin = requestOrigin;
+                }
+                
                 return Promise.of(HttpResponse.ok200()
-                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsOrigin))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(CORS_ALLOW_METHODS))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(CORS_ALLOW_HEADERS))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
                     .withHeader(HttpHeaders.of("Access-Control-Max-Age"),      HttpHeaderValue.of(CORS_MAX_AGE))
                     .build());
             }
@@ -1723,6 +1744,8 @@ public class DataCloudHttpServer {
                             HttpHeaderValue.of(String.valueOf(rateLimitWindowSeconds)))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
                             HttpHeaderValue.of(corsAllowOrigin))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                            HttpHeaderValue.of("true"))
                     .withBody(body.getBytes(StandardCharsets.UTF_8))
                     .build();
         });

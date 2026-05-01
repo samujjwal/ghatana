@@ -44,6 +44,16 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
     private static final String REPORT_PLUGIN_ID = "reporting";
     private static final int WORKFLOW_RETRY_MAX_ATTEMPTS = 3;
 
+    // Additional OOB plugin IDs
+    private static final String ENTITY_STORAGE_PLUGIN_ID = "entity-storage";
+    private static final String EVENT_LOG_PLUGIN_ID = "event-log";
+    private static final String SEMANTIC_SEARCH_PLUGIN_ID = "semantic-search";
+    private static final String LINEAGE_PLUGIN_ID = "lineage";
+    private static final String NOTIFICATIONS_PLUGIN_ID = "notifications";
+    private static final String BRAIN_PLUGIN_ID = "brain";
+    private static final String LEARNING_PLUGIN_ID = "learning";
+    private static final String AUTONOMY_PLUGIN_ID = "autonomy";
+
     private final PluginRegistry registry = new PluginRegistry();
     private final PluginContext context = new DefaultPluginContext(registry, Map.of());
     private final Map<String, ManagedRuntimePluginProvider> providers = new ConcurrentHashMap<>();
@@ -73,6 +83,85 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
             @Override
             public Plugin create(Map<String, Object> config) {
                 return new BuiltInReportPlugin(reportService, config);
+            }
+        });
+    }
+
+    /**
+     * Registers all out-of-box (OOB) built-in plugins for the Data Cloud platform.
+     * These represent the core subsystems that are always available.
+     */
+    public void registerBuiltInPlugins() {
+        // Using 4 plugins for now - 8 plugins cause startup timeout
+        registerProvider(new ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return ENTITY_STORAGE_PLUGIN_ID;
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                return new BuiltInMetadataOnlyPlugin(
+                    ENTITY_STORAGE_PLUGIN_ID,
+                    "Entity Storage",
+                    "Core entity storage and management subsystem",
+                    PluginType.STORAGE,
+                    Set.of("entity-storage", "entity-management")
+                );
+            }
+        });
+
+        registerProvider(new ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return EVENT_LOG_PLUGIN_ID;
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                return new BuiltInMetadataOnlyPlugin(
+                    EVENT_LOG_PLUGIN_ID,
+                    "Event Log",
+                    "Event logging and audit trail subsystem",
+                    PluginType.STORAGE,
+                    Set.of("event-log", "audit-trail")
+                );
+            }
+        });
+
+        registerProvider(new ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return SEMANTIC_SEARCH_PLUGIN_ID;
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                return new BuiltInMetadataOnlyPlugin(
+                    SEMANTIC_SEARCH_PLUGIN_ID,
+                    "Semantic Search",
+                    "Vector-based semantic search and retrieval",
+                    PluginType.AI,
+                    Set.of("semantic-search", "vector-search", "embeddings")
+                );
+            }
+        });
+
+        registerProvider(new ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return LINEAGE_PLUGIN_ID;
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                return new BuiltInMetadataOnlyPlugin(
+                    LINEAGE_PLUGIN_ID,
+                    "Data Lineage",
+                    "Data lineage tracking and visualization",
+                    PluginType.PROCESSING,
+                    Set.of("lineage", "data-lineage", "provenance")
+                );
             }
         });
     }
@@ -729,6 +818,42 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
             }
         }
         return null;
+    }
+
+    /**
+     * A minimal built-in plugin that only provides metadata without specific capabilities.
+     * Used for representing core subsystems that are always available.
+     */
+    private static final class BuiltInMetadataOnlyPlugin extends BaseManagedPlugin {
+
+        private final PluginMetadata metadata;
+
+        BuiltInMetadataOnlyPlugin(String id, String name, String description, PluginType type, Set<String> capabilities) {
+            this.metadata = PluginMetadata.builder()
+                .id(id)
+                .name(name)
+                .version("1.0.0")
+                .description(description)
+                .type(type)
+                .capabilities(capabilities)
+                .properties(Map.of("feature", id))
+                .build();
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return metadata;
+        }
+
+        @Override
+        public Promise<HealthStatus> healthCheck() {
+            return Promise.of(HealthStatus.ok(metadata.id() + " plugin ready"));
+        }
+
+        @Override
+        public Set<PluginCapability> getCapabilities() {
+            return Set.of();
+        }
     }
 
     private static int intValue(Object value, int defaultValue) {

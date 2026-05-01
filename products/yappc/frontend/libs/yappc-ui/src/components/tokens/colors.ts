@@ -4,9 +4,15 @@
  * These tokens define the color palette for the application,
  * with semantic naming for consistent usage across components.
  * All colors are designed to meet WCAG 2.1 AA contrast requirements.
+ * 
+ * @deprecated Use @ghatana/tokens instead. This file will be removed.
+ * Migration guide: Replace imports from './tokens/colors' with '@ghatana/tokens'
  */
 
-// Base palette
+// Re-export from platform tokens for backwards compatibility
+export { palette, lightColors, darkColors } from '@ghatana/tokens';
+
+// Legacy exports for backwards compatibility - will be removed
 export const palette = {
   // Primary colors - Blue
   primary: {
@@ -23,18 +29,18 @@ export const palette = {
     contrastText: '#ffffff',
   },
 
-  // Secondary colors - Teal (better for accessibility than pink/red)
+  // Secondary colors - Purple (updated for better accessibility)
   secondary: {
-    50: '#e0f2f1',
-    100: '#b2dfdb',
-    200: '#80cbc4',
-    300: '#4db6ac',
-    400: '#26a69a',
-    500: '#009688', // Main secondary color
-    600: '#00897b',
-    700: '#00796b',
-    800: '#00695c',
-    900: '#004d40',
+    50: '#f3e8ff',
+    100: '#d8b4fe',
+    200: '#c084fc',
+    300: '#a855f7',
+    400: '#9333ea',
+    500: '#7c3aed', // Main secondary color - WCAG AA compliant
+    600: '#6d28d9',
+    700: '#5b21b6',
+    800: '#4c1d95',
+    900: '#3b0764',
     contrastText: '#ffffff',
   },
 
@@ -99,9 +105,9 @@ export const lightColors = {
     icon: 'rgba(0, 0, 0, 0.54)',
   },
 
-  // UI elements
-  divider: 'rgba(0, 0, 0, 0.12)',
-  border: 'rgba(0, 0, 0, 0.12)',
+  // UI elements - Increased opacity for better visibility
+  divider: 'rgba(0, 0, 0, 0.2)',
+  border: 'rgba(0, 0, 0, 0.2)',
 
   // Action states
   action: {
@@ -123,38 +129,38 @@ export const lightColors = {
 export const darkColors = {
   // Background colors
   background: {
-    default: '#121212',
-    paper: '#1e1e1e',
-    elevated: '#2c2c2c',
-    surface: '#1e1e1e',
-    backdrop: 'rgba(0, 0, 0, 0.7)',
+    default: '#0d1117',
+    paper: '#161b22',
+    elevated: '#21262d',
+    surface: '#161b22',
+    backdrop: 'rgba(1, 4, 9, 0.8)',
   },
 
   // Text colors
   text: {
-    primary: 'rgba(255, 255, 255, 0.87)',
-    secondary: 'rgba(255, 255, 255, 0.7)',
-    disabled: 'rgba(255, 255, 255, 0.5)',
-    hint: 'rgba(255, 255, 255, 0.5)',
-    icon: 'rgba(255, 255, 255, 0.5)',
+    primary: '#e6edf3',
+    secondary: '#8b949e',
+    disabled: '#484f58',
+    hint: '#6e7681',
+    icon: '#8b949e',
   },
 
-  // UI elements
-  divider: 'rgba(255, 255, 255, 0.12)',
-  border: 'rgba(255, 255, 255, 0.12)',
+  // UI elements - Increased visibility for accessibility
+  divider: '#484f58',
+  border: '#484f58',
 
   // Action states
   action: {
-    active: '#fff',
-    hover: 'rgba(255, 255, 255, 0.08)',
-    hoverOpacity: 0.08,
-    selected: 'rgba(255, 255, 255, 0.16)',
-    selectedOpacity: 0.16,
-    disabled: 'rgba(255, 255, 255, 0.3)',
-    disabledBackground: 'rgba(255, 255, 255, 0.12)',
+    active: '#e6edf3',
+    hover: 'rgba(177, 186, 196, 0.12)',
+    hoverOpacity: 0.12,
+    selected: 'rgba(177, 186, 196, 0.2)',
+    selectedOpacity: 0.2,
+    disabled: '#484f58',
+    disabledBackground: 'rgba(110, 118, 129, 0.1)',
     disabledOpacity: 0.38,
-    focus: 'rgba(255, 255, 255, 0.12)',
-    focusOpacity: 0.12,
+    focus: 'rgba(56, 139, 253, 0.6)',
+    focusOpacity: 0.6,
     activatedOpacity: 0.24,
   },
 };

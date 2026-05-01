@@ -3,39 +3,51 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Primary Palette (Indigo) */
-  --color-primary-50: var(--color-indigo-50);
-  --color-primary-100: var(--color-indigo-100);
-  --color-primary-200: var(--color-indigo-200);
-  --color-primary-300: var(--color-indigo-300);
-  --color-primary-400: var(--color-indigo-400);
-  --color-primary-500: var(--color-indigo-500);
-  --color-primary-600: var(--color-indigo-600);
-  --color-primary-700: var(--color-indigo-700);
-  --color-primary-800: var(--color-indigo-800);
-  --color-primary-900: var(--color-indigo-900);
-  --color-primary-950: var(--color-indigo-950);
+  /* Primary Palette - Blue (platform-compliant) */
+  --color-primary-50: #e3f2fd;
+  --color-primary-100: #bbdefb;
+  --color-primary-200: #90caf9;
+  --color-primary-300: #64b5f6;
+  --color-primary-400: #42a5f5;
+  --color-primary-500: #1976d2;
+  --color-primary-600: #1565c0;
+  --color-primary-700: #0d47a1;
+  --color-primary-800: #0a3880;
+  --color-primary-900: #072a60;
+  --color-primary-950: #072a60;
+
+  /* Secondary Palette - Purple (better accessibility) */
+  --color-secondary-50: #f3e8ff;
+  --color-secondary-100: #d8b4fe;
+  --color-secondary-200: #c084fc;
+  --color-secondary-300: #a855f7;
+  --color-secondary-400: #9333ea;
+  --color-secondary-500: #7c3aed;
+  --color-secondary-600: #6d28d9;
+  --color-secondary-700: #5b21b6;
+  --color-secondary-800: #4c1d95;
+  --color-secondary-900: #3b0764;
 
   /* Semantic Colors */
   --color-bg-paper: var(--color-white);
-  --color-text-primary: var(--color-gray-900);
-  --color-text-secondary: var(--color-gray-600);
-  --color-divider: var(--color-gray-200);
+  --color-text-primary: rgba(0, 0, 0, 0.87);
+  --color-text-secondary: rgba(0, 0, 0, 0.6);
+  --color-divider: rgba(0, 0, 0, 0.2); /* Increased opacity for accessibility */
 }
 
 @layer base {
   :root {
-    --color-bg-paper: var(--color-white);
-    --color-text-primary: var(--color-gray-900);
-    --color-text-secondary: var(--color-gray-600);
-    --color-divider: var(--color-gray-200);
+    --color-bg-paper: #ffffff;
+    --color-text-primary: rgba(0, 0, 0, 0.87);
+    --color-text-secondary: rgba(0, 0, 0, 0.6);
+    --color-divider: rgba(0, 0, 0, 0.2);
   }
 
   .dark {
-    --color-bg-paper: var(--color-slate-900);
-    --color-text-primary: var(--color-gray-100);
-    --color-text-secondary: var(--color-gray-400);
-    --color-divider: var(--color-gray-700);
+    --color-bg-paper: #0d1117;
+    --color-text-primary: #e6edf3;
+    --color-text-secondary: #8b949e;
+    --color-divider: #484f58;
   }
 }
 
@@ -68,4 +80,22 @@ html:not(.dark) {
     --color-text-secondary: white;
     --color-divider: white;
   }
+}
+
+/* Accessibility: Focus states for keyboard navigation */
+:focus-visible {
+  outline: 2px solid rgba(25, 118, 210, 0.6);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+  :focus-visible {
+    outline: 3px solid #0000ff;
+    outline-offset: 2px;
+  }
+}
+
+.dark :focus-visible {
+  outline: 2px solid rgba(56, 139, 253, 0.6);
+  outline-offset: 2px;
 }

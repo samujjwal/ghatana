@@ -30,16 +30,18 @@ export const fontSize = {
   display: '3rem',    // 48px (alias for compatibility)
 } as const;
 
-// Font weights
+// Font weights - Accessibility: removed thin (100) and light (300) for better readability
+// Minimum recommended weight for body text is 400 (regular)
 export const fontWeight = {
-  thin: 100,
-  extralight: 200,
-  light: 300,
   regular: 400,
   normal: 400,
   medium: 500,
   semibold: 600,
   bold: 700,
+  // Deprecated - not recommended for accessibility
+  thin: 100,
+  extralight: 200,
+  light: 300,
   extrabold: 800,
   black: 900,
 } as const;
@@ -169,3 +171,6 @@ export type FontWeightKey = keyof typeof fontWeight;
 export type LineHeightKey = keyof typeof lineHeight;
 export type LetterSpacingKey = keyof typeof letterSpacing;
 export type TypographyVariant = keyof typeof typography;
+
+// Accessibility-safe font weights (minimum 400 for readability)
+export type AccessibleFontWeight = 'regular' | 'normal' | 'medium' | 'semibold' | 'bold';

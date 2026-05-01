@@ -25,6 +25,8 @@ export const borderWidth = {
   thin: 1,
   medium: 2,
   thick: 4,
+  // Accessibility: minimum visible border
+  accessible: 2,
 } as const;
 
 // Component-specific border radius
@@ -75,11 +77,57 @@ export const shapeVariants = {
   },
 } as const;
 
+// Focus state tokens for accessibility
+export const focusRing = {
+  width: 2,
+  offset: 2,
+  color: {
+    light: 'rgba(25, 118, 210, 0.6)',  // Primary blue with good visibility
+    dark: 'rgba(56, 139, 253, 0.6)',   // Lighter blue for dark mode
+    highContrast: '#0000ff',           // Pure blue for high contrast mode
+  },
+  style: 'solid',
+  borderRadius: borderRadius.sm,
+} as const;
+
+// High contrast mode tokens
+export const highContrast = {
+  border: {
+    light: '#000000',
+    dark: '#ffffff',
+  },
+  focus: {
+    color: '#0000ff',
+    width: 3,
+  },
+  text: {
+    primary: {
+      light: '#000000',
+      dark: '#ffffff',
+    },
+    secondary: {
+      light: '#000000',
+      dark: '#ffffff',
+    },
+  },
+  background: {
+    default: {
+      light: '#ffffff',
+      dark: '#000000',
+    },
+    paper: {
+      light: '#ffffff',
+      dark: '#000000',
+    },
+  },
+} as const;
+
 // Type exports
 export type BorderRadiusKey = keyof typeof borderRadius;
 export type BorderWidthKey = keyof typeof borderWidth;
 export type ComponentRadiusKey = keyof typeof componentRadius;
 export type ShapeVariant = keyof typeof shapeVariants;
+export type FocusRingColorKey = keyof typeof focusRing.color;
 
 /**
  * Get border radius value
@@ -110,4 +158,20 @@ export function getShapeVariantRadius(
   component: keyof typeof shapeVariants.rounded
 ): number {
   return shapeVariants[variant][component];
+}
+
+/**
+ * Get focus ring CSS for accessibility
+ */
+export function getFocusRing(mode: 'light' | 'dark' | 'highContrast' = 'light'): string {
+  const color = focusRing.color[mode];
+  return `${focusRing.width}px solid ${color}`;
+}
+
+/**
+ * Get focus ring with offset for accessibility
+ */
+export function getFocusRingWithOffset(mode: 'light' | 'dark' | 'highContrast' = 'light'): string {
+  const ring = getFocusRing(mode);
+  return `0 0 0 ${focusRing.offset}px ${ring}`;
 }

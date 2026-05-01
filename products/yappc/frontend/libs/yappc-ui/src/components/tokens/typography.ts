@@ -3,21 +3,30 @@
  *
  * These tokens define the typography styles for the application,
  * with semantic naming for consistent usage across components.
+ * 
+ * @deprecated Use @ghatana/tokens instead. This file will be removed.
+ * Migration guide: Replace imports from './tokens/typography' with '@ghatana/tokens'
  */
 
+// Re-export from platform tokens for backwards compatibility
+export { fontFamily, fontSize, fontWeight, lineHeight, typography } from '@ghatana/tokens';
+export { letterSpacing as letterSpacingToken } from '@ghatana/tokens';
+
+// Legacy exports for backwards compatibility - will be removed
 // Font families
 export const fontFamilies = {
   primary: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
   code: '"Fira Code", "Roboto Mono", "Courier New", monospace',
 };
 
-// Font weights
+// Font weights - Accessibility: light (300) deprecated for better readability
 export const fontWeights = {
-  light: 300,
   regular: 400,
   medium: 500,
   semiBold: 600,
   bold: 700,
+  // Deprecated - not recommended for accessibility
+  light: 300,
 };
 
 // Font sizes (in rem)

@@ -82,6 +82,10 @@ public class SseStreamingHandler {
     /** Active WebSocket connections — closed on {@link #shutdown()}. */
     private final CopyOnWriteArrayList<IWebSocket> wsConnections = new CopyOnWriteArrayList<>();
 
+    /** Active notification SSE client queues — drained on {@link #shutdown()}. */
+    private final CopyOnWriteArrayList<LinkedBlockingQueue<Optional<byte[]>>> notificationQueues =
+            new CopyOnWriteArrayList<>();
+
     /** Optional OpenSearch connector for streaming query SSE. */
     private OpenSearchConnector openSearchConnector;
 
@@ -286,6 +290,73 @@ public class SseStreamingHandler {
             sseSubscriptions.add(subscription);
             return buildSseChannelResponse(queue, subscription, tenantId, "*");
         });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Notification Centre SSE — GET /events/notifications
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Persistent SSE stream for in-app notifications delivered to the
+     * {@code NotificationCenter} component.
+     *
+     * <p>No tenant header required — connections receive system-level heartbeats
+     * and any notifications broadcast via {@link #broadcastNotification}.
+     *
+     * @param request the incoming HTTP request
+     * @return a streaming {@code text/event-stream} response
+     *
+     * @doc.type method
+     * @doc.purpose System notification SSE stream for NotificationCenter
+     * @doc.layer product
+     * @doc.pattern Publish-Subscribe, SSE
+     */
+    public Promise<HttpResponse> handleNotificationsStream(HttpRequest request) {
+        LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
+        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
+            "service",   "data-cloud-notifications",
+            "timestamp", Instant.now().toString()
+        ))));
+
+        notificationQueues.add(queue);
+        log.debug("[SSE-notif] client connected; total active={}", notificationQueues.size());
+
+        ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
+            try {
+                Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
+                if (item == null) {
+                    return Promise.of(ByteBuf.wrapForReading(buildSseFrame("heartbeat",
+                        Map.of("ts", Instant.now().toString()))));
+                }
+                if (item.isEmpty()) {
+                    notificationQueues.remove(queue);
+                    return Promise.of(null);
+                }
+                return Promise.of(ByteBuf.wrapForReading(item.get()));
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                notificationQueues.remove(queue);
+                return Promise.of(null);
+            }
+        });
+
+        return Promise.of(buildSseResponse(bodyStream));
+    }
+
+    /**
+     * Broadcasts a notification event to all connected notification SSE clients.
+     *
+     * @param type    the SSE event type (e.g. {@code "notification"})
+     * @param payload the event payload to serialize as JSON
+     */
+    public void broadcastNotification(String type, Map<String, Object> payload) {
+        if (notificationQueues.isEmpty()) return;
+        byte[] frame = buildSseFrame(type, payload);
+        for (LinkedBlockingQueue<Optional<byte[]>> q : new ArrayList<>(notificationQueues)) {
+            if (!q.offer(Optional.of(frame))) {
+                log.debug("[SSE-notif] queue full, dropping notification type={}", type);
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -609,6 +680,11 @@ public class SseStreamingHandler {
             }
             wsConnections.clear();
         }
+        if (!notificationQueues.isEmpty()) {
+            log.info("Closing {} notification SSE streams", notificationQueues.size());
+            notificationQueues.forEach(q -> q.offer(Optional.empty()));
+            notificationQueues.clear();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -713,6 +789,7 @@ public class SseStreamingHandler {
                 .withHeader(HttpHeaders.of("X-Accel-Buffering"),  HttpHeaderValue.of("no"))
                 .withHeader(HttpHeaders.of("Connection"),         HttpHeaderValue.of("keep-alive"))
                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(http.corsAllowOrigin()))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
                 .withBodyStream(bodyStream)
                 .build();
     }

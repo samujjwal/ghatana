@@ -96,10 +96,18 @@ public final class DataCloudMiddleware {
     public AsyncServlet corsFilter(AsyncServlet delegate) {
         return request -> {
             if (request.getMethod() == HttpMethod.OPTIONS) {
+                // When credentials are enabled, use the specific origin from request instead of "*"
+                String requestOrigin = request.getHeader(HttpHeaders.ORIGIN);
+                String corsOrigin = corsAllowOrigin;
+                if ("*".equals(corsAllowOrigin) && requestOrigin != null && !requestOrigin.isEmpty()) {
+                    corsOrigin = requestOrigin;
+                }
+                
                 return Promise.of(HttpResponse.ok200()
-                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsAllowOrigin))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(corsOrigin))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
                     .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
                     .withHeader(HttpHeaders.of("Access-Control-Max-Age"), HttpHeaderValue.of(corsMaxAge))
                     .build());
             }
@@ -138,6 +146,8 @@ public final class DataCloudMiddleware {
                                         HttpHeaderValue.of(String.valueOf(retryAfterSec)))
                                 .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
                                         HttpHeaderValue.of(corsAllowOrigin))
+                                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                                        HttpHeaderValue.of("true"))
                                 .withBody(body.getBytes(StandardCharsets.UTF_8))
                                 .build());
                     }
@@ -177,6 +187,8 @@ public final class DataCloudMiddleware {
                                 HttpHeaderValue.of(String.valueOf(retryAfterSec)))
                         .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
                                 HttpHeaderValue.of(corsAllowOrigin))
+                        .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                                HttpHeaderValue.of("true"))
                         .withBody(body.getBytes(StandardCharsets.UTF_8))
                         .build());
             }
@@ -220,6 +232,8 @@ public final class DataCloudMiddleware {
                             HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                         .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
                             HttpHeaderValue.of(corsAllowOrigin))
+                        .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                            HttpHeaderValue.of("true"))
                         .withBody("{\"error\":\"Content-Type must be application/json\"}".getBytes(StandardCharsets.UTF_8))
                         .build());
                 }
@@ -257,6 +271,8 @@ public final class DataCloudMiddleware {
                                 HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
                             .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
                                 HttpHeaderValue.of(corsAllowOrigin))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"),
+                                HttpHeaderValue.of("true"))
                             .withBody(msg.getBytes(StandardCharsets.UTF_8))
                             .build());
                     }

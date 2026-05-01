@@ -12,7 +12,12 @@ const workspaceAliases = {
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/platform-utils/src/index.ts'),
   '@ghatana/realtime': path.resolve(__dirname, '../../../platform/typescript/realtime/src/index.ts'),
-  '@ghatana/domain-components': path.resolve(__dirname, '../../../platform/typescript/domain-components'),
+  '@ghatana/domain-components': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/index.ts'),
+  '@ghatana/domain-components/security': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/security/index.ts'),
+  '@ghatana/domain-components/privacy': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/privacy/index.ts'),
+  '@ghatana/domain-components/voice': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/voice/index.ts'),
+  '@ghatana/domain-components/nlp': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/nlp/index.ts'),
+  '@ghatana/domain-components/selection': path.resolve(__dirname, '../../../platform/typescript/domain-components/src/selection/index.ts'),
   '@ghatana/wizard': path.resolve(__dirname, '../../../platform/typescript/wizard/src/index.ts'),
 }
 
@@ -50,6 +55,15 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8082',
         changeOrigin: true,
+      },
+      '/events': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },
