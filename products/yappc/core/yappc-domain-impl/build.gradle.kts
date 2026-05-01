@@ -2,6 +2,7 @@ plugins {
     id("maven-publish")
     id("java-module")
     id("jacoco")
+    id("java-test-fixtures")
 }
 
 description = "YAPPC Domain Implementation - Domain logic and persistence (Phase 2.1: api/impl split)"
@@ -40,6 +41,10 @@ dependencies {
 
     // Logging
     implementation(libs.slf4j.api)
+
+    // Test fixtures — in-memory repository stubs shared with other modules
+    testFixturesImplementation(libs.activej.promise)
+    testFixturesImplementation("org.jetbrains:annotations:24.0.1")
 
     // Testing
     testImplementation(libs.junit.jupiter)

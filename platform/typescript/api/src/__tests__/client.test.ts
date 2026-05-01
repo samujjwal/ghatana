@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ApiClient } from "../client";
 import type { ApiError } from "../types";
 import { ValidationError } from "../types";
+import { createCorrelationMiddleware } from "../middleware/telemetry";
 
 function mockFetch(
   status: number,
@@ -372,5 +373,78 @@ describe("ApiClient — schema validation", () => {
     const response = await client.get("/anything");
 
     expect(response.data).toEqual({ anything: true });
+  });
+});
+
+describe("createCorrelationMiddleware", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("stamps X-Correlation-ID on a request that has no existing header", () => {
+    const middleware = createCorrelationMiddleware();
+    const req = { url: "/test", method: "GET" as const, headers: {} };
+    const result = middleware(req);
+    expect(result.headers?.["X-Correlation-ID"]).toBeDefined();
+    expect(typeof result.headers?.["X-Correlation-ID"]).toBe("string");
+    expect((result.headers?.["X-Correlation-ID"] as string).length).toBeGreaterThan(0);
+  });
+
+  it("does not overwrite an existing X-Correlation-ID header", () => {
+    const middleware = createCorrelationMiddleware();
+    const existingId = "my-trace-12345";
+    const req = {
+      url: "/test",
+      method: "GET" as const,
+      headers: { "X-Correlation-ID": existingId },
+    };
+    const result = middleware(req);
+    expect(result.headers?.["X-Correlation-ID"]).toBe(existingId);
+  });
+
+  it("uses a custom header name when configured", () => {
+    const middleware = createCorrelationMiddleware({ headerName: "X-Trace-ID" });
+    const req = { url: "/test", method: "GET" as const, headers: {} };
+    const result = middleware(req);
+    expect(result.headers?.["X-Trace-ID"]).toBeDefined();
+    expect(result.headers?.["X-Correlation-ID"]).toBeUndefined();
+  });
+
+  it("uses the ID returned by getCorrelationId when provided", () => {
+    const fixedId = "fixed-correlation-id";
+    const middleware = createCorrelationMiddleware({ getCorrelationId: () => fixedId });
+    const req = { url: "/test", method: "GET" as const, headers: {} };
+    const result = middleware(req);
+    expect(result.headers?.["X-Correlation-ID"]).toBe(fixedId);
+  });
+
+  it("reuses the same session ID across multiple requests", () => {
+    const middleware = createCorrelationMiddleware();
+    const req = { url: "/test", method: "GET" as const, headers: {} };
+    const r1 = middleware(req);
+    const r2 = middleware(req);
+    expect(r1.headers?.["X-Correlation-ID"]).toBe(r2.headers?.["X-Correlation-ID"]);
+  });
+
+  it("integrates with ApiClient — header appears on outbound fetch", async () => {
+    let capturedHeaders: Headers | undefined;
+    globalThis.fetch = vi.fn().mockImplementation((_, init: RequestInit) => {
+      capturedHeaders = new Headers(init?.headers as HeadersInit);
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () => Promise.resolve({}),
+      } as unknown as Response);
+    });
+
+    const client = new ApiClient({ baseUrl: "https://api.test.com" });
+    client.useRequest(createCorrelationMiddleware());
+    await client.get("/items");
+
+    expect(capturedHeaders?.get("X-Correlation-ID")).toBeDefined();
+    expect(capturedHeaders?.get("X-Correlation-ID")!.length).toBeGreaterThan(0);
   });
 });

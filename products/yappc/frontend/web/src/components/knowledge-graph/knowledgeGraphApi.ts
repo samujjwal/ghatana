@@ -11,13 +11,14 @@
  * @doc.pattern API Client
  */
 
-import { ApiClient } from '@ghatana/api';
+import { ApiClient, createCorrelationMiddleware } from '@ghatana/api';
 
 // API client instance
 const apiClient = new ApiClient({
   baseUrl: process.env.YAPPC_API_URL || '/api',
   timeoutMs: 10000,
 });
+apiClient.useRequest(createCorrelationMiddleware());
 
 // Types matching backend API
 interface KnowledgeNode {

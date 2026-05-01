@@ -13,7 +13,7 @@
  * @doc.layer api
  */
 
-import { ApiClient } from '@ghatana/api';
+import { ApiClient, createCorrelationMiddleware } from '@ghatana/api';
 import type { ApiRequest, ApiResponse as GhatanaApiResponse } from '@ghatana/api';
 
 // ============================================================================
@@ -181,6 +181,8 @@ export class AuthService {
       timeoutMs: config.timeout ?? 30000,
       retry: { attempts: config.retryAttempts ?? 1 },
     });
+
+    this.apiClient.useRequest(createCorrelationMiddleware());
 
     // Inject Bearer token from localStorage on every request
     this.apiClient.useRequest((request: ApiRequest): ApiRequest => {

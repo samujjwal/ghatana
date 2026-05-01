@@ -22,10 +22,6 @@ export type {
 export { UnifiedHeaderBar } from './UnifiedHeaderBar';
 export { NewButton, QuickActionsPanel } from './QuickActionsPanel';
 
-// Phase rail
-export { UnifiedPhaseRail } from './UnifiedPhaseRail';
-export type { UnifiedPhaseRailProps } from './UnifiedPhaseRail';
-
 // Unified navigation system
 export { NavigationBreadcrumb } from './NavigationBreadcrumb';
 export type {

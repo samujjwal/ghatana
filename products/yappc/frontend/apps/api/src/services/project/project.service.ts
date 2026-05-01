@@ -11,6 +11,7 @@
  */
 
 import { getPrismaClient, type PrismaClient } from '../../database/client';
+import { type ProjectType, type ProjectStatus, type LifecyclePhase } from '@prisma/client';
 
 // ============================================================================
 // Types
@@ -20,15 +21,15 @@ export interface CreateProjectInput {
   workspaceId: string;
   name: string;
   description?: string;
-  type?: string;
+  type?: ProjectType;
 }
 
 export interface UpdateProjectInput {
   name?: string;
   description?: string;
-  type?: string;
-  status?: string;
-  lifecyclePhase?: string;
+  type?: ProjectType;
+  status?: ProjectStatus;
+  lifecyclePhase?: LifecyclePhase;
   aiSummary?: string;
   aiNextActions?: string[];
   aiHealthScore?: number;
@@ -133,9 +134,8 @@ export class ProjectService {
         description: input.description?.trim(),
         ownerWorkspaceId: input.workspaceId,
         createdById: actorId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        type: (input.type as any) ?? 'FULL_STACK',
-        status: 'ACTIVE',
+        type: input.type ?? ('FULL_STACK' as ProjectType),
+        status: 'ACTIVE' as ProjectStatus,
       },
       include: {
         ownerWorkspace: true,
@@ -164,14 +164,9 @@ export class ProjectService {
         ...(input.description !== undefined
           ? { description: input.description?.trim() }
           : {}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...(input.type !== undefined ? { type: input.type as any } : {}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...(input.status !== undefined ? { status: input.status as any } : {}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...(input.lifecyclePhase !== undefined
-          ? { lifecyclePhase: input.lifecyclePhase as any }
-          : {}),
+        ...(input.type !== undefined ? { type: input.type } : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.lifecyclePhase !== undefined ? { lifecyclePhase: input.lifecyclePhase } : {}),
         ...(input.aiSummary !== undefined
           ? { aiSummary: input.aiSummary }
           : {}),

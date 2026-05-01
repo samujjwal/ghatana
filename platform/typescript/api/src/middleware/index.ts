@@ -27,6 +27,7 @@ export type { AuthMiddlewareConfig, AuthMiddleware } from './auth';
 export {
     createTelemetryMiddleware,
     createLoggerMiddleware,
+    createCorrelationMiddleware,
 } from './telemetry';
 export type {
     TelemetryMiddlewareConfig,
@@ -34,4 +35,5 @@ export type {
     RequestTelemetryEvent,
     ResponseTelemetryEvent,
     ErrorTelemetryEvent,
+    CorrelationMiddlewareConfig,
 } from './telemetry';

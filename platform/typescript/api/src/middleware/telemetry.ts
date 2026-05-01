@@ -263,6 +263,69 @@ export function createTelemetryMiddleware(
 }
 
 /**
+ * Correlation ID middleware configuration.
+ */
+export interface CorrelationMiddlewareConfig {
+    /**
+     * Header name to use (default: 'X-Correlation-ID').
+     * Must match the header the Java backend reads and echoes back.
+     */
+    headerName?: string;
+    /**
+     * Optional function that returns a fixed correlation ID (e.g. from a
+     * React context or session store).  When omitted a stable per-tab UUID is
+     * generated once and reused for the lifetime of the page.
+     */
+    getCorrelationId?: () => string | null | undefined;
+}
+
+// Stable per-tab session correlation ID — generated once on module load.
+const SESSION_CORRELATION_ID: string =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `cid-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
+/**
+ * Create a correlation-ID request middleware.
+ *
+ * Every outbound request will carry an `X-Correlation-ID` header so that
+ * FE log entries, BE MDC logs, and AEP event payloads can be joined by a
+ * single trace ID.  The server is expected to echo the header back on
+ * responses (as `YappcLifecycleService` does).
+ *
+ * Usage:
+ * ```ts
+ * const client = new ApiClient({ baseUrl: '/api' });
+ * client.useRequest(createCorrelationMiddleware());
+ * ```
+ */
+export function createCorrelationMiddleware(
+    config: CorrelationMiddlewareConfig = {}
+): RequestMiddleware {
+    const headerName = config.headerName ?? 'X-Correlation-ID';
+    const getCorrelationId = config.getCorrelationId;
+
+    return (req: ApiRequest): ApiRequest => {
+        // If the caller (or a higher-priority middleware) has already stamped
+        // the header, leave it untouched.
+        if (req.headers?.[headerName]) {
+            return req;
+        }
+
+        const correlationId =
+            (getCorrelationId ? getCorrelationId() : null) ?? SESSION_CORRELATION_ID;
+
+        return {
+            ...req,
+            headers: {
+                ...(req.headers ?? {}),
+                [headerName]: correlationId,
+            },
+        };
+    };
+}
+
+/**
  * Create a simple console logger middleware for debugging.
  */
 export function createLoggerMiddleware(

@@ -14,8 +14,6 @@
  * @doc.pattern Page Component
  */
 
-import { useFeatureFlag, FeatureFlag } from '@/providers/FeatureFlagProvider';
-
 function RunPhaseDisabled() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-zinc-950">
@@ -45,27 +43,9 @@ function RunPhaseDisabled() {
 }
 
 export function Component() {
-  const { isFeatureEnabled } = useFeatureFlag();
-  const isRunPhaseEnabled = isFeatureEnabled(FeatureFlag.PHASE_RUN);
-
-  if (!isRunPhaseEnabled) {
-    return <RunPhaseDisabled />;
-  }
-
-  // Import the actual run/deploy component when enabled
-  // Note: The deploy directory doesn't exist yet, so this will fail
-  // until the Run phase is properly implemented
-  return (
-    <div className="p-8">
-      <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4 text-yellow-400">
-        <h2 className="font-semibold mb-2">Run Phase Under Construction</h2>
-        <p className="text-sm">
-          The Run phase is enabled but the deployment component is not yet implemented.
-          Please complete the deployment UI implementation.
-        </p>
-      </div>
-    </div>
-  );
+  // Run phase UI is not yet implemented (pending GitHubActionsCiCdAdapter integration).
+  // Always show the disabled placeholder — no stub content is rendered to users.
+  return <RunPhaseDisabled />;
 }
 
 export function ErrorBoundary() {

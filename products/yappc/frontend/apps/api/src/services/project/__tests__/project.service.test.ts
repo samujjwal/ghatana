@@ -10,6 +10,7 @@ import type {
   CreateProjectInput,
   UpdateProjectInput,
 } from '../project.service';
+import { ProjectType, ProjectStatus, LifecyclePhase } from '@prisma/client';
 
 // ---------------------------------------------------------------------------
 // Prisma Mock Factory
@@ -44,9 +45,9 @@ function projectRow(overrides: Record<string, unknown> = {}) {
     createdById: 'user-1',
     name: 'My Project',
     description: null,
-    type: 'FULL_STACK',
-    status: 'ACTIVE',
-    lifecyclePhase: 'DEVELOPMENT',
+    type: ProjectType.FULL_STACK,
+    status: ProjectStatus.ACTIVE,
+    lifecyclePhase: LifecyclePhase.INTENT,
     isDefault: false,
     aiSummary: null,
     aiNextActions: [],
@@ -139,14 +140,13 @@ describe('ProjectService.create', () => {
     const input: CreateProjectInput = {
       workspaceId: 'ws-1',
       name: 'New Project',
-      type: 'FULL_STACK',
+      type: ProjectType.FULL_STACK,
     };
     await svc.create('user-1', input);
 
     const callData = prisma.project.create.mock.calls[0][0].data;
-    expect(callData.status).toBe('ACTIVE');
-    expect(callData.lifecyclePhase).toBe('DEVELOPMENT');
-    expect(callData.type).toBe('FULL_STACK');
+    expect(callData.status).toBe(ProjectStatus.ACTIVE);
+    expect(callData.type).toBe(ProjectType.FULL_STACK);
   });
 
   it('returns project with ISO dates', async () => {

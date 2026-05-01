@@ -1,11 +1,17 @@
 /**
  * Unified Phase Rail Component
- * 
- * Always-visible phase navigation that shows the complete lifecycle.
- * Context-aware styling and interactions.
- * 
+ *
+ * @deprecated This component is NOT rendered in any route shell and uses an
+ * outdated 7-phase model (`LifecyclePhase.IMPROVE`) that does not match the
+ * canonical 8-phase IA (`INTENT → SHAPE → VALIDATE → GENERATE → RUN →
+ * OBSERVE → LEARN → EVOLVE`) defined in `shared/types/lifecycle.ts`.
+ *
+ * The canonical phase navigation is the `NavLink` tab bar in
+ * `routes/app/project/_shell.tsx` (`BASE_PROJECT_TABS`).  Do not import or
+ * render this component; `_shell.tsx` is the single source of truth.
+ *
  * @doc.type component
- * @doc.purpose Lifecycle phase navigation
+ * @doc.purpose DEPRECATED — orphaned 7-phase rail (use _shell.tsx tab bar)
  * @doc.layer product
  * @doc.pattern Navigation Component
  */

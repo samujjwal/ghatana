@@ -1,5 +1,6 @@
 package com.ghatana.yappc.ai.canvas;
 
+import com.ghatana.agent.memory.security.MemoryRedactionFilter;
 import com.ghatana.ai.llm.*;
 import com.ghatana.ai.prompts.PromptTemplateManager;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -240,11 +241,17 @@ public class CanvasAIServer extends Launcher {
             }
 
             @Provides
+            MemoryRedactionFilter memoryRedactionFilter() {
+                return MemoryRedactionFilter.defaultFilter();
+            }
+
+            @Provides
             CanvasAIServiceImpl canvasAIService(CanvasValidationService validationService,
                                                CanvasGenerationService generationService,
                                                MetricsCollector metrics,
-                                               DataSource dataSource) {
-                return new CanvasAIServiceImpl(validationService, generationService, metrics, dataSource);
+                                               DataSource dataSource,
+                                               MemoryRedactionFilter redactionFilter) {
+                return new CanvasAIServiceImpl(validationService, generationService, metrics, dataSource, redactionFilter);
             }
         };
     }

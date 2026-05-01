@@ -3,7 +3,7 @@
  * Handles all API communication with the backend server
  */
 
-import { ApiClient } from '@ghatana/api';
+import { ApiClient, createCorrelationMiddleware } from '@ghatana/api';
 import type {
   ApiResponse,
   DevSecOpsOverview,
@@ -37,6 +37,7 @@ export class DevSecOpsClient {
    */
   constructor() {
     this.apiClient = new ApiClient();
+    this.apiClient.useRequest(createCorrelationMiddleware());
   }
 
   /**

@@ -16,6 +16,9 @@ dependencies {
     // Agent Framework
     api(project(":platform:java:agent-core"))
 
+    // AEP Agent Runtime (for MemoryRedactionFilter)
+    implementation(project(":products:aep:aep-agent-runtime"))
+
     // Platform libs
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:core"))
@@ -86,6 +89,7 @@ dependencies {
         testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.h2)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.jmh.core)

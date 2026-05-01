@@ -270,13 +270,14 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
      *
      * <p><b>Limitations:</b> This method only supports equality filters.
      * Comparison operators ($gte, $gt, $lte, $lt) are not supported.
-     * Sorting is not implemented.
+     * Sorting is not supported by the current Data Cloud adapter — passing a non-null
+     * {@code sort} value will result in a failed Promise.
      *
      * <p><b>Note:</b> Full query operators are not supported by the current Data Cloud adapter.
      * Use explicit equality methods (findByFieldEquals) instead.
      *
      * @param filter the filter criteria (field name -&gt; value) - equality only
-     * @param sort   ignored - sorting not implemented
+     * @param sort   must be {@code null}; non-null values are rejected with {@link UnsupportedOperationException}
      * @param limit  maximum results to return
      * @param offset offset for pagination
      * @return Promise of list of matching entities
@@ -289,6 +290,10 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
             String sort,
             int limit,
             int offset) {
+        if (sort != null && !sort.isBlank()) {
+            return Promise.ofException(
+                new UnsupportedOperationException("Sorting is not supported by the DataCloud adapter"));
+        }
         String tenantId = resolveTenantId();
         List<DataCloudClient.Filter> filters = filter.entrySet().stream()
                 .map(e -> DataCloudClient.Filter.eq(e.getKey(), e.getValue()))

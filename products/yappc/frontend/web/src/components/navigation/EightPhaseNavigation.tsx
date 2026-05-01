@@ -1,15 +1,18 @@
 /**
  * Eight-Phase Navigation Component
  *
- * Primary navigation for YAPPC using the canonical 8-phase IA model:
- * Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve
+ * @deprecated This component is NOT used in any route.
+ * The canonical phase navigation is the `NavLink` tab bar defined in
+ * `routes/app/project/_shell.tsx` (`BASE_PROJECT_TABS`), which uses real
+ * React Router routes (`/p/:id/intent`, `/p/:id/shape`, …).
  *
- * This replaces the old dev/ops/admin page structure with a unified
- * lifecycle-based navigation. Development, operations, and admin pages
- * are demoted to context-sensitive panels within appropriate phases.
+ * This file navigates via `?phase=` query params, which do not match the
+ * route tree and are therefore a no-op.  Do not import or render this
+ * component; use `_shell.tsx` as the single source of truth for phase
+ * navigation.
  *
  * @doc.type component
- * @doc.purpose Primary 8-phase lifecycle navigation
+ * @doc.purpose DEPRECATED — orphaned phase navigation (use _shell.tsx tab bar)
  * @doc.layer product
  * @doc.pattern Navigation Component
  */

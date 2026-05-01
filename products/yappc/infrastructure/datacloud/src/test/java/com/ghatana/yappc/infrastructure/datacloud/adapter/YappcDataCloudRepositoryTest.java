@@ -176,6 +176,45 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
             .containsEntry("OPENAI_API_KEY", "sk-live-secret"); // GH-90000
     }
 
+    @Test
+    @DisplayName("findByFilter with non-null sort returns failed Promise")
+    void findByFilterRejectsSortParameter() { // GH-90000
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+
+        Throwable thrown = catchThrowable(() ->
+            runPromise(() -> repository.findByFilter(Map.of(), "createdAt DESC", 10, 0))
+        );
+        assertThat(thrown).isInstanceOf(UnsupportedOperationException.class)
+            .hasMessageContaining("Sorting is not supported by the DataCloud adapter");
+    }
+
+    @Test
+    @DisplayName("findByFilterPaginated with non-null sort returns failed Promise")
+    void findByFilterPaginatedRejectsSortParameter() { // GH-90000
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+
+        Throwable thrown = catchThrowable(() ->
+            runPromise(() -> repository.findByFilterPaginated(Map.of(), "updatedAt ASC", null, 20))
+        );
+        assertThat(thrown).isInstanceOf(UnsupportedOperationException.class)
+            .hasMessageContaining("Sorting is not");
+    }
+
+    @Test
+    @DisplayName("findByFilter with null sort executes normally")
+    void findByFilterAcceptsNullSort() { // GH-90000
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+
+        when(client.query(anyString(), anyString(), any()))
+            .thenReturn(Promise.of(List.of()));
+
+        List<TestEntity> result = runPromise(() -> repository.findByFilter(Map.of(), null, 10, 0));
+        assertThat(result).isEmpty();
+    }
+
     record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { // GH-90000
         @Override public UUID getId() { return id; } // GH-90000
     }

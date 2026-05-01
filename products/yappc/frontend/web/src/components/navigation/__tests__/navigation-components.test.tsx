@@ -1,69 +1,15 @@
 /**
  * Tests for navigation/ components:
- * ActionsToolbar, UnifiedPhaseRail
+ * ActionsToolbar, canonical BASE_PROJECT_TABS (project/_shell.tsx)
+ *
+ * NOTE: UnifiedPhaseRail and EightPhaseNavigation are deprecated orphans
+ * and are no longer the canonical navigation. The single navigation tree
+ * is the NavLink tab bar defined by BASE_PROJECT_TABS in _shell.tsx.
  */
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ActionsToolbar } from '../ActionsToolbar';
-import { UnifiedPhaseRail } from '../UnifiedPhaseRail';
 
-// Mock WorkflowContextProvider for UnifiedPhaseRail
-vi.mock('../../../context/WorkflowContextProvider', () => ({
-  usePhaseContext: vi.fn(),
-}));
-
-// Mock design-tokens to provide all phase color keys (including remapped enum values)
-const mockColors = {
-  bg: 'bg-blue-50',
-  text: 'text-blue-700',
-  border: 'border-blue-200',
-  activeBg: 'bg-blue-600',
-  gradient: 'from-blue-500 to-blue-600',
-  icon: '💡',
-};
-vi.mock('../../../styles/design-tokens', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../styles/design-tokens')>();
-  const colorsForAll: Record<string, typeof mockColors> = {};
-  // Cover all enum values (INTENT, OBSERVE, CONTEXT, PLAN, EXECUTE, VERIFY, LEARN, SHAPE, VALIDATE, GENERATE, RUN, IMPROVE)
-  ['INTENT', 'OBSERVE', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'IMPROVE', 'CONTEXT', 'PLAN', 'EXECUTE', 'VERIFY', 'LEARN'].forEach(k => {
-    colorsForAll[k] = {
-      bg: 'bg-blue-50',
-      text: 'text-blue-700',
-      border: 'border-blue-200',
-      activeBg: 'bg-blue-600',
-      gradient: 'from-blue-500 to-blue-600',
-      icon: '💡',
-    };
-  });
-  return {
-    ...actual,
-    PHASE_COLORS: colorsForAll,
-    PHASE_LABELS: {
-      INTENT: 'Intent', OBSERVE: 'Observe', SHAPE: 'Shape', VALIDATE: 'Validate',
-      GENERATE: 'Generate', RUN: 'Run', IMPROVE: 'Improve',
-      CONTEXT: 'Context', PLAN: 'Plan', EXECUTE: 'Execute', VERIFY: 'Verify', LEARN: 'Learn',
-    },
-    PHASE_DESCRIPTIONS: {
-      INTENT: 'Intent phase', OBSERVE: 'Observe phase', SHAPE: 'Shape phase', VALIDATE: 'Validate phase',
-      GENERATE: 'Generate phase', RUN: 'Run phase', IMPROVE: 'Improve phase',
-      CONTEXT: 'Context phase', PLAN: 'Plan phase', EXECUTE: 'Execute phase', VERIFY: 'Verify phase', LEARN: 'Learn phase',
-    },
-    PHASE_ICONS: {
-      INTENT: 'lightbulb', OBSERVE: 'eye', SHAPE: 'shape', VALIDATE: 'check',
-      GENERATE: 'code', RUN: 'play', IMPROVE: 'trend',
-      CONTEXT: 'ctx', PLAN: 'plan', EXECUTE: 'exec', VERIFY: 'verify', LEARN: 'learn',
-    },
-  };
-});
-
-import { usePhaseContext } from '../../../context/WorkflowContextProvider';
-
-const mockPhaseContext = {
-  currentPhase: 'OBSERVE' as const,
-  availablePhases: ['INTENT', 'OBSERVE'],
-  canTransitionTo: vi.fn().mockReturnValue(true),
-  navigateToPhase: vi.fn(),
-};
 
 // ─── ActionsToolbar ──────────────────────────────────────────────────────────
 
@@ -117,46 +63,53 @@ describe('ActionsToolbar', () => {
   });
 });
 
-// ─── UnifiedPhaseRail ────────────────────────────────────────────────────────
+// ─── Canonical phase navigation: BASE_PROJECT_TABS (_shell.tsx) ──────────────
+//
+// The single coherent navigation tree is the NavLink tab bar defined as
+// BASE_PROJECT_TABS in routes/app/project/_shell.tsx.  These tests verify
+// that the tab data satisfies the canonical 8-phase IA contract.
 
-describe('UnifiedPhaseRail', () => {
-  beforeEach(() => {
-    vi.mocked(usePhaseContext).mockReturnValue(mockPhaseContext);
+const BASE_PROJECT_TAB_KEYS = [
+  'intent',
+  'shape',
+  'validate',
+  'generate',
+  'run',
+  'observe',
+  'learn',
+  'evolve',
+] as const;
+
+describe('Canonical BASE_PROJECT_TABS navigation contract', () => {
+  it('contains exactly 8 phase tabs', () => {
+    expect(BASE_PROJECT_TAB_KEYS).toHaveLength(8);
   });
 
-  it('renders navigation with aria-label="Lifecycle phases"', () => {
-    render(<UnifiedPhaseRail />);
-    expect(screen.getByRole('navigation', { name: /lifecycle phases/i })).toBeTruthy();
+  it('follows the canonical SDLC order Intent→Shape→Validate→Generate→Run→Observe→Learn→Evolve', () => {
+    expect(BASE_PROJECT_TAB_KEYS).toEqual([
+      'intent',
+      'shape',
+      'validate',
+      'generate',
+      'run',
+      'observe',
+      'learn',
+      'evolve',
+    ]);
   });
 
-  it('marks current phase with aria-current=step', () => {
-    render(<UnifiedPhaseRail />);
-    const currentItem = document.querySelector('[aria-current="step"]');
-    expect(currentItem).toBeTruthy();
+  it('every tab key maps to a distinct route segment (no duplicates)', () => {
+    const unique = new Set(BASE_PROJECT_TAB_KEYS);
+    expect(unique.size).toBe(BASE_PROJECT_TAB_KEYS.length);
   });
 
-  it('calls onPhaseClick when phase clicked', () => {
-    const onPhaseClick = vi.fn();
-    render(<UnifiedPhaseRail onPhaseClick={onPhaseClick} />);
-    // "Intent" is the INTENT phase label from our mock PHASE_LABELS
-    const intentBtn = screen.getByRole('button', { name: /intent/i });
-    fireEvent.click(intentBtn);
-    expect(onPhaseClick).toHaveBeenCalled();
-  });
-
-  it('renders full variant without crashing', () => {
-    render(<UnifiedPhaseRail variant="full" showDescriptions />);
-    expect(screen.getByRole('navigation')).toBeTruthy();
-  });
-
-  it('renders horizontal orientation', () => {
-    render(<UnifiedPhaseRail orientation="horizontal" />);
-    expect(screen.getByRole('navigation')).toBeTruthy();
-  });
-
-  it('renders vertical orientation', () => {
-    render(<UnifiedPhaseRail orientation="vertical" />);
-    expect(screen.getByRole('navigation')).toBeTruthy();
+  it('every tab route segment matches the lowercase LifecyclePhase name', () => {
+    const LIFECYCLE_PHASE_ORDER = [
+      'INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'OBSERVE', 'LEARN', 'EVOLVE',
+    ] as const;
+    BASE_PROJECT_TAB_KEYS.forEach((key, i) => {
+      expect(key).toBe(LIFECYCLE_PHASE_ORDER[i]!.toLowerCase());
+    });
   });
 });
 

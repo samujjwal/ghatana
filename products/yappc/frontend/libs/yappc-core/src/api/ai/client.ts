@@ -10,7 +10,7 @@
  * @doc.pattern API Client
  */
 
-import { ApiClient } from '@ghatana/api';
+import { ApiClient, createCorrelationMiddleware } from '@ghatana/api';
 import type {
   AIInsight,
   Prediction,
@@ -167,6 +167,7 @@ export class AIClient {
 
   constructor(baseUrl = '/api/ai') {
     this.apiClient = new ApiClient({ baseUrl });
+    this.apiClient.useRequest(createCorrelationMiddleware());
   }
 
   /**

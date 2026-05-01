@@ -57,6 +57,19 @@ export interface SecurityFinding {
   references?: string[];
 }
 
+interface NpmAuditVulnerability {
+  severity: string;
+  version?: string;
+  title?: string;
+  cwe?: string[];
+  url?: string;
+  fixAvailable?: { version?: string };
+}
+
+interface NpmAuditResult {
+  vulnerabilities?: Record<string, NpmAuditVulnerability>;
+}
+
 export interface ScanListOptions {
   status?: string;
   scanType?: string;
@@ -290,60 +303,51 @@ export class SecurityScanService {
       await access(targetPath);
 
       // Run npm audit for real vulnerability scanning
-      const { stdout, stderr } = await execAsync(`npm audit --json`, {
+      const { stdout } = await execAsync(`npm audit --json`, {
         cwd: isPackageJson ? undefined : target,
         timeout: 30000 // 30 second timeout
       });
 
-      const auditResult = JSON.parse(stdout);
-      
+      const auditResult = JSON.parse(stdout) as NpmAuditResult;
       if (auditResult.vulnerabilities) {
-        for (const [packageName, vulnerability] of Object.entries(auditResult.vulnerabilities)) {
-          const vuln = vulnerability as any;
-          
-          // Filter by severity if specified
+        for (const [packageName, vuln] of Object.entries(auditResult.vulnerabilities)) {
           if (options?.severity && this.mapSeverity(vuln.severity) !== options.severity) {
             continue;
           }
-
           findings.push({
-            id: `dep-${packageName}-${vuln.version}`,
+            id: `dep-${packageName}-${vuln.version ?? 'unknown'}`,
             type: 'dependency',
             severity: this.mapSeverity(vuln.severity),
             title: `Dependency vulnerability in ${packageName}`,
-            description: vuln.title || `Vulnerability in ${packageName}@${vuln.version}`,
-            location: `package.json: ${packageName}@${vuln.version}`,
+            description: vuln.title ?? `Vulnerability in ${packageName}@${vuln.version ?? 'unknown'}`,
+            location: `package.json: ${packageName}@${vuln.version ?? 'unknown'}`,
             cveId: vuln.cwe?.join(', '),
-            recommendation: `Update ${packageName} to a safe version. Current: ${vuln.version}, Fixed in: ${vuln.fixAvailable?.version || 'latest'}`,
+            recommendation: `Update ${packageName} to a safe version. Current: ${vuln.version ?? 'unknown'}, Fixed in: ${vuln.fixAvailable?.version ?? 'latest'}`,
             references: vuln.url ? [vuln.url] : []
           });
         }
       }
 
       this.logger.info(`Dependency scan found ${findings.length} vulnerabilities for target: ${target}`);
-    } catch (error: any) {
-      // npm audit exits with non-zero code when vulnerabilities are found
-      if (error.stdout) {
+    } catch (error: unknown) {
+      const err = error as { stdout?: string; message?: string };
+      if (err.stdout) {
         try {
-          const auditResult = JSON.parse(error.stdout);
+          const auditResult = JSON.parse(err.stdout) as NpmAuditResult;
           if (auditResult.vulnerabilities) {
-            // Process vulnerabilities even when audit fails
-            for (const [packageName, vulnerability] of Object.entries(auditResult.vulnerabilities)) {
-              const vuln = vulnerability as any;
-              
+            for (const [packageName, vuln] of Object.entries(auditResult.vulnerabilities)) {
               if (options?.severity && this.mapSeverity(vuln.severity) !== options.severity) {
                 continue;
               }
-
               findings.push({
-                id: `dep-${packageName}-${vuln.version}`,
+                id: `dep-${packageName}-${vuln.version ?? 'unknown'}`,
                 type: 'dependency',
                 severity: this.mapSeverity(vuln.severity),
                 title: `Dependency vulnerability in ${packageName}`,
-                description: vuln.title || `Vulnerability in ${packageName}@${vuln.version}`,
-                location: `package.json: ${packageName}@${vuln.version}`,
+                description: vuln.title ?? `Vulnerability in ${packageName}@${vuln.version ?? 'unknown'}`,
+                location: `package.json: ${packageName}@${vuln.version ?? 'unknown'}`,
                 cveId: vuln.cwe?.join(', '),
-                recommendation: `Update ${packageName} to a safe version. Current: ${vuln.version}, Fixed in: ${vuln.fixAvailable?.version || 'latest'}`,
+                recommendation: `Update ${packageName} to a safe version. Current: ${vuln.version ?? 'unknown'}, Fixed in: ${vuln.fixAvailable?.version ?? 'latest'}`,
                 references: vuln.url ? [vuln.url] : []
               });
             }
@@ -353,7 +357,7 @@ export class SecurityScanService {
         }
       } else {
         this.logger.error('Dependency scan failed', { error });
-        throw new Error(`Dependency scan failed: ${error.message}`);
+        throw new Error(`Dependency scan failed: ${err.message ?? 'unknown error'}`);
       }
     }
 
@@ -430,10 +434,8 @@ export class SecurityScanService {
       }
 
       this.logger.info(`Code scan found ${findings.length} security issues for target: ${target}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('Code scan failed', { error });
-      // Don't throw error for code scan failures, just log and return empty findings
-      // This allows scans to continue even if ESLint isn't available
     }
 
     return findings;

@@ -76,5 +76,5 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
-    testImplementation(project(":products:yappc:core:yappc-domain-impl"))
+    testImplementation(testFixtures(project(":products:yappc:core:yappc-domain-impl")))
 }

@@ -11,9 +11,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.ghatana.agent.memory.security.MemoryRedactionFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.sql.DataSource;
@@ -38,15 +40,18 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
     private final CanvasGenerationService generationService;
     private final MetricsCollector metrics;
     private final DataSource dataSource;
+    private final MemoryRedactionFilter redactionFilter;
 
     public CanvasAIServiceImpl(CanvasValidationService validationService,
                                CanvasGenerationService generationService,
                                MetricsCollector metrics,
-                               DataSource dataSource) {
+                               DataSource dataSource,
+                               MemoryRedactionFilter redactionFilter) {
         this.validationService = validationService;
         this.generationService = generationService;
         this.metrics = metrics;
         this.dataSource = dataSource;
+        this.redactionFilter = redactionFilter;
     }
 
     private Connection getConnection() throws SQLException {
@@ -54,10 +59,11 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
     }
 
     private void saveValidationReport(String canvasId, ValidationReport report) {
+        ValidationReport redacted = redactReport(report);
         String sql = "INSERT INTO canvas_validation_history (canvas_id, report_bytes, created_at) VALUES (?, ?, NOW())";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, canvasId);
-            ps.setBytes(2, report.toByteArray());
+            ps.setBytes(2, redacted.toByteArray());
             ps.executeUpdate();
         } catch (SQLException e) {
             logger.warn("Failed to persist validation report for canvas {}: {}", canvasId, e.getMessage());
@@ -72,7 +78,7 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
             ps.setInt(2, limit);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    reports.add(ValidationReport.parseFrom(rs.getBytes("report_bytes")));
+                    reports.add(redactReport(ValidationReport.parseFrom(rs.getBytes("report_bytes"))));
                 }
             }
         } catch (Exception e) {
@@ -97,10 +103,11 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
     }
 
     private void saveGenerationResult(String canvasId, CodeGenerationResult result) {
+        CodeGenerationResult redacted = redactResult(result);
         String sql = "INSERT INTO canvas_generation_history (canvas_id, result_bytes, created_at) VALUES (?, ?, NOW())";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, canvasId);
-            ps.setBytes(2, result.toByteArray());
+            ps.setBytes(2, redacted.toByteArray());
             ps.executeUpdate();
         } catch (SQLException e) {
             logger.warn("Failed to persist generation result for canvas {}: {}", canvasId, e.getMessage());
@@ -115,7 +122,7 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
             ps.setInt(2, limit);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    results.add(CodeGenerationResult.parseFrom(rs.getBytes("result_bytes")));
+                    results.add(redactResult(CodeGenerationResult.parseFrom(rs.getBytes("result_bytes"))));
                 }
             }
         } catch (Exception e) {
@@ -137,6 +144,73 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
             logger.warn("Failed to count generation history for canvas {}: {}", canvasId, e.getMessage());
         }
         return 0;
+    }
+
+    /**
+     * Redacts sensitive content from a ValidationReport before persistence or after retrieval.
+     */
+    private ValidationReport redactReport(ValidationReport report) {
+        List<ValidationIssue> redactedIssues = report.getIssuesList().stream()
+            .map(i -> ValidationIssue.newBuilder(i)
+                .setTitle(redactionFilter.redact(i.getTitle()))
+                .setDescription(redactionFilter.redact(i.getDescription()))
+                .setSuggestion(redactionFilter.redact(i.getSuggestion()))
+                .build())
+            .collect(Collectors.toList());
+
+        List<RiskAssessment> redactedRisks = report.getRisksList().stream()
+            .map(r -> RiskAssessment.newBuilder(r)
+                .setTitle(redactionFilter.redact(r.getTitle()))
+                .setDescription(redactionFilter.redact(r.getDescription()))
+                .setImpact(redactionFilter.redact(r.getImpact()))
+                .setMitigation(redactionFilter.redact(r.getMitigation()))
+                .build())
+            .collect(Collectors.toList());
+
+        List<String> redactedGaps = report.getGapsList().stream()
+            .map(redactionFilter::redact)
+            .collect(Collectors.toList());
+
+        return ValidationReport.newBuilder(report)
+            .clearIssues()
+            .addAllIssues(redactedIssues)
+            .clearRisks()
+            .addAllRisks(redactedRisks)
+            .clearGaps()
+            .addAllGaps(redactedGaps)
+            .build();
+    }
+
+    /**
+     * Redacts sensitive content from a CodeGenerationResult before persistence or after retrieval.
+     */
+    private CodeGenerationResult redactResult(CodeGenerationResult result) {
+        List<GeneratedArtifact> redactedArtifacts = result.getArtifactsList().stream()
+            .map(a -> GeneratedArtifact.newBuilder(a)
+                .setPath(redactionFilter.redact(a.getPath()))
+                .setContent(redactionFilter.redact(a.getContent()))
+                .setLanguage(redactionFilter.redact(a.getLanguage()))
+                .setFramework(redactionFilter.redact(a.getFramework()))
+                .build())
+            .collect(Collectors.toList());
+
+        List<String> redactedErrors = result.getErrorsList().stream()
+            .map(redactionFilter::redact)
+            .collect(Collectors.toList());
+
+        List<String> redactedWarnings = result.getWarningsList().stream()
+            .map(redactionFilter::redact)
+            .collect(Collectors.toList());
+
+        return CodeGenerationResult.newBuilder(result)
+            .clearArtifacts()
+            .addAllArtifacts(redactedArtifacts)
+            .setSummary(redactionFilter.redact(result.getSummary()))
+            .clearErrors()
+            .addAllErrors(redactedErrors)
+            .clearWarnings()
+            .addAllWarnings(redactedWarnings)
+            .build();
     }
 
     /**
