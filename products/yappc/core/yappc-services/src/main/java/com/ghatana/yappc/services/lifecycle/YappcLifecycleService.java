@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import javax.sql.DataSource;
 
 import static io.activej.http.HttpMethod.GET;
 import static io.activej.http.HttpMethod.POST;
@@ -313,7 +314,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             LifecycleWorkflowService workflowService) {
 
         ObjectMapper objectMapper = new ObjectMapper();
-                ApprovalHttpHandlers approvalHttpHandlers = new ApprovalHttpHandlers(humanApprovalService, objectMapper);
+        DataSource dataSource = injector.getInstance(DataSource.class);
+        ApprovalHttpHandlers approvalHttpHandlers = new ApprovalHttpHandlers(humanApprovalService, objectMapper, dataSource);
 
         return RoutingServlet.builder(eventloop)
 

@@ -363,6 +363,10 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
             String sort,
             String cursor,
             int pageSize) {
+        if (sort != null && !sort.isBlank()) {
+            return Promise.ofException(
+                new UnsupportedOperationException("Sorting is not yet implemented by DataCloud adapter"));
+        }
         String tenantId = resolveTenantId();
         int validatedPageSize = PaginationConfig.clampPageSize(pageSize);
 

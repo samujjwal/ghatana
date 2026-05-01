@@ -59,14 +59,20 @@ public class ResultAggregatorOperator extends AbstractOperator {
     /** Expected results per correlation group before emitting. Default: 1 (immediate). */
     private final int aggregationThreshold;
 
+    /** Maximum number of in-flight correlation buckets before eviction. */
+    private final int maxBucketCount;
+
     /** In-flight result buckets keyed by correlationId. */
     private final ConcurrentHashMap<String, List<Map<?, ?>>> buckets = new ConcurrentHashMap<>();
+
+    /** Default maximum in-flight correlation buckets. */
+    private static final int DEFAULT_MAX_BUCKETS = 10_000;
 
     /**
      * Creates a {@code ResultAggregatorOperator} with immediate emission (threshold=1).
      */
     public ResultAggregatorOperator() {
-        this(1);
+        this(1, DEFAULT_MAX_BUCKETS);
     }
 
     /**
@@ -74,8 +80,9 @@ public class ResultAggregatorOperator extends AbstractOperator {
      *
      * @param aggregationThreshold number of results to collect per correlation ID
      *                             before emitting a {@code workflow.step.completed} event
+     * @param maxBucketCount     maximum number of in-flight correlation buckets
      */
-    public ResultAggregatorOperator(int aggregationThreshold) {
+    public ResultAggregatorOperator(int aggregationThreshold, int maxBucketCount) {
         super(
             OperatorId.of("yappc", "stream", "result-aggregator", "1.0.0"),
             OperatorType.STREAM,
@@ -88,7 +95,12 @@ public class ResultAggregatorOperator extends AbstractOperator {
             throw new IllegalArgumentException(
                     "aggregationThreshold must be positive, got: " + aggregationThreshold);
         }
+        if (maxBucketCount <= 0) {
+            throw new IllegalArgumentException(
+                    "maxBucketCount must be positive, got: " + maxBucketCount);
+        }
         this.aggregationThreshold = aggregationThreshold;
+        this.maxBucketCount = maxBucketCount;
     }
 
     @Override
@@ -110,6 +122,13 @@ public class ResultAggregatorOperator extends AbstractOperator {
             "status",        Objects.toString(status, "unknown"),
             "receivedAt",    Instant.now().toString()
         );
+
+        // Enforce bounded bucket count — evict oldest (arbitrary) if at capacity
+        if (buckets.size() >= maxBucketCount && !buckets.containsKey(correlationId)) {
+            String evicted = buckets.keySet().iterator().next();
+            buckets.remove(evicted);
+            log.warn("Evicted correlation bucket {} to stay within maxBucketCount={}", evicted, maxBucketCount);
+        }
 
         List<Map<?, ?>> bucket = buckets.computeIfAbsent(correlationId, k -> new ArrayList<>());
         synchronized (bucket) {
@@ -167,6 +186,7 @@ public class ResultAggregatorOperator extends AbstractOperator {
                 .addPayload("operatorType", getType().name())
                 .addPayload("version",      getVersion())
                 .addPayload("threshold",    aggregationThreshold)
+                .addPayload("maxBucketCount", maxBucketCount)
                 .build();
     }
 }

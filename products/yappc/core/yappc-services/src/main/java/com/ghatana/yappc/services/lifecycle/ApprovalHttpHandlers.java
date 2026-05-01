@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.sql.DataSource;
 
 /**
  * @doc.type class
@@ -36,6 +37,10 @@ final class ApprovalHttpHandlers {
 
     ApprovalHttpHandlers(HumanApprovalService humanApprovalService, ObjectMapper objectMapper) {
         this(humanApprovalService, objectMapper, new InMemoryIdempotencyStore(REPLAY_WINDOW));
+    }
+
+    ApprovalHttpHandlers(HumanApprovalService humanApprovalService, ObjectMapper objectMapper, DataSource dataSource) {
+        this(humanApprovalService, objectMapper, new JdbcIdempotencyStore(dataSource, REPLAY_WINDOW));
     }
 
     ApprovalHttpHandlers(
