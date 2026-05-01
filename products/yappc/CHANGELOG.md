@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build green yappc,dc [`1c9abf9`](https://github.com/samujjwal/ghatana/commit/1c9abf93ce1ba30aaa3eafd80a93e3535b3c4d1a)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`a3565cc`](https://github.com/samujjwal/ghatana/commit/a3565cc375e58b611095c7402321fce334f7a04a)
 - **Changed**: fdaf [`6e14eb7`](https://github.com/samujjwal/ghatana/commit/6e14eb7863ffa9275f7e6db38b6eb7a70e3c32d2)
 - **Changed**: ref ffd [`b6e50fb`](https://github.com/samujjwal/ghatana/commit/b6e50fbdd95fb986165d1379b10db6395e392307)
