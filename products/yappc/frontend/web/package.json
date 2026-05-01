@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/web-app",
+  "name": "@ghatana/yappc-web-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -59,7 +59,7 @@
     "@ghatana/code-editor": "workspace:*",
     "yappc-collab": "workspace:*",
     "yappc-core": "workspace:*",
-    "@yappc/ide": "workspace:*",
+    "@ghatana/yappc-ide": "workspace:*",
     "yappc-initialization-ui": "workspace*",
     "yappc-product-theme": "workspace:*",
     "yappc-state": "workspace:*",

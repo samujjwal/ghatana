@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("Audio-Video Tracing Service Integration Tests")
 class AudioVideoTracingServiceIntegrationTest {
 
@@ -31,10 +31,10 @@ class AudioVideoTracingServiceIntegrationTest {
     private AudioVideoTracingService tracingService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        tracer = mock(Tracer.class); // GH-90000
-        tracingService = new AudioVideoTracingService(tracer); // GH-90000
-        MDC.clear(); // GH-90000
+    void setUp() { 
+        tracer = mock(Tracer.class); 
+        tracingService = new AudioVideoTracingService(tracer); 
+        MDC.clear(); 
     }
 
     @Nested
@@ -42,55 +42,55 @@ class AudioVideoTracingServiceIntegrationTest {
     class GrpcStreamingTracingTests {
 
         @Test
-        void shouldCreateGrpcStreamingSpan() { // GH-90000
+        void shouldCreateGrpcStreamingSpan() { 
             // Given
             String methodName = "VisionStream";
             String tenantId = "grpc-tenant-123";
 
             // When
-            Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); // GH-90000
+            Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); 
 
             // Then
-            assertThat(span).isNotNull(); // GH-90000
+            assertThat(span).isNotNull(); 
             assertThat(MDC.get("methodName")).isEqualTo(methodName);
             assertThat(MDC.get("correlationId")).isNotNull();
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldTrackMethodNameInContext() { // GH-90000
+        void shouldTrackMethodNameInContext() { 
             // Given
             String methodName = "ProcessVideo";
             String tenantId = "grpc-tenant-456";
 
             // When
-            Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); // GH-90000
+            Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); 
 
             // Then
             assertThat(MDC.get("methodName")).isEqualTo(methodName);
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldPropagateCorrelationIdInGrpc() { // GH-90000
+        void shouldPropagateCorrelationIdInGrpc() { 
             // Given
             String correlationId = "grpc-correlation-123";
-            MDC.put("correlationId", correlationId); // GH-90000
+            MDC.put("correlationId", correlationId); 
             String methodName = "StreamAudio";
             String tenantId = "grpc-tenant-789";
 
             // When
-            Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); // GH-90000
+            Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); 
 
             // Then
             assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
     }
 
@@ -99,64 +99,64 @@ class AudioVideoTracingServiceIntegrationTest {
     class VideoProcessingTracingTests {
 
         @Test
-        void shouldCreateVideoProcessingSpan() { // GH-90000
+        void shouldCreateVideoProcessingSpan() { 
             // Given
             String processId = "video-process-123";
             String tenantId = "video-tenant-456";
 
             // When
-            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); // GH-90000
+            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); 
 
             // Then
-            assertThat(span).isNotNull(); // GH-90000
+            assertThat(span).isNotNull(); 
             assertThat(MDC.get("processId")).isEqualTo(processId);
             assertThat(MDC.get("correlationId")).isNotNull();
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldTrackProcessIdInContext() { // GH-90000
+        void shouldTrackProcessIdInContext() { 
             // Given
             String processId = "video-encode-789";
             String tenantId = "video-tenant-123";
 
             // When
-            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); // GH-90000
+            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); 
 
             // Then
             assertThat(MDC.get("processId")).isEqualTo(processId);
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldGenerateUniqueCorrelationIdPerProcess() { // GH-90000
+        void shouldGenerateUniqueCorrelationIdPerProcess() { 
             // Given
             String processId1 = "process-1";
             String processId2 = "process-2";
             String tenantId = "video-tenant-shared";
 
             // When
-            Span span1 = tracingService.startVideoProcessingSpan(processId1, tenantId); // GH-90000
+            Span span1 = tracingService.startVideoProcessingSpan(processId1, tenantId); 
             String correlationId1 = MDC.get("correlationId");
 
-            MDC.clear(); // GH-90000
+            MDC.clear(); 
 
-            Span span2 = tracingService.startVideoProcessingSpan(processId2, tenantId); // GH-90000
+            Span span2 = tracingService.startVideoProcessingSpan(processId2, tenantId); 
             String correlationId2 = MDC.get("correlationId");
 
             // Then
-            assertThat(correlationId1).isNotNull(); // GH-90000
-            assertThat(correlationId2).isNotNull(); // GH-90000
+            assertThat(correlationId1).isNotNull(); 
+            assertThat(correlationId2).isNotNull(); 
             // Two independent processes should have independent correlation IDs
             // unless explicitly reused
 
-            span1.end(); // GH-90000
-            span2.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span1.end(); 
+            span2.end(); 
+            MDC.clear(); 
         }
     }
 
@@ -165,37 +165,37 @@ class AudioVideoTracingServiceIntegrationTest {
     class AudioProcessingTracingTests {
 
         @Test
-        void shouldCreateAudioProcessingSpan() { // GH-90000
+        void shouldCreateAudioProcessingSpan() { 
             // Given
             String processId = "audio-process-123";
             String tenantId = "audio-tenant-456";
 
             // When
-            Span span = tracingService.startAudioProcessingSpan(processId, tenantId); // GH-90000
+            Span span = tracingService.startAudioProcessingSpan(processId, tenantId); 
 
             // Then
-            assertThat(span).isNotNull(); // GH-90000
+            assertThat(span).isNotNull(); 
             assertThat(MDC.get("processId")).isEqualTo(processId);
             assertThat(MDC.get("correlationId")).isNotNull();
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldTrackAudioMetadataInContext() { // GH-90000
+        void shouldTrackAudioMetadataInContext() { 
             // Given
             String processId = "audio-transcode-001";
             String tenantId = "audio-tenant-789";
 
             // When
-            Span span = tracingService.startAudioProcessingSpan(processId, tenantId); // GH-90000
+            Span span = tracingService.startAudioProcessingSpan(processId, tenantId); 
 
             // Then
             assertThat(MDC.get("processId")).isEqualTo("audio-transcode-001");
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
     }
 
@@ -204,37 +204,37 @@ class AudioVideoTracingServiceIntegrationTest {
     class SynthesisTracingTests {
 
         @Test
-        void shouldCreateSynthesisSpan() { // GH-90000
+        void shouldCreateSynthesisSpan() { 
             // Given
             String synthesisId = "synthesis-123";
             String tenantId = "synthesis-tenant-456";
 
             // When
-            Span span = tracingService.startSynthesisSpan(synthesisId, tenantId); // GH-90000
+            Span span = tracingService.startSynthesisSpan(synthesisId, tenantId); 
 
             // Then
-            assertThat(span).isNotNull(); // GH-90000
+            assertThat(span).isNotNull(); 
             assertThat(MDC.get("synthesisId")).isEqualTo(synthesisId);
             assertThat(MDC.get("correlationId")).isNotNull();
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldTraceSynthesisOperations() { // GH-90000
+        void shouldTraceSynthesisOperations() { 
             // Given
             String synthesisId = "speech-synthesis-001";
             String tenantId = "synthesis-tenant-789";
 
             // When
-            Span span = tracingService.startSynthesisSpan(synthesisId, tenantId); // GH-90000
+            Span span = tracingService.startSynthesisSpan(synthesisId, tenantId); 
 
             // Then
             assertThat(MDC.get("synthesisId")).isEqualTo(synthesisId);
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
     }
 
@@ -243,69 +243,69 @@ class AudioVideoTracingServiceIntegrationTest {
     class SLAThresholdValidationTests {
 
         @Test
-        void shouldRecordSuccessfulOperationWithinSLA() { // GH-90000
+        void shouldRecordSuccessfulOperationWithinSLA() { 
             // Given
             Span span = tracer.spanBuilder("operations.within.sla").startSpan();
             long durationMs = 30; // Within 50ms SLA
 
             // When
-            tracingService.recordSuccess(span, durationMs); // GH-90000
+            tracingService.recordSuccess(span, durationMs); 
 
             // Then
             // Operation should be recorded without SLA warning
         }
 
         @Test
-        void shouldWarnWhenOperationExceedsSLA() { // GH-90000
+        void shouldWarnWhenOperationExceedsSLA() { 
             // Given
             Span span = tracer.spanBuilder("operation.exceed.sla").startSpan();
             long durationMs = 75; // Exceeds 50ms SLA
 
             // When
-            tracingService.recordSuccess(span, durationMs); // GH-90000
+            tracingService.recordSuccess(span, durationMs); 
 
             // Then
-            // SLA warning should be logged (verified through log capture in real tests) // GH-90000
+            // SLA warning should be logged (verified through log capture in real tests) 
         }
 
         @Test
-        void shouldRecordDurationMetric() { // GH-90000
+        void shouldRecordDurationMetric() { 
             // Given
             Span span = tracer.spanBuilder("duration.test").startSpan();
             long durationMs = 45;
 
             // When
-            tracingService.recordSuccess(span, durationMs); // GH-90000
+            tracingService.recordSuccess(span, durationMs); 
 
             // Then
-            assertThat(durationMs).isLessThan(50); // GH-90000
+            assertThat(durationMs).isLessThan(50); 
         }
 
         @Test
-        void shouldHandleVeryShortOperations() { // GH-90000
+        void shouldHandleVeryShortOperations() { 
             // Given
             Span span = tracer.spanBuilder("fast.operation").startSpan();
             long durationMs = 5;
 
             // When
-            tracingService.recordSuccess(span, durationMs); // GH-90000
+            tracingService.recordSuccess(span, durationMs); 
 
             // Then
-            assertThat(durationMs).isLessThan(50); // GH-90000
+            assertThat(durationMs).isLessThan(50); 
         }
 
         @Test
-        void shouldHandleOperationsAtSLABoundary() { // GH-90000
+        void shouldHandleOperationsAtSLABoundary() { 
             // Given
             Span span = tracer.spanBuilder("boundary.operation").startSpan();
             long durationMs = 50; // Exactly at SLA threshold
 
             // When
-            tracingService.recordSuccess(span, durationMs); // GH-90000
+            tracingService.recordSuccess(span, durationMs); 
 
             // Then
-            // Should be at threshold (verified through span attributes) // GH-90000
-            assertThat(durationMs).isEqualTo(50); // GH-90000
+            // Should be at threshold (verified through span attributes) 
+            assertThat(durationMs).isEqualTo(50); 
         }
     }
 
@@ -314,29 +314,29 @@ class AudioVideoTracingServiceIntegrationTest {
     class ErrorRecordingTests {
 
         @Test
-        void shouldRecordErrorWithException() { // GH-90000
+        void shouldRecordErrorWithException() { 
             // Given
             Span span = tracer.spanBuilder("error.operation").startSpan();
             Exception exception = new RuntimeException("Processing failed");
             long durationMs = 100;
 
             // When
-            tracingService.recordError(span, exception, durationMs); // GH-90000
+            tracingService.recordError(span, exception, durationMs); 
 
             // Then
-            assertThat(exception).isNotNull(); // GH-90000
+            assertThat(exception).isNotNull(); 
         }
 
         @Test
-        void shouldHandleNullSpanInError() { // GH-90000
+        void shouldHandleNullSpanInError() { 
             // When + Then
             Exception exception = new RuntimeException("Test error");
-            tracingService.recordError(null, exception, 50); // GH-90000
+            tracingService.recordError(null, exception, 50); 
             // Should not throw
         }
 
         @Test
-        void shouldHandleDifferentExceptionTypes() { // GH-90000
+        void shouldHandleDifferentExceptionTypes() { 
             // Given
             Span span1 = tracer.spanBuilder("io.error").startSpan();
             Span span2 = tracer.spanBuilder("timeout.error").startSpan();
@@ -346,19 +346,19 @@ class AudioVideoTracingServiceIntegrationTest {
             tracingService.recordError(span2, new java.util.concurrent.TimeoutException("Timeout"), 120);
 
             // Then
-            assertThat(span1).isNotNull(); // GH-90000
-            assertThat(span2).isNotNull(); // GH-90000
+            assertThat(span1).isNotNull(); 
+            assertThat(span2).isNotNull(); 
         }
 
         @Test
-        void shouldRecordExceptionDetails() { // GH-90000
+        void shouldRecordExceptionDetails() { 
             // Given
             Span span = tracer.spanBuilder("exception.detail.test").startSpan();
             Exception exception = new IllegalStateException("Invalid audio format");
             long durationMs = 75;
 
             // When
-            tracingService.recordError(span, exception, durationMs); // GH-90000
+            tracingService.recordError(span, exception, durationMs); 
 
             // Then
             assertThat(exception.getMessage()).isEqualTo("Invalid audio format");
@@ -370,35 +370,35 @@ class AudioVideoTracingServiceIntegrationTest {
     class ScopeManagementTests {
 
         @Test
-        void shouldCreateScopeForSpan() { // GH-90000
+        void shouldCreateScopeForSpan() { 
             // Given
             Span span = tracer.spanBuilder("scope.test").startSpan();
 
             // When
-            Scope scope = tracingService.createScope(span); // GH-90000
+            Scope scope = tracingService.createScope(span); 
 
             // Then
-            assertThat(scope).isNotNull(); // GH-90000
-            scope.close(); // GH-90000
-            span.end(); // GH-90000
+            assertThat(scope).isNotNull(); 
+            scope.close(); 
+            span.end(); 
         }
 
         @Test
-        void shouldMaintainContextAcrossScope() { // GH-90000
+        void shouldMaintainContextAcrossScope() { 
             // Given
             String processId = "scope-context-test";
             String tenantId = "scope-tenant-test";
-            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); // GH-90000
+            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); 
             String correlationId = MDC.get("correlationId");
 
             // When
-            Scope scope = tracingService.createScope(span); // GH-90000
+            Scope scope = tracingService.createScope(span); 
 
             // Then
             assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
-            scope.close(); // GH-90000
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            scope.close(); 
+            span.end(); 
+            MDC.clear(); 
         }
     }
 
@@ -407,32 +407,32 @@ class AudioVideoTracingServiceIntegrationTest {
     class ContextClearingTests {
 
         @Test
-        void shouldClearAllMDCContext() { // GH-90000
+        void shouldClearAllMDCContext() { 
             // Given
-            MDC.put("key1", "value1"); // GH-90000
-            MDC.put("key2", "value2"); // GH-90000
-            MDC.put("correlationId", "test-correlation"); // GH-90000
+            MDC.put("key1", "value1"); 
+            MDC.put("key2", "value2"); 
+            MDC.put("correlationId", "test-correlation"); 
 
             // When
-            tracingService.clearContext(); // GH-90000
+            tracingService.clearContext(); 
 
             // Then
-            assertThat(MDC.getCopyOfContextMap()).isEmpty(); // GH-90000
+            assertThat(MDC.getCopyOfContextMap()).isEmpty(); 
         }
 
         @Test
-        void shouldCleanupAfterProcessing() { // GH-90000
+        void shouldCleanupAfterProcessing() { 
             // Given
             String processId = "cleanup-test";
             String tenantId = "cleanup-tenant";
-            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); // GH-90000
+            Span span = tracingService.startVideoProcessingSpan(processId, tenantId); 
 
             // When
-            tracingService.clearContext(); // GH-90000
+            tracingService.clearContext(); 
 
             // Then
-            assertThat(MDC.getCopyOfContextMap()).isEmpty(); // GH-90000
-            span.end(); // GH-90000
+            assertThat(MDC.getCopyOfContextMap()).isEmpty(); 
+            span.end(); 
         }
     }
 
@@ -441,43 +441,43 @@ class AudioVideoTracingServiceIntegrationTest {
     class MultiTenantContextIsolationTests {
 
         @Test
-        void shouldIsolateTenantContextsInVideoProcessing() { // GH-90000
+        void shouldIsolateTenantContextsInVideoProcessing() { 
             // Given
             String tenant1 = "isolation-tenant-1";
             String tenant2 = "isolation-tenant-2";
             String processId = "isolation-process";
 
             // When
-            Span span1 = tracingService.startVideoProcessingSpan(processId, tenant1); // GH-90000
+            Span span1 = tracingService.startVideoProcessingSpan(processId, tenant1); 
             String tenant1Context = MDC.get("processingTenant");
-            tracingService.clearContext(); // GH-90000
+            tracingService.clearContext(); 
 
-            Span span2 = tracingService.startVideoProcessingSpan(processId, tenant2); // GH-90000
+            Span span2 = tracingService.startVideoProcessingSpan(processId, tenant2); 
             String tenant2Context = MDC.get("processingTenant");
 
             // Then
             // Contexts should be properly isolated
-            span1.end(); // GH-90000
-            span2.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span1.end(); 
+            span2.end(); 
+            MDC.clear(); 
         }
 
         @Test
-        void shouldPreserveCorrelationIdAcrossTenants() { // GH-90000
+        void shouldPreserveCorrelationIdAcrossTenants() { 
             // Given
             String correlationId = "shared-correlation-av";
-            MDC.put("correlationId", correlationId); // GH-90000
+            MDC.put("correlationId", correlationId); 
             String tenant1 = "tenant-1";
             String processId = "shared-process";
 
             // When
-            Span span = tracingService.startVideoProcessingSpan(processId, tenant1); // GH-90000
+            Span span = tracingService.startVideoProcessingSpan(processId, tenant1); 
 
             // Then
             assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
 
-            span.end(); // GH-90000
-            MDC.clear(); // GH-90000
+            span.end(); 
+            MDC.clear(); 
         }
     }
 
@@ -486,47 +486,47 @@ class AudioVideoTracingServiceIntegrationTest {
     class ConcurrentOperationsTests {
 
         @Test
-        void shouldHandleConcurrentVideoProcessing() { // GH-90000
+        void shouldHandleConcurrentVideoProcessing() { 
             // Given
             String[] processIds = {"process-1", "process-2", "process-3"};
             Span[] spans = new Span[3];
 
             // When
-            for (int i = 0; i < 3; i++) { // GH-90000
-                spans[i] = tracingService.startVideoProcessingSpan( // GH-90000
+            for (int i = 0; i < 3; i++) { 
+                spans[i] = tracingService.startVideoProcessingSpan( 
                         processIds[i],
                         "concurrent-tenant"
                 );
             }
 
             // Then
-            for (Span span : spans) { // GH-90000
-                assertThat(span).isNotNull(); // GH-90000
-                span.end(); // GH-90000
+            for (Span span : spans) { 
+                assertThat(span).isNotNull(); 
+                span.end(); 
             }
-            MDC.clear(); // GH-90000
+            MDC.clear(); 
         }
 
         @Test
-        void shouldHandleConcurrentAudioProcessing() { // GH-90000
+        void shouldHandleConcurrentAudioProcessing() { 
             // Given
             String[] processIds = {"audio-1", "audio-2", "audio-3"};
             Span[] spans = new Span[3];
 
             // When
-            for (int i = 0; i < 3; i++) { // GH-90000
-                spans[i] = tracingService.startAudioProcessingSpan( // GH-90000
+            for (int i = 0; i < 3; i++) { 
+                spans[i] = tracingService.startAudioProcessingSpan( 
                         processIds[i],
                         "concurrent-audio-tenant"
                 );
             }
 
             // Then
-            for (Span span : spans) { // GH-90000
-                assertThat(span).isNotNull(); // GH-90000
-                span.end(); // GH-90000
+            for (Span span : spans) { 
+                assertThat(span).isNotNull(); 
+                span.end(); 
             }
-            MDC.clear(); // GH-90000
+            MDC.clear(); 
         }
     }
 }

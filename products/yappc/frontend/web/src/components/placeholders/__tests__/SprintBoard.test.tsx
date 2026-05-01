@@ -68,8 +68,7 @@ function renderWithStore(
 ) {
   const store = createStore();
   store.set(activeSprintAtom, sprint);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  store.set(sprintStoriesAtom as any, stories);
+  store.set(sprintStoriesAtom as never, stories);
   return render(<Provider store={store}>{ui}</Provider>);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.integration;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("integration")
 @Tag("infrastructure-backed")
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("PostgresIntegrationTest")
 class PostgresIntegrationTest {
 
@@ -43,20 +43,20 @@ class PostgresIntegrationTest {
 
     @Test
     @DisplayName("can create a table and round-trip a row")
-    void canCreateTableAndRoundTripRow() throws Exception { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
+    void canCreateTableAndRoundTripRow() throws Exception { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
 
-        try (HikariDataSource dataSource = new HikariDataSource(config); // GH-90000
-             Connection connection = dataSource.getConnection(); // GH-90000
-             Statement statement = connection.createStatement()) { // GH-90000
+        try (HikariDataSource dataSource = new HikariDataSource(config); 
+             Connection connection = dataSource.getConnection(); 
+             Statement statement = connection.createStatement()) { 
             statement.execute("CREATE TABLE IF NOT EXISTS aep_probe (id TEXT PRIMARY KEY, value TEXT NOT NULL)");
             statement.execute("INSERT INTO aep_probe (id, value) VALUES ('probe-1', 'ok')");
 
             try (ResultSet resultSet = statement.executeQuery("SELECT value FROM aep_probe WHERE id = 'probe-1'")) {
-                assertThat(resultSet.next()).isTrue(); // GH-90000
+                assertThat(resultSet.next()).isTrue(); 
                 assertThat(resultSet.getString(1)).isEqualTo("ok");
             }
         }

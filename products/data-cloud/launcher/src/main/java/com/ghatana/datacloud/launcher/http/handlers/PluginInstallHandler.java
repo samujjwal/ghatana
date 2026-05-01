@@ -58,6 +58,12 @@ public final class PluginInstallHandler {
             new java.util.concurrent.ConcurrentHashMap<>());
 
     /**
+     * Controls whether the hot-swap plugin upgrade endpoint is active.
+     * Defaults to {@code false} — the endpoint returns HTTP 501 until explicitly enabled.
+     */
+    private boolean pluginUpgradeEnabled = false;
+
+    /**
      * @param http           shared HTTP support
      * @param pluginRegistry live plugin registry holding all registered plugins
      * @param metrics        observability metrics
@@ -71,6 +77,17 @@ public final class PluginInstallHandler {
         this.pluginRegistry = Objects.requireNonNull(pluginRegistry, "pluginRegistry");
         this.runtimePluginManager = Objects.requireNonNull(runtimePluginManager, "runtimePluginManager");
         this.metrics = Objects.requireNonNull(metrics, "metrics");
+    }
+
+    /**
+     * Enables or disables the plugin hot-swap upgrade endpoint.
+     *
+     * @param enabled {@code true} to allow plugin upgrades at runtime
+     * @return this handler (fluent)
+     */
+    public PluginInstallHandler withPluginUpgradeEnabled(boolean enabled) {
+        this.pluginUpgradeEnabled = enabled;
+        return this;
     }
 
     // ─── GET /api/v1/plugins ──────────────────────────────────────────────────
@@ -191,8 +208,15 @@ public final class PluginInstallHandler {
 
     /**
      * Hot-swaps runtime feature plugins or reloads storage plugins without restarting the launcher.
+     *
+     * <p>This endpoint is disabled by default (returns HTTP 501 Not Implemented) and must be
+     * explicitly enabled via {@link #withPluginUpgradeEnabled(boolean)} before it becomes active.
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {
+        if (!pluginUpgradeEnabled) {
+            log.debug("Plugin upgrade requested but pluginUpgradeEnabled=false — returning 501");
+            return Promise.of(http.errorResponse(501, "Plugin hot-swap upgrade is not enabled on this instance"));
+        }
         String pluginId = request.getPathParameter("id");
         String tenantId = http.requireTenantIdOrFail(request);
         if (tenantId == null) {

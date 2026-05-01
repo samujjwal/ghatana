@@ -2094,7 +2094,10 @@ public class AiAssistHandler {
             "tenantId", tenantId,
             "correlations", List.of(),
             "count", 0,
-            "generatedAt", Instant.now().toString()
+            "generatedAt", Instant.now().toString(),
+            "boundary", true,
+            "boundaryReason", "Unified operation event model not yet available",
+            "modelVersion", "not-implemented"
         );
         return Promise.of(http.jsonResponse(payload));
     }
@@ -2180,7 +2183,8 @@ public class AiAssistHandler {
             "scoreBand", "medium",
             "advisories", advisories,
             "generatedAt", Instant.now().toString(),
-            "modelVersion", "heuristic-v1"
+            "modelVersion", "heuristic-v1",
+            "fallback", true
         );
 
         recommendationMetrics.recordRecommendation(

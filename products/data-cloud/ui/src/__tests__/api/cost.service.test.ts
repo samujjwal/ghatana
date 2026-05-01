@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING } from '@/lib/runtime-boundaries';
+import {
+  COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING,
+  COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE,
+  COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE,
+} from '@/lib/runtime-boundaries';
 
 const { mockApiClient, mockCollectionsApi } = vi.hoisted(() => ({
   mockApiClient: {
@@ -120,5 +124,30 @@ describe('costService contract mapping', () => {
 
     expect(prediction.warnings).toEqual([COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING]);
     expect(prediction.recommendedTier).toBe('WARM');
+  });
+
+  it('throws an explicit boundary error for getQueryOptimization', async () => {
+    await expect(costService.getQueryOptimization('SELECT * FROM orders')).rejects.toThrow(
+      COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE,
+    );
+  });
+
+  it('throws an explicit boundary error for applyOptimization', async () => {
+    await expect(costService.applyOptimization('q-1', 'INDEX')).rejects.toThrow(
+      COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE,
+    );
+  });
+
+  it('throws an explicit boundary error for createMaterializedView', async () => {
+    await expect(
+      costService.createMaterializedView({
+        name: 'mv_orders',
+        query: 'SELECT * FROM orders',
+        pattern: 'daily-aggregate',
+        frequency: 1,
+        estimatedSavings: 5,
+        refreshStrategy: 'SCHEDULED',
+      }),
+    ).rejects.toThrow('Materialized view creation is not exposed');
   });
 });

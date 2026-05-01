@@ -200,7 +200,7 @@ public class EntityExportHandler {
                 }
 
                 if ("ndjson".equalsIgnoreCase(format)) {
-                    return exportService.exportNdjson(finalTenant, finalCollection, Map.of(), finalLimit)
+                    return exportService.exportNdjsonGoverned(finalTenant, finalCollection, Map.of(), finalLimit)
                         .map(data -> HttpResponse.ok200()
                             .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/x-ndjson; charset=utf-8"))
                             .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(http.corsAllowOrigin()))
@@ -211,7 +211,7 @@ public class EntityExportHandler {
                             return Promise.of(http.errorResponse(500, "Export failed: " + e.getMessage()));
                         });
                 } else {
-                    return exportService.exportCsv(finalTenant, finalCollection, Map.of(), finalLimit)
+                    return exportService.exportCsvGoverned(finalTenant, finalCollection, Map.of(), finalLimit)
                         .map(data -> HttpResponse.ok200()
                             .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/csv; charset=utf-8"))
                             .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(http.corsAllowOrigin()))

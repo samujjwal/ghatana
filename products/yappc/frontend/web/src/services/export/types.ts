@@ -7,7 +7,7 @@ import type { CanvasState } from '../../components/canvas/workspace/canvasAtoms'
 /**
  *
  */
-export type ExportFormat = 'png' | 'svg' | 'pdf' | 'json' | 'jsx';
+export type ExportFormat = 'png' | 'svg' | 'json' | 'jsx';
 
 /**
  *

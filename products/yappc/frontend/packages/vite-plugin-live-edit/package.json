@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/vite-plugin-live-edit",
+  "name": "@ghatana/yappc-vite-plugin-live-edit",
   "version": "1.0.0",
   "description": "Vite plugin for YAPPC live component editing",
   "type": "module",

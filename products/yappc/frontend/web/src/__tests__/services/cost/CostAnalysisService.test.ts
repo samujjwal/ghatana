@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CostAnalysisService } from '../../../services/cost/CostAnalysisService';
 import { InMemoryCloudCostRepository } from '../../../repositories/CloudCostRepository';

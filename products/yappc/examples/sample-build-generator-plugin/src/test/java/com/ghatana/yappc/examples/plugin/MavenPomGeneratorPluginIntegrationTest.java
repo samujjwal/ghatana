@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies // GH-90000
+ * Copyright (c) 2026 Ghatana Technologies 
  * YAPPC Example Plugin — Integration Test
  */
 package com.ghatana.yappc.examples.plugin;
@@ -24,20 +24,20 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration test for the sample Maven POM generator plugin (plan sections 10.5.4, 10.5.5). // GH-90000
+ * Integration test for the sample Maven POM generator plugin (plan sections 10.5.4, 10.5.5). 
  *
  * <p>Verifies:
  * <ul>
  *   <li>The plugin runs correctly inside {@link IsolatingPluginSandbox}.</li>
  *   <li>The generated {@code pom.xml} is structurally valid and contains the correct field values.</li>
- *   <li>The plugin honours the {@link BuildGeneratorPlugin} contract (enabled, priority, capabilities).</li> // GH-90000
+ *   <li>The plugin honours the {@link BuildGeneratorPlugin} contract (enabled, priority, capabilities).</li> 
  * </ul>
  *
  * <p>Since the entry-point class is on the test classpath an empty classpath list is used,
  * which causes {@code URLClassLoader} to delegate to the parent class loader.
  *
  * @doc.type class
- * @doc.purpose Integration test: MavenPomGeneratorPlugin runs in sandbox, produces valid POM (10.5.5) // GH-90000
+ * @doc.purpose Integration test: MavenPomGeneratorPlugin runs in sandbox, produces valid POM (10.5.5) 
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -48,13 +48,13 @@ class MavenPomGeneratorPluginIntegrationTest {
     private PluginDescriptor descriptor;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        sandbox = new IsolatingPluginSandbox(PlatformVersion.CURRENT); // GH-90000
-        // Empty classpath: plugin class loaded via parent ClassLoader (test classpath) // GH-90000
-        descriptor = PluginDescriptor.restrictedOf( // GH-90000
+    void setUp() { 
+        sandbox = new IsolatingPluginSandbox(PlatformVersion.CURRENT); 
+        // Empty classpath: plugin class loaded via parent ClassLoader (test classpath) 
+        descriptor = PluginDescriptor.restrictedOf( 
                 "maven-pom-generator", "1.0.0", "2.0.0",
-                MavenPomGeneratorPlugin.class.getName(), // GH-90000
-                List.of()); // GH-90000
+                MavenPomGeneratorPlugin.class.getName(), 
+                List.of()); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -67,15 +67,15 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("plugin loads successfully in sandbox and is enabled")
-        void pluginLoadsInSandbox() throws PluginLoadException { // GH-90000
-            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); // GH-90000
-            assertThat(plugin.isEnabled()).isTrue(); // GH-90000
+        void pluginLoadsInSandbox() throws PluginLoadException { 
+            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); 
+            assertThat(plugin.isEnabled()).isTrue(); 
         }
 
         @Test
         @DisplayName("plugin name, version, and description are correct")
-        void pluginMetadataIsCorrect() throws PluginLoadException { // GH-90000
-            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); // GH-90000
+        void pluginMetadataIsCorrect() throws PluginLoadException { 
+            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); 
             assertThat(plugin.getName()).isEqualTo("maven-pom-generator");
             assertThat(plugin.getVersion()).isEqualTo("1.0.0");
             assertThat(plugin.getDescription()).contains("Maven").contains("pom.xml");
@@ -83,16 +83,16 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("plugin has correct priority for Maven build system")
-        void priorityIsCorrectForMaven() throws PluginLoadException { // GH-90000
-            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); // GH-90000
-            assertThat(plugin.getPriority(BuildSystemType.MAVEN)).isEqualTo(10); // GH-90000
+        void priorityIsCorrectForMaven() throws PluginLoadException { 
+            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); 
+            assertThat(plugin.getPriority(BuildSystemType.MAVEN)).isEqualTo(10); 
         }
 
         @Test
         @DisplayName("plugin capabilities include maven-pom-generation")
-        void capabilitiesAdvertiseMavenPomGeneration() throws PluginLoadException { // GH-90000
-            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); // GH-90000
-            assertThat(plugin.getCapabilities().getSupportedFeatures()) // GH-90000
+        void capabilitiesAdvertiseMavenPomGeneration() throws PluginLoadException { 
+            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); 
+            assertThat(plugin.getCapabilities().getSupportedFeatures()) 
                     .contains("maven-pom-generation");
         }
     }
@@ -107,17 +107,17 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("generates valid pom.xml with correct artifactId and groupId")
-        void generatesValidPomXml() { // GH-90000
-            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); // GH-90000
-            ProjectDescriptor project = new ProjectDescriptor( // GH-90000
+        void generatesValidPomXml() { 
+            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); 
+            ProjectDescriptor project = new ProjectDescriptor( 
                     "my-project", "My Project",
                     Path.of("."),
-                    Map.of("groupId", "com.example", "version", "1.0.0")); // GH-90000
+                    Map.of("groupId", "com.example", "version", "1.0.0")); 
 
-            String pom = plugin.generatePom(project); // GH-90000
+            String pom = plugin.generatePom(project); 
 
-            assertThat(pom) // GH-90000
-                    .contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>") // GH-90000
+            assertThat(pom) 
+                    .contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>") 
                     .contains("<modelVersion>4.0.0</modelVersion>")
                     .contains("<groupId>com.example</groupId>")
                     .contains("<artifactId>my-project</artifactId>")
@@ -127,14 +127,14 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("falls back to defaults when metadata is absent")
-        void usesDefaultsWhenMetadataAbsent() { // GH-90000
-            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); // GH-90000
-            ProjectDescriptor project = new ProjectDescriptor( // GH-90000
+        void usesDefaultsWhenMetadataAbsent() { 
+            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); 
+            ProjectDescriptor project = new ProjectDescriptor( 
                     "bare-project", "Bare Project", Path.of("."), Map.of());
 
-            String pom = plugin.generatePom(project); // GH-90000
+            String pom = plugin.generatePom(project); 
 
-            assertThat(pom) // GH-90000
+            assertThat(pom) 
                     .contains("<groupId>com.ghatana.generated</groupId>")
                     .contains("<version>0.1.0-SNAPSHOT</version>")
                     .contains("<packaging>jar</packaging>");
@@ -142,37 +142,37 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("escapes XML special characters in project name")
-        void escapesXmlSpecialCharacters() { // GH-90000
-            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); // GH-90000
-            ProjectDescriptor project = new ProjectDescriptor( // GH-90000
+        void escapesXmlSpecialCharacters() { 
+            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); 
+            ProjectDescriptor project = new ProjectDescriptor( 
                     "escape-test", "My <Project> & More",
                     Path.of("."), Map.of());
 
-            String pom = plugin.generatePom(project); // GH-90000
+            String pom = plugin.generatePom(project); 
 
-            assertThat(pom) // GH-90000
+            assertThat(pom) 
                     .contains("<name>My &lt;Project&gt; &amp; More</name>")
                     .doesNotContain("<name>My <Project>");
         }
 
         @Test
         @DisplayName("null project raises IllegalArgumentException")
-        void nullProjectRaisesException() { // GH-90000
-            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); // GH-90000
-            assertThatThrownBy(() -> plugin.generatePom(null)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void nullProjectRaisesException() { 
+            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); 
+            assertThatThrownBy(() -> plugin.generatePom(null)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("generated POM contains Java 21 compiler settings")
-        void generatedPomContainsJava21Settings() { // GH-90000
-            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); // GH-90000
-            ProjectDescriptor project = new ProjectDescriptor( // GH-90000
+        void generatedPomContainsJava21Settings() { 
+            MavenPomGeneratorPlugin plugin = new MavenPomGeneratorPlugin(); 
+            ProjectDescriptor project = new ProjectDescriptor( 
                     "java21-project", "Java 21 Project", Path.of("."), Map.of());
 
-            String pom = plugin.generatePom(project); // GH-90000
+            String pom = plugin.generatePom(project); 
 
-            assertThat(pom) // GH-90000
+            assertThat(pom) 
                     .contains("<maven.compiler.source>21</maven.compiler.source>")
                     .contains("<maven.compiler.target>21</maven.compiler.target>");
         }
@@ -188,21 +188,21 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("plugin loaded in sandbox generates a valid pom.xml")
-        void pluginInSandboxGeneratesValidPom() throws PluginLoadException { // GH-90000
-            // Load via sandbox (uses PermissionProxy + isolated ClassLoader) // GH-90000
-            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); // GH-90000
+        void pluginInSandboxGeneratesValidPom() throws PluginLoadException { 
+            // Load via sandbox (uses PermissionProxy + isolated ClassLoader) 
+            BuildGeneratorPlugin plugin = sandbox.loadPlugin(descriptor, BuildGeneratorPlugin.class); 
 
-            // Cast to concrete type to access generatePom() — permitted because class // GH-90000
-            // is on the shared test classpath (no separate URLClassLoader in this test setup) // GH-90000
-            MavenPomGeneratorPlugin concretePlugin = (MavenPomGeneratorPlugin) plugin; // GH-90000
-            ProjectDescriptor project = new ProjectDescriptor( // GH-90000
+            // Cast to concrete type to access generatePom() — permitted because class 
+            // is on the shared test classpath (no separate URLClassLoader in this test setup) 
+            MavenPomGeneratorPlugin concretePlugin = (MavenPomGeneratorPlugin) plugin; 
+            ProjectDescriptor project = new ProjectDescriptor( 
                     "sandbox-project", "Sandbox Project",
                     Path.of("."),
-                    Map.of("groupId", "com.ghatana.sandbox", "version", "2.5.0")); // GH-90000
+                    Map.of("groupId", "com.ghatana.sandbox", "version", "2.5.0")); 
 
-            String pom = concretePlugin.generatePom(project); // GH-90000
+            String pom = concretePlugin.generatePom(project); 
 
-            assertThat(pom) // GH-90000
+            assertThat(pom) 
                     .startsWith("<?xml")
                     .contains("<groupId>com.ghatana.sandbox</groupId>")
                     .contains("<artifactId>sandbox-project</artifactId>")
@@ -212,15 +212,15 @@ class MavenPomGeneratorPluginIntegrationTest {
 
         @Test
         @DisplayName("sandbox with unrestricted permissions still generates correct POM")
-        void sandboxWithUnrestrictedPermissionsWorks() throws PluginLoadException { // GH-90000
-            PluginDescriptor unrestrictedDescriptor = new PluginDescriptor( // GH-90000
+        void sandboxWithUnrestrictedPermissionsWorks() throws PluginLoadException { 
+            PluginDescriptor unrestrictedDescriptor = new PluginDescriptor( 
                     "maven-pom-generator", "1.0.0", "2.0.0", null,
-                    MavenPomGeneratorPlugin.class.getName(), // GH-90000
-                    List.of(), // GH-90000
-                    PermissionSet.unrestricted()); // GH-90000
+                    MavenPomGeneratorPlugin.class.getName(), 
+                    List.of(), 
+                    PermissionSet.unrestricted()); 
 
-            BuildGeneratorPlugin plugin = sandbox.loadPlugin(unrestrictedDescriptor, BuildGeneratorPlugin.class); // GH-90000
-            assertThat(plugin.isEnabled()).isTrue(); // GH-90000
+            BuildGeneratorPlugin plugin = sandbox.loadPlugin(unrestrictedDescriptor, BuildGeneratorPlugin.class); 
+            assertThat(plugin.isEnabled()).isTrue(); 
         }
     }
 }

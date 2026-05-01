@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Simplified Performance and Integration Tests
  * Focus on testing the actual implemented functionality

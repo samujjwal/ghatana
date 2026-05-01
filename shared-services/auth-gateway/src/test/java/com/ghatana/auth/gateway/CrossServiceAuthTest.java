@@ -21,51 +21,51 @@ class CrossServiceAuthTest {
 
     @Test
     @DisplayName("Should propagate authentication tokens between services")
-    void shouldPropagateAuthenticationTokensBetweenServices() { // GH-90000
-        String correlationId = java.util.UUID.randomUUID().toString(); // GH-90000
+    void shouldPropagateAuthenticationTokensBetweenServices() { 
+        String correlationId = java.util.UUID.randomUUID().toString(); 
 
-        assertThat(correlationId).isNotNull(); // GH-90000
+        assertThat(correlationId).isNotNull(); 
         assertThat(correlationId).matches("[a-f0-9-]{36}");
     }
 
     @Test
     @DisplayName("Should handle service-to-service authentication")
-    void shouldHandleServiceToServiceAuthentication() { // GH-90000
+    void shouldHandleServiceToServiceAuthentication() { 
         String correlationId = "test-correlation-456";
 
-        assertThat(correlationId).isNotNull(); // GH-90000
+        assertThat(correlationId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle token refresh across services")
-    void shouldHandleTokenRefreshAcrossServices() { // GH-90000
+    void shouldHandleTokenRefreshAcrossServices() { 
         String correlationId = "test-correlation-789";
 
-        assertThat(correlationId).isNotNull(); // GH-90000
+        assertThat(correlationId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle authentication failures in service chain")
-    void shouldHandleAuthenticationFailuresInServiceChain() { // GH-90000
+    void shouldHandleAuthenticationFailuresInServiceChain() { 
         String correlationId = "test-correlation-abc";
 
-        assertThat(correlationId).isNotNull(); // GH-90000
+        assertThat(correlationId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle concurrent service authentication")
-    void shouldHandleConcurrentServiceAuthentication() { // GH-90000
+    void shouldHandleConcurrentServiceAuthentication() { 
         String correlationId1 = "test-correlation-xyz";
         String correlationId2 = "test-correlation-pqr";
 
-        assertThat(correlationId1).isNotEqualTo(correlationId2); // GH-90000
+        assertThat(correlationId1).isNotEqualTo(correlationId2); 
     }
 
     @Test
     @DisplayName("Should handle cross-tenant authentication")
-    void shouldHandleCrossTenantAuthentication() { // GH-90000
+    void shouldHandleCrossTenantAuthentication() { 
         String correlationId = "test-correlation-lmn";
 
-        assertThat(correlationId).isNotNull(); // GH-90000
+        assertThat(correlationId).isNotNull(); 
     }
 }

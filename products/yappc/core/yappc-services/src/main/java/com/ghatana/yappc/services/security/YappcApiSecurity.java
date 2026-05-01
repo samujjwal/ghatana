@@ -5,7 +5,6 @@ import com.ghatana.platform.http.security.filter.RBACFilter;
 import com.ghatana.platform.http.security.filter.RateLimitFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
-import com.ghatana.platform.security.rbac.InMemoryPolicyRepository;
 import com.ghatana.platform.security.rbac.PolicyRepository;
 import com.ghatana.platform.security.rbac.PolicyService;
 import io.activej.http.AsyncServlet;
@@ -64,35 +63,6 @@ public final class YappcApiSecurity {
     }
 
     /**
-     * Secures an API servlet with consistent YAPPC authn/authz controls.
-     *
-     * <p><b>Deprecated:</b> This version uses in-memory policy storage which is non-durable across restarts.
-     * Use {@link #secureApi(AsyncServlet, String, PolicyRepository)} with a durable PolicyRepository for production.</p>
-     *
-     * @param apiServlet API servlet to secure
-     * @param resource RBAC resource name (for example, yappc:lifecycle-api)
-     * @return read/write secured servlet pair
-     * @deprecated Use {@link #secureApi(AsyncServlet, String, PolicyRepository)} with durable storage
-     */
-    @Deprecated
-    public static SecurityRoutes secureApi(AsyncServlet apiServlet, String resource) {
-        int rateLimitMax = parseIntEnv("YAPPC_RATE_LIMIT_MAX", 100);
-        long rateLimitWindow = parseLongEnv("YAPPC_RATE_LIMIT_WINDOW", 60L);
-
-        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
-        ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
-
-        PolicyService policyService = buildPolicyService(resource, new InMemoryPolicyRepository());
-        RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
-        RBACFilter writeFilter = new RBACFilter(policyService, "write", resource);
-
-        AsyncServlet readSecured = authFilter.secure(readFilter.secure(rateLimitFilter.wrap(apiServlet)));
-        AsyncServlet writeSecured = authFilter.secure(writeFilter.secure(rateLimitFilter.wrap(apiServlet)));
-
-        return new SecurityRoutes(readSecured, writeSecured);
-    }
-
-    /**
      * Secures a non-API endpoint that should be read-only (for example, metrics).
      *
      * @param endpoint servlet to secure
@@ -107,30 +77,6 @@ public final class YappcApiSecurity {
         RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
         ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
         PolicyService policyService = buildPolicyService(resource, policyRepository);
-        RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
-
-        return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));
-    }
-
-    /**
-     * Secures a non-API endpoint that should be read-only (for example, metrics).
-     *
-     * <p><b>Deprecated:</b> This version uses in-memory policy storage which is non-durable across restarts.
-     * Use {@link #secureReadEndpoint(AsyncServlet, String, PolicyRepository)} with a durable PolicyRepository for production.</p>
-     *
-     * @param endpoint servlet to secure
-     * @param resource RBAC resource name (for example, yappc:lifecycle-metrics)
-     * @return endpoint secured with API key auth, RBAC read permission, and rate limiting
-     * @deprecated Use {@link #secureReadEndpoint(AsyncServlet, String, PolicyRepository)} with durable storage
-     */
-    @Deprecated
-    public static AsyncServlet secureReadEndpoint(AsyncServlet endpoint, String resource) {
-        int rateLimitMax = parseIntEnv("YAPPC_RATE_LIMIT_MAX", 100);
-        long rateLimitWindow = parseLongEnv("YAPPC_RATE_LIMIT_WINDOW", 60L);
-
-        RateLimitFilter rateLimitFilter = new RateLimitFilter(rateLimitMax, rateLimitWindow);
-        ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(buildApiKeyResolver());
-        PolicyService policyService = buildPolicyService(resource, new InMemoryPolicyRepository());
         RBACFilter readFilter = new RBACFilter(policyService, "read", resource);
 
         return authFilter.secure(readFilter.secure(rateLimitFilter.wrap(endpoint)));

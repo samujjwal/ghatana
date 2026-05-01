@@ -2,7 +2,12 @@ package com.ghatana.yappc.ai.requirements.ai.feedback;
 
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.ai.requirements.ai.suggestions.AISuggestion;
+import io.activej.inject.annotation.Inject;
 import io.activej.promise.Promise;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +50,9 @@ public final class FeedbackLearningService {
   private static final Logger logger = LoggerFactory.getLogger(FeedbackLearningService.class);
 
   private final MetricsCollector metrics;
+  private final DataSource dataSource;
 
-  // In-memory learning statistics (survives for the JVM lifetime)
+  // In-memory learning statistics (fast read path; writes are mirrored to DB)
   private final AtomicLong feedbackCount = new AtomicLong(0);
   private final AtomicLong helpfulCount = new AtomicLong(0);
   private final AtomicLong notHelpfulCount = new AtomicLong(0);
@@ -53,24 +60,90 @@ public final class FeedbackLearningService {
   private final Map<FeedbackType, AtomicLong> feedbackByType = buildTypeCounters();
 
   /**
-   * Create a feedback learning service with observability metrics.
+   * Create a feedback learning service with observability metrics and durable storage.
    *
    * @param metrics collector for recording feedback processing events (non-null)
+   * @param dataSource JDBC data source for persisting counters (nullable; null uses in-memory only)
    */
-  public FeedbackLearningService(MetricsCollector metrics) {
+  @Inject
+  public FeedbackLearningService(MetricsCollector metrics, DataSource dataSource) {
     this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
-    logger.info("FeedbackLearningService initialized with MetricsCollector: {}",
+    this.dataSource = dataSource;
+    loadCountersFromDb();
+    logger.info("FeedbackLearningService initialized with MetricsCollector: {} and durable DB storage",
         metrics.getClass().getSimpleName());
   }
 
   /**
    * Create a feedback learning service without metrics (no-op metrics).
    *
-   * <p>Use this constructor in test or development environments only.
+   * <p>Use this constructor in test or development environments only.</p>
+   * <p><b>Deprecated:</b> Use the DataSource constructor for production environments.
    */
+  @Deprecated
   public FeedbackLearningService() {
-    this(MetricsCollector.create());
-    logger.warn("FeedbackLearningService created without MetricsCollector — using noop metrics");
+    this(MetricsCollector.create(), null);
+    logger.warn("FeedbackLearningService created without MetricsCollector/DataSource — using noop metrics and ephemeral counters");
+  }
+
+  private Connection getConnection() throws SQLException {
+    return dataSource != null ? dataSource.getConnection() : null;
+  }
+
+  private void loadCountersFromDb() {
+    if (dataSource == null) return;
+    String sql = "SELECT counter_name, counter_value FROM feedback_learning_counters";
+    try (Connection conn = getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+      while (rs.next()) {
+        String name = rs.getString("counter_name");
+        long value = rs.getLong("counter_value");
+        switch (name) {
+          case "feedbackCount" -> feedbackCount.set(value);
+          case "helpfulCount" -> helpfulCount.set(value);
+          case "notHelpfulCount" -> notHelpfulCount.set(value);
+          default -> {
+            try {
+              FeedbackType type = FeedbackType.valueOf(name);
+              AtomicLong counter = feedbackByType.get(type);
+              if (counter != null) counter.set(value);
+            } catch (IllegalArgumentException ignored) {
+              // unknown counter name
+            }
+          }
+        }
+      }
+    } catch (SQLException e) {
+      logger.warn("Failed to load feedback counters from DB: {}", e.getMessage());
+    }
+  }
+
+  private void persistCounter(String name, long value) {
+    if (dataSource == null) return;
+    String upsert = "INSERT INTO feedback_learning_counters (counter_name, counter_value) VALUES (?, ?) "
+        + "ON CONFLICT (counter_name) DO UPDATE SET counter_value = EXCLUDED.counter_value";
+    try (Connection conn = getConnection();
+         PreparedStatement ps = conn.prepareStatement(upsert)) {
+      ps.setString(1, name);
+      ps.setLong(2, value);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      logger.warn("Failed to persist counter {}={} to DB: {}", name, value, e.getMessage());
+    }
+  }
+
+  private void persistRelevanceDelta(double value) {
+    if (dataSource == null) return;
+    String upsert = "INSERT INTO feedback_learning_counters (counter_name, counter_value) VALUES ('avgRelevanceAdjustment', ?) "
+        + "ON CONFLICT (counter_name) DO UPDATE SET counter_value = EXCLUDED.counter_value";
+    try (Connection conn = getConnection();
+         PreparedStatement ps = conn.prepareStatement(upsert)) {
+      ps.setDouble(1, value);
+      ps.executeUpdate();
+    } catch (SQLException e) {
+      logger.warn("Failed to persist relevance delta to DB: {}", e.getMessage());
+    }
   }
 
   /**
@@ -108,19 +181,24 @@ public final class FeedbackLearningService {
     AISuggestion updated = suggestion.withStatus(computeNewStatus(feedback));
     AISuggestion finalSuggestion = updated.withScores(newRelevance, newPriority);
 
-    // Update in-memory learning counters (thread-safe)
-    feedbackCount.incrementAndGet();
-    feedbackByType.get(feedback.type()).incrementAndGet();
+    // Update in-memory learning counters (thread-safe) and mirror to DB
+    long currentFeedbackCount = feedbackCount.incrementAndGet();
+    persistCounter("feedbackCount", currentFeedbackCount);
+    long currentTypeCount = feedbackByType.get(feedback.type()).incrementAndGet();
+    persistCounter(feedback.type().name(), currentTypeCount);
     if (feedback.isPositive()) {
-      helpfulCount.incrementAndGet();
+      long currentHelpful = helpfulCount.incrementAndGet();
+      persistCounter("helpfulCount", currentHelpful);
     } else if (feedback.isNegative()) {
-      notHelpfulCount.incrementAndGet();
+      long currentNotHelpful = notHelpfulCount.incrementAndGet();
+      persistCounter("notHelpfulCount", currentNotHelpful);
     }
     // Cumulative running average of delta (approximate, lock-free)
-    runningRelevanceDelta.updateAndGet(prev -> {
+    Double currentDelta = runningRelevanceDelta.updateAndGet(prev -> {
       long n = feedbackCount.get();
       return prev + (relevanceDelta - prev) / n; // Welford-style incremental avg
     });
+    persistRelevanceDelta(currentDelta);
 
     // Record observability metrics
     metrics.incrementCounter("feedback.processed");

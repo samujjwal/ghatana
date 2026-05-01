@@ -37,26 +37,26 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
     private TestWorkflowLifecycleListener lifecycleListener;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        stateStore = new InMemoryWorkflowStateStore(); // GH-90000
-        lifecycleListener = new TestWorkflowLifecycleListener(); // GH-90000
+    void setUp() { 
+        stateStore = new InMemoryWorkflowStateStore(); 
+        lifecycleListener = new TestWorkflowLifecycleListener(); 
 
-        engine = DurableWorkflowEngine.builder() // GH-90000
-                .stateStore(stateStore) // GH-90000
-                .defaultTimeout(Duration.ofSeconds(30)) // GH-90000
-                .defaultMaxRetries(3) // GH-90000
-                .defaultRetryBackoff(Duration.ofMillis(100)) // GH-90000
-                .addListener(lifecycleListener) // GH-90000
-                .build(); // GH-90000
+        engine = DurableWorkflowEngine.builder() 
+                .stateStore(stateStore) 
+                .defaultTimeout(Duration.ofSeconds(30)) 
+                .defaultMaxRetries(3) 
+                .defaultRetryBackoff(Duration.ofMillis(100)) 
+                .addListener(lifecycleListener) 
+                .build(); 
     }
 
-    private WorkflowContext context() { // GH-90000
-        return WorkflowContext.forWorkflow("test-workflow", "test-tenant"); // GH-90000
+    private WorkflowContext context() { 
+        return WorkflowContext.forWorkflow("test-workflow", "test-tenant"); 
     }
 
     /** Run a workflow and return its final context. */
-    private WorkflowContext runWorkflow(String id, List<StepDefinition> steps) { // GH-90000
-        return runPromise(() -> engine.submit(id, context(), steps).result()); // GH-90000
+    private WorkflowContext runWorkflow(String id, List<StepDefinition> steps) { 
+        return runPromise(() -> engine.submit(id, context(), steps).result()); 
     }
 
     @Nested
@@ -65,63 +65,63 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should execute single step workflow successfully")
-        void shouldExecuteSingleStepSuccessfully() { // GH-90000
-            AtomicInteger stepCounter = new AtomicInteger(0); // GH-90000
+        void shouldExecuteSingleStepSuccessfully() { 
+            AtomicInteger stepCounter = new AtomicInteger(0); 
 
-            StepDefinition step = StepDefinition.of("Validate", ctx -> { // GH-90000
-                stepCounter.incrementAndGet(); // GH-90000
-                return Promise.of(ctx); // GH-90000
+            StepDefinition step = StepDefinition.of("Validate", ctx -> { 
+                stepCounter.incrementAndGet(); 
+                return Promise.of(ctx); 
             });
 
-            WorkflowContext result = runWorkflow("single-step", List.of(step)); // GH-90000
+            WorkflowContext result = runWorkflow("single-step", List.of(step)); 
 
-            assertNotNull(result); // GH-90000
-            assertEquals(1, stepCounter.get()); // GH-90000
+            assertNotNull(result); 
+            assertEquals(1, stepCounter.get()); 
         }
 
         @Test
         @DisplayName("should execute multi-step workflow sequentially")
-        void shouldExecuteMultiStepSequentially() { // GH-90000
-            List<String> executionOrder = new ArrayList<>(); // GH-90000
+        void shouldExecuteMultiStepSequentially() { 
+            List<String> executionOrder = new ArrayList<>(); 
 
-            StepDefinition step1 = StepDefinition.of("Validate", ctx -> { // GH-90000
+            StepDefinition step1 = StepDefinition.of("Validate", ctx -> { 
                 executionOrder.add("validate");
-                return Promise.of(ctx); // GH-90000
+                return Promise.of(ctx); 
             });
-            StepDefinition step2 = StepDefinition.of("Process", ctx -> { // GH-90000
+            StepDefinition step2 = StepDefinition.of("Process", ctx -> { 
                 executionOrder.add("process");
-                return Promise.of(ctx); // GH-90000
+                return Promise.of(ctx); 
             });
-            StepDefinition step3 = StepDefinition.of("Notify", ctx -> { // GH-90000
+            StepDefinition step3 = StepDefinition.of("Notify", ctx -> { 
                 executionOrder.add("notify");
-                return Promise.of(ctx); // GH-90000
+                return Promise.of(ctx); 
             });
 
-            WorkflowContext result = runWorkflow("multi-step", List.of(step1, step2, step3)); // GH-90000
+            WorkflowContext result = runWorkflow("multi-step", List.of(step1, step2, step3)); 
 
-            assertNotNull(result); // GH-90000
-            assertEquals(List.of("validate", "process", "notify"), executionOrder); // GH-90000
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED)); // GH-90000
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED)); // GH-90000
+            assertNotNull(result); 
+            assertEquals(List.of("validate", "process", "notify"), executionOrder); 
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED)); 
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED)); 
         }
 
         @Test
         @DisplayName("should preserve context variables through workflow steps")
-        void shouldPreserveContextThroughSteps() { // GH-90000
-            StepDefinition step1 = StepDefinition.of("SetValue", ctx -> { // GH-90000
-                ctx.setVariable("key1", "value1"); // GH-90000
-                return Promise.of(ctx); // GH-90000
+        void shouldPreserveContextThroughSteps() { 
+            StepDefinition step1 = StepDefinition.of("SetValue", ctx -> { 
+                ctx.setVariable("key1", "value1"); 
+                return Promise.of(ctx); 
             });
-            StepDefinition step2 = StepDefinition.of("VerifyValue", ctx -> { // GH-90000
+            StepDefinition step2 = StepDefinition.of("VerifyValue", ctx -> { 
                 Object value = ctx.getVariable("key1");
-                assertTrue(value != null && "value1".equals(value.toString())); // GH-90000
-                return Promise.of(ctx); // GH-90000
+                assertTrue(value != null && "value1".equals(value.toString())); 
+                return Promise.of(ctx); 
             });
 
-            WorkflowContext result = runWorkflow("context-preservation", List.of(step1, step2)); // GH-90000
-            assertNotNull(result); // GH-90000
+            WorkflowContext result = runWorkflow("context-preservation", List.of(step1, step2)); 
+            assertNotNull(result); 
         }
     }
 
@@ -131,78 +131,78 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should trigger compensation on failure")
-        void shouldTriggerCompensationOnFailure() { // GH-90000
-            List<String> history = new ArrayList<>(); // GH-90000
+        void shouldTriggerCompensationOnFailure() { 
+            List<String> history = new ArrayList<>(); 
 
-            StepDefinition step1 = StepDefinition.of("Reserve", ctx -> { // GH-90000
+            StepDefinition step1 = StepDefinition.of("Reserve", ctx -> { 
                 history.add("reserve");
-                return Promise.of(ctx); // GH-90000
-            }).withCompensation(ctx -> { // GH-90000
+                return Promise.of(ctx); 
+            }).withCompensation(ctx -> { 
                 history.add("unreserve");
                 return null;
             });
 
-            StepDefinition step2 = StepDefinition.of("Charge", ctx -> { // GH-90000
+            StepDefinition step2 = StepDefinition.of("Charge", ctx -> { 
                 history.add("charge");
                 return Promise.ofException(new RuntimeException("Payment failed"));
             });
 
-            assertThatThrownBy(() -> runWorkflow("compensation-test", List.of(step1, step2))) // GH-90000
-                    .isInstanceOf(RuntimeException.class); // GH-90000
+            assertThatThrownBy(() -> runWorkflow("compensation-test", List.of(step1, step2))) 
+                    .isInstanceOf(RuntimeException.class); 
 
             assertTrue(history.contains("unreserve"), "Compensation should have been triggered");
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_COMPENSATING)); // GH-90000
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_COMPENSATING)); 
         }
 
         @Test
         @DisplayName("should execute compensation in reverse order")
-        void shouldExecuteCompensationInReverseOrder() { // GH-90000
-            List<String> history = new ArrayList<>(); // GH-90000
+        void shouldExecuteCompensationInReverseOrder() { 
+            List<String> history = new ArrayList<>(); 
 
-            StepDefinition step1 = StepDefinition.of("Step1", ctx -> { // GH-90000
+            StepDefinition step1 = StepDefinition.of("Step1", ctx -> { 
                 history.add("step1");
-                return Promise.of(ctx); // GH-90000
-            }).withCompensation(ctx -> { // GH-90000
+                return Promise.of(ctx); 
+            }).withCompensation(ctx -> { 
                 history.add("compensate-step1");
                 return null;
             });
 
-            StepDefinition step2 = StepDefinition.of("Step2", ctx -> { // GH-90000
+            StepDefinition step2 = StepDefinition.of("Step2", ctx -> { 
                 history.add("step2");
-                return Promise.of(ctx); // GH-90000
-            }).withCompensation(ctx -> { // GH-90000
+                return Promise.of(ctx); 
+            }).withCompensation(ctx -> { 
                 history.add("compensate-step2");
                 return null;
             });
 
-            StepDefinition step3 = StepDefinition.of("Step3", ctx -> { // GH-90000
+            StepDefinition step3 = StepDefinition.of("Step3", ctx -> { 
                 history.add("step3");
                 return Promise.ofException(new RuntimeException("Failed"));
             });
 
-            assertThatThrownBy(() -> runWorkflow("reverse-compensation", List.of(step1, step2, step3))) // GH-90000
-                    .isInstanceOf(Exception.class); // GH-90000
+            assertThatThrownBy(() -> runWorkflow("reverse-compensation", List.of(step1, step2, step3))) 
+                    .isInstanceOf(Exception.class); 
 
             int compensateStep2Index = history.indexOf("compensate-step2");
             int compensateStep1Index = history.indexOf("compensate-step1");
-            assertTrue(compensateStep2Index >= 0 && compensateStep1Index >= 0, // GH-90000
+            assertTrue(compensateStep2Index >= 0 && compensateStep1Index >= 0, 
                     "Both compensation steps should be present");
-            assertTrue(compensateStep2Index < compensateStep1Index, // GH-90000
+            assertTrue(compensateStep2Index < compensateStep1Index, 
                     "Compensation should be in reverse order");
         }
 
         @Test
         @DisplayName("should handle missing context variable gracefully")
-        void shouldHandleMissingInputGracefully() { // GH-90000
-            StepDefinition step = StepDefinition.of("Process", ctx -> { // GH-90000
+        void shouldHandleMissingInputGracefully() { 
+            StepDefinition step = StepDefinition.of("Process", ctx -> { 
                 Object missing = ctx.getVariable("nonexistent");
-                assertNull(missing); // GH-90000
-                return Promise.of(ctx); // GH-90000
+                assertNull(missing); 
+                return Promise.of(ctx); 
             });
 
-            WorkflowContext result = runWorkflow("missing-input", List.of(step)); // GH-90000
-            assertNotNull(result); // GH-90000
+            WorkflowContext result = runWorkflow("missing-input", List.of(step)); 
+            assertNotNull(result); 
         }
     }
 
@@ -212,36 +212,36 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should retry failed step until success")
-        void shouldRetryFailedStep() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+        void shouldRetryFailedStep() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
 
-            StepDefinition step = StepDefinition.of("RetryableStep", ctx -> { // GH-90000
-                int attempt = attempts.incrementAndGet(); // GH-90000
-                if (attempt < 3) { // GH-90000
+            StepDefinition step = StepDefinition.of("RetryableStep", ctx -> { 
+                int attempt = attempts.incrementAndGet(); 
+                if (attempt < 3) { 
                     return Promise.ofException(new RuntimeException("Temporary failure"));
                 }
-                return Promise.of(ctx); // GH-90000
-            }).withRetries(2, Duration.ofMillis(10)); // GH-90000
+                return Promise.of(ctx); 
+            }).withRetries(2, Duration.ofMillis(10)); 
 
-            WorkflowContext result = runWorkflow("retry-workflow", List.of(step)); // GH-90000
+            WorkflowContext result = runWorkflow("retry-workflow", List.of(step)); 
 
-            assertNotNull(result); // GH-90000
-            assertEquals(3, attempts.get(), "Step should have been retried twice before success"); // GH-90000
+            assertNotNull(result); 
+            assertEquals(3, attempts.get(), "Step should have been retried twice before success"); 
         }
 
         @Test
         @DisplayName("should fail after maximum retries are exhausted")
-        void shouldRespectMaximumRetries() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+        void shouldRespectMaximumRetries() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
 
-            StepDefinition step = StepDefinition.of("TooManyFailures", ctx -> { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
+            StepDefinition step = StepDefinition.of("TooManyFailures", ctx -> { 
+                attempts.incrementAndGet(); 
                 return Promise.ofException(new RuntimeException("Always fails"));
-            }).withRetries(2, Duration.ofMillis(10)); // GH-90000
+            }).withRetries(2, Duration.ofMillis(10)); 
 
-            assertThatThrownBy(() -> runWorkflow("max-retry-test", List.of(step))) // GH-90000
-                    .isInstanceOf(Exception.class); // GH-90000
-            assertEquals(3, attempts.get(), "Should have attempted 1 + 2 retries = 3 total"); // GH-90000
+            assertThatThrownBy(() -> runWorkflow("max-retry-test", List.of(step))) 
+                    .isInstanceOf(Exception.class); 
+            assertEquals(3, attempts.get(), "Should have attempted 1 + 2 retries = 3 total"); 
         }
     }
 
@@ -251,29 +251,29 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should timeout long-running step")
-        void shouldTimeoutLongRunningStep() { // GH-90000
-            StepDefinition step = StepDefinition.of("SlowStep", ctx -> { // GH-90000
+        void shouldTimeoutLongRunningStep() { 
+            StepDefinition step = StepDefinition.of("SlowStep", ctx -> { 
                 try {
-                    Thread.sleep(500); // GH-90000
-                    return Promise.of(ctx); // GH-90000
-                } catch (InterruptedException e) { // GH-90000
-                    Thread.currentThread().interrupt(); // GH-90000
-                    return Promise.ofException(e); // GH-90000
+                    Thread.sleep(500); 
+                    return Promise.of(ctx); 
+                } catch (InterruptedException e) { 
+                    Thread.currentThread().interrupt(); 
+                    return Promise.ofException(e); 
                 }
-            }).withTimeout(Duration.ofMillis(50)); // GH-90000
+            }).withTimeout(Duration.ofMillis(50)); 
 
-            assertThatThrownBy(() -> runWorkflow("timeout-test", List.of(step))) // GH-90000
-                    .isInstanceOf(Exception.class); // GH-90000
+            assertThatThrownBy(() -> runWorkflow("timeout-test", List.of(step))) 
+                    .isInstanceOf(Exception.class); 
         }
 
         @Test
         @DisplayName("should complete within generous timeout for fast step")
-        void shouldCompleteWithinTimeout() { // GH-90000
-            StepDefinition step = StepDefinition.of("FastStep", ctx -> Promise.of(ctx)) // GH-90000
-                    .withTimeout(Duration.ofSeconds(10)); // GH-90000
+        void shouldCompleteWithinTimeout() { 
+            StepDefinition step = StepDefinition.of("FastStep", ctx -> Promise.of(ctx)) 
+                    .withTimeout(Duration.ofSeconds(10)); 
 
-            WorkflowContext result = runWorkflow("no-timeout", List.of(step)); // GH-90000
-            assertNotNull(result); // GH-90000
+            WorkflowContext result = runWorkflow("no-timeout", List.of(step)); 
+            assertNotNull(result); 
         }
     }
 
@@ -283,31 +283,31 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should save workflow state after execution")
-        void shouldSaveWorkflowState() { // GH-90000
-            StepDefinition step = StepDefinition.of("SaveState", ctx -> Promise.of(ctx)); // GH-90000
+        void shouldSaveWorkflowState() { 
+            StepDefinition step = StepDefinition.of("SaveState", ctx -> Promise.of(ctx)); 
 
-            runWorkflow("state-save", List.of(step)); // GH-90000
+            runWorkflow("state-save", List.of(step)); 
 
             Optional<WorkflowRun> run = stateStore.load("state-save");
-            assertTrue(run.isPresent(), "Workflow state should have been persisted"); // GH-90000
+            assertTrue(run.isPresent(), "Workflow state should have been persisted"); 
         }
 
         @Test
         @DisplayName("should track step execution")
-        void shouldUpdateStepStatus() { // GH-90000
-            List<String> statusUpdates = new ArrayList<>(); // GH-90000
+        void shouldUpdateStepStatus() { 
+            List<String> statusUpdates = new ArrayList<>(); 
 
-            StepDefinition step1 = StepDefinition.of("Step1", ctx -> { // GH-90000
+            StepDefinition step1 = StepDefinition.of("Step1", ctx -> { 
                 statusUpdates.add("step1-running");
-                return Promise.of(ctx); // GH-90000
+                return Promise.of(ctx); 
             });
-            StepDefinition step2 = StepDefinition.of("Step2", ctx -> { // GH-90000
+            StepDefinition step2 = StepDefinition.of("Step2", ctx -> { 
                 statusUpdates.add("step2-running");
-                return Promise.of(ctx); // GH-90000
+                return Promise.of(ctx); 
             });
 
-            runWorkflow("status-update", List.of(step1, step2)); // GH-90000
-            assertFalse(statusUpdates.isEmpty(), "Steps should have executed"); // GH-90000
+            runWorkflow("status-update", List.of(step1, step2)); 
+            assertFalse(statusUpdates.isEmpty(), "Steps should have executed"); 
         }
     }
 
@@ -317,34 +317,34 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should emit workflow start event")
-        void shouldEmitStartEvent() { // GH-90000
-            StepDefinition step = StepDefinition.of("Test", ctx -> Promise.of(ctx)); // GH-90000
-            runWorkflow("lifecycle-start", List.of(step)); // GH-90000
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED), // GH-90000
+        void shouldEmitStartEvent() { 
+            StepDefinition step = StepDefinition.of("Test", ctx -> Promise.of(ctx)); 
+            runWorkflow("lifecycle-start", List.of(step)); 
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED), 
                     "Should emit WORKFLOW_STARTED event");
         }
 
         @Test
         @DisplayName("should emit step start and completion events")
-        void shouldEmitStepEvents() { // GH-90000
-            StepDefinition step = StepDefinition.of("TestStep", ctx -> Promise.of(ctx)); // GH-90000
-            runWorkflow("lifecycle-steps", List.of(step)); // GH-90000
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.STEP_STARTED), // GH-90000
+        void shouldEmitStepEvents() { 
+            StepDefinition step = StepDefinition.of("TestStep", ctx -> Promise.of(ctx)); 
+            runWorkflow("lifecycle-steps", List.of(step)); 
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.STEP_STARTED), 
                     "Should emit STEP_STARTED event");
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.STEP_COMPLETED), // GH-90000
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.STEP_COMPLETED), 
                     "Should emit STEP_COMPLETED event");
         }
 
         @Test
         @DisplayName("should emit workflow completion event")
-        void shouldEmitCompletionEvent() { // GH-90000
-            StepDefinition step = StepDefinition.of("Test", ctx -> Promise.of(ctx)); // GH-90000
-            runWorkflow("lifecycle-complete", List.of(step)); // GH-90000
-            assertTrue(lifecycleListener.hasEvent( // GH-90000
-                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED), // GH-90000
+        void shouldEmitCompletionEvent() { 
+            StepDefinition step = StepDefinition.of("Test", ctx -> Promise.of(ctx)); 
+            runWorkflow("lifecycle-complete", List.of(step)); 
+            assertTrue(lifecycleListener.hasEvent( 
+                    event -> event.phase() == WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED), 
                     "Should emit WORKFLOW_COMPLETED event");
         }
     }
@@ -352,15 +352,15 @@ class DurableWorkflowEngineTest extends EventloopTestBase {
     // ─── Helper ───────────────────────────────────────────────────────────────
 
     private static class TestWorkflowLifecycleListener implements WorkflowLifecycleListener {
-        private final List<WorkflowLifecycleEvent> events = new ArrayList<>(); // GH-90000
+        private final List<WorkflowLifecycleEvent> events = new ArrayList<>(); 
 
         @Override
-        public void onEvent(WorkflowLifecycleEvent event) { // GH-90000
-            events.add(event); // GH-90000
+        public void onEvent(WorkflowLifecycleEvent event) { 
+            events.add(event); 
         }
 
-        public boolean hasEvent(Predicate<WorkflowLifecycleEvent> predicate) { // GH-90000
-            return events.stream().anyMatch(predicate); // GH-90000
+        public boolean hasEvent(Predicate<WorkflowLifecycleEvent> predicate) { 
+            return events.stream().anyMatch(predicate); 
         }
     }
 }

@@ -152,9 +152,9 @@ export default defineConfig({
         './test-utils/faker-shim.ts'
       ),
       'yappc-core': resolve(__dirname, './libs/yappc-core/src'),
-      '@yappc/ide': resolve(__dirname, './libs/ide/src'),
+      '@ghatana/yappc-ide': resolve(__dirname, './libs/ide/src'),
       'yappc-initialization-ui': resolve(__dirname, './libs/yappc-initialization-ui/src'),
-      '@yappc/development-ui': resolve(__dirname, './libs/yappc-development-ui/src'),
+      '@ghatana/yappc-development-ui': resolve(__dirname, './libs/yappc-development-ui/src'),
       'yappc-product-theme': resolve(__dirname, './libs/yappc-product-theme/src'),
       'yappc-state': resolve(__dirname, './libs/yappc-state/src'),
       'yappc-ui': resolve(__dirname, './libs/yappc-ui/src'),

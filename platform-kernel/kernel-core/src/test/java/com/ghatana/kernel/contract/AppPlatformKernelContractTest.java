@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("App Platform Kernel Contract Tests")
 public class AppPlatformKernelContractTest {
 
-    private static final Path SPEC_PATH = Path.of( // GH-90000
+    private static final Path SPEC_PATH = Path.of( 
             "..",
             "..",
             "platform",
@@ -43,23 +43,23 @@ public class AppPlatformKernelContractTest {
             "app-platform-kernel.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); 
 
     private static final String API_VERSION = "1.0.0";
 
     @Test
     @DisplayName("OpenAPI contract file exists and is readable")
-    void openApiContractFileExists() { // GH-90000
-        assertThat(SPEC_PATH) // GH-90000
-                .as("Kernel OpenAPI contract should exist at %s", SPEC_PATH) // GH-90000
-                .exists() // GH-90000
-                .isReadable(); // GH-90000
+    void openApiContractFileExists() { 
+        assertThat(SPEC_PATH) 
+                .as("Kernel OpenAPI contract should exist at %s", SPEC_PATH) 
+                .exists() 
+                .isReadable(); 
     }
 
     @Test
     @DisplayName("OpenAPI metadata matches expected kernel contract")
-    void openApiMetadataIsConsistent() throws Exception { // GH-90000
-        JsonNode root = readSpec(); // GH-90000
+    void openApiMetadataIsConsistent() throws Exception { 
+        JsonNode root = readSpec(); 
 
         assertThat(root.path("openapi").asText()).isEqualTo("3.1.0");
         assertThat(root.path("info").path("title").asText()).isEqualTo("AppPlatform Kernel API");
@@ -69,7 +69,7 @@ public class AppPlatformKernelContractTest {
 
     @Test
     @DisplayName("OpenAPI exposes all required kernel paths")
-    void openApiContainsExpectedPaths() throws Exception { // GH-90000
+    void openApiContainsExpectedPaths() throws Exception { 
         JsonNode paths = readSpec().path("paths");
 
         assertThat(paths.has("/health")).isTrue();
@@ -84,8 +84,8 @@ public class AppPlatformKernelContractTest {
 
     @Test
     @DisplayName("OpenAPI defines bearer authentication and shared error schema")
-    void openApiDefinesSharedSecurityAndErrorSchemas() throws Exception { // GH-90000
-        JsonNode root = readSpec(); // GH-90000
+    void openApiDefinesSharedSecurityAndErrorSchemas() throws Exception { 
+        JsonNode root = readSpec(); 
         JsonNode components = root.path("components");
 
         assertThat(components.path("securitySchemes").has("BearerAuth")).isTrue();
@@ -97,7 +97,7 @@ public class AppPlatformKernelContractTest {
 
     @Test
     @DisplayName("OpenAPI request and response schemas cover key kernel capabilities")
-    void openApiContainsExpectedSchemas() throws Exception { // GH-90000
+    void openApiContainsExpectedSchemas() throws Exception { 
         JsonNode schemas = readSpec().path("components").path("schemas");
 
         assertThat(schemas.has("EvaluateRuleRequest")).isTrue();
@@ -112,9 +112,9 @@ public class AppPlatformKernelContractTest {
         assertThat(schemas.has("HealthResponse")).isTrue();
     }
 
-    private JsonNode readSpec() throws IOException { // GH-90000
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
-            return objectMapper.readTree(inputStream); // GH-90000
+    private JsonNode readSpec() throws IOException { 
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { 
+            return objectMapper.readTree(inputStream); 
         }
     }
 }

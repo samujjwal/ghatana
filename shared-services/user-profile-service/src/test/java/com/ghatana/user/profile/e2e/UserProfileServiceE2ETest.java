@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("User Profile Service E2E Tests")
 public class UserProfileServiceE2ETest {
 
-    private static final Path SPEC_PATH = Path.of( // GH-90000
+    private static final Path SPEC_PATH = Path.of( 
             "..",
             "..",
             "platform",
@@ -42,11 +42,11 @@ public class UserProfileServiceE2ETest {
             "user-profile-service.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); 
 
     @Test
     @DisplayName("Profile CRUD endpoints exist for documented end-to-end flows")
-    void profileCrudEndpointsExist() throws Exception { // GH-90000
+    void profileCrudEndpointsExist() throws Exception { 
         JsonNode paths = readSpec().path("paths");
 
         assertThat(paths.has("/profiles/{userId}")).isTrue();
@@ -57,7 +57,7 @@ public class UserProfileServiceE2ETest {
 
     @Test
     @DisplayName("Profile endpoints declare tenant-scoped bearer and internal-key security")
-    void profileEndpointsDeclareSecurity() throws Exception { // GH-90000
+    void profileEndpointsDeclareSecurity() throws Exception { 
         JsonNode profilePath = readSpec().path("paths").path("/profiles/{userId}");
 
         assertThat(profilePath.path("get").path("security")).isNotEmpty();
@@ -67,7 +67,7 @@ public class UserProfileServiceE2ETest {
 
     @Test
     @DisplayName("Schema documents complete profile payload and update request fields")
-    void profileSchemasDocumentFlowPayloads() throws Exception { // GH-90000
+    void profileSchemasDocumentFlowPayloads() throws Exception { 
         JsonNode schemas = readSpec().path("components").path("schemas");
 
         assertThat(schemas.path("UserProfile").path("properties").has("userId")).isTrue();
@@ -80,7 +80,7 @@ public class UserProfileServiceE2ETest {
 
     @Test
     @DisplayName("Observability endpoints remain part of the documented service surface")
-    void observabilityEndpointsRemainDocumented() throws Exception { // GH-90000
+    void observabilityEndpointsRemainDocumented() throws Exception { 
         JsonNode paths = readSpec().path("paths");
         JsonNode healthSchema = readSpec().path("components").path("schemas").path("HealthResponse");
 
@@ -90,9 +90,9 @@ public class UserProfileServiceE2ETest {
                 .isEqualTo("user-profile-service");
     }
 
-    private JsonNode readSpec() throws IOException { // GH-90000
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
-            return objectMapper.readTree(inputStream); // GH-90000
+    private JsonNode readSpec() throws IOException { 
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { 
+            return objectMapper.readTree(inputStream); 
         }
     }
 }

@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import javax.sql.DataSource;
 
 /**
  * Canvas AI Server
@@ -226,10 +227,24 @@ public class CanvasAIServer extends Launcher {
             }
 
             @Provides
+            DataSource dataSource() {
+                String url = System.getenv().getOrDefault("YAPPC_AI_DB_URL", "jdbc:postgresql://localhost:5432/yappc_ai");
+                String user = System.getenv().getOrDefault("YAPPC_AI_DB_USER", "yappc");
+                String pass = System.getenv().getOrDefault("YAPPC_AI_DB_PASS", "yappc");
+                com.zaxxer.hikari.HikariConfig config = new com.zaxxer.hikari.HikariConfig();
+                config.setJdbcUrl(url);
+                config.setUsername(user);
+                config.setPassword(pass);
+                config.setMaximumPoolSize(10);
+                return new com.zaxxer.hikari.HikariDataSource(config);
+            }
+
+            @Provides
             CanvasAIServiceImpl canvasAIService(CanvasValidationService validationService,
                                                CanvasGenerationService generationService,
-                                               MetricsCollector metrics) {
-                return new CanvasAIServiceImpl(validationService, generationService, metrics);
+                                               MetricsCollector metrics,
+                                               DataSource dataSource) {
+                return new CanvasAIServiceImpl(validationService, generationService, metrics, dataSource);
             }
         };
     }

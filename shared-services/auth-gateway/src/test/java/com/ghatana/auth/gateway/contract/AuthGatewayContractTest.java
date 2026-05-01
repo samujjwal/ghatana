@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Auth Gateway Contract Tests")
 public class AuthGatewayContractTest {
 
-    private static final Path SPEC_PATH = Path.of( // GH-90000
+    private static final Path SPEC_PATH = Path.of( 
             "..",
             "..",
             "platform",
@@ -42,23 +42,23 @@ public class AuthGatewayContractTest {
             "auth-gateway.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); 
 
     private static final String API_VERSION = "2.0.0";
 
     @Test
     @DisplayName("OpenAPI contract file exists and is readable")
-    void openApiContractFileExists() { // GH-90000
-        assertThat(SPEC_PATH) // GH-90000
-                .as("Auth Gateway OpenAPI contract should exist at %s", SPEC_PATH) // GH-90000
-                .exists() // GH-90000
-                .isReadable(); // GH-90000
+    void openApiContractFileExists() { 
+        assertThat(SPEC_PATH) 
+                .as("Auth Gateway OpenAPI contract should exist at %s", SPEC_PATH) 
+                .exists() 
+                .isReadable(); 
     }
 
     @Test
     @DisplayName("OpenAPI metadata matches expected auth gateway contract")
-    void openApiMetadataIsConsistent() throws Exception { // GH-90000
-        JsonNode root = readSpec(); // GH-90000
+    void openApiMetadataIsConsistent() throws Exception { 
+        JsonNode root = readSpec(); 
 
         assertThat(root.path("openapi").asText()).isEqualTo("3.1.0");
         assertThat(root.path("info").path("title").asText()).isEqualTo("Ghatana Auth Gateway API");
@@ -67,7 +67,7 @@ public class AuthGatewayContractTest {
 
     @Test
     @DisplayName("OpenAPI exposes the expected auth flow endpoints")
-    void openApiContainsExpectedPaths() throws Exception { // GH-90000
+    void openApiContainsExpectedPaths() throws Exception { 
         JsonNode paths = readSpec().path("paths");
 
         assertThat(paths.has("/auth/login")).isTrue();
@@ -80,7 +80,7 @@ public class AuthGatewayContractTest {
 
     @Test
     @DisplayName("OpenAPI defines expected schemas for requests and responses")
-    void openApiContainsExpectedSchemas() throws Exception { // GH-90000
+    void openApiContainsExpectedSchemas() throws Exception { 
         JsonNode schemas = readSpec().path("components").path("schemas");
 
         assertThat(schemas.has("LoginRequest")).isTrue();
@@ -96,8 +96,8 @@ public class AuthGatewayContractTest {
 
     @Test
     @DisplayName("OpenAPI exposes bearer authentication and auth gateway health example")
-    void openApiDefinesSecurityAndHealthMetadata() throws Exception { // GH-90000
-        JsonNode root = readSpec(); // GH-90000
+    void openApiDefinesSecurityAndHealthMetadata() throws Exception { 
+        JsonNode root = readSpec(); 
         JsonNode components = root.path("components");
 
         assertThat(components.path("securitySchemes").has("bearerAuth")).isTrue();
@@ -105,9 +105,9 @@ public class AuthGatewayContractTest {
                 .path("service").path("example").asText()).isEqualTo("auth-gateway");
     }
 
-    private JsonNode readSpec() throws IOException { // GH-90000
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
-            return objectMapper.readTree(inputStream); // GH-90000
+    private JsonNode readSpec() throws IOException { 
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { 
+            return objectMapper.readTree(inputStream); 
         }
     }
 }

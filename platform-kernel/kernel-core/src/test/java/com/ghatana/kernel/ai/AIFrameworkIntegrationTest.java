@@ -31,40 +31,40 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     private TestAIOrchestrator orchestrator;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new KernelRegistryImpl(); // GH-90000
-        context = TestKernelContextFactory.create(registry); // GH-90000
-        orchestrator = new TestAIOrchestrator(); // GH-90000
+    void setUp() { 
+        registry = new KernelRegistryImpl(); 
+        context = TestKernelContextFactory.create(registry); 
+        orchestrator = new TestAIOrchestrator(); 
     }
 
     @Test
     @DisplayName("Should register and execute AI agent")
-    void testAIAgentRegistrationAndExecution() { // GH-90000
+    void testAIAgentRegistrationAndExecution() { 
         // GIVEN: AI agent
-        TestAIAgent agent = new TestAIAgent("test-agent", "classification"); // GH-90000
+        TestAIAgent agent = new TestAIAgent("test-agent", "classification"); 
 
         // WHEN: Register and execute
-        orchestrator.registerAgent(agent); // GH-90000
-        AIResponse response = runPromise(() -> // GH-90000
+        orchestrator.registerAgent(agent); 
+        AIResponse response = runPromise(() -> 
             orchestrator.executeAgent("test-agent", new AIRequest("test input"))
         );
 
         // THEN: Agent executes successfully
-        assertThat(response.isSuccess()).isTrue(); // GH-90000
-        assertThat(response.getResult()).isNotNull(); // GH-90000
+        assertThat(response.isSuccess()).isTrue(); 
+        assertThat(response.getResult()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should orchestrate multi-agent workflow")
-    void testMultiAgentWorkflow() { // GH-90000
+    void testMultiAgentWorkflow() { 
         // GIVEN: Multiple agents in workflow
-        TestAIAgent classificationAgent = new TestAIAgent("classifier", "classification"); // GH-90000
-        TestAIAgent enrichmentAgent = new TestAIAgent("enricher", "enrichment"); // GH-90000
-        TestAIAgent validationAgent = new TestAIAgent("validator", "validation"); // GH-90000
+        TestAIAgent classificationAgent = new TestAIAgent("classifier", "classification"); 
+        TestAIAgent enrichmentAgent = new TestAIAgent("enricher", "enrichment"); 
+        TestAIAgent validationAgent = new TestAIAgent("validator", "validation"); 
 
-        orchestrator.registerAgent(classificationAgent); // GH-90000
-        orchestrator.registerAgent(enrichmentAgent); // GH-90000
-        orchestrator.registerAgent(validationAgent); // GH-90000
+        orchestrator.registerAgent(classificationAgent); 
+        orchestrator.registerAgent(enrichmentAgent); 
+        orchestrator.registerAgent(validationAgent); 
 
         // WHEN: Execute workflow
         AIWorkflow workflow = new AIWorkflow("multi-agent-workflow");
@@ -72,155 +72,155 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         workflow.addStep("enricher");
         workflow.addStep("validator");
 
-        WorkflowResult result = runPromise(() -> // GH-90000
+        WorkflowResult result = runPromise(() -> 
             orchestrator.executeWorkflow(workflow, new AIRequest("input data"))
         );
 
         // THEN: All agents executed in order
-        assertThat(result.isSuccess()).isTrue(); // GH-90000
-        assertThat(result.getExecutedAgents()).containsExactly("classifier", "enricher", "validator"); // GH-90000
+        assertThat(result.isSuccess()).isTrue(); 
+        assertThat(result.getExecutedAgents()).containsExactly("classifier", "enricher", "validator"); 
     }
 
     @Test
     @DisplayName("Should enforce AI governance policies")
-    void testAIGovernancePolicies() { // GH-90000
+    void testAIGovernancePolicies() { 
         // GIVEN: AI agent with governance policy
-        TestAIAgent agent = new TestAIAgent("governed-agent", "sensitive-classification"); // GH-90000
+        TestAIAgent agent = new TestAIAgent("governed-agent", "sensitive-classification"); 
 
         AIGovernancePolicy policy = new AIGovernancePolicy("sensitive-data-policy");
-        policy.addRule("max-tokens", "1000"); // GH-90000
-        policy.addRule("require-audit", "true"); // GH-90000
-        policy.addRule("pii-detection", "enabled"); // GH-90000
+        policy.addRule("max-tokens", "1000"); 
+        policy.addRule("require-audit", "true"); 
+        policy.addRule("pii-detection", "enabled"); 
 
-        orchestrator.registerAgent(agent); // GH-90000
-        orchestrator.registerGovernancePolicy("governed-agent", policy); // GH-90000
+        orchestrator.registerAgent(agent); 
+        orchestrator.registerGovernancePolicy("governed-agent", policy); 
 
         // WHEN: Execute with governance
         AIRequest request = new AIRequest("sensitive data");
-        AIResponse response = runPromise(() -> // GH-90000
-            orchestrator.executeAgent("governed-agent", request) // GH-90000
+        AIResponse response = runPromise(() -> 
+            orchestrator.executeAgent("governed-agent", request) 
         );
 
         // THEN: Governance enforced
-        assertThat(response.isSuccess()).isTrue(); // GH-90000
-        assertThat(orchestrator.getAuditLog()).isNotEmpty(); // GH-90000
+        assertThat(response.isSuccess()).isTrue(); 
+        assertThat(orchestrator.getAuditLog()).isNotEmpty(); 
         assertThat(orchestrator.getAuditLog().get(0)).contains("governed-agent");
     }
 
     @Test
     @DisplayName("Should handle AI agent failures gracefully")
-    void testAIAgentFailureHandling() { // GH-90000
+    void testAIAgentFailureHandling() { 
         // GIVEN: Failing AI agent
         FailingAIAgent failingAgent = new FailingAIAgent("failing-agent");
 
-        orchestrator.registerAgent(failingAgent); // GH-90000
+        orchestrator.registerAgent(failingAgent); 
 
         // WHEN: Execute failing agent
-        AIResponse response = runPromise(() -> // GH-90000
+        AIResponse response = runPromise(() -> 
             orchestrator.executeAgent("failing-agent", new AIRequest("input"))
         );
 
         // THEN: Failure handled gracefully
-        assertThat(response.isSuccess()).isFalse(); // GH-90000
+        assertThat(response.isSuccess()).isFalse(); 
         assertThat(response.getError()).contains("Agent execution failed");
     }
 
     @Test
     @DisplayName("Should track AI agent metrics")
-    void testAIAgentMetricsTracking() { // GH-90000
+    void testAIAgentMetricsTracking() { 
         // GIVEN: AI agent with metrics
-        TestAIAgent agent = new TestAIAgent("metrics-agent", "classification"); // GH-90000
-        orchestrator.registerAgent(agent); // GH-90000
+        TestAIAgent agent = new TestAIAgent("metrics-agent", "classification"); 
+        orchestrator.registerAgent(agent); 
 
         // WHEN: Execute same agent multiple times concurrently
         int executionCount = 10;
-        java.util.stream.IntStream.range(0, executionCount).forEach(i -> { // GH-90000
-            runPromise(() -> orchestrator.executeAgent("metrics-agent", new AIRequest("input-" + i))); // GH-90000
+        java.util.stream.IntStream.range(0, executionCount).forEach(i -> { 
+            runPromise(() -> orchestrator.executeAgent("metrics-agent", new AIRequest("input-" + i))); 
         });
 
         // THEN: Metrics tracked
         AIAgentMetrics metrics = orchestrator.getMetrics("metrics-agent");
-        assertThat(metrics.getExecutionCount()).isEqualTo(executionCount); // GH-90000
-        assertThat(metrics.getAverageLatencyMs()).isGreaterThan(0); // GH-90000
+        assertThat(metrics.getExecutionCount()).isEqualTo(executionCount); 
+        assertThat(metrics.getAverageLatencyMs()).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("Should support AI agent versioning")
-    void testAIAgentVersioning() { // GH-90000
+    void testAIAgentVersioning() { 
         // GIVEN: Multiple versions of same agent
-        TestAIAgent agentV1 = new TestAIAgent("classifier", "classification"); // GH-90000
+        TestAIAgent agentV1 = new TestAIAgent("classifier", "classification"); 
         agentV1.setVersion("1.0.0");
 
-        TestAIAgent agentV2 = new TestAIAgent("classifier", "classification"); // GH-90000
+        TestAIAgent agentV2 = new TestAIAgent("classifier", "classification"); 
         agentV2.setVersion("2.0.0");
 
-        orchestrator.registerAgent(agentV1); // GH-90000
-        orchestrator.registerAgent(agentV2); // GH-90000
+        orchestrator.registerAgent(agentV1); 
+        orchestrator.registerAgent(agentV2); 
 
         // WHEN: Execute specific version
-        AIResponse responseV1 = runPromise(() -> // GH-90000
+        AIResponse responseV1 = runPromise(() -> 
             orchestrator.executeAgentVersion("classifier", "1.0.0", new AIRequest("input"))
         );
-        AIResponse responseV2 = runPromise(() -> // GH-90000
+        AIResponse responseV2 = runPromise(() -> 
             orchestrator.executeAgentVersion("classifier", "2.0.0", new AIRequest("input"))
         );
 
         // THEN: Correct versions executed
-        assertThat(responseV1.isSuccess()).isTrue(); // GH-90000
-        assertThat(responseV2.isSuccess()).isTrue(); // GH-90000
+        assertThat(responseV1.isSuccess()).isTrue(); 
+        assertThat(responseV2.isSuccess()).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle concurrent AI agent executions")
-    void testConcurrentAIAgentExecutions() { // GH-90000
+    void testConcurrentAIAgentExecutions() { 
         // GIVEN: AI agent
-        TestAIAgent agent = new TestAIAgent("concurrent-agent", "classification"); // GH-90000
-        orchestrator.registerAgent(agent); // GH-90000
+        TestAIAgent agent = new TestAIAgent("concurrent-agent", "classification"); 
+        orchestrator.registerAgent(agent); 
 
         // WHEN: Execute concurrently
-        List<Promise<AIResponse>> executions = new ArrayList<>(); // GH-90000
-        for (int i = 0; i < 20; i++) { // GH-90000
-            Promise<AIResponse> execution = orchestrator.executeAgent( // GH-90000
+        List<Promise<AIResponse>> executions = new ArrayList<>(); 
+        for (int i = 0; i < 20; i++) { 
+            Promise<AIResponse> execution = orchestrator.executeAgent( 
                 "concurrent-agent",
-                new AIRequest("input-" + i) // GH-90000
+                new AIRequest("input-" + i) 
             );
-            executions.add(execution); // GH-90000
+            executions.add(execution); 
         }
 
-        List<AIResponse> responses = runPromise(() -> // GH-90000
-            io.activej.promise.Promises.toList(executions) // GH-90000
+        List<AIResponse> responses = runPromise(() -> 
+            io.activej.promise.Promises.toList(executions) 
         );
 
         // THEN: All executions succeed
-        assertThat(responses).hasSize(20); // GH-90000
-        assertThat(responses).allMatch(AIResponse::isSuccess); // GH-90000
+        assertThat(responses).hasSize(20); 
+        assertThat(responses).allMatch(AIResponse::isSuccess); 
     }
 
     @Test
     @DisplayName("Should validate AI agent input and output")
-    void testAIAgentInputOutputValidation() { // GH-90000
+    void testAIAgentInputOutputValidation() { 
         // GIVEN: Agent with validation
         ValidatingAIAgent agent = new ValidatingAIAgent("validating-agent");
-        orchestrator.registerAgent(agent); // GH-90000
+        orchestrator.registerAgent(agent); 
 
         // WHEN: Execute with invalid input
         AIRequest invalidRequest = new AIRequest(""); // Empty input
-        AIResponse invalidResponse = runPromise(() -> // GH-90000
-            orchestrator.executeAgent("validating-agent", invalidRequest) // GH-90000
+        AIResponse invalidResponse = runPromise(() -> 
+            orchestrator.executeAgent("validating-agent", invalidRequest) 
         );
 
         // THEN: Validation fails
-        assertThat(invalidResponse.isSuccess()).isFalse(); // GH-90000
+        assertThat(invalidResponse.isSuccess()).isFalse(); 
         assertThat(invalidResponse.getError()).contains("Input validation failed");
 
         // WHEN: Execute with valid input
         AIRequest validRequest = new AIRequest("valid input");
-        AIResponse validResponse = runPromise(() -> // GH-90000
-            orchestrator.executeAgent("validating-agent", validRequest) // GH-90000
+        AIResponse validResponse = runPromise(() -> 
+            orchestrator.executeAgent("validating-agent", validRequest) 
         );
 
         // THEN: Validation succeeds
-        assertThat(validResponse.isSuccess()).isTrue(); // GH-90000
+        assertThat(validResponse.isSuccess()).isTrue(); 
     }
 
     // Test AI implementations
@@ -230,61 +230,61 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         private final String agentType;
         private String version = "1.0.0";
 
-        TestAIAgent(String agentId, String agentType) { // GH-90000
+        TestAIAgent(String agentId, String agentType) { 
             this.agentId = agentId;
             this.agentType = agentType;
         }
 
-        void setVersion(String version) { // GH-90000
+        void setVersion(String version) { 
             this.version = version;
         }
 
-        String getAgentId() { // GH-90000
+        String getAgentId() { 
             return agentId;
         }
 
-        String getVersion() { // GH-90000
+        String getVersion() { 
             return version;
         }
 
-        Promise<AIResponse> execute(AIRequest request) { // GH-90000
-            return Promise.of(new AIResponse(true, "Processed: " + request.getInput(), null)); // GH-90000
+        Promise<AIResponse> execute(AIRequest request) { 
+            return Promise.of(new AIResponse(true, "Processed: " + request.getInput(), null)); 
         }
     }
 
     private static class FailingAIAgent extends TestAIAgent {
-        FailingAIAgent(String agentId) { // GH-90000
-            super(agentId, "failing"); // GH-90000
+        FailingAIAgent(String agentId) { 
+            super(agentId, "failing"); 
         }
 
         @Override
-        Promise<AIResponse> execute(AIRequest request) { // GH-90000
-            return Promise.of(new AIResponse(false, null, "Agent execution failed")); // GH-90000
+        Promise<AIResponse> execute(AIRequest request) { 
+            return Promise.of(new AIResponse(false, null, "Agent execution failed")); 
         }
     }
 
     private static class ValidatingAIAgent extends TestAIAgent {
-        ValidatingAIAgent(String agentId) { // GH-90000
-            super(agentId, "validating"); // GH-90000
+        ValidatingAIAgent(String agentId) { 
+            super(agentId, "validating"); 
         }
 
         @Override
-        Promise<AIResponse> execute(AIRequest request) { // GH-90000
-            if (request.getInput() == null || request.getInput().isEmpty()) { // GH-90000
-                return Promise.of(new AIResponse(false, null, "Input validation failed")); // GH-90000
+        Promise<AIResponse> execute(AIRequest request) { 
+            if (request.getInput() == null || request.getInput().isEmpty()) { 
+                return Promise.of(new AIResponse(false, null, "Input validation failed")); 
             }
-            return Promise.of(new AIResponse(true, "Validated: " + request.getInput(), null)); // GH-90000
+            return Promise.of(new AIResponse(true, "Validated: " + request.getInput(), null)); 
         }
     }
 
     private static class AIRequest {
         private final String input;
 
-        AIRequest(String input) { // GH-90000
+        AIRequest(String input) { 
             this.input = input;
         }
 
-        String getInput() { // GH-90000
+        String getInput() { 
             return input;
         }
     }
@@ -294,39 +294,39 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         private final String result;
         private final String error;
 
-        AIResponse(boolean success, String result, String error) { // GH-90000
+        AIResponse(boolean success, String result, String error) { 
             this.success = success;
             this.result = result;
             this.error = error;
         }
 
-        boolean isSuccess() { // GH-90000
+        boolean isSuccess() { 
             return success;
         }
 
-        String getResult() { // GH-90000
+        String getResult() { 
             return result;
         }
 
-        String getError() { // GH-90000
+        String getError() { 
             return error;
         }
     }
 
     private static class AIWorkflow {
         private final String workflowId;
-        private final List<String> steps = new ArrayList<>(); // GH-90000
+        private final List<String> steps = new ArrayList<>(); 
 
-        AIWorkflow(String workflowId) { // GH-90000
+        AIWorkflow(String workflowId) { 
             this.workflowId = workflowId;
         }
 
-        void addStep(String agentId) { // GH-90000
-            steps.add(agentId); // GH-90000
+        void addStep(String agentId) { 
+            steps.add(agentId); 
         }
 
-        List<String> getSteps() { // GH-90000
-            return new ArrayList<>(steps); // GH-90000
+        List<String> getSteps() { 
+            return new ArrayList<>(steps); 
         }
     }
 
@@ -334,134 +334,134 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         private final boolean success;
         private final List<String> executedAgents;
 
-        WorkflowResult(boolean success, List<String> executedAgents) { // GH-90000
+        WorkflowResult(boolean success, List<String> executedAgents) { 
             this.success = success;
             this.executedAgents = executedAgents;
         }
 
-        boolean isSuccess() { // GH-90000
+        boolean isSuccess() { 
             return success;
         }
 
-        List<String> getExecutedAgents() { // GH-90000
+        List<String> getExecutedAgents() { 
             return executedAgents;
         }
     }
 
     private static class AIGovernancePolicy {
         private final String policyId;
-        private final Map<String, String> rules = new HashMap<>(); // GH-90000
+        private final Map<String, String> rules = new HashMap<>(); 
 
-        AIGovernancePolicy(String policyId) { // GH-90000
+        AIGovernancePolicy(String policyId) { 
             this.policyId = policyId;
         }
 
-        void addRule(String key, String value) { // GH-90000
-            rules.put(key, value); // GH-90000
+        void addRule(String key, String value) { 
+            rules.put(key, value); 
         }
 
-        Map<String, String> getRules() { // GH-90000
-            return new HashMap<>(rules); // GH-90000
+        Map<String, String> getRules() { 
+            return new HashMap<>(rules); 
         }
     }
 
     private static class AIAgentMetrics {
-        private final AtomicInteger executionCount = new AtomicInteger(0); // GH-90000
+        private final AtomicInteger executionCount = new AtomicInteger(0); 
         private long totalLatencyMs = 0;
 
-        void recordExecution(long latencyMs) { // GH-90000
-            executionCount.incrementAndGet(); // GH-90000
-            totalLatencyMs += Math.max(1L, latencyMs); // GH-90000
+        void recordExecution(long latencyMs) { 
+            executionCount.incrementAndGet(); 
+            totalLatencyMs += Math.max(1L, latencyMs); 
         }
 
-        int getExecutionCount() { // GH-90000
-            return executionCount.get(); // GH-90000
+        int getExecutionCount() { 
+            return executionCount.get(); 
         }
 
-        long getAverageLatencyMs() { // GH-90000
-            int count = executionCount.get(); // GH-90000
+        long getAverageLatencyMs() { 
+            int count = executionCount.get(); 
             return count > 0 ? totalLatencyMs / count : 0;
         }
     }
 
     private static class TestAIOrchestrator {
-        private final Map<String, List<TestAIAgent>> agents = new HashMap<>(); // GH-90000
-        private final Map<String, AIGovernancePolicy> policies = new HashMap<>(); // GH-90000
-        private final Map<String, AIAgentMetrics> metrics = new HashMap<>(); // GH-90000
-        private final List<String> auditLog = new ArrayList<>(); // GH-90000
+        private final Map<String, List<TestAIAgent>> agents = new HashMap<>(); 
+        private final Map<String, AIGovernancePolicy> policies = new HashMap<>(); 
+        private final Map<String, AIAgentMetrics> metrics = new HashMap<>(); 
+        private final List<String> auditLog = new ArrayList<>(); 
 
-        void registerAgent(TestAIAgent agent) { // GH-90000
-            agents.computeIfAbsent(agent.getAgentId(), k -> new ArrayList<>()).add(agent); // GH-90000
-            metrics.putIfAbsent(agent.getAgentId(), new AIAgentMetrics()); // GH-90000
+        void registerAgent(TestAIAgent agent) { 
+            agents.computeIfAbsent(agent.getAgentId(), k -> new ArrayList<>()).add(agent); 
+            metrics.putIfAbsent(agent.getAgentId(), new AIAgentMetrics()); 
         }
 
-        void registerGovernancePolicy(String agentId, AIGovernancePolicy policy) { // GH-90000
-            policies.put(agentId, policy); // GH-90000
+        void registerGovernancePolicy(String agentId, AIGovernancePolicy policy) { 
+            policies.put(agentId, policy); 
         }
 
-        Promise<AIResponse> executeAgent(String agentId, AIRequest request) { // GH-90000
-            return executeAgentVersion(agentId, null, request); // GH-90000
+        Promise<AIResponse> executeAgent(String agentId, AIRequest request) { 
+            return executeAgentVersion(agentId, null, request); 
         }
 
-        Promise<AIResponse> executeAgentVersion(String agentId, String version, AIRequest request) { // GH-90000
-            List<TestAIAgent> agentVersions = agents.get(agentId); // GH-90000
-            if (agentVersions == null || agentVersions.isEmpty()) { // GH-90000
-                return Promise.of(new AIResponse(false, null, "Agent not found")); // GH-90000
+        Promise<AIResponse> executeAgentVersion(String agentId, String version, AIRequest request) { 
+            List<TestAIAgent> agentVersions = agents.get(agentId); 
+            if (agentVersions == null || agentVersions.isEmpty()) { 
+                return Promise.of(new AIResponse(false, null, "Agent not found")); 
             }
 
             TestAIAgent agent = version == null ?
-                agentVersions.get(agentVersions.size() - 1) : // GH-90000
-                agentVersions.stream() // GH-90000
-                    .filter(a -> a.getVersion().equals(version)) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElse(null); // GH-90000
+                agentVersions.get(agentVersions.size() - 1) : 
+                agentVersions.stream() 
+                    .filter(a -> a.getVersion().equals(version)) 
+                    .findFirst() 
+                    .orElse(null); 
 
-            if (agent == null) { // GH-90000
-                return Promise.of(new AIResponse(false, null, "Agent version not found")); // GH-90000
+            if (agent == null) { 
+                return Promise.of(new AIResponse(false, null, "Agent version not found")); 
             }
 
             // Check governance
-            if (policies.containsKey(agentId)) { // GH-90000
-                auditLog.add("Executing agent: " + agentId + " with governance"); // GH-90000
+            if (policies.containsKey(agentId)) { 
+                auditLog.add("Executing agent: " + agentId + " with governance"); 
             }
 
-            long startTime = System.currentTimeMillis(); // GH-90000
-            return agent.execute(request).then(response -> { // GH-90000
-                long latency = System.currentTimeMillis() - startTime; // GH-90000
-                metrics.get(agentId).recordExecution(latency); // GH-90000
-                return Promise.of(response); // GH-90000
+            long startTime = System.currentTimeMillis(); 
+            return agent.execute(request).then(response -> { 
+                long latency = System.currentTimeMillis() - startTime; 
+                metrics.get(agentId).recordExecution(latency); 
+                return Promise.of(response); 
             });
         }
 
-        Promise<WorkflowResult> executeWorkflow(AIWorkflow workflow, AIRequest request) { // GH-90000
-            List<String> executedAgents = new ArrayList<>(); // GH-90000
-            Promise<AIRequest> currentPromise = Promise.of(request); // GH-90000
+        Promise<WorkflowResult> executeWorkflow(AIWorkflow workflow, AIRequest request) { 
+            List<String> executedAgents = new ArrayList<>(); 
+            Promise<AIRequest> currentPromise = Promise.of(request); 
 
-            for (String agentId : workflow.getSteps()) { // GH-90000
-                currentPromise = currentPromise.then(req -> // GH-90000
-                    executeAgent(agentId, req).then(response -> { // GH-90000
-                        if (response.isSuccess()) { // GH-90000
-                            executedAgents.add(agentId); // GH-90000
-                            return Promise.of(new AIRequest(response.getResult())); // GH-90000
+            for (String agentId : workflow.getSteps()) { 
+                currentPromise = currentPromise.then(req -> 
+                    executeAgent(agentId, req).then(response -> { 
+                        if (response.isSuccess()) { 
+                            executedAgents.add(agentId); 
+                            return Promise.of(new AIRequest(response.getResult())); 
                         }
-                        return Promise.ofException(new RuntimeException("Workflow failed at: " + agentId)); // GH-90000
+                        return Promise.ofException(new RuntimeException("Workflow failed at: " + agentId)); 
                     })
                 );
             }
 
             return currentPromise
-                .then( // GH-90000
-                    finalRequest -> Promise.of(new WorkflowResult(true, executedAgents)), // GH-90000
-                    error -> Promise.of(new WorkflowResult(false, executedAgents)) // GH-90000
+                .then( 
+                    finalRequest -> Promise.of(new WorkflowResult(true, executedAgents)), 
+                    error -> Promise.of(new WorkflowResult(false, executedAgents)) 
                 );
         }
 
-        AIAgentMetrics getMetrics(String agentId) { // GH-90000
-            return metrics.get(agentId); // GH-90000
+        AIAgentMetrics getMetrics(String agentId) { 
+            return metrics.get(agentId); 
         }
 
-        List<String> getAuditLog() { // GH-90000
-            return new ArrayList<>(auditLog); // GH-90000
+        List<String> getAuditLog() { 
+            return new ArrayList<>(auditLog); 
         }
     }
 }

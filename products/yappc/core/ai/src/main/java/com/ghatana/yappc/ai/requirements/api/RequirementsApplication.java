@@ -1,6 +1,7 @@
 package com.ghatana.yappc.ai.requirements.api;
 
 import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
+import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.yappc.ai.requirements.api.config.RequirementsConfig;
 import com.ghatana.yappc.ai.requirements.api.http.RequirementsHttpServer;
 import io.activej.http.HttpServer;
@@ -9,6 +10,7 @@ import io.activej.inject.module.ModuleBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -85,7 +87,25 @@ public final class RequirementsApplication extends UnifiedApplicationLauncher {
         .bind(Executor.class)
         .toInstance(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2));
 
+    // Observability metrics collector for feedback learning
+    builder.bind(MetricsCollector.class).toInstance(MetricsCollector.create());
+
+    // Durable DataSource for feedback learning counters (P0: persist across restarts)
+    builder.bind(DataSource.class).toInstance(createDataSource());
+
     // HTTP Server (configured in this class's createHttpServer method)
+  }
+
+  private static DataSource createDataSource() {
+    String url = System.getenv().getOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/yappc_ai");
+    String user = System.getenv().getOrDefault("DB_USER", "yappc");
+    String pass = System.getenv().getOrDefault("DB_PASSWORD", "yappc");
+    com.zaxxer.hikari.HikariConfig config = new com.zaxxer.hikari.HikariConfig();
+    config.setJdbcUrl(url);
+    config.setUsername(user);
+    config.setPassword(pass);
+    config.setMaximumPoolSize(10);
+    return new com.zaxxer.hikari.HikariDataSource(config);
   }
 
   @Override

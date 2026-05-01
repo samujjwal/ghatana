@@ -25,42 +25,42 @@ class ScanStatusTest {
 
         @Test
         @DisplayName("PENDING has correct display name")
-        void pendingHasCorrectDisplayName() { // GH-90000
+        void pendingHasCorrectDisplayName() { 
             assertThat(ScanStatus.PENDING.getDisplayName()).isEqualTo("Pending");
         }
 
         @Test
         @DisplayName("RUNNING has correct display name")
-        void runningHasCorrectDisplayName() { // GH-90000
+        void runningHasCorrectDisplayName() { 
             assertThat(ScanStatus.RUNNING.getDisplayName()).isEqualTo("Running");
         }
 
         @Test
         @DisplayName("COMPLETED has correct display name")
-        void completedHasCorrectDisplayName() { // GH-90000
+        void completedHasCorrectDisplayName() { 
             assertThat(ScanStatus.COMPLETED.getDisplayName()).isEqualTo("Completed");
         }
 
         @Test
         @DisplayName("FAILED has correct display name")
-        void failedHasCorrectDisplayName() { // GH-90000
+        void failedHasCorrectDisplayName() { 
             assertThat(ScanStatus.FAILED.getDisplayName()).isEqualTo("Failed");
         }
 
         @Test
         @DisplayName("CANCELLED has correct display name")
-        void cancelledHasCorrectDisplayName() { // GH-90000
+        void cancelledHasCorrectDisplayName() { 
             assertThat(ScanStatus.CANCELLED.getDisplayName()).isEqualTo("Cancelled");
         }
 
         @ParameterizedTest
-        @EnumSource(ScanStatus.class) // GH-90000
+        @EnumSource(ScanStatus.class) 
         @DisplayName("all statuses have non-null display names")
-        void allStatusesHaveNonNullDisplayNames(ScanStatus status) { // GH-90000
-            assertThat(status.getDisplayName()) // GH-90000
-                    .as("Display name for %s", status.name()) // GH-90000
-                    .isNotNull() // GH-90000
-                    .isNotEmpty(); // GH-90000
+        void allStatusesHaveNonNullDisplayNames(ScanStatus status) { 
+            assertThat(status.getDisplayName()) 
+                    .as("Display name for %s", status.name()) 
+                    .isNotNull() 
+                    .isNotEmpty(); 
         }
     }
 
@@ -70,50 +70,50 @@ class ScanStatusTest {
 
         @Test
         @DisplayName("PENDING is not a terminal state")
-        void pendingIsNotTerminal() { // GH-90000
-            assertThat(ScanStatus.PENDING.isTerminal()).isFalse(); // GH-90000
+        void pendingIsNotTerminal() { 
+            assertThat(ScanStatus.PENDING.isTerminal()).isFalse(); 
         }
 
         @Test
         @DisplayName("RUNNING is not a terminal state")
-        void runningIsNotTerminal() { // GH-90000
-            assertThat(ScanStatus.RUNNING.isTerminal()).isFalse(); // GH-90000
+        void runningIsNotTerminal() { 
+            assertThat(ScanStatus.RUNNING.isTerminal()).isFalse(); 
         }
 
         @Test
         @DisplayName("COMPLETED is a terminal state")
-        void completedIsTerminal() { // GH-90000
-            assertThat(ScanStatus.COMPLETED.isTerminal()).isTrue(); // GH-90000
+        void completedIsTerminal() { 
+            assertThat(ScanStatus.COMPLETED.isTerminal()).isTrue(); 
         }
 
         @Test
         @DisplayName("FAILED is a terminal state")
-        void failedIsTerminal() { // GH-90000
-            assertThat(ScanStatus.FAILED.isTerminal()).isTrue(); // GH-90000
+        void failedIsTerminal() { 
+            assertThat(ScanStatus.FAILED.isTerminal()).isTrue(); 
         }
 
         @Test
         @DisplayName("CANCELLED is a terminal state")
-        void cancelledIsTerminal() { // GH-90000
-            assertThat(ScanStatus.CANCELLED.isTerminal()).isTrue(); // GH-90000
+        void cancelledIsTerminal() { 
+            assertThat(ScanStatus.CANCELLED.isTerminal()).isTrue(); 
         }
 
         @Test
         @DisplayName("exactly two non-terminal states exist")
-        void exactlyTwoNonTerminalStatesExist() { // GH-90000
-            long activeCount = java.util.stream.Stream.of(ScanStatus.values()) // GH-90000
-                    .filter(s -> !s.isTerminal()) // GH-90000
-                    .count(); // GH-90000
-            assertThat(activeCount).isEqualTo(2); // GH-90000
+        void exactlyTwoNonTerminalStatesExist() { 
+            long activeCount = java.util.stream.Stream.of(ScanStatus.values()) 
+                    .filter(s -> !s.isTerminal()) 
+                    .count(); 
+            assertThat(activeCount).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("exactly three terminal states exist")
-        void exactlyThreeTerminalStatesExist() { // GH-90000
-            long terminalCount = java.util.stream.Stream.of(ScanStatus.values()) // GH-90000
-                    .filter(ScanStatus::isTerminal) // GH-90000
-                    .count(); // GH-90000
-            assertThat(terminalCount).isEqualTo(3); // GH-90000
+        void exactlyThreeTerminalStatesExist() { 
+            long terminalCount = java.util.stream.Stream.of(ScanStatus.values()) 
+                    .filter(ScanStatus::isTerminal) 
+                    .count(); 
+            assertThat(terminalCount).isEqualTo(3); 
         }
     }
 
@@ -123,39 +123,39 @@ class ScanStatusTest {
 
         @Test
         @DisplayName("PENDING is active")
-        void pendingIsActive() { // GH-90000
-            assertThat(ScanStatus.PENDING.isActive()).isTrue(); // GH-90000
+        void pendingIsActive() { 
+            assertThat(ScanStatus.PENDING.isActive()).isTrue(); 
         }
 
         @Test
         @DisplayName("RUNNING is active")
-        void runningIsActive() { // GH-90000
-            assertThat(ScanStatus.RUNNING.isActive()).isTrue(); // GH-90000
+        void runningIsActive() { 
+            assertThat(ScanStatus.RUNNING.isActive()).isTrue(); 
         }
 
         @Test
         @DisplayName("COMPLETED is not active")
-        void completedIsNotActive() { // GH-90000
-            assertThat(ScanStatus.COMPLETED.isActive()).isFalse(); // GH-90000
+        void completedIsNotActive() { 
+            assertThat(ScanStatus.COMPLETED.isActive()).isFalse(); 
         }
 
         @Test
         @DisplayName("FAILED is not active")
-        void failedIsNotActive() { // GH-90000
-            assertThat(ScanStatus.FAILED.isActive()).isFalse(); // GH-90000
+        void failedIsNotActive() { 
+            assertThat(ScanStatus.FAILED.isActive()).isFalse(); 
         }
 
         @Test
         @DisplayName("CANCELLED is not active")
-        void cancelledIsNotActive() { // GH-90000
-            assertThat(ScanStatus.CANCELLED.isActive()).isFalse(); // GH-90000
+        void cancelledIsNotActive() { 
+            assertThat(ScanStatus.CANCELLED.isActive()).isFalse(); 
         }
 
         @ParameterizedTest
-        @EnumSource(ScanStatus.class) // GH-90000
+        @EnumSource(ScanStatus.class) 
         @DisplayName("isActive() is inverse of isTerminal()")
-        void isActiveIsInverseOfIsTerminal(ScanStatus status) { // GH-90000
-            assertThat(status.isActive()).isEqualTo(!status.isTerminal()); // GH-90000
+        void isActiveIsInverseOfIsTerminal(ScanStatus status) { 
+            assertThat(status.isActive()).isEqualTo(!status.isTerminal()); 
         }
     }
 
@@ -165,13 +165,13 @@ class ScanStatusTest {
 
         @Test
         @DisplayName("enum has expected number of values")
-        void enumHasExpectedNumberOfValues() { // GH-90000
-            assertThat(ScanStatus.values()).hasSize(5); // GH-90000
+        void enumHasExpectedNumberOfValues() { 
+            assertThat(ScanStatus.values()).hasSize(5); 
         }
 
         @Test
         @DisplayName("enum values can be retrieved by name")
-        void enumValuesCanBeRetrievedByName() { // GH-90000
+        void enumValuesCanBeRetrievedByName() { 
             assertThat(ScanStatus.valueOf("PENDING")).isEqualTo(ScanStatus.PENDING);
             assertThat(ScanStatus.valueOf("RUNNING")).isEqualTo(ScanStatus.RUNNING);
             assertThat(ScanStatus.valueOf("COMPLETED")).isEqualTo(ScanStatus.COMPLETED);
@@ -186,15 +186,15 @@ class ScanStatusTest {
 
         @Test
         @DisplayName("valid state transitions follow expected pattern")
-        void validStateTransitions() { // GH-90000
-            // PENDING -> RUNNING (valid initial transition) // GH-90000
-            assertThat(ScanStatus.PENDING.isActive()).isTrue(); // GH-90000
-            assertThat(ScanStatus.RUNNING.isActive()).isTrue(); // GH-90000
+        void validStateTransitions() { 
+            // PENDING -> RUNNING (valid initial transition) 
+            assertThat(ScanStatus.PENDING.isActive()).isTrue(); 
+            assertThat(ScanStatus.RUNNING.isActive()).isTrue(); 
 
             // Terminal states cannot transition further
-            assertThat(ScanStatus.COMPLETED.isTerminal()).isTrue(); // GH-90000
-            assertThat(ScanStatus.FAILED.isTerminal()).isTrue(); // GH-90000
-            assertThat(ScanStatus.CANCELLED.isTerminal()).isTrue(); // GH-90000
+            assertThat(ScanStatus.COMPLETED.isTerminal()).isTrue(); 
+            assertThat(ScanStatus.FAILED.isTerminal()).isTrue(); 
+            assertThat(ScanStatus.CANCELLED.isTerminal()).isTrue(); 
         }
     }
 }

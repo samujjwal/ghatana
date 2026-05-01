@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("ScanJob Domain Model Tests")
 class ScanJobTest {
 
-    private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
-    private static final UUID PROJECT_ID = UUID.randomUUID(); // GH-90000
+    private static final UUID WORKSPACE_ID = UUID.randomUUID(); 
+    private static final UUID PROJECT_ID = UUID.randomUUID(); 
     private static final ScanType SCAN_TYPE = ScanType.FULL;
 
     @Nested
@@ -33,47 +33,47 @@ class ScanJobTest {
 
         @Test
         @DisplayName("pending() creates job with PENDING status and defaults")
-        void pendingCreatesJobWithPendingStatusAndDefaults() { // GH-90000
+        void pendingCreatesJobWithPendingStatusAndDefaults() { 
             // WHEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
 
             // THEN
-            assertThat(job.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(job.getProjectId()).isEqualTo(PROJECT_ID); // GH-90000
-            assertThat(job.getScanType()).isEqualTo(SCAN_TYPE); // GH-90000
-            assertThat(job.getStatus()).isEqualTo(ScanStatus.PENDING); // GH-90000
-            assertThat(job.getFindingsCount()).isZero(); // GH-90000
-            assertThat(job.getCriticalCount()).isZero(); // GH-90000
-            assertThat(job.getHighCount()).isZero(); // GH-90000
-            assertThat(job.getMediumCount()).isZero(); // GH-90000
-            assertThat(job.getLowCount()).isZero(); // GH-90000
-            assertThat(job.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(job.getUpdatedAt()).isNotNull(); // GH-90000
-            assertThat(job.getStartedAt()).isNull(); // GH-90000
-            assertThat(job.getCompletedAt()).isNull(); // GH-90000
+            assertThat(job.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(job.getProjectId()).isEqualTo(PROJECT_ID); 
+            assertThat(job.getScanType()).isEqualTo(SCAN_TYPE); 
+            assertThat(job.getStatus()).isEqualTo(ScanStatus.PENDING); 
+            assertThat(job.getFindingsCount()).isZero(); 
+            assertThat(job.getCriticalCount()).isZero(); 
+            assertThat(job.getHighCount()).isZero(); 
+            assertThat(job.getMediumCount()).isZero(); 
+            assertThat(job.getLowCount()).isZero(); 
+            assertThat(job.getCreatedAt()).isNotNull(); 
+            assertThat(job.getUpdatedAt()).isNotNull(); 
+            assertThat(job.getStartedAt()).isNull(); 
+            assertThat(job.getCompletedAt()).isNull(); 
         }
 
         @Test
         @DisplayName("pending() throws NullPointerException when workspaceId is null")
-        void pendingThrowsWhenWorkspaceIdNull() { // GH-90000
-            assertThatThrownBy(() -> ScanJob.pending(null, PROJECT_ID, SCAN_TYPE)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void pendingThrowsWhenWorkspaceIdNull() { 
+            assertThatThrownBy(() -> ScanJob.pending(null, PROJECT_ID, SCAN_TYPE)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
         @DisplayName("pending() throws NullPointerException when projectId is null")
-        void pendingThrowsWhenProjectIdNull() { // GH-90000
-            assertThatThrownBy(() -> ScanJob.pending(WORKSPACE_ID, null, SCAN_TYPE)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void pendingThrowsWhenProjectIdNull() { 
+            assertThatThrownBy(() -> ScanJob.pending(WORKSPACE_ID, null, SCAN_TYPE)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("projectId must not be null");
         }
 
         @Test
         @DisplayName("pending() throws NullPointerException when scanType is null")
-        void pendingThrowsWhenScanTypeNull() { // GH-90000
-            assertThatThrownBy(() -> ScanJob.pending(WORKSPACE_ID, PROJECT_ID, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void pendingThrowsWhenScanTypeNull() { 
+            assertThatThrownBy(() -> ScanJob.pending(WORKSPACE_ID, PROJECT_ID, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("scanType must not be null");
         }
     }
@@ -84,72 +84,72 @@ class ScanJobTest {
 
         @Test
         @DisplayName("start() transitions to RUNNING and sets startedAt")
-        void startTransitionsToRunning() { // GH-90000
+        void startTransitionsToRunning() { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            Instant beforeStart = Instant.now(); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            Instant beforeStart = Instant.now(); 
 
             // WHEN
-            ScanJob result = job.start(); // GH-90000
+            ScanJob result = job.start(); 
 
             // THEN
-            assertThat(result).isSameAs(job); // GH-90000
-            assertThat(job.getStatus()).isEqualTo(ScanStatus.RUNNING); // GH-90000
-            assertThat(job.getStartedAt()).isAfterOrEqualTo(beforeStart); // GH-90000
-            assertThat(job.getUpdatedAt()).isAfterOrEqualTo(beforeStart); // GH-90000
-            assertThat(job.getCompletedAt()).isNull(); // GH-90000
+            assertThat(result).isSameAs(job); 
+            assertThat(job.getStatus()).isEqualTo(ScanStatus.RUNNING); 
+            assertThat(job.getStartedAt()).isAfterOrEqualTo(beforeStart); 
+            assertThat(job.getUpdatedAt()).isAfterOrEqualTo(beforeStart); 
+            assertThat(job.getCompletedAt()).isNull(); 
         }
 
         @Test
         @DisplayName("complete() transitions to COMPLETED and sets completedAt")
-        void completeTransitionsToCompleted() { // GH-90000
+        void completeTransitionsToCompleted() { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            job.start(); // GH-90000
-            Instant beforeComplete = Instant.now(); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            job.start(); 
+            Instant beforeComplete = Instant.now(); 
 
             // WHEN
-            ScanJob result = job.complete(); // GH-90000
+            ScanJob result = job.complete(); 
 
             // THEN
-            assertThat(result).isSameAs(job); // GH-90000
-            assertThat(job.getStatus()).isEqualTo(ScanStatus.COMPLETED); // GH-90000
-            assertThat(job.getCompletedAt()).isAfterOrEqualTo(beforeComplete); // GH-90000
-            assertThat(job.getErrorMessage()).isNull(); // GH-90000
+            assertThat(result).isSameAs(job); 
+            assertThat(job.getStatus()).isEqualTo(ScanStatus.COMPLETED); 
+            assertThat(job.getCompletedAt()).isAfterOrEqualTo(beforeComplete); 
+            assertThat(job.getErrorMessage()).isNull(); 
         }
 
         @Test
         @DisplayName("fail() transitions to FAILED with error message")
-        void failTransitionsToFailed() { // GH-90000
+        void failTransitionsToFailed() { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            job.start(); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            job.start(); 
             String errorMsg = "Connection timeout to cloud provider";
 
             // WHEN
-            ScanJob result = job.fail(errorMsg); // GH-90000
+            ScanJob result = job.fail(errorMsg); 
 
             // THEN
-            assertThat(result).isSameAs(job); // GH-90000
-            assertThat(job.getStatus()).isEqualTo(ScanStatus.FAILED); // GH-90000
-            assertThat(job.getErrorMessage()).isEqualTo(errorMsg); // GH-90000
-            assertThat(job.getCompletedAt()).isNotNull(); // GH-90000
+            assertThat(result).isSameAs(job); 
+            assertThat(job.getStatus()).isEqualTo(ScanStatus.FAILED); 
+            assertThat(job.getErrorMessage()).isEqualTo(errorMsg); 
+            assertThat(job.getCompletedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("full lifecycle from PENDING to COMPLETED")
-        void fullLifecycle() { // GH-90000
+        void fullLifecycle() { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
 
             // WHEN
-            job.start().complete(); // GH-90000
+            job.start().complete(); 
 
             // THEN
-            assertThat(job.getStatus()).isEqualTo(ScanStatus.COMPLETED); // GH-90000
-            assertThat(job.getStartedAt()).isNotNull(); // GH-90000
-            assertThat(job.getCompletedAt()).isNotNull(); // GH-90000
-            assertThat(job.getStartedAt()).isBeforeOrEqualTo(job.getCompletedAt()); // GH-90000
+            assertThat(job.getStatus()).isEqualTo(ScanStatus.COMPLETED); 
+            assertThat(job.getStartedAt()).isNotNull(); 
+            assertThat(job.getCompletedAt()).isNotNull(); 
+            assertThat(job.getStartedAt()).isBeforeOrEqualTo(job.getCompletedAt()); 
         }
     }
 
@@ -159,43 +159,43 @@ class ScanJobTest {
 
         @Test
         @DisplayName("getDurationMs() returns -1 before start")
-        void getDurationMsReturnsNegativeBeforeStart() { // GH-90000
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            assertThat(job.getDurationMs()).isEqualTo(-1); // GH-90000
+        void getDurationMsReturnsNegativeBeforeStart() { 
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            assertThat(job.getDurationMs()).isEqualTo(-1); 
         }
 
         @Test
         @DisplayName("getDurationMs() returns -1 while running")
-        void getDurationMsReturnsNegativeWhileRunning() { // GH-90000
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            job.start(); // GH-90000
-            assertThat(job.getDurationMs()).isEqualTo(-1); // GH-90000
+        void getDurationMsReturnsNegativeWhileRunning() { 
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            job.start(); 
+            assertThat(job.getDurationMs()).isEqualTo(-1); 
         }
 
         @Test
         @DisplayName("getDurationMs() returns positive value after completion")
-        void getDurationMsReturnsPositiveAfterCompletion() throws InterruptedException { // GH-90000
+        void getDurationMsReturnsPositiveAfterCompletion() throws InterruptedException { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            job.start(); // GH-90000
-            Thread.sleep(10); // Ensure measurable duration // GH-90000
-            job.complete(); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            job.start(); 
+            Thread.sleep(10); // Ensure measurable duration 
+            job.complete(); 
 
             // THEN
-            assertThat(job.getDurationMs()).isGreaterThan(0); // GH-90000
+            assertThat(job.getDurationMs()).isGreaterThan(0); 
         }
 
         @Test
         @DisplayName("getDurationMs() returns positive value after failure")
-        void getDurationMsReturnsPositiveAfterFailure() throws InterruptedException { // GH-90000
+        void getDurationMsReturnsPositiveAfterFailure() throws InterruptedException { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
-            job.start(); // GH-90000
-            Thread.sleep(10); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
+            job.start(); 
+            Thread.sleep(10); 
             job.fail("Error");
 
             // THEN
-            assertThat(job.getDurationMs()).isGreaterThan(0); // GH-90000
+            assertThat(job.getDurationMs()).isGreaterThan(0); 
         }
     }
 
@@ -205,60 +205,60 @@ class ScanJobTest {
 
         @Test
         @DisplayName("builder defaults all counts to zero")
-        void builderDefaultsCountsToZero() { // GH-90000
-            ScanJob job = ScanJob.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .projectId(PROJECT_ID) // GH-90000
-                    .scanType(SCAN_TYPE) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsCountsToZero() { 
+            ScanJob job = ScanJob.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .projectId(PROJECT_ID) 
+                    .scanType(SCAN_TYPE) 
+                    .build(); 
 
-            assertThat(job.getFindingsCount()).isZero(); // GH-90000
-            assertThat(job.getCriticalCount()).isZero(); // GH-90000
-            assertThat(job.getHighCount()).isZero(); // GH-90000
-            assertThat(job.getMediumCount()).isZero(); // GH-90000
-            assertThat(job.getLowCount()).isZero(); // GH-90000
+            assertThat(job.getFindingsCount()).isZero(); 
+            assertThat(job.getCriticalCount()).isZero(); 
+            assertThat(job.getHighCount()).isZero(); 
+            assertThat(job.getMediumCount()).isZero(); 
+            assertThat(job.getLowCount()).isZero(); 
         }
 
         @Test
         @DisplayName("can set finding counts via builder")
-        void canSetFindingCountsViaBuilder() { // GH-90000
-            ScanJob job = ScanJob.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .projectId(PROJECT_ID) // GH-90000
-                    .scanType(SCAN_TYPE) // GH-90000
-                    .findingsCount(100) // GH-90000
-                    .criticalCount(5) // GH-90000
-                    .highCount(15) // GH-90000
-                    .mediumCount(30) // GH-90000
-                    .lowCount(50) // GH-90000
-                    .build(); // GH-90000
+        void canSetFindingCountsViaBuilder() { 
+            ScanJob job = ScanJob.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .projectId(PROJECT_ID) 
+                    .scanType(SCAN_TYPE) 
+                    .findingsCount(100) 
+                    .criticalCount(5) 
+                    .highCount(15) 
+                    .mediumCount(30) 
+                    .lowCount(50) 
+                    .build(); 
 
-            assertThat(job.getFindingsCount()).isEqualTo(100); // GH-90000
-            assertThat(job.getCriticalCount()).isEqualTo(5); // GH-90000
-            assertThat(job.getHighCount()).isEqualTo(15); // GH-90000
-            assertThat(job.getMediumCount()).isEqualTo(30); // GH-90000
-            assertThat(job.getLowCount()).isEqualTo(50); // GH-90000
+            assertThat(job.getFindingsCount()).isEqualTo(100); 
+            assertThat(job.getCriticalCount()).isEqualTo(5); 
+            assertThat(job.getHighCount()).isEqualTo(15); 
+            assertThat(job.getMediumCount()).isEqualTo(30); 
+            assertThat(job.getLowCount()).isEqualTo(50); 
         }
 
         @Test
         @DisplayName("finding counts can be updated via setters")
-        void findingCountsCanBeUpdatedViaSetters() { // GH-90000
+        void findingCountsCanBeUpdatedViaSetters() { 
             // GIVEN
-            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
+            ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); 
 
             // WHEN
-            job.setFindingsCount(25); // GH-90000
-            job.setCriticalCount(2); // GH-90000
-            job.setHighCount(5); // GH-90000
-            job.setMediumCount(8); // GH-90000
-            job.setLowCount(10); // GH-90000
+            job.setFindingsCount(25); 
+            job.setCriticalCount(2); 
+            job.setHighCount(5); 
+            job.setMediumCount(8); 
+            job.setLowCount(10); 
 
             // THEN
-            assertThat(job.getFindingsCount()).isEqualTo(25); // GH-90000
-            assertThat(job.getCriticalCount()).isEqualTo(2); // GH-90000
-            assertThat(job.getHighCount()).isEqualTo(5); // GH-90000
-            assertThat(job.getMediumCount()).isEqualTo(8); // GH-90000
-            assertThat(job.getLowCount()).isEqualTo(10); // GH-90000
+            assertThat(job.getFindingsCount()).isEqualTo(25); 
+            assertThat(job.getCriticalCount()).isEqualTo(2); 
+            assertThat(job.getHighCount()).isEqualTo(5); 
+            assertThat(job.getMediumCount()).isEqualTo(8); 
+            assertThat(job.getLowCount()).isEqualTo(10); 
         }
     }
 
@@ -268,10 +268,10 @@ class ScanJobTest {
 
         @Test
         @DisplayName("can create job for each scan type")
-        void canCreateJobForEachScanType() { // GH-90000
-            for (ScanType type : ScanType.values()) { // GH-90000
-                ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, type); // GH-90000
-                assertThat(job.getScanType()).isEqualTo(type); // GH-90000
+        void canCreateJobForEachScanType() { 
+            for (ScanType type : ScanType.values()) { 
+                ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, type); 
+                assertThat(job.getScanType()).isEqualTo(type); 
             }
         }
     }
@@ -282,22 +282,22 @@ class ScanJobTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            ScanJob job1 = ScanJob.builder().id(id).scanType(ScanType.FULL).build(); // GH-90000
-            ScanJob job2 = ScanJob.builder().id(id).scanType(ScanType.QUICK).build(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
+            ScanJob job1 = ScanJob.builder().id(id).scanType(ScanType.FULL).build(); 
+            ScanJob job2 = ScanJob.builder().id(id).scanType(ScanType.QUICK).build(); 
 
-            assertThat(job1).isEqualTo(job2); // GH-90000
-            assertThat(job1.hashCode()).isEqualTo(job2.hashCode()); // GH-90000
+            assertThat(job1).isEqualTo(job2); 
+            assertThat(job1.hashCode()).isEqualTo(job2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            ScanJob job1 = ScanJob.builder().id(UUID.randomUUID()).build(); // GH-90000
-            ScanJob job2 = ScanJob.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            ScanJob job1 = ScanJob.builder().id(UUID.randomUUID()).build(); 
+            ScanJob job2 = ScanJob.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(job1).isNotEqualTo(job2); // GH-90000
+            assertThat(job1).isNotEqualTo(job2); 
         }
     }
 
@@ -307,7 +307,7 @@ class ScanJobTest {
 
         @Test
         @DisplayName("can store JSON configuration")
-        void canStoreJsonConfiguration() { // GH-90000
+        void canStoreJsonConfiguration() { 
             String config = """
                     {
                         "scanners": ["sast", "sca", "secrets"],
@@ -316,25 +316,25 @@ class ScanJobTest {
                     }
                     """;
 
-            ScanJob job = ScanJob.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .projectId(PROJECT_ID) // GH-90000
-                    .scanType(SCAN_TYPE) // GH-90000
-                    .config(config) // GH-90000
-                    .build(); // GH-90000
+            ScanJob job = ScanJob.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .projectId(PROJECT_ID) 
+                    .scanType(SCAN_TYPE) 
+                    .config(config) 
+                    .build(); 
 
-            assertThat(job.getConfig()).isEqualTo(config); // GH-90000
+            assertThat(job.getConfig()).isEqualTo(config); 
         }
 
         @Test
         @DisplayName("can store description")
-        void canStoreDescription() { // GH-90000
-            ScanJob job = ScanJob.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .projectId(PROJECT_ID) // GH-90000
-                    .scanType(SCAN_TYPE) // GH-90000
+        void canStoreDescription() { 
+            ScanJob job = ScanJob.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .projectId(PROJECT_ID) 
+                    .scanType(SCAN_TYPE) 
                     .description("Nightly security scan for production deployment")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(job.getDescription()).isEqualTo("Nightly security scan for production deployment");
         }

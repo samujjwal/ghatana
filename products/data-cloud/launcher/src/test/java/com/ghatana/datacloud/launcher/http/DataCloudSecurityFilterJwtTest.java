@@ -22,6 +22,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit-level tests for {@link DataCloudSecurityFilter} JWT authentication.
+ *
+ * <p>Each test constructs a real {@link DataCloudSecurityFilter} via its builder and
+ * issues {@link HttpRequest} objects through the resulting servlet pipeline inside the
+ * ActiveJ event loop. The status code of the real {@link HttpResponse} returned by the
+ * filter chain is then asserted without starting a TCP server.
+ *
+ * @doc.type class
+ * @doc.purpose JWT authentication enforcement tests for DataCloudSecurityFilter
+ * @doc.layer product
+ * @doc.pattern Test
+ */
 @DisplayName("DataCloudSecurityFilter JWT authentication")
 class DataCloudSecurityFilterJwtTest extends EventloopTestBase {
 
@@ -32,151 +45,168 @@ class DataCloudSecurityFilterJwtTest extends EventloopTestBase {
     private ApiKeyResolver apiKeyResolver;
 
     private static final AsyncServlet OK_DELEGATE =
-            request -> Promise.of(HttpResponse.ok200().build()); // GH-90000
+            request -> Promise.of(HttpResponse.ok200().build());
 
     @BeforeEach
-    void setUp() { // GH-90000
-        jwtProvider = mock(JwtTokenProvider.class); // GH-90000
-        apiKeyResolver = mock(ApiKeyResolver.class); // GH-90000
+    void setUp() {
+        jwtProvider = mock(JwtTokenProvider.class);
+        apiKeyResolver = mock(ApiKeyResolver.class);
 
-        when(jwtProvider.validateToken(VALID_TOKEN)).thenReturn(true); // GH-90000
-        when(jwtProvider.validateToken(INVALID_TOKEN)).thenReturn(false); // GH-90000
+        when(jwtProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtProvider.validateToken(INVALID_TOKEN)).thenReturn(false);
         when(jwtProvider.getUserIdFromToken(VALID_TOKEN)).thenReturn(Optional.of("jwt-user"));
         when(jwtProvider.getRolesFromToken(VALID_TOKEN)).thenReturn(List.of("admin"));
-        when(jwtProvider.extractClaims(VALID_TOKEN)).thenReturn(Optional.of(Map.of("tenant_id", "tenant-jwt"))); // GH-90000
+        when(jwtProvider.extractClaims(VALID_TOKEN)).thenReturn(Optional.of(Map.of("tenant_id", "tenant-jwt")));
     }
 
     @Test
     @DisplayName("JWT-authenticated request passes through and resolves tenant from claims")
-    void jwtAuthenticatedRequestPassesThrough() { // GH-90000
-        AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                .jwtProvider(jwtProvider) // GH-90000
-                .build() // GH-90000
-                .apply(OK_DELEGATE); // GH-90000
+    void jwtAuthenticatedRequestPassesThrough() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
                 .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
-                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                .build(); // GH-90000
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-        assertThat(status).isEqualTo(200); // GH-90000
-        verify(jwtProvider).extractClaims(VALID_TOKEN); // GH-90000
+        assertThat(status).isEqualTo(200);
+        verify(jwtProvider).extractClaims(VALID_TOKEN);
     }
 
-        @Test
-        @DisplayName("cookie-backed JWT request passes through when Authorization header is absent")
-        void cookieBackedJwtRequestPassesThrough() { // GH-90000
-                AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                                .jwtProvider(jwtProvider) // GH-90000
-                                .build() // GH-90000
-                                .apply(OK_DELEGATE); // GH-90000
+    @Test
+    @DisplayName("cookie-backed JWT request passes through when Authorization header is absent")
+    void cookieBackedJwtRequestPassesThrough() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
-                HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
-                                .withHeader(HttpHeaders.COOKIE, DataCloudSecurityFilter.AUTH_TOKEN_COOKIE + "=" + VALID_TOKEN) // GH-90000
-                                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                                .build(); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
+                .withHeader(HttpHeaders.COOKIE, DataCloudSecurityFilter.AUTH_TOKEN_COOKIE + "=" + VALID_TOKEN)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-                int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-                assertThat(status).isEqualTo(200); // GH-90000
-                verify(jwtProvider).validateToken(VALID_TOKEN); // GH-90000
-        }
+        assertThat(status).isEqualTo(200);
+        verify(jwtProvider).validateToken(VALID_TOKEN);
+    }
 
     @Test
     @DisplayName("invalid JWT request returns 401")
-    void invalidJwtRequestReturns401() { // GH-90000
-        AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                .jwtProvider(jwtProvider) // GH-90000
-                .build() // GH-90000
-                .apply(OK_DELEGATE); // GH-90000
+    void invalidJwtRequestReturns401() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
                 .withHeader(HttpHeaders.of("Authorization"), "Bearer " + INVALID_TOKEN)
-                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                .build(); // GH-90000
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-        assertThat(status).isEqualTo(401); // GH-90000
+        assertThat(status).isEqualTo(401);
     }
 
-        @Test
-        @DisplayName("invalid JWT cookie returns 401")
-        void invalidJwtCookieReturns401() { // GH-90000
-                AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                                .jwtProvider(jwtProvider) // GH-90000
-                                .build() // GH-90000
-                                .apply(OK_DELEGATE); // GH-90000
+    @Test
+    @DisplayName("invalid JWT cookie returns 401")
+    void invalidJwtCookieReturns401() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
-                HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
-                                .withHeader(HttpHeaders.COOKIE, DataCloudSecurityFilter.AUTH_TOKEN_COOKIE + "=" + INVALID_TOKEN) // GH-90000
-                                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                                .build(); // GH-90000
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
+                .withHeader(HttpHeaders.COOKIE, DataCloudSecurityFilter.AUTH_TOKEN_COOKIE + "=" + INVALID_TOKEN)
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-                int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-                assertThat(status).isEqualTo(401); // GH-90000
-        }
+        assertThat(status).isEqualTo(401);
+    }
 
     @Test
     @DisplayName("JWT request with mismatched tenant header returns 403")
-    void jwtRequestWithMismatchedTenantHeaderReturns403() { // GH-90000
-        AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                .jwtProvider(jwtProvider) // GH-90000
-                .build() // GH-90000
-                .apply(OK_DELEGATE); // GH-90000
+    void jwtRequestWithMismatchedTenantHeaderReturns403() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
                 .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-other")
-                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                .build(); // GH-90000
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-        assertThat(status).isEqualTo(403); // GH-90000
+        assertThat(status).isEqualTo(403);
     }
 
     @Test
     @DisplayName("JWT request with mismatched tenant query parameter returns 403")
-    void jwtRequestWithMismatchedTenantQueryReturns403() { // GH-90000
-        AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                .jwtProvider(jwtProvider) // GH-90000
-                .build() // GH-90000
-                .apply(OK_DELEGATE); // GH-90000
+    void jwtRequestWithMismatchedTenantQueryReturns403() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health?tenantId=tenant-other")
                 .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
-                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                .build(); // GH-90000
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-        assertThat(status).isEqualTo(403); // GH-90000
+        assertThat(status).isEqualTo(403);
     }
 
     @Test
     @DisplayName("API key is checked before JWT when both credentials are present")
-    void apiKeyCheckedBeforeJwt() { // GH-90000
+    void apiKeyCheckedBeforeJwt() {
         when(apiKeyResolver.resolve("bad-key")).thenReturn(Optional.empty());
 
-        AsyncServlet secured = DataCloudSecurityFilter.builder() // GH-90000
-                .apiKeyResolver(apiKeyResolver) // GH-90000
-                .jwtProvider(jwtProvider) // GH-90000
-                .build() // GH-90000
-                .apply(OK_DELEGATE); // GH-90000
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .apiKeyResolver(apiKeyResolver)
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/brain/health")
                 .withHeader(HttpHeaders.of("X-API-Key"), "bad-key")
                 .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
-                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
-                .build(); // GH-90000
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
 
-        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode)); // GH-90000
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-        assertThat(status).isEqualTo(401); // GH-90000
-        verify(jwtProvider, never()).validateToken(VALID_TOKEN); // GH-90000
+        assertThat(status).isEqualTo(401);
+        verify(jwtProvider, never()).validateToken(VALID_TOKEN);
+    }
+
+    @Test
+    @DisplayName("request with no credentials to a protected endpoint returns 401")
+    void unauthenticatedRequestReturns401() {
+        AsyncServlet secured = DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .build()
+                .apply(OK_DELEGATE);
+
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/entities/sales")
+                .withHeader(HttpHeaders.HOST, "localhost")
+                .build();
+
+        int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+        assertThat(status).isEqualTo(401);
     }
 }

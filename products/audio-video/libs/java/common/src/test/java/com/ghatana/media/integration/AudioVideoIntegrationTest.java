@@ -44,141 +44,141 @@ class AudioVideoIntegrationTest {
     private AudioVideoLibrary library;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        eventloop = Eventloop.create(); // GH-90000
-        executor = Executors.newSingleThreadExecutor(); // GH-90000
-        executor.submit(() -> eventloop.run()); // GH-90000
+    void setUp() { 
+        eventloop = Eventloop.create(); 
+        executor = Executors.newSingleThreadExecutor(); 
+        executor.submit(() -> eventloop.run()); 
         library = AudioVideoLibrary.builder().withSttConfig(SttConfig.builder().modelId("test").build()).build();
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        eventloop.breakEventloop(); // GH-90000
-        executor.shutdown(); // GH-90000
-        library.close(); // GH-90000
+    void tearDown() { 
+        eventloop.breakEventloop(); 
+        executor.shutdown(); 
+        library.close(); 
     }
 
     @Test
     @DisplayName("Integration: Circuit breaker protects failing STT engine")
-    void testCircuitBreakerProtection() throws Exception { // GH-90000
+    void testCircuitBreakerProtection() throws Exception { 
         // Create engine that always fails
-        var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); // GH-90000
+        var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); 
 
         // Wrap with circuit breaker
-        var cbEngine = new CircuitBreakerSttEngine(failingEngine, eventloop); // GH-90000
+        var cbEngine = new CircuitBreakerSttEngine(failingEngine, eventloop); 
 
         // First call should trigger failures and eventually open circuit
-        for (int i = 0; i < 10; i++) { // GH-90000
+        for (int i = 0; i < 10; i++) { 
             try {
-                cbEngine.transcribe( // GH-90000
-                    new AudioData(new byte[16000], 16000, 1, 16), // GH-90000
-                    TranscriptionOptions.defaults() // GH-90000
+                cbEngine.transcribe( 
+                    new AudioData(new byte[16000], 16000, 1, 16), 
+                    TranscriptionOptions.defaults() 
                 );
-            } catch (Exception e) { // GH-90000
+            } catch (Exception e) { 
                 // Expected - engine is failing
             }
         }
 
         // Circuit should be open after failures
-        Thread.sleep(100); // Allow state to update // GH-90000
+        Thread.sleep(100); // Allow state to update 
 
-        // With open circuit, we get degraded result (empty transcription) // GH-90000
-        var result = cbEngine.transcribe( // GH-90000
-            new AudioData(new byte[16000], 16000, 1, 16), // GH-90000
-            TranscriptionOptions.defaults() // GH-90000
+        // With open circuit, we get degraded result (empty transcription) 
+        var result = cbEngine.transcribe( 
+            new AudioData(new byte[16000], 16000, 1, 16), 
+            TranscriptionOptions.defaults() 
         );
 
-        assertNotNull(result); // GH-90000
+        assertNotNull(result); 
         // Degraded result has empty text
-        assertTrue(result.text().isEmpty() || result.confidence() == 0.0); // GH-90000
+        assertTrue(result.text().isEmpty() || result.confidence() == 0.0); 
     }
 
     @Test
     @DisplayName("Integration: Retry handler recovers from transient failures")
-    void testRetryRecovery() { // GH-90000
-        var retryHandler = StreamingRetryHandler.builder() // GH-90000
-            .maxRetries(3) // GH-90000
-            .initialDelay(Duration.ofMillis(10)) // GH-90000
-            .build(); // GH-90000
+    void testRetryRecovery() { 
+        var retryHandler = StreamingRetryHandler.builder() 
+            .maxRetries(3) 
+            .initialDelay(Duration.ofMillis(10)) 
+            .build(); 
 
-        var callCount = new AtomicInteger(0); // GH-90000
+        var callCount = new AtomicInteger(0); 
 
-        String result = retryHandler.executeWithRetry(() -> { // GH-90000
-            int call = callCount.incrementAndGet(); // GH-90000
-            if (call < 3) { // GH-90000
-                throw new RuntimeException("try again " + call); // GH-90000
+        String result = retryHandler.executeWithRetry(() -> { 
+            int call = callCount.incrementAndGet(); 
+            if (call < 3) { 
+                throw new RuntimeException("try again " + call); 
             }
             return "success";
         }, "test operation");
 
-        assertEquals("success", result); // GH-90000
-        assertEquals(3, callCount.get()); // GH-90000
+        assertEquals("success", result); 
+        assertEquals(3, callCount.get()); 
     }
 
     @Test
     @DisplayName("Integration: Timeout configuration applies correctly")
-    void testTimeoutConfiguration() { // GH-90000
-        var config = TimeoutConfig.lowLatency(); // GH-90000
+    void testTimeoutConfiguration() { 
+        var config = TimeoutConfig.lowLatency(); 
 
         // Create slow engine
-        var slowEngine = AudioVideoTestUtils.createSlowSttEngine(200); // GH-90000
+        var slowEngine = AudioVideoTestUtils.createSlowSttEngine(200); 
 
         // With low latency config, operation should timeout or complete quickly
-        long start = System.currentTimeMillis(); // GH-90000
+        long start = System.currentTimeMillis(); 
         try {
-            slowEngine.transcribe( // GH-90000
-                new AudioData(new byte[8000], 16000, 1, 16), // Short audio // GH-90000
-                TranscriptionOptions.defaults() // GH-90000
+            slowEngine.transcribe( 
+                new AudioData(new byte[8000], 16000, 1, 16), // Short audio 
+                TranscriptionOptions.defaults() 
             );
-        } catch (Exception e) { // GH-90000
+        } catch (Exception e) { 
             // Expected - might timeout or fail
         }
 
-        long elapsed = System.currentTimeMillis() - start; // GH-90000
+        long elapsed = System.currentTimeMillis() - start; 
 
-        // Should complete within reasonable time (config.streamingTimeout) // GH-90000
-        assertTrue(elapsed < config.streamingTimeoutMs() + 1000, // GH-90000
+        // Should complete within reasonable time (config.streamingTimeout) 
+        assertTrue(elapsed < config.streamingTimeoutMs() + 1000, 
             "Operation took too long: " + elapsed + "ms");
     }
 
     @Test
     @DisplayName("Integration: Configuration provider loads and applies settings")
-    void testConfigurationProvider() { // GH-90000
-        var provider = ConfigurationProvider.getInstance(); // GH-90000
+    void testConfigurationProvider() { 
+        var provider = ConfigurationProvider.getInstance(); 
 
         // Set test values
-        provider.set("test.timeout", "5000"); // GH-90000
-        provider.set("test.enabled", "true"); // GH-90000
+        provider.set("test.timeout", "5000"); 
+        provider.set("test.enabled", "true"); 
 
         // Verify values are retrieved
-        assertEquals(5000, provider.getInt("test.timeout", 0)); // GH-90000
-        assertTrue(provider.getBoolean("test.enabled", false)); // GH-90000
+        assertEquals(5000, provider.getInt("test.timeout", 0)); 
+        assertTrue(provider.getBoolean("test.enabled", false)); 
 
         // Default values work
-        assertEquals(42, provider.getInt("nonexistent", 42)); // GH-90000
+        assertEquals(42, provider.getInt("nonexistent", 42)); 
     }
 
     @Test
     @DisplayName("Integration: All resilience patterns work together")
-    void testResiliencePatternsCombined() { // GH-90000
+    void testResiliencePatternsCombined() { 
         // This test validates that multiple resilience patterns can work together
 
         // 1. Create a retry handler
-        var retryHandler = StreamingRetryHandler.defaults(); // GH-90000
+        var retryHandler = StreamingRetryHandler.defaults(); 
 
         // 2. Create a circuit breaker
         var circuitBreaker = com.ghatana.platform.resilience.CircuitBreaker.builder("integration-test")
-            .failureThreshold(5) // GH-90000
-            .resetTimeout(Duration.ofMillis(100)) // GH-90000
-            .build(); // GH-90000
+            .failureThreshold(5) 
+            .resetTimeout(Duration.ofMillis(100)) 
+            .build(); 
 
         // 3. Combine them - retry first, then circuit breaker
-        var callCount = new AtomicInteger(0); // GH-90000
+        var callCount = new AtomicInteger(0); 
 
-        String result = retryHandler.executeWithFallback( // GH-90000
-            () -> { // GH-90000
-                int call = callCount.incrementAndGet(); // GH-90000
-                if (call < 3) { // GH-90000
+        String result = retryHandler.executeWithFallback( 
+            () -> { 
+                int call = callCount.incrementAndGet(); 
+                if (call < 3) { 
                     throw new RuntimeException("try again failure");
                 }
                 return "recovered";
@@ -187,31 +187,31 @@ class AudioVideoIntegrationTest {
             "combined test"
         );
 
-        assertEquals("recovered", result); // GH-90000
+        assertEquals("recovered", result); 
     }
 
     @Test
     @DisplayName("Integration: Library lifecycle management")
-    void testLibraryLifecycle() { // GH-90000
+    void testLibraryLifecycle() { 
         // Create library
         var lib = AudioVideoLibrary.builder().withSttConfig(SttConfig.builder().modelId("test").build()).withTtsConfig(TtsConfig.builder().defaultVoiceId("test").build()).withVisionConfig(VisionConfig.builder().modelId("test").build()).build();
-        assertNotNull(lib); // GH-90000
+        assertNotNull(lib); 
 
         // Get engines
-        try (var sttEngine = lib.getSttEngine()) { // GH-90000
-            assertNotNull(sttEngine); // GH-90000
-            var status = sttEngine.getStatus(); // GH-90000
-            assertNotNull(status); // GH-90000
+        try (var sttEngine = lib.getSttEngine()) { 
+            assertNotNull(sttEngine); 
+            var status = sttEngine.getStatus(); 
+            assertNotNull(status); 
         }
 
-        try (var ttsEngine = lib.getTtsEngine()) { // GH-90000
-            assertNotNull(ttsEngine); // GH-90000
-            var status = ttsEngine.getStatus(); // GH-90000
-            assertNotNull(status); // GH-90000
+        try (var ttsEngine = lib.getTtsEngine()) { 
+            assertNotNull(ttsEngine); 
+            var status = ttsEngine.getStatus(); 
+            assertNotNull(status); 
         }
 
         // Close library
-        lib.close(); // GH-90000
+        lib.close(); 
     }
 
     // -------------------------------------------------------------------------
@@ -220,187 +220,187 @@ class AudioVideoIntegrationTest {
 
     @Test
     @DisplayName("Failure: Engine returns typed ProcessingError with isRetryable flag")
-    void testProcessingErrorIsTyped() { // GH-90000
+    void testProcessingErrorIsTyped() { 
         // Engines must surface typed errors so callers can decide whether to retry.
-        var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); // GH-90000
-        var audio = new AudioData(new byte[16000], 16000, 1, 16); // GH-90000
+        var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); 
+        var audio = new AudioData(new byte[16000], 16000, 1, 16); 
 
-        Exception caught = assertThrows(Exception.class, // GH-90000
-            () -> failingEngine.transcribe(audio, TranscriptionOptions.defaults())); // GH-90000
+        Exception caught = assertThrows(Exception.class, 
+            () -> failingEngine.transcribe(audio, TranscriptionOptions.defaults())); 
 
-        // The exception must be a subtype of ProcessingError so that isRetryable() is available. // GH-90000
-        assertNotNull(caught.getMessage(), "Error message must not be null"); // GH-90000
+        // The exception must be a subtype of ProcessingError so that isRetryable() is available. 
+        assertNotNull(caught.getMessage(), "Error message must not be null"); 
     }
 
     @Test
     @DisplayName("Failure: Retry handler exhausts attempts and propagates last error")
-    void testRetryExhaustionHasLastError() { // GH-90000
-        var retryHandler = StreamingRetryHandler.builder() // GH-90000
-            .maxRetries(3) // GH-90000
-            .initialDelay(Duration.ofMillis(5)) // GH-90000
-            .build(); // GH-90000
+    void testRetryExhaustionHasLastError() { 
+        var retryHandler = StreamingRetryHandler.builder() 
+            .maxRetries(3) 
+            .initialDelay(Duration.ofMillis(5)) 
+            .build(); 
 
-        var callCount = new AtomicInteger(0); // GH-90000
-        var lastErrorMessage = new AtomicReference<String>(); // GH-90000
+        var callCount = new AtomicInteger(0); 
+        var lastErrorMessage = new AtomicReference<String>(); 
 
-        String result = retryHandler.executeWithFallback( // GH-90000
-            () -> { // GH-90000
-                int n = callCount.incrementAndGet(); // GH-90000
-                lastErrorMessage.set("attempt-" + n); // GH-90000
-                throw new RuntimeException("temporarily unavailable attempt " + n); // GH-90000
+        String result = retryHandler.executeWithFallback( 
+            () -> { 
+                int n = callCount.incrementAndGet(); 
+                lastErrorMessage.set("attempt-" + n); 
+                throw new RuntimeException("temporarily unavailable attempt " + n); 
             },
             "FALLBACK",
             "exhaustion test"
         );
 
         // executeWithFallback performs the initial call plus maxRetries retry attempts.
-        assertEquals("FALLBACK", result, "Should return fallback value after exhaustion"); // GH-90000
-        assertEquals(4, callCount.get(), "Should attempt once plus maxRetries retry attempts"); // GH-90000
-        assertNotNull(lastErrorMessage.get(), "Should have recorded the last error message"); // GH-90000
+        assertEquals("FALLBACK", result, "Should return fallback value after exhaustion"); 
+        assertEquals(4, callCount.get(), "Should attempt once plus maxRetries retry attempts"); 
+        assertNotNull(lastErrorMessage.get(), "Should have recorded the last error message"); 
     }
 
     @Test
     @DisplayName("Failure: Circuit breaker recovers after timeout window")
-    void testCircuitBreakerRecoveryAfterTimeout() throws InterruptedException { // GH-90000
-        var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); // GH-90000
+    void testCircuitBreakerRecoveryAfterTimeout() throws InterruptedException { 
+        var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); 
         var circuitBreaker = com.ghatana.platform.resilience.CircuitBreaker.builder("recovery-test")
-            .failureThreshold(3) // GH-90000
-            .successThreshold(1) // GH-90000
-            .resetTimeout(Duration.ofMillis(100)) // GH-90000
-            .build(); // GH-90000
+            .failureThreshold(3) 
+            .successThreshold(1) 
+            .resetTimeout(Duration.ofMillis(100)) 
+            .build(); 
 
-        var cbEngine = new CircuitBreakerSttEngine(failingEngine, eventloop, circuitBreaker); // GH-90000
-        var audio = new AudioData(new byte[16000], 16000, 1, 16); // GH-90000
+        var cbEngine = new CircuitBreakerSttEngine(failingEngine, eventloop, circuitBreaker); 
+        var audio = new AudioData(new byte[16000], 16000, 1, 16); 
 
         // Exhaust failure threshold to open the circuit.
-        for (int i = 0; i < 3; i++) { // GH-90000
+        for (int i = 0; i < 3; i++) { 
             try {
-                cbEngine.transcribe(audio, TranscriptionOptions.defaults()); // GH-90000
-            } catch (Exception ignored) { /* expected */ } // GH-90000
+                cbEngine.transcribe(audio, TranscriptionOptions.defaults()); 
+            } catch (Exception ignored) { /* expected */ } 
         }
 
         // Circuit is now open; next call should degrade gracefully.
-        var degraded = cbEngine.transcribe(audio, TranscriptionOptions.defaults()); // GH-90000
-        assertNotNull(degraded, "Degraded result must not be null"); // GH-90000
-        assertTrue(degraded.text().isEmpty() || degraded.confidence() == 0.0, // GH-90000
+        var degraded = cbEngine.transcribe(audio, TranscriptionOptions.defaults()); 
+        assertNotNull(degraded, "Degraded result must not be null"); 
+        assertTrue(degraded.text().isEmpty() || degraded.confidence() == 0.0, 
             "Degraded result should indicate empty/zero-confidence output");
 
         // Wait for the reset timeout to elapse.
-        Thread.sleep(150); // GH-90000
+        Thread.sleep(150); 
 
         // After timeout the circuit is half-open; a success should close it.
         // AudioVideoTestUtils.createFailingSttEngine with 0% failure rate simulates recovery.
-        var recoveringEngine = AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class); // GH-90000
-        var recoveringCb = new CircuitBreakerSttEngine(recoveringEngine, eventloop, circuitBreaker); // GH-90000
-        var recovered = recoveringCb.transcribe(audio, TranscriptionOptions.defaults()); // GH-90000
-        assertNotNull(recovered, "Recovered result must not be null"); // GH-90000
+        var recoveringEngine = AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class); 
+        var recoveringCb = new CircuitBreakerSttEngine(recoveringEngine, eventloop, circuitBreaker); 
+        var recovered = recoveringCb.transcribe(audio, TranscriptionOptions.defaults()); 
+        assertNotNull(recovered, "Recovered result must not be null"); 
 
-        cbEngine.close(); // GH-90000
-        recoveringCb.close(); // GH-90000
+        cbEngine.close(); 
+        recoveringCb.close(); 
     }
 
     @Test
     @DisplayName("Failure: Concurrent requests do not exceed engine pool capacity")
-    void testConcurrentRequestsRespectPoolCapacity() throws Exception { // GH-90000
+    void testConcurrentRequestsRespectPoolCapacity() throws Exception { 
         int poolSize = 3;
         int totalRequests = 10;
-        var pool = new EnginePool<>( // GH-90000
-            () -> AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class), // GH-90000
+        var pool = new EnginePool<>( 
+            () -> AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class), 
             engine -> true,
             engine -> {
                 try {
-                    engine.close(); // GH-90000
-                } catch (Exception ignored) { // GH-90000
+                    engine.close(); 
+                } catch (Exception ignored) { 
                     // Best-effort cleanup for test doubles.
                 }
                 return null;
             },
-            EnginePool.PoolConfig.defaults() // GH-90000
-                .minSize(0) // GH-90000
-                .maxSize(poolSize) // GH-90000
-                .borrowTimeout(Duration.ofMillis(250)) // GH-90000
+            EnginePool.PoolConfig.defaults() 
+                .minSize(0) 
+                .maxSize(poolSize) 
+                .borrowTimeout(Duration.ofMillis(250)) 
         );
 
-        var latch = new CountDownLatch(totalRequests); // GH-90000
-        var maxConcurrent = new AtomicInteger(0); // GH-90000
-        var currentConcurrent = new AtomicInteger(0); // GH-90000
-        var errors = new CopyOnWriteArrayList<Exception>(); // GH-90000
+        var latch = new CountDownLatch(totalRequests); 
+        var maxConcurrent = new AtomicInteger(0); 
+        var currentConcurrent = new AtomicInteger(0); 
+        var errors = new CopyOnWriteArrayList<Exception>(); 
 
-        var executor = Executors.newFixedThreadPool(totalRequests); // GH-90000
+        var executor = Executors.newFixedThreadPool(totalRequests); 
         try {
-            for (int i = 0; i < totalRequests; i++) { // GH-90000
-                executor.submit(() -> { // GH-90000
+            for (int i = 0; i < totalRequests; i++) { 
+                executor.submit(() -> { 
                     try {
-                        var engine = pool.borrow(); // GH-90000
-                        int c = currentConcurrent.incrementAndGet(); // GH-90000
-                        maxConcurrent.updateAndGet(prev -> Math.max(prev, c)); // GH-90000
+                        var engine = pool.borrow(); 
+                        int c = currentConcurrent.incrementAndGet(); 
+                        maxConcurrent.updateAndGet(prev -> Math.max(prev, c)); 
                         // Simulate work
-                        Thread.sleep(20); // GH-90000
-                        currentConcurrent.decrementAndGet(); // GH-90000
-                        pool.returnEngine(engine); // GH-90000
-                    } catch (Exception e) { // GH-90000
-                        errors.add(e); // GH-90000
+                        Thread.sleep(20); 
+                        currentConcurrent.decrementAndGet(); 
+                        pool.returnEngine(engine); 
+                    } catch (Exception e) { 
+                        errors.add(e); 
                     } finally {
-                        latch.countDown(); // GH-90000
+                        latch.countDown(); 
                     }
                 });
             }
-            assertTrue(latch.await(5, TimeUnit.SECONDS), "All requests should complete within timeout"); // GH-90000
+            assertTrue(latch.await(5, TimeUnit.SECONDS), "All requests should complete within timeout"); 
         } finally {
-            executor.shutdown(); // GH-90000
-            pool.close(); // GH-90000
+            executor.shutdown(); 
+            pool.close(); 
         }
 
-        assertTrue(errors.isEmpty(), "No exceptions expected: " + errors); // GH-90000
-        assertTrue(maxConcurrent.get() <= poolSize, // GH-90000
-            "Concurrent requests must not exceed pool capacity; observed: " + maxConcurrent.get()); // GH-90000
+        assertTrue(errors.isEmpty(), "No exceptions expected: " + errors); 
+        assertTrue(maxConcurrent.get() <= poolSize, 
+            "Concurrent requests must not exceed pool capacity; observed: " + maxConcurrent.get()); 
     }
 
     @Test
     @DisplayName("Failure: Empty audio data produces a ProcessingError, not a silent empty result")
-    void testEmptyAudioDataRejected() { // GH-90000
-        var engine = AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class); // GH-90000
+    void testEmptyAudioDataRejected() { 
+        var engine = AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class); 
         // An empty byte array is invalid for speech transcription.
-        var emptyAudio = new AudioData(new byte[0], 16000, 1, 16); // GH-90000
+        var emptyAudio = new AudioData(new byte[0], 16000, 1, 16); 
 
         // The engine or library must either throw or return a result indicating failure —
         // a silent empty transcript is an observable error surfacing gap.
         try {
-            var result = engine.transcribe(emptyAudio, TranscriptionOptions.defaults()); // GH-90000
+            var result = engine.transcribe(emptyAudio, TranscriptionOptions.defaults()); 
             // If no exception, the result must clearly indicate it has no useful content.
-            assertTrue(result.text().isEmpty(), // GH-90000
+            assertTrue(result.text().isEmpty(), 
                 "Silent empty transcription of empty audio should yield empty text");
-        } catch (Exception e) { // GH-90000
+        } catch (Exception e) { 
             // Throwing is also acceptable — the key requirement is it does not silently succeed.
-            assertNotNull(e.getMessage(), "Exception from empty audio must have a message"); // GH-90000
+            assertNotNull(e.getMessage(), "Exception from empty audio must have a message"); 
         }
     }
 
     @Test
     @DisplayName("Failure: Model loading error surfaces before first inference attempt")
-    void testModelLoadingErrorSurfacedEarly() { // GH-90000
+    void testModelLoadingErrorSurfacedEarly() { 
         // A model path that does not exist should fail at engine construction or first use,
         // not silently fall through to produce garbage output.
-        var invalidConfig = SttConfig.builder() // GH-90000
+        var invalidConfig = SttConfig.builder() 
             .modelId("nonexistent-model-that-does-not-exist")
-            .build(); // GH-90000
+            .build(); 
 
-        // Library construction with an invalid model should not throw immediately (lazy init), // GH-90000
+        // Library construction with an invalid model should not throw immediately (lazy init), 
         // but the first call must surface the problem.
-        var lib = AudioVideoLibrary.builder().withSttConfig(invalidConfig).build(); // GH-90000
+        var lib = AudioVideoLibrary.builder().withSttConfig(invalidConfig).build(); 
         try {
-            var engine = lib.getSttEngine(); // GH-90000
-            var audio = new AudioData(new byte[16000], 16000, 1, 16); // GH-90000
+            var engine = lib.getSttEngine(); 
+            var audio = new AudioData(new byte[16000], 16000, 1, 16); 
             // Either throws or returns a stub result; the critical assertion is no crash with NPE.
             try {
-                var result = engine.transcribe(audio, TranscriptionOptions.defaults()); // GH-90000
-                assertNotNull(result, "Result should not be null even from stub engine"); // GH-90000
-            } catch (Exception e) { // GH-90000
+                var result = engine.transcribe(audio, TranscriptionOptions.defaults()); 
+                assertNotNull(result, "Result should not be null even from stub engine"); 
+            } catch (Exception e) { 
                 // A typed exception is the preferred path.
-                assertNotNull(e.getMessage(), "Error must carry a descriptive message"); // GH-90000
+                assertNotNull(e.getMessage(), "Error must carry a descriptive message"); 
             }
         } finally {
-            lib.close(); // GH-90000
+            lib.close(); 
         }
     }
 }

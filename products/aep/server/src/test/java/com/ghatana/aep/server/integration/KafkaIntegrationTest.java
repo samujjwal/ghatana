@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.integration;
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("integration")
 @Tag("infrastructure-backed")
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("KafkaIntegrationTest")
 class KafkaIntegrationTest {
 
@@ -38,13 +38,13 @@ class KafkaIntegrationTest {
 
     @Test
     @DisplayName("can create and list a topic")
-    void canCreateAndListTopic() throws Exception { // GH-90000
-        try (AdminClient adminClient = AdminClient.create(Map.of( // GH-90000
-            "bootstrap.servers", KAFKA.getBootstrapServers() // GH-90000
+    void canCreateAndListTopic() throws Exception { 
+        try (AdminClient adminClient = AdminClient.create(Map.of( 
+            "bootstrap.servers", KAFKA.getBootstrapServers() 
         ))) {
-            adminClient.createTopics(java.util.List.of(new NewTopic("aep.integration.probe", 1, (short) 1))) // GH-90000
-                .all() // GH-90000
-                .get(); // GH-90000
+            adminClient.createTopics(java.util.List.of(new NewTopic("aep.integration.probe", 1, (short) 1))) 
+                .all() 
+                .get(); 
 
             assertThat(adminClient.listTopics().names().get()).contains("aep.integration.probe");
         }

@@ -30,48 +30,48 @@ class CloudProviderTest {
 
         @Test
         @DisplayName("AWS has correct display name")
-        void awsHasCorrectDisplayName() { // GH-90000
+        void awsHasCorrectDisplayName() { 
             assertThat(CloudProvider.AWS.getDisplayName()).isEqualTo("Amazon Web Services");
         }
 
         @Test
         @DisplayName("GCP has correct display name")
-        void gcpHasCorrectDisplayName() { // GH-90000
+        void gcpHasCorrectDisplayName() { 
             assertThat(CloudProvider.GCP.getDisplayName()).isEqualTo("Google Cloud Platform");
         }
 
         @Test
         @DisplayName("AZURE has correct display name")
-        void azureHasCorrectDisplayName() { // GH-90000
+        void azureHasCorrectDisplayName() { 
             assertThat(CloudProvider.AZURE.getDisplayName()).isEqualTo("Microsoft Azure");
         }
 
         @Test
         @DisplayName("OCI has correct display name")
-        void ociHasCorrectDisplayName() { // GH-90000
+        void ociHasCorrectDisplayName() { 
             assertThat(CloudProvider.OCI.getDisplayName()).isEqualTo("Oracle Cloud Infrastructure");
         }
 
         @Test
         @DisplayName("DIGITAL_OCEAN has correct display name")
-        void digitalOceanHasCorrectDisplayName() { // GH-90000
+        void digitalOceanHasCorrectDisplayName() { 
             assertThat(CloudProvider.DIGITAL_OCEAN.getDisplayName()).isEqualTo("DigitalOcean");
         }
 
         @Test
         @DisplayName("OTHER has correct display name")
-        void otherHasCorrectDisplayName() { // GH-90000
+        void otherHasCorrectDisplayName() { 
             assertThat(CloudProvider.OTHER.getDisplayName()).isEqualTo("Other");
         }
 
         @Test
         @DisplayName("all providers have non-null display names")
-        void allProvidersHaveNonNullDisplayNames() { // GH-90000
-            for (CloudProvider provider : CloudProvider.values()) { // GH-90000
-                assertThat(provider.getDisplayName()) // GH-90000
-                        .as("Display name for %s", provider.name()) // GH-90000
-                        .isNotNull() // GH-90000
-                        .isNotEmpty(); // GH-90000
+        void allProvidersHaveNonNullDisplayNames() { 
+            for (CloudProvider provider : CloudProvider.values()) { 
+                assertThat(provider.getDisplayName()) 
+                        .as("Display name for %s", provider.name()) 
+                        .isNotNull() 
+                        .isNotEmpty(); 
             }
         }
     }
@@ -83,29 +83,29 @@ class CloudProviderTest {
         @ParameterizedTest
         @MethodSource("providerShortCodeMappings")
         @DisplayName("providers have correct short codes")
-        void providersHaveCorrectShortCodes(CloudProvider provider, String expectedShortCode) { // GH-90000
-            assertThat(provider.getShortCode()).isEqualTo(expectedShortCode); // GH-90000
+        void providersHaveCorrectShortCodes(CloudProvider provider, String expectedShortCode) { 
+            assertThat(provider.getShortCode()).isEqualTo(expectedShortCode); 
         }
 
-        static Stream<Arguments> providerShortCodeMappings() { // GH-90000
-            return Stream.of( // GH-90000
-                    Arguments.of(CloudProvider.AWS, "aws"), // GH-90000
-                    Arguments.of(CloudProvider.GCP, "gcp"), // GH-90000
-                    Arguments.of(CloudProvider.AZURE, "azure"), // GH-90000
-                    Arguments.of(CloudProvider.OCI, "oci"), // GH-90000
-                    Arguments.of(CloudProvider.DIGITAL_OCEAN, "do"), // GH-90000
-                    Arguments.of(CloudProvider.OTHER, "other") // GH-90000
+        static Stream<Arguments> providerShortCodeMappings() { 
+            return Stream.of( 
+                    Arguments.of(CloudProvider.AWS, "aws"), 
+                    Arguments.of(CloudProvider.GCP, "gcp"), 
+                    Arguments.of(CloudProvider.AZURE, "azure"), 
+                    Arguments.of(CloudProvider.OCI, "oci"), 
+                    Arguments.of(CloudProvider.DIGITAL_OCEAN, "do"), 
+                    Arguments.of(CloudProvider.OTHER, "other") 
             );
         }
 
         @Test
         @DisplayName("all providers have non-null short codes")
-        void allProvidersHaveNonNullShortCodes() { // GH-90000
-            for (CloudProvider provider : CloudProvider.values()) { // GH-90000
-                assertThat(provider.getShortCode()) // GH-90000
-                        .as("Short code for %s", provider.name()) // GH-90000
-                        .isNotNull() // GH-90000
-                        .isNotEmpty(); // GH-90000
+        void allProvidersHaveNonNullShortCodes() { 
+            for (CloudProvider provider : CloudProvider.values()) { 
+                assertThat(provider.getShortCode()) 
+                        .as("Short code for %s", provider.name()) 
+                        .isNotNull() 
+                        .isNotEmpty(); 
             }
         }
     }
@@ -116,47 +116,47 @@ class CloudProviderTest {
 
         @Test
         @DisplayName("AWS is a major provider")
-        void awsIsMajorProvider() { // GH-90000
-            assertThat(CloudProvider.AWS.isMajorProvider()).isTrue(); // GH-90000
+        void awsIsMajorProvider() { 
+            assertThat(CloudProvider.AWS.isMajorProvider()).isTrue(); 
         }
 
         @Test
         @DisplayName("GCP is a major provider")
-        void gcpIsMajorProvider() { // GH-90000
-            assertThat(CloudProvider.GCP.isMajorProvider()).isTrue(); // GH-90000
+        void gcpIsMajorProvider() { 
+            assertThat(CloudProvider.GCP.isMajorProvider()).isTrue(); 
         }
 
         @Test
         @DisplayName("AZURE is a major provider")
-        void azureIsMajorProvider() { // GH-90000
-            assertThat(CloudProvider.AZURE.isMajorProvider()).isTrue(); // GH-90000
+        void azureIsMajorProvider() { 
+            assertThat(CloudProvider.AZURE.isMajorProvider()).isTrue(); 
         }
 
         @Test
         @DisplayName("OCI is not a major provider")
-        void ociIsNotMajorProvider() { // GH-90000
-            assertThat(CloudProvider.OCI.isMajorProvider()).isFalse(); // GH-90000
+        void ociIsNotMajorProvider() { 
+            assertThat(CloudProvider.OCI.isMajorProvider()).isFalse(); 
         }
 
         @Test
         @DisplayName("DIGITAL_OCEAN is not a major provider")
-        void digitalOceanIsNotMajorProvider() { // GH-90000
-            assertThat(CloudProvider.DIGITAL_OCEAN.isMajorProvider()).isFalse(); // GH-90000
+        void digitalOceanIsNotMajorProvider() { 
+            assertThat(CloudProvider.DIGITAL_OCEAN.isMajorProvider()).isFalse(); 
         }
 
         @Test
         @DisplayName("OTHER is not a major provider")
-        void otherIsNotMajorProvider() { // GH-90000
-            assertThat(CloudProvider.OTHER.isMajorProvider()).isFalse(); // GH-90000
+        void otherIsNotMajorProvider() { 
+            assertThat(CloudProvider.OTHER.isMajorProvider()).isFalse(); 
         }
 
         @Test
         @DisplayName("exactly three major providers exist")
-        void exactlyThreeMajorProvidersExist() { // GH-90000
-            long majorCount = Stream.of(CloudProvider.values()) // GH-90000
-                    .filter(CloudProvider::isMajorProvider) // GH-90000
-                    .count(); // GH-90000
-            assertThat(majorCount).isEqualTo(3); // GH-90000
+        void exactlyThreeMajorProvidersExist() { 
+            long majorCount = Stream.of(CloudProvider.values()) 
+                    .filter(CloudProvider::isMajorProvider) 
+                    .count(); 
+            assertThat(majorCount).isEqualTo(3); 
         }
     }
 
@@ -165,41 +165,41 @@ class CloudProviderTest {
     class FromShortCodeTests {
 
         @ParameterizedTest
-        @ValueSource(strings = {"aws", "AWS", "Aws"}) // GH-90000
+        @ValueSource(strings = {"aws", "AWS", "Aws"}) 
         @DisplayName("fromShortCode returns AWS for aws variations")
-        void fromShortCodeReturnsAwsForVariations(String shortCode) { // GH-90000
-            assertThat(CloudProvider.fromShortCode(shortCode)).isEqualTo(CloudProvider.AWS); // GH-90000
+        void fromShortCodeReturnsAwsForVariations(String shortCode) { 
+            assertThat(CloudProvider.fromShortCode(shortCode)).isEqualTo(CloudProvider.AWS); 
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"gcp", "GCP", "Gcp"}) // GH-90000
+        @ValueSource(strings = {"gcp", "GCP", "Gcp"}) 
         @DisplayName("fromShortCode returns GCP for gcp variations")
-        void fromShortCodeReturnsGcpForVariations(String shortCode) { // GH-90000
-            assertThat(CloudProvider.fromShortCode(shortCode)).isEqualTo(CloudProvider.GCP); // GH-90000
+        void fromShortCodeReturnsGcpForVariations(String shortCode) { 
+            assertThat(CloudProvider.fromShortCode(shortCode)).isEqualTo(CloudProvider.GCP); 
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"azure", "AZURE", "Azure"}) // GH-90000
+        @ValueSource(strings = {"azure", "AZURE", "Azure"}) 
         @DisplayName("fromShortCode returns AZURE for azure variations")
-        void fromShortCodeReturnsAzureForVariations(String shortCode) { // GH-90000
-            assertThat(CloudProvider.fromShortCode(shortCode)).isEqualTo(CloudProvider.AZURE); // GH-90000
+        void fromShortCodeReturnsAzureForVariations(String shortCode) { 
+            assertThat(CloudProvider.fromShortCode(shortCode)).isEqualTo(CloudProvider.AZURE); 
         }
 
         @Test
         @DisplayName("fromShortCode returns OCI for oci")
-        void fromShortCodeReturnsOci() { // GH-90000
+        void fromShortCodeReturnsOci() { 
             assertThat(CloudProvider.fromShortCode("oci")).isEqualTo(CloudProvider.OCI);
         }
 
         @Test
         @DisplayName("fromShortCode returns DIGITAL_OCEAN for do")
-        void fromShortCodeReturnsDigitalOcean() { // GH-90000
+        void fromShortCodeReturnsDigitalOcean() { 
             assertThat(CloudProvider.fromShortCode("do")).isEqualTo(CloudProvider.DIGITAL_OCEAN);
         }
 
         @Test
         @DisplayName("fromShortCode returns OTHER for unknown codes")
-        void fromShortCodeReturnsOtherForUnknown() { // GH-90000
+        void fromShortCodeReturnsOtherForUnknown() { 
             assertThat(CloudProvider.fromShortCode("unknown")).isEqualTo(CloudProvider.OTHER);
             assertThat(CloudProvider.fromShortCode("")).isEqualTo(CloudProvider.OTHER);
             assertThat(CloudProvider.fromShortCode("alibaba")).isEqualTo(CloudProvider.OTHER);
@@ -207,9 +207,9 @@ class CloudProviderTest {
 
         @Test
         @DisplayName("fromShortCode handles null gracefully")
-        void fromShortCodeHandlesNull() { // GH-90000
-            assertThatThrownBy(() -> CloudProvider.fromShortCode(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void fromShortCodeHandlesNull() { 
+            assertThatThrownBy(() -> CloudProvider.fromShortCode(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -219,13 +219,13 @@ class CloudProviderTest {
 
         @Test
         @DisplayName("enum has expected number of values")
-        void enumHasExpectedNumberOfValues() { // GH-90000
-            assertThat(CloudProvider.values()).hasSize(6); // GH-90000
+        void enumHasExpectedNumberOfValues() { 
+            assertThat(CloudProvider.values()).hasSize(6); 
         }
 
         @Test
         @DisplayName("enum values can be retrieved by name")
-        void enumValuesCanBeRetrievedByName() { // GH-90000
+        void enumValuesCanBeRetrievedByName() { 
             assertThat(CloudProvider.valueOf("AWS")).isEqualTo(CloudProvider.AWS);
             assertThat(CloudProvider.valueOf("GCP")).isEqualTo(CloudProvider.GCP);
             assertThat(CloudProvider.valueOf("AZURE")).isEqualTo(CloudProvider.AZURE);

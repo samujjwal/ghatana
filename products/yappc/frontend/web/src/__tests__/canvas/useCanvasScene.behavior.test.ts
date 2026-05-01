@@ -1,16 +1,14 @@
-// @ts-nocheck
-// All tests skipped - incomplete feature
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // We need to mock jotai's useAtom before importing the hook under test
 const mockSetCanvasState = vi.fn();
-let mockCanvasState: any = null;
+let mockCanvasState: Record<string, unknown> | null = null;
 
 vi.mock('jotai', async () => {
   const actual = await vi.importActual('jotai');
   return {
     ...actual,
-    useAtom: (atom: unknown) => {
+    useAtom: () => {
       // return the current mock state and setter
       return [mockCanvasState, mockSetCanvasState];
     },
@@ -45,19 +43,19 @@ describe('useCanvasScene behavior - change detection', () => {
     mockSetCanvasState.mockImplementation((arg: unknown) => {
       if (typeof arg === 'function') {
         const prev = mockCanvasState;
-        const next = arg(prev);
+        const next = (arg as (prev: unknown) => unknown)(prev);
         if (next !== prev) {
-          mockCanvasState = next;
+          mockCanvasState = next as Record<string, unknown> | null;
           updateCount++;
         }
       } else {
         if (arg !== mockCanvasState) {
-          mockCanvasState = arg;
+          mockCanvasState = arg as Record<string, unknown> | null;
           updateCount++;
         }
       }
       // expose the count for assertions
-      (mockSetCanvasState as unknown)._updateCount = updateCount;
+      (mockSetCanvasState as unknown as Record<string, unknown>)._updateCount = updateCount;
       return mockCanvasState;
     });
   });
@@ -111,7 +109,7 @@ describe('useCanvasScene behavior - change detection', () => {
     expect(afterCalls).toBe(before + 1);
     // verify the updated elements passed to setter include new position
     // the mock implementation updated mockCanvasState in-place when an actual change occurred
-    const el = mockCanvasState.elements.find((e: unknown) => e.id === 'n1');
+    const el = (mockCanvasState as Record<string, unknown>).elements.find((e: Record<string, unknown>) => e.id === 'n1');
     expect(el.position).toEqual({ x: 30, y: 40 });
   });
 });

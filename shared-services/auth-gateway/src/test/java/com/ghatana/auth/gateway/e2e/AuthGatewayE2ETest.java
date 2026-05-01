@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Auth Gateway E2E Tests")
 public class AuthGatewayE2ETest {
 
-    private static final Path SPEC_PATH = Path.of( // GH-90000
+    private static final Path SPEC_PATH = Path.of( 
             "..",
             "..",
             "platform",
@@ -43,11 +43,11 @@ public class AuthGatewayE2ETest {
             "auth-gateway.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); 
 
     @Test
     @DisplayName("Auth flow endpoints exist in documented login-validate-refresh-exchange sequence")
-    void authFlowEndpointsExistInSequence() throws Exception { // GH-90000
+    void authFlowEndpointsExistInSequence() throws Exception { 
         JsonNode paths = readSpec().path("paths");
 
         assertThat(paths.has("/auth/login")).isTrue();
@@ -59,7 +59,7 @@ public class AuthGatewayE2ETest {
 
     @Test
     @DisplayName("Login and refresh responses declare token-bearing response schemas")
-    void tokenBearingSchemasExist() throws Exception { // GH-90000
+    void tokenBearingSchemasExist() throws Exception { 
         JsonNode schemas = readSpec().path("components").path("schemas");
 
         assertThat(schemas.path("LoginResponse").path("properties").has("accessToken")).isTrue();
@@ -70,7 +70,7 @@ public class AuthGatewayE2ETest {
 
     @Test
     @DisplayName("Protected tenant and validation endpoints require documented bearer auth")
-    void protectedEndpointsDeclareBearerSecurity() throws Exception { // GH-90000
+    void protectedEndpointsDeclareBearerSecurity() throws Exception { 
         JsonNode paths = readSpec().path("paths");
 
         assertThat(paths.path("/auth/validate").path("get").path("security")).isNotEmpty();
@@ -80,16 +80,16 @@ public class AuthGatewayE2ETest {
 
     @Test
     @DisplayName("Health endpoint documents auth-gateway service identity")
-    void healthEndpointDocumentsServiceIdentity() throws Exception { // GH-90000
+    void healthEndpointDocumentsServiceIdentity() throws Exception { 
         JsonNode healthSchema = readSpec().path("components").path("schemas").path("HealthResponse");
 
         assertThat(healthSchema.path("properties").path("service").path("example").asText())
                 .isEqualTo("auth-gateway");
     }
 
-    private JsonNode readSpec() throws IOException { // GH-90000
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
-            return objectMapper.readTree(inputStream); // GH-90000
+    private JsonNode readSpec() throws IOException { 
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { 
+            return objectMapper.readTree(inputStream); 
         }
     }
 }

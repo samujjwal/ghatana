@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unit tests for AnomalyDetectionDashboard component
  *
@@ -37,7 +36,7 @@ vi.mock('./AutomatedResponseWorkflow', () => ({
 }));
 
 vi.mock('./AnomalyDetailModal', () => ({
-  AnomalyDetailModal: ({ isOpen, onClose }) => isOpen ? (
+  AnomalyDetailModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? (
     <div data-testid="detail-modal">
       <button onClick={onClose}>Close</button>
     </div>

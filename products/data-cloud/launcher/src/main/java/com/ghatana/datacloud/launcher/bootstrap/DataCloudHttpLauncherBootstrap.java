@@ -28,6 +28,7 @@ import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.audit.EventLogAuditService;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
+import com.ghatana.datacloud.launcher.settings.JdbcSettingsStore;
 import com.ghatana.datacloud.spi.EventLogStoreAdapters;
 import com.ghatana.datacloud.client.autonomy.AutonomyController;
 import com.ghatana.datacloud.client.autonomy.DefaultAutonomyController;
@@ -45,6 +46,9 @@ import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpClient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -179,6 +183,12 @@ public final class DataCloudHttpLauncherBootstrap {
                     httpServer.withAutonomyController(autonomyController);
                 }
 
+                if (!embeddedProfile && databaseDataSource != null) {
+                    httpServer.withSettingsStore(new JdbcSettingsStore(
+                        databaseDataSource,
+                        new ObjectMapper().findAndRegisterModules()));
+                }
+
                 if (eventLogStore != null) {
                     httpServer
                         .withAuditService(new EventLogAuditService(eventLogStore, new ObjectMapper().findAndRegisterModules()))
@@ -202,34 +212,12 @@ public final class DataCloudHttpLauncherBootstrap {
                 // Security check: enforce authentication by default in production
                 boolean insecureMode = Boolean.parseBoolean(env.getOrDefault("DATACLOUD_INSECURE_MODE", "false"));
                 boolean hasAuthConfigured = apiKeyResolver != null || jwtProvider != null;
-                String configuredBindHost = env.getOrDefault("DATACLOUD_BIND_HOST", "").trim();
-                
-                if (!insecureMode && !hasAuthConfigured && !embeddedProfile) {
-                    throw new IllegalStateException(
-                        "SECURITY ERROR: No authentication configured for Data-Cloud HTTP server. " +
-                        "Authentication is required by default in production environments. " +
-                        "Configure either DATACLOUD_API_KEYS for API key authentication " +
-                        "or DATACLOUD_JWT_SECRET / DATACLOUD_JWT_JWKS_URL for JWT authentication. " +
-                        "To disable this check (NOT recommended for production), set DATACLOUD_INSECURE_MODE=true.");
-                }
-                
-                if (!insecureMode && !hasAuthConfigured && embeddedProfile) {
-                    log.warn("[DC-E2] No authentication configured in embedded/local profile. " +
-                        "Set DATACLOUD_API_KEYS or DATACLOUD_JWT_SECRET to enable authentication. " +
-                        "To allow insecure mode, set DATACLOUD_INSECURE_MODE=true.");
-                }
-
-                if (embeddedProfile && insecureMode && !hasAuthConfigured) {
-                    if (configuredBindHost.isBlank()) {
-                        configuredBindHost = "127.0.0.1";
-                        log.warn("[DC-E2] DATACLOUD_BIND_HOST not set while running insecure embedded mode; forcing loopback bind host {}", configuredBindHost);
-                    }
-                    if (!isLoopbackHost(configuredBindHost)) {
-                        throw new IllegalStateException(
-                            "SECURITY ERROR: Insecure embedded mode requires loopback binding. " +
-                            "Set DATACLOUD_BIND_HOST to 127.0.0.1 or localhost, or configure authentication.");
-                    }
-                }
+                String configuredBindHost = validateAuthenticationAndResolveBindHost(
+                    insecureMode,
+                    hasAuthConfigured,
+                    embeddedProfile,
+                    env.getOrDefault("DATACLOUD_BIND_HOST", ""),
+                    log);
 
                 if (!configuredBindHost.isBlank()) {
                     httpServer.withListenHost(configuredBindHost);
@@ -299,11 +287,25 @@ public final class DataCloudHttpLauncherBootstrap {
         log.info("[DC-E1] API key authentication enabled ({} key(s) registered)", validKeys.size());
         return apiKey -> {
             if (validKeys.contains(apiKey)) {
-                String keyId = "key-" + apiKey.substring(Math.max(0, apiKey.length() - 8));
+                String keyId = "key-" + apiKeyFingerprint(apiKey);
                 return Optional.of(new Principal(keyId, List.of("api-client"), "service"));
             }
             return Optional.empty();
         };
+    }
+
+    private static String apiKeyFingerprint(String apiKey) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(apiKey.getBytes(StandardCharsets.UTF_8));
+            StringBuilder encoded = new StringBuilder(hash.length * 2);
+            for (byte value : hash) {
+                encoded.append(String.format("%02x", value));
+            }
+            return encoded.substring(0, 12);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 
     /**
@@ -344,6 +346,43 @@ public final class DataCloudHttpLauncherBootstrap {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    static String validateAuthenticationAndResolveBindHost(boolean insecureMode,
+                                                           boolean hasAuthConfigured,
+                                                           boolean embeddedProfile,
+                                                           String configuredBindHost,
+                                                           Logger log) {
+        String bindHost = configuredBindHost == null ? "" : configuredBindHost.trim();
+
+        if (!insecureMode && !hasAuthConfigured && !embeddedProfile) {
+            throw new IllegalStateException(
+                "SECURITY ERROR: No authentication configured for Data-Cloud HTTP server. " +
+                    "Authentication is required by default in production environments. " +
+                    "Configure either DATACLOUD_API_KEYS for API key authentication " +
+                    "or DATACLOUD_JWT_SECRET / DATACLOUD_JWT_JWKS_URL for JWT authentication. " +
+                    "To disable this check (NOT recommended for production), set DATACLOUD_INSECURE_MODE=true.");
+        }
+
+        if (!insecureMode && !hasAuthConfigured && embeddedProfile) {
+            log.warn("[DC-E2] No authentication configured in embedded/local profile. " +
+                "Set DATACLOUD_API_KEYS or DATACLOUD_JWT_SECRET to enable authentication. " +
+                "To allow insecure mode, set DATACLOUD_INSECURE_MODE=true.");
+        }
+
+        if (embeddedProfile && insecureMode && !hasAuthConfigured) {
+            if (bindHost.isBlank()) {
+                bindHost = "127.0.0.1";
+                log.warn("[DC-E2] DATACLOUD_BIND_HOST not set while running insecure embedded mode; forcing loopback bind host {}", bindHost);
+            }
+            if (!isLoopbackHost(bindHost)) {
+                throw new IllegalStateException(
+                    "SECURITY ERROR: Insecure embedded mode requires loopback binding. " +
+                        "Set DATACLOUD_BIND_HOST to 127.0.0.1 or localhost, or configure authentication.");
+            }
+        }
+
+        return bindHost;
     }
 
     private static DataSource buildDatabaseDataSource() {

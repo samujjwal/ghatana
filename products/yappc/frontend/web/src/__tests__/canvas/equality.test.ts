@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 
 import {
@@ -20,8 +19,8 @@ describe('normalization equality helpers', () => {
 
     const normalized = normalizeNodesForCompare(nodes as unknown);
     expect(normalized).toHaveLength(2);
-    expect(normalized[0].id).toBe('a');
-    expect(normalized[1].id).toBe('b');
+    expect((normalized[0] as Record<string, unknown>).id).toBe('a');
+    expect((normalized[1] as Record<string, unknown>).id).toBe('b');
   });
 
   it('normalizeConnectionsForCompare ignores irrelevant ordering and handles undefined handles', () => {
@@ -44,7 +43,7 @@ describe('normalization equality helpers', () => {
 
     const normalized = normalizeConnectionsForCompare(conns as unknown);
     expect(normalized).toHaveLength(2);
-    expect(normalized[0].id).toBe('c1');
-    expect(normalized[1].id).toBe('c2');
+    expect((normalized[0] as Record<string, unknown>).id).toBe('c1');
+    expect((normalized[1] as Record<string, unknown>).id).toBe('c2');
   });
 });

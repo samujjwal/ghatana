@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.integration;
@@ -16,7 +16,7 @@ import org.junit.platform.suite.api.Suite;
  * @doc.pattern TestSuite
  */
 @Suite
-@SelectClasses({ // GH-90000
+@SelectClasses({ 
     PostgresIntegrationTest.class,
     RedisIntegrationTest.class,
     KafkaIntegrationTest.class,

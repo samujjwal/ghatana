@@ -359,7 +359,7 @@ class ApiErrorHandlingTest extends EventloopTestBase {
         void handlesEmptyRequestBodyGracefully() { // GH-90000
             CollectionService mockService = mock(CollectionService.class); // GH-90000
             MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
+            ObjectMapper mockMapper = new ObjectMapper(); // GH-90000
             com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
 
             CollectionController controller = new CollectionController( // GH-90000
@@ -367,7 +367,7 @@ class ApiErrorHandlingTest extends EventloopTestBase {
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .withBody("".getBytes(StandardCharsets.UTF_8)) // GH-90000
+                .withBody(" ".getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
 
             HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000

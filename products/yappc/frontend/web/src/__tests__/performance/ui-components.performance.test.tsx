@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * UI Components Performance Tests
  *
@@ -214,7 +213,7 @@ describe('UI Components Performance Tests', () => {
 
   describe('Memory Usage', () => {
     it('does not leak memory on repeated renders', () => {
-      const initialMemory = (performance as unknown).memory?.usedJSHeapSize || 0;
+      const initialMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize || 0;
 
       // Render and unrender 100 times
       for (let i = 0; i < 100; i++) {
@@ -238,7 +237,7 @@ describe('UI Components Performance Tests', () => {
         global.gc();
       }
 
-      const finalMemory = (performance as unknown).memory?.usedJSHeapSize || 0;
+      const finalMemory = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize || 0;
       const memoryIncrease = finalMemory - initialMemory;
 
       // Memory increase should be minimal (less than 1MB)

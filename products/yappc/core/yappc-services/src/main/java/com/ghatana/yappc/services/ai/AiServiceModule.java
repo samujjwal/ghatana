@@ -27,6 +27,7 @@ import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.util.Map;
 
 /**
@@ -285,5 +286,26 @@ public class AiServiceModule extends AbstractModule {
             MetricsCollector metrics) {
         logger.info("Creating CanvasGenerationService backed by LLMGateway");
         return new CanvasGenerationService(llmGateway, promptTemplates, metrics);
+    }
+
+    /** Provides DataSource for AI service persistence. */
+    @Provides
+    DataSource dataSource() {
+        String url = System.getenv().getOrDefault("YAPPC_AI_DB_URL", "jdbc:postgresql://localhost:5432/yappc_ai");
+        String user = System.getenv().getOrDefault("YAPPC_AI_DB_USER", "yappc");
+        String pass = System.getenv().getOrDefault("YAPPC_AI_DB_PASS", "yappc");
+        com.zaxxer.hikari.HikariConfig config = new com.zaxxer.hikari.HikariConfig();
+        config.setJdbcUrl(url);
+        config.setUsername(user);
+        config.setPassword(pass);
+        config.setMaximumPoolSize(10);
+        return new com.zaxxer.hikari.HikariDataSource(config);
+    }
+
+    /** Provides the durable {@link com.ghatana.platform.security.rbac.PolicyRepository} for RBAC policy persistence. */
+    @Provides
+    com.ghatana.platform.security.rbac.PolicyRepository policyRepository(DataSource dataSource) {
+        logger.info("Creating JdbcPolicyRepository — RBAC policies persisted to PostgreSQL");
+        return new com.ghatana.platform.security.rbac.JdbcPolicyRepository(dataSource);
     }
 }

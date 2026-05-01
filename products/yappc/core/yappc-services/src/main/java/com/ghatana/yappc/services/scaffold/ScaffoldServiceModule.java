@@ -13,6 +13,8 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
+
 /**
  * ActiveJ DI module for YAPPC Scaffold services.
  *
@@ -66,5 +68,26 @@ public class ScaffoldServiceModule extends AbstractModule {
     PolyglotBuildOrchestrator polyglotBuildOrchestrator() {
         logger.info("Creating PolyglotBuildOrchestrator");
         return new PolyglotBuildOrchestrator();
+    }
+
+    /** Provides DataSource for scaffold service persistence. */
+    @Provides
+    DataSource dataSource() {
+        String url = System.getenv().getOrDefault("YAPPC_SCAFFOLD_DB_URL", "jdbc:postgresql://localhost:5432/yappc_scaffold");
+        String user = System.getenv().getOrDefault("YAPPC_SCAFFOLD_DB_USER", "yappc");
+        String pass = System.getenv().getOrDefault("YAPPC_SCAFFOLD_DB_PASS", "yappc");
+        com.zaxxer.hikari.HikariConfig config = new com.zaxxer.hikari.HikariConfig();
+        config.setJdbcUrl(url);
+        config.setUsername(user);
+        config.setPassword(pass);
+        config.setMaximumPoolSize(10);
+        return new com.zaxxer.hikari.HikariDataSource(config);
+    }
+
+    /** Provides the durable {@link com.ghatana.platform.security.rbac.PolicyRepository} for RBAC policy persistence. */
+    @Provides
+    com.ghatana.platform.security.rbac.PolicyRepository policyRepository(DataSource dataSource) {
+        logger.info("Creating JdbcPolicyRepository — RBAC policies persisted to PostgreSQL");
+        return new com.ghatana.platform.security.rbac.JdbcPolicyRepository(dataSource);
     }
 }

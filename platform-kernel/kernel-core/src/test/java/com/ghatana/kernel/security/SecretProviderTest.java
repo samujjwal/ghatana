@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.kernel.security;
@@ -22,33 +22,33 @@ class SecretProviderTest {
 
     @Test
     @DisplayName("INSTANCE singleton is non-null")
-    void instanceIsNotNull() { // GH-90000
-        assertThat(EnvironmentSecretProvider.INSTANCE).isNotNull(); // GH-90000
+    void instanceIsNotNull() { 
+        assertThat(EnvironmentSecretProvider.INSTANCE).isNotNull(); 
     }
 
     @Test
     @DisplayName("returns empty when the env var is not set")
-    void returnsEmptyForMissingVar() { // GH-90000
+    void returnsEmptyForMissingVar() { 
         // Use a name that is extremely unlikely to exist in any real environment
         Optional<String> value = EnvironmentSecretProvider.INSTANCE.get("__GHATANA_TEST_ABSENT_SECRET_XYZ__");
-        assertThat(value).isEmpty(); // GH-90000
+        assertThat(value).isEmpty(); 
     }
 
     // ─── SecretProvider default methods ───────────────────────────────────────
 
     @Test
     @DisplayName("require() throws MissingSecretException for absent secret")
-    void requireThrowsForAbsentSecret() { // GH-90000
-        SecretProvider provider = name -> Optional.empty(); // GH-90000
+    void requireThrowsForAbsentSecret() { 
+        SecretProvider provider = name -> Optional.empty(); 
 
         assertThatThrownBy(() -> provider.require("DB_PASSWORD"))
-                .isInstanceOf(SecretProvider.MissingSecretException.class) // GH-90000
+                .isInstanceOf(SecretProvider.MissingSecretException.class) 
                 .hasMessageContaining("DB_PASSWORD");
     }
 
     @Test
     @DisplayName("require() returns the value when the secret is present")
-    void requireReturnsValueWhenPresent() { // GH-90000
+    void requireReturnsValueWhenPresent() { 
         SecretProvider provider = name -> Optional.of("s3cr3t");
 
         assertThat(provider.require("MY_KEY")).isEqualTo("s3cr3t");
@@ -56,15 +56,15 @@ class SecretProviderTest {
 
     @Test
     @DisplayName("get(name, version) delegates to get(name) by default")
-    void versionedGetDelegatesToUnversioned() { // GH-90000
-        SecretProvider provider = name -> Optional.of("value-of-" + name); // GH-90000
+    void versionedGetDelegatesToUnversioned() { 
+        SecretProvider provider = name -> Optional.of("value-of-" + name); 
 
         assertThat(provider.get("API_KEY", "v2")).contains("value-of-API_KEY");
     }
 
     @Test
     @DisplayName("MissingSecretException captures the secret name")
-    void missingSecretExceptionCapturesName() { // GH-90000
+    void missingSecretExceptionCapturesName() { 
         SecretProvider.MissingSecretException ex = new SecretProvider.MissingSecretException("PAYMENT_KEY");
 
         assertThat(ex.getSecretName()).isEqualTo("PAYMENT_KEY");

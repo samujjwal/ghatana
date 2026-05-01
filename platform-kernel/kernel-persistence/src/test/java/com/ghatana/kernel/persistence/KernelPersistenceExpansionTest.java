@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.kernel.persistence;
@@ -36,18 +36,18 @@ class KernelPersistenceExpansionTest {
     private JdbcModuleRegistry registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        JdbcDataSource dataSource = new JdbcDataSource(); // GH-90000
-        dataSource.setURL("jdbc:h2:mem:registry_" + System.nanoTime() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1"); // GH-90000
+    void setUp() { 
+        JdbcDataSource dataSource = new JdbcDataSource(); 
+        dataSource.setURL("jdbc:h2:mem:registry_" + System.nanoTime() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1"); 
         dataSource.setUser("sa");
         dataSource.setPassword("sa");
 
-        registry = new JdbcModuleRegistry(dataSource); // GH-90000
-        registry.ensureSchema(); // GH-90000
+        registry = new JdbcModuleRegistry(dataSource); 
+        registry.ensureSchema(); 
     }
 
     // ============================================
-    // MODULE REGISTRATION (4 tests) // GH-90000
+    // MODULE REGISTRATION (4 tests) 
     // ============================================
 
     @Nested
@@ -56,62 +56,62 @@ class KernelPersistenceExpansionTest {
 
         @Test
         @DisplayName("Register many modules")
-        void registerManyModules() { // GH-90000
-            for (int i = 0; i < 100; i++) { // GH-90000
+        void registerManyModules() { 
+            for (int i = 0; i < 100; i++) { 
                 String moduleId = "platform:java:module-" + i;
-                registry.registerModule(moduleId, "1.0.0", "REGISTERED"); // GH-90000
+                registry.registerModule(moduleId, "1.0.0", "REGISTERED"); 
             }
 
-            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
-            assertThat(all).hasSize(100); // GH-90000
+            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); 
+            assertThat(all).hasSize(100); 
         }
 
         @Test
         @DisplayName("Register and update modules")
-        void registerAndUpdate() { // GH-90000
+        void registerAndUpdate() { 
             String moduleId = "platform:java:kernel";
 
-            registry.registerModule(moduleId, "1.0.0", "REGISTERED"); // GH-90000
-            registry.registerModule(moduleId, "1.0.1", "STARTED"); // GH-90000
-            registry.registerModule(moduleId, "1.0.2", "HEALTHY"); // GH-90000
+            registry.registerModule(moduleId, "1.0.0", "REGISTERED"); 
+            registry.registerModule(moduleId, "1.0.1", "STARTED"); 
+            registry.registerModule(moduleId, "1.0.2", "HEALTHY"); 
 
-            JdbcModuleRegistry.ModuleRegistration reg = registry.getModule(moduleId).orElseThrow(); // GH-90000
+            JdbcModuleRegistry.ModuleRegistration reg = registry.getModule(moduleId).orElseThrow(); 
             assertThat(reg.moduleVersion()).isEqualTo("1.0.2");
             assertThat(reg.moduleStatus()).isEqualTo("HEALTHY");
         }
 
         @Test
         @DisplayName("Register with various statuses")
-        void variousStatuses() { // GH-90000
+        void variousStatuses() { 
             String[] statuses = {"REGISTERED", "STARTED", "HEALTHY", "DEGRADED", "FAILED", "STOPPED"};
 
-            for (int i = 0; i < 60; i++) { // GH-90000
+            for (int i = 0; i < 60; i++) { 
                 String moduleId = "module-" + i;
                 String status = statuses[i % statuses.length];
-                registry.registerModule(moduleId, "1.0", status); // GH-90000
+                registry.registerModule(moduleId, "1.0", status); 
             }
 
-            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
-            assertThat(all).hasSize(60); // GH-90000
+            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); 
+            assertThat(all).hasSize(60); 
         }
 
         @Test
         @DisplayName("Register modules with semantic versioning")
-        void semanticVersioning() { // GH-90000
+        void semanticVersioning() { 
             String moduleId = "platform:java:core";
             String[] versions = {"0.1.0", "0.2.0", "1.0.0", "1.1.0", "2.0.0"};
 
-            for (String version : versions) { // GH-90000
-                registry.registerModule(moduleId, version, "REGISTERED"); // GH-90000
+            for (String version : versions) { 
+                registry.registerModule(moduleId, version, "REGISTERED"); 
             }
 
-            JdbcModuleRegistry.ModuleRegistration reg = registry.getModule(moduleId).orElseThrow(); // GH-90000
+            JdbcModuleRegistry.ModuleRegistration reg = registry.getModule(moduleId).orElseThrow(); 
             assertThat(reg.moduleVersion()).isEqualTo("2.0.0");
         }
     }
 
     // ============================================
-    // MODULE RETRIEVAL AND QUERYING (3 tests) // GH-90000
+    // MODULE RETRIEVAL AND QUERYING (3 tests) 
     // ============================================
 
     @Nested
@@ -120,18 +120,18 @@ class KernelPersistenceExpansionTest {
 
         @Test
         @DisplayName("Fetch modules by ID")
-        void fetchById() { // GH-90000
-            registry.registerModule("m1", "1.0", "REGISTERED"); // GH-90000
-            registry.registerModule("m2", "1.1", "STARTED"); // GH-90000
-            registry.registerModule("m3", "1.2", "HEALTHY"); // GH-90000
+        void fetchById() { 
+            registry.registerModule("m1", "1.0", "REGISTERED"); 
+            registry.registerModule("m2", "1.1", "STARTED"); 
+            registry.registerModule("m3", "1.2", "HEALTHY"); 
 
             Optional<JdbcModuleRegistry.ModuleRegistration> m1 = registry.getModule("m1");
             Optional<JdbcModuleRegistry.ModuleRegistration> m2 = registry.getModule("m2");
             Optional<JdbcModuleRegistry.ModuleRegistration> m3 = registry.getModule("m3");
 
-            assertThat(m1).isPresent(); // GH-90000
-            assertThat(m2).isPresent(); // GH-90000
-            assertThat(m3).isPresent(); // GH-90000
+            assertThat(m1).isPresent(); 
+            assertThat(m2).isPresent(); 
+            assertThat(m3).isPresent(); 
 
             assertThat(m1.get().moduleStatus()).isEqualTo("REGISTERED");
             assertThat(m2.get().moduleStatus()).isEqualTo("STARTED");
@@ -140,28 +140,28 @@ class KernelPersistenceExpansionTest {
 
         @Test
         @DisplayName("List all modules efficiently")
-        void listAll() { // GH-90000
-            for (int i = 0; i < 500; i++) { // GH-90000
+        void listAll() { 
+            for (int i = 0; i < 500; i++) { 
                 final int idx = i;
-                registry.registerModule("module-" + idx, "1.0.0", "REGISTERED"); // GH-90000
+                registry.registerModule("module-" + idx, "1.0.0", "REGISTERED"); 
             }
 
-            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
-            assertThat(all).hasSize(500); // GH-90000
+            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); 
+            assertThat(all).hasSize(500); 
         }
 
         @Test
         @DisplayName("Non-existent module returns empty")
-        void nonExistentModule() { // GH-90000
-            registry.registerModule("m1", "1.0", "REGISTERED"); // GH-90000
+        void nonExistentModule() { 
+            registry.registerModule("m1", "1.0", "REGISTERED"); 
 
             Optional<JdbcModuleRegistry.ModuleRegistration> nonExistent = registry.getModule("does-not-exist");
-            assertThat(nonExistent).isEmpty(); // GH-90000
+            assertThat(nonExistent).isEmpty(); 
         }
     }
 
     // ============================================
-    // MODULE REMOVAL (2 tests) // GH-90000
+    // MODULE REMOVAL (2 tests) 
     // ============================================
 
     @Nested
@@ -170,42 +170,42 @@ class KernelPersistenceExpansionTest {
 
         @Test
         @DisplayName("Remove registered modules")
-        void removeModules() { // GH-90000
-            registry.registerModule("m1", "1.0", "REGISTERED"); // GH-90000
-            registry.registerModule("m2", "1.1", "STARTED"); // GH-90000
-            registry.registerModule("m3", "1.2", "HEALTHY"); // GH-90000
+        void removeModules() { 
+            registry.registerModule("m1", "1.0", "REGISTERED"); 
+            registry.registerModule("m2", "1.1", "STARTED"); 
+            registry.registerModule("m3", "1.2", "HEALTHY"); 
 
             registry.removeModule("m2");
 
             Optional<JdbcModuleRegistry.ModuleRegistration> m2 = registry.getModule("m2");
-            assertThat(m2).isEmpty(); // GH-90000
+            assertThat(m2).isEmpty(); 
 
             Optional<JdbcModuleRegistry.ModuleRegistration> m1 = registry.getModule("m1");
-            assertThat(m1).isPresent(); // GH-90000
+            assertThat(m1).isPresent(); 
         }
 
         @Test
         @DisplayName("Remove many modules")
-        void removeManyModules() { // GH-90000
-            List<String> moduleIds = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 100; i++) { // GH-90000
+        void removeManyModules() { 
+            List<String> moduleIds = new ArrayList<>(); 
+            for (int i = 0; i < 100; i++) { 
                 String moduleId = "module-" + i;
-                registry.registerModule(moduleId, "1.0", "REGISTERED"); // GH-90000
-                moduleIds.add(moduleId); // GH-90000
+                registry.registerModule(moduleId, "1.0", "REGISTERED"); 
+                moduleIds.add(moduleId); 
             }
 
             // Remove every other module
-            for (int i = 0; i < moduleIds.size(); i += 2) { // GH-90000
-                registry.removeModule(moduleIds.get(i)); // GH-90000
+            for (int i = 0; i < moduleIds.size(); i += 2) { 
+                registry.removeModule(moduleIds.get(i)); 
             }
 
-            List<JdbcModuleRegistry.ModuleRegistration> remaining = registry.listModules(); // GH-90000
-            assertThat(remaining).hasSize(50); // GH-90000
+            List<JdbcModuleRegistry.ModuleRegistration> remaining = registry.listModules(); 
+            assertThat(remaining).hasSize(50); 
         }
     }
 
     // ============================================
-    // CONCURRENT PERSISTENCE OPERATIONS (3 tests) // GH-90000
+    // CONCURRENT PERSISTENCE OPERATIONS (3 tests) 
     // ============================================
 
     @Nested
@@ -214,144 +214,144 @@ class KernelPersistenceExpansionTest {
 
         @Test
         @DisplayName("Concurrent module registration")
-        void concurrentRegistration() throws Exception { // GH-90000
+        void concurrentRegistration() throws Exception { 
             int threadCount = 20;
             int modulesPerThread = 50;
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
 
-            ExecutorService exec = Executors.newFixedThreadPool(threadCount); // GH-90000
+            ExecutorService exec = Executors.newFixedThreadPool(threadCount); 
             try {
-                for (int t = 0; t < threadCount; t++) { // GH-90000
+                for (int t = 0; t < threadCount; t++) { 
                     final int threadIdx = t;
-                    exec.submit(() -> { // GH-90000
+                    exec.submit(() -> { 
                         try {
-                            for (int i = 0; i < modulesPerThread; i++) { // GH-90000
+                            for (int i = 0; i < modulesPerThread; i++) { 
                                 final int modIdx = i;
                                 String moduleId = "module-" + threadIdx + "-" + modIdx;
-                                registry.registerModule(moduleId, "1.0.0", "REGISTERED"); // GH-90000
+                                registry.registerModule(moduleId, "1.0.0", "REGISTERED"); 
                             }
                         } finally {
-                            latch.countDown(); // GH-90000
+                            latch.countDown(); 
                         }
                     });
                 }
-                assertThat(latch.await(15, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); // GH-90000
+                assertThat(latch.await(15, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); 
             } finally {
-                exec.shutdownNow(); // GH-90000
+                exec.shutdownNow(); 
             }
 
-            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
-            assertThat(all).hasSize(threadCount * modulesPerThread); // GH-90000
+            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); 
+            assertThat(all).hasSize(threadCount * modulesPerThread); 
         }
 
         @Test
         @DisplayName("Concurrent reads and writes")
-        void concurrentReadsAndWrites() throws Exception { // GH-90000
+        void concurrentReadsAndWrites() throws Exception { 
             // Pre-populate
-            for (int i = 0; i < 200; i++) { // GH-90000
+            for (int i = 0; i < 200; i++) { 
                 final int idx = i;
-                registry.registerModule("module-" + idx, "1.0", "REGISTERED"); // GH-90000
+                registry.registerModule("module-" + idx, "1.0", "REGISTERED"); 
             }
 
             int threadCount = 25;
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
-            AtomicInteger readCount = new AtomicInteger(0); // GH-90000
-            AtomicInteger writeCount = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
+            AtomicInteger readCount = new AtomicInteger(0); 
+            AtomicInteger writeCount = new AtomicInteger(0); 
 
-            ExecutorService exec = Executors.newFixedThreadPool(threadCount); // GH-90000
+            ExecutorService exec = Executors.newFixedThreadPool(threadCount); 
             try {
-                for (int t = 0; t < threadCount; t++) { // GH-90000
+                for (int t = 0; t < threadCount; t++) { 
                     final int threadIdx = t;
-                    exec.submit(() -> { // GH-90000
+                    exec.submit(() -> { 
                         try {
-                            for (int i = 0; i < 100; i++) { // GH-90000
+                            for (int i = 0; i < 100; i++) { 
                                 final int idx = i;
-                                if (threadIdx % 2 == 0) { // GH-90000
+                                if (threadIdx % 2 == 0) { 
                                     // Write operation
-                                    registry.registerModule( // GH-90000
+                                    registry.registerModule( 
                                         "module-w-" + threadIdx + "-" + idx,
                                         "1.0",
                                         "REGISTERED");
-                                    writeCount.incrementAndGet(); // GH-90000
+                                    writeCount.incrementAndGet(); 
                                 } else {
                                     // Read operation
                                     Optional<JdbcModuleRegistry.ModuleRegistration> result =
-                                        registry.getModule("module-" + (idx % 200)); // GH-90000
-                                    if (result.isPresent()) { // GH-90000
-                                        readCount.incrementAndGet(); // GH-90000
+                                        registry.getModule("module-" + (idx % 200)); 
+                                    if (result.isPresent()) { 
+                                        readCount.incrementAndGet(); 
                                     }
                                 }
                             }
                         } finally {
-                            latch.countDown(); // GH-90000
+                            latch.countDown(); 
                         }
                     });
                 }
-                assertThat(latch.await(20, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); // GH-90000
+                assertThat(latch.await(20, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); 
             } finally {
-                exec.shutdownNow(); // GH-90000
+                exec.shutdownNow(); 
             }
 
-            assertThat(readCount.get()).isGreaterThan(0); // GH-90000
-            assertThat(writeCount.get()).isGreaterThan(0); // GH-90000
+            assertThat(readCount.get()).isGreaterThan(0); 
+            assertThat(writeCount.get()).isGreaterThan(0); 
         }
 
         @Test
         @DisplayName("Concurrent mixed operations (register, update, remove, list)")
-        void concurrentMixedOperations() throws Exception { // GH-90000
+        void concurrentMixedOperations() throws Exception { 
             // Pre-populate
-            for (int i = 0; i < 300; i++) { // GH-90000
+            for (int i = 0; i < 300; i++) { 
                 final int idx = i;
-                registry.registerModule("module-" + idx, "1.0", "REGISTERED"); // GH-90000
+                registry.registerModule("module-" + idx, "1.0", "REGISTERED"); 
             }
 
             int threadCount = 30;
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
 
-            ExecutorService exec = Executors.newFixedThreadPool(threadCount); // GH-90000
+            ExecutorService exec = Executors.newFixedThreadPool(threadCount); 
             try {
-                for (int t = 0; t < threadCount; t++) { // GH-90000
+                for (int t = 0; t < threadCount; t++) { 
                     final int threadIdx = t;
-                    exec.submit(() -> { // GH-90000
+                    exec.submit(() -> { 
                         try {
-                            for (int i = 0; i < 80; i++) { // GH-90000
+                            for (int i = 0; i < 80; i++) { 
                                 final int idx = i;
                                 int op = idx % 4;
 
-                                if (op == 0) { // GH-90000
+                                if (op == 0) { 
                                     // Register
-                                    registry.registerModule( // GH-90000
+                                    registry.registerModule( 
                                         "module-t" + threadIdx + "-" + idx,
                                         "1.0",
                                         "REGISTERED");
-                                } else if (op == 1) { // GH-90000
+                                } else if (op == 1) { 
                                     // Update
-                                    String moduleId = "module-" + (idx % 300); // GH-90000
-                                    registry.registerModule(moduleId, "1.1", "STARTED"); // GH-90000
-                                } else if (op == 2) { // GH-90000
+                                    String moduleId = "module-" + (idx % 300); 
+                                    registry.registerModule(moduleId, "1.1", "STARTED"); 
+                                } else if (op == 2) { 
                                     // Remove
-                                    String moduleId = "module-" + ((threadIdx * 80 + idx) % 300); // GH-90000
-                                    registry.removeModule(moduleId); // GH-90000
+                                    String moduleId = "module-" + ((threadIdx * 80 + idx) % 300); 
+                                    registry.removeModule(moduleId); 
                                 } else {
                                     // List
-                                    List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
-                                    assertThat(all).isNotNull(); // GH-90000
+                                    List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); 
+                                    assertThat(all).isNotNull(); 
                                 }
                             }
                         } finally {
-                            latch.countDown(); // GH-90000
+                            latch.countDown(); 
                         }
                     });
                 }
-                assertThat(latch.await(25, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); // GH-90000
+                assertThat(latch.await(25, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); 
             } finally {
-                exec.shutdownNow(); // GH-90000
+                exec.shutdownNow(); 
             }
         }
     }
 
     // ============================================
-    // EDGE CASES (2 tests) // GH-90000
+    // EDGE CASES (2 tests) 
     // ============================================
 
     @Nested
@@ -360,30 +360,30 @@ class KernelPersistenceExpansionTest {
 
         @Test
         @DisplayName("Very long module IDs and versions")
-        void veryLongNames() { // GH-90000
-            String longModuleId = "platform:java:" + "a".repeat(200); // GH-90000
-            String longVersion = "1." + "0".repeat(200); // GH-90000
-            String longStatus = "STATUS_" + "X".repeat(200); // GH-90000
+        void veryLongNames() { 
+            String longModuleId = "platform:java:" + "a".repeat(200); 
+            String longVersion = "1." + "0".repeat(200); 
+            String longStatus = "STATUS_" + "X".repeat(200); 
 
-            assertThatThrownBy(() -> registry.registerModule(longModuleId, longVersion, longStatus)) // GH-90000
-                .isInstanceOf(IllegalStateException.class); // GH-90000
+            assertThatThrownBy(() -> registry.registerModule(longModuleId, longVersion, longStatus)) 
+                .isInstanceOf(IllegalStateException.class); 
         }
 
         @Test
         @DisplayName("High volume module registry with many versions")
-        void highVolumeVersionTracking() { // GH-90000
+        void highVolumeVersionTracking() { 
             String baseModuleId = "platform:java:kernel";
 
-            for (int i = 0; i < 100; i++) { // GH-90000
+            for (int i = 0; i < 100; i++) { 
                 String version = "1." + i + ".0";
-                registry.registerModule(baseModuleId, version, "REGISTERED"); // GH-90000
+                registry.registerModule(baseModuleId, version, "REGISTERED"); 
             }
 
-            JdbcModuleRegistry.ModuleRegistration latest = registry.getModule(baseModuleId).orElseThrow(); // GH-90000
+            JdbcModuleRegistry.ModuleRegistration latest = registry.getModule(baseModuleId).orElseThrow(); 
             assertThat(latest.moduleVersion()).isEqualTo("1.99.0");
 
-            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
-            assertThat(all).hasSize(1);  // Only latest version stored per module // GH-90000
+            List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); 
+            assertThat(all).hasSize(1);  // Only latest version stored per module 
         }
     }
 }

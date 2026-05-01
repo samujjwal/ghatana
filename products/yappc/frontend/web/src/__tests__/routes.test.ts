@@ -1,8 +1,20 @@
-// @ts-nocheck
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
 
 import { describe, it, expect } from 'vitest';
+
+interface RouteLike {
+  id?: string;
+  index?: boolean;
+  path?: string;
+  lazy?: unknown;
+  children?: RouteLike[];
+}
+
+interface RoutesModule {
+  routes?: RouteLike[];
+  default?: RouteLike[];
+}
 
 describe('routes configuration (smoke)', () => {
   it('uses the truthful workspace and project route taxonomy', () => {
@@ -51,15 +63,15 @@ describe('routes configuration (smoke)', () => {
     if (!existsSync(routesPath)) return; // nothing to validate at runtime
 
     // dynamic import to avoid failing when module is missing
-    const mod = await import('../routes').catch((err) => {
+    const mod = (await import('../routes').catch((err: Error) => {
       throw new Error(`Failed to import routes module: ${err?.message || err}`);
-    });
+    })) as RoutesModule;
 
     const routes = mod?.routes || mod?.default;
     if (!Array.isArray(routes))
       throw new Error('routes export is not an array');
 
-    function assertRoute(route: unknown) {
+    function assertRoute(route: RouteLike) {
       expect(route).toBeTruthy();
       expect(route.id).toBeTruthy();
       // Index routes use 'index: true' instead of a path

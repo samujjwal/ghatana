@@ -18,7 +18,11 @@ import {
   type AgentCapability as BackendAgentCapability,
   type AgentCatalogEntry,
 } from '../contracts/schemas';
-import { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+import { isAgentCatalogSurfaceEnabled } from '@/lib/feature-gates';
+import {
+  AGENT_REGISTRY_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from '@/lib/runtime-boundaries';
 
 export { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
@@ -121,6 +125,12 @@ function mapCatalogEntry(entry: AgentCatalogEntry): AgentDefinition {
   };
 }
 
+function assertAgentCatalogSurfaceEnabled(): void {
+  if (!isAgentCatalogSurfaceEnabled()) {
+    throw createRuntimeBoundaryError(AGENT_REGISTRY_BOUNDARY_MESSAGE);
+  }
+}
+
 // =============================================================================
 // Client
 // =============================================================================
@@ -138,6 +148,7 @@ export class AgentRegistryService {
 
   /** List all registered agents for a tenant */
   async listAgents(params: AgentListParams = {}): Promise<AgentDefinition[]> {
+    assertAgentCatalogSurfaceEnabled();
     const rawEntries = await apiClient.get<AgentCatalogEntry[]>('/agents/catalog', { params });
     const entries = AgentCatalogListSchema.parse(rawEntries);
     return entries.map(mapCatalogEntry);
@@ -145,6 +156,7 @@ export class AgentRegistryService {
 
   /** Get a specific agent by ID */
   async getAgent(agentId: string): Promise<AgentDefinition> {
+    assertAgentCatalogSurfaceEnabled();
     const rawEntry = await apiClient.get<AgentCatalogEntry>(`/agents/catalog/${agentId}`);
     const entry = AgentCatalogEntrySchema.parse(rawEntry);
     return mapCatalogEntry(entry);

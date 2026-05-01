@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Sync Strategy Tests
  * 

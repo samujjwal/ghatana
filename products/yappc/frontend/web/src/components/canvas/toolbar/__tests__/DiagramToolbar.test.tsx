@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * DiagramToolbar Component Tests
  * 

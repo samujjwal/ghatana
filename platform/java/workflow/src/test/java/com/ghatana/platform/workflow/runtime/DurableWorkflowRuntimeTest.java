@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.workflow.runtime;
@@ -29,78 +29,78 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
     private DurableWorkflowRuntime runtime;
 
     @Override
-    protected Duration eventloopTimeout() { // GH-90000
-        return Duration.ofSeconds(30); // GH-90000
+    protected Duration eventloopTimeout() { 
+        return Duration.ofSeconds(30); 
     }
 
     @Override
-    protected boolean breakOnFatalError() { // GH-90000
+    protected boolean breakOnFatalError() { 
         return false;
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        definitionRegistry = new InMemoryWorkflowDefinitionRegistry(); // GH-90000
-        stateStore = new InMemoryWorkflowStateStore(); // GH-90000
-        operatorRegistry = new DefaultStepOperatorRegistry(); // GH-90000
-        capturedEvents = new ArrayList<>(); // GH-90000
+    void setUp() { 
+        definitionRegistry = new InMemoryWorkflowDefinitionRegistry(); 
+        stateStore = new InMemoryWorkflowStateStore(); 
+        operatorRegistry = new DefaultStepOperatorRegistry(); 
+        capturedEvents = new ArrayList<>(); 
 
-        runtime = DurableWorkflowRuntime.builder() // GH-90000
-            .definitionRegistry(definitionRegistry) // GH-90000
-            .stateStore(stateStore) // GH-90000
-            .operatorRegistry(operatorRegistry) // GH-90000
-            .addListener(capturedEvents::add) // GH-90000
-            .defaultMaxRetries(0) // GH-90000
-            .build(); // GH-90000
+        runtime = DurableWorkflowRuntime.builder() 
+            .definitionRegistry(definitionRegistry) 
+            .stateStore(stateStore) 
+            .operatorRegistry(operatorRegistry) 
+            .addListener(capturedEvents::add) 
+            .defaultMaxRetries(0) 
+            .build(); 
     }
 
     @Test
-    void shouldExecuteLinearWorkflow() { // GH-90000
+    void shouldExecuteLinearWorkflow() { 
         // Register operators
-        operatorRegistry.register("step1-op", (ctx, cfg) -> { // GH-90000
-            ctx.put("step1", "done"); // GH-90000
-            return Promise.of(ctx); // GH-90000
+        operatorRegistry.register("step1-op", (ctx, cfg) -> { 
+            ctx.put("step1", "done"); 
+            return Promise.of(ctx); 
         });
-        operatorRegistry.register("step2-op", (ctx, cfg) -> { // GH-90000
-            ctx.put("step2", "done"); // GH-90000
-            return Promise.of(ctx); // GH-90000
+        operatorRegistry.register("step2-op", (ctx, cfg) -> { 
+            ctx.put("step2", "done"); 
+            return Promise.of(ctx); 
         });
 
         // Register definition
-        WorkflowDefinition def = WorkflowDefinition.builder("linear-wf", "Linear WF") // GH-90000
+        WorkflowDefinition def = WorkflowDefinition.builder("linear-wf", "Linear WF") 
             .addStep(WorkflowStepDefinition.action("s1", "Step 1", "step1-op").withNextStep("s2"))
-            .addStep(WorkflowStepDefinition.action("s2", "Step 2", "step2-op") // GH-90000
-                .withNextStep(null)) // terminal // GH-90000
-            .build(); // GH-90000
+            .addStep(WorkflowStepDefinition.action("s2", "Step 2", "step2-op") 
+                .withNextStep(null)) // terminal 
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
-        WorkflowRun result = runPromise(() -> runtime.start( // GH-90000
-            "linear-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+        WorkflowRun result = runPromise(() -> runtime.start( 
+            "linear-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); 
 
-        assertThat(result.status()).isEqualTo(WorkflowRunStatus.COMPLETED); // GH-90000
-        assertThat(result.variables()).containsEntry("step1", "done"); // GH-90000
-        assertThat(result.variables()).containsEntry("step2", "done"); // GH-90000
+        assertThat(result.status()).isEqualTo(WorkflowRunStatus.COMPLETED); 
+        assertThat(result.variables()).containsEntry("step1", "done"); 
+        assertThat(result.variables()).containsEntry("step2", "done"); 
     }
 
     @Test
-    void shouldEmitLifecycleEvents() { // GH-90000
-        operatorRegistry.register("noop-op", (ctx, cfg) -> Promise.of(ctx)); // GH-90000
+    void shouldEmitLifecycleEvents() { 
+        operatorRegistry.register("noop-op", (ctx, cfg) -> Promise.of(ctx)); 
 
-        WorkflowDefinition def = WorkflowDefinition.builder("event-wf", "Event WF") // GH-90000
-            .addStep(WorkflowStepDefinition.action("s1", "Step 1", "noop-op")) // GH-90000
-            .build(); // GH-90000
+        WorkflowDefinition def = WorkflowDefinition.builder("event-wf", "Event WF") 
+            .addStep(WorkflowStepDefinition.action("s1", "Step 1", "noop-op")) 
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
-        runPromise(() -> runtime.start( // GH-90000
-            "event-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+        runPromise(() -> runtime.start( 
+            "event-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); 
 
-        List<WorkflowLifecycleEvent.Phase> phases = capturedEvents.stream() // GH-90000
-            .map(WorkflowLifecycleEvent::phase) // GH-90000
-            .toList(); // GH-90000
+        List<WorkflowLifecycleEvent.Phase> phases = capturedEvents.stream() 
+            .map(WorkflowLifecycleEvent::phase) 
+            .toList(); 
 
-        assertThat(phases).contains( // GH-90000
+        assertThat(phases).contains( 
             WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED,
             WorkflowLifecycleEvent.Phase.STEP_STARTED,
             WorkflowLifecycleEvent.Phase.STEP_COMPLETED,
@@ -108,176 +108,176 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
     }
 
     @Test
-    void shouldFailForMissingDefinition() { // GH-90000
+    void shouldFailForMissingDefinition() { 
         try {
-            runPromise(() -> runtime.start( // GH-90000
-                "nonexistent", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+            runPromise(() -> runtime.start( 
+                "nonexistent", "tenant-1", "corr-1", new java.util.HashMap<>())); 
             fail("Should have thrown");
-        } catch (Exception e) { // GH-90000
-            assertThat(e).isInstanceOf(WorkflowDefinitionException.class); // GH-90000
+        } catch (Exception e) { 
+            assertThat(e).isInstanceOf(WorkflowDefinitionException.class); 
         }
-        clearFatalError(); // GH-90000
+        clearFatalError(); 
     }
 
     @Test
-    void shouldFailForDisabledWorkflow() { // GH-90000
-        WorkflowDefinition def = WorkflowDefinition.builder("disabled-wf", "Disabled") // GH-90000
-            .addStep(WorkflowStepDefinition.action("s1", "Step", "op")) // GH-90000
-            .enabled(false) // GH-90000
-            .build(); // GH-90000
+    void shouldFailForDisabledWorkflow() { 
+        WorkflowDefinition def = WorkflowDefinition.builder("disabled-wf", "Disabled") 
+            .addStep(WorkflowStepDefinition.action("s1", "Step", "op")) 
+            .enabled(false) 
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
         try {
-            runPromise(() -> runtime.start( // GH-90000
-                "disabled-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+            runPromise(() -> runtime.start( 
+                "disabled-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); 
             fail("Should have thrown");
-        } catch (Exception e) { // GH-90000
-            assertThat(e).isInstanceOf(WorkflowDefinitionException.class); // GH-90000
+        } catch (Exception e) { 
+            assertThat(e).isInstanceOf(WorkflowDefinitionException.class); 
         }
-        clearFatalError(); // GH-90000
+        clearFatalError(); 
     }
 
     @Test
-    void shouldHandleStepFailure() { // GH-90000
-        operatorRegistry.register("fail-op", (ctx, cfg) -> { // GH-90000
+    void shouldHandleStepFailure() { 
+        operatorRegistry.register("fail-op", (ctx, cfg) -> { 
             throw new RuntimeException("step error");
         });
 
-        WorkflowDefinition def = WorkflowDefinition.builder("fail-wf", "Fail WF") // GH-90000
-            .addStep(WorkflowStepDefinition.action("s1", "Fail Step", "fail-op")) // GH-90000
-            .build(); // GH-90000
+        WorkflowDefinition def = WorkflowDefinition.builder("fail-wf", "Fail WF") 
+            .addStep(WorkflowStepDefinition.action("s1", "Fail Step", "fail-op")) 
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
-        WorkflowRun result = runPromise(() -> runtime.start( // GH-90000
-            "fail-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+        WorkflowRun result = runPromise(() -> runtime.start( 
+            "fail-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); 
 
-        assertThat(result.status()).isEqualTo(WorkflowRunStatus.FAILED); // GH-90000
+        assertThat(result.status()).isEqualTo(WorkflowRunStatus.FAILED); 
         assertThat(result.errorMessage()).contains("step error");
     }
 
     @Test
-    void shouldHandleDecisionStep() { // GH-90000
-        operatorRegistry.register("high-op", (ctx, cfg) -> { // GH-90000
-            ctx.put("path", "high"); // GH-90000
-            return Promise.of(ctx); // GH-90000
+    void shouldHandleDecisionStep() { 
+        operatorRegistry.register("high-op", (ctx, cfg) -> { 
+            ctx.put("path", "high"); 
+            return Promise.of(ctx); 
         });
-        operatorRegistry.register("low-op", (ctx, cfg) -> { // GH-90000
-            ctx.put("path", "low"); // GH-90000
-            return Promise.of(ctx); // GH-90000
+        operatorRegistry.register("low-op", (ctx, cfg) -> { 
+            ctx.put("path", "low"); 
+            return Promise.of(ctx); 
         });
 
-        WorkflowExpressionEvaluator evaluator = new WorkflowExpressionEvaluator() { // GH-90000
+        WorkflowExpressionEvaluator evaluator = new WorkflowExpressionEvaluator() { 
             @Override
-            public Object evaluate(String expression, WorkflowContext context) { // GH-90000
+            public Object evaluate(String expression, WorkflowContext context) { 
                 // Simplistic evaluator for testing
                 if (expression.equals("ctx.amount > 1000")) {
                     Object amount = context.getVariables().get("amount");
-                    if (amount instanceof Number n) { // GH-90000
-                        return n.doubleValue() > 1000; // GH-90000
+                    if (amount instanceof Number n) { 
+                        return n.doubleValue() > 1000; 
                     }
                 }
                 return false;
             }
 
             @Override
-            public boolean evaluateBoolean(String expression, WorkflowContext context) { // GH-90000
-                return (boolean) evaluate(expression, context); // GH-90000
+            public boolean evaluateBoolean(String expression, WorkflowContext context) { 
+                return (boolean) evaluate(expression, context); 
             }
 
             @Override
-            public void validate(String expression) { // GH-90000
+            public void validate(String expression) { 
                 // no-op
             }
         };
 
-        DurableWorkflowRuntime runtimeWithCel = DurableWorkflowRuntime.builder() // GH-90000
-            .definitionRegistry(definitionRegistry) // GH-90000
-            .stateStore(stateStore) // GH-90000
-            .operatorRegistry(operatorRegistry) // GH-90000
-            .expressionEvaluator(evaluator) // GH-90000
-            .build(); // GH-90000
+        DurableWorkflowRuntime runtimeWithCel = DurableWorkflowRuntime.builder() 
+            .definitionRegistry(definitionRegistry) 
+            .stateStore(stateStore) 
+            .operatorRegistry(operatorRegistry) 
+            .expressionEvaluator(evaluator) 
+            .build(); 
 
-        WorkflowDefinition def = WorkflowDefinition.builder("decision-wf", "Decision WF") // GH-90000
-            .addStep(WorkflowStepDefinition.decision( // GH-90000
+        WorkflowDefinition def = WorkflowDefinition.builder("decision-wf", "Decision WF") 
+            .addStep(WorkflowStepDefinition.decision( 
                 "check", "Check Amount", "ctx.amount > 1000", "high", "low"))
-            .addStep(WorkflowStepDefinition.action("high", "High Path", "high-op")) // GH-90000
-            .addStep(WorkflowStepDefinition.action("low", "Low Path", "low-op")) // GH-90000
+            .addStep(WorkflowStepDefinition.action("high", "High Path", "high-op")) 
+            .addStep(WorkflowStepDefinition.action("low", "Low Path", "low-op")) 
             .entryStepId("check")
-            .build(); // GH-90000
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
         // High path
-        java.util.HashMap<String, Object> highCtx = new java.util.HashMap<>(); // GH-90000
-        highCtx.put("amount", 5000); // GH-90000
-        WorkflowRun highResult = runPromise(() -> runtimeWithCel.start( // GH-90000
+        java.util.HashMap<String, Object> highCtx = new java.util.HashMap<>(); 
+        highCtx.put("amount", 5000); 
+        WorkflowRun highResult = runPromise(() -> runtimeWithCel.start( 
             "decision-wf", "t", "c1", highCtx));
 
-        assertThat(highResult.status()).isEqualTo(WorkflowRunStatus.COMPLETED); // GH-90000
-        assertThat(highResult.variables()).containsEntry("path", "high"); // GH-90000
+        assertThat(highResult.status()).isEqualTo(WorkflowRunStatus.COMPLETED); 
+        assertThat(highResult.variables()).containsEntry("path", "high"); 
     }
 
     @Test
-    void shouldHandleWaitAndSignal() { // GH-90000
-        operatorRegistry.register("post-wait-op", (ctx, cfg) -> { // GH-90000
-            ctx.put("resumed", true); // GH-90000
-            return Promise.of(ctx); // GH-90000
+    void shouldHandleWaitAndSignal() { 
+        operatorRegistry.register("post-wait-op", (ctx, cfg) -> { 
+            ctx.put("resumed", true); 
+            return Promise.of(ctx); 
         });
 
-        WorkflowDefinition def = WorkflowDefinition.builder("wait-wf", "Wait WF") // GH-90000
-            .addStep(WorkflowStepDefinition.wait("wait-step", "Wait", Duration.ofHours(1)) // GH-90000
+        WorkflowDefinition def = WorkflowDefinition.builder("wait-wf", "Wait WF") 
+            .addStep(WorkflowStepDefinition.wait("wait-step", "Wait", Duration.ofHours(1)) 
                 .withNextStep("post-wait"))
-            .addStep(WorkflowStepDefinition.action("post-wait", "Post Wait", "post-wait-op")) // GH-90000
-            .build(); // GH-90000
+            .addStep(WorkflowStepDefinition.action("post-wait", "Post Wait", "post-wait-op")) 
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
         // Start — should suspend on WAIT
-        WorkflowRun waiting = runPromise(() -> runtime.start( // GH-90000
-            "wait-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+        WorkflowRun waiting = runPromise(() -> runtime.start( 
+            "wait-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); 
 
-        assertThat(waiting.status()).isEqualTo(WorkflowRunStatus.WAITING); // GH-90000
+        assertThat(waiting.status()).isEqualTo(WorkflowRunStatus.WAITING); 
 
         // Signal to resume
-        WorkflowRun resumed = runPromise(() -> runtime.signal( // GH-90000
-            waiting.runId(), Map.of("signal", "approved"))); // GH-90000
+        WorkflowRun resumed = runPromise(() -> runtime.signal( 
+            waiting.runId(), Map.of("signal", "approved"))); 
 
-        assertThat(resumed.status()).isEqualTo(WorkflowRunStatus.COMPLETED); // GH-90000
-        assertThat(resumed.variables()).containsEntry("resumed", true); // GH-90000
+        assertThat(resumed.status()).isEqualTo(WorkflowRunStatus.COMPLETED); 
+        assertThat(resumed.variables()).containsEntry("resumed", true); 
     }
 
     @Test
-    void shouldRetryFailingStepThenSucceed() { // GH-90000
-        AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-        operatorRegistry.register("flaky-op", (ctx, cfg) -> { // GH-90000
-            if (attempts.incrementAndGet() < 3) { // GH-90000
+    void shouldRetryFailingStepThenSucceed() { 
+        AtomicInteger attempts = new AtomicInteger(0); 
+        operatorRegistry.register("flaky-op", (ctx, cfg) -> { 
+            if (attempts.incrementAndGet() < 3) { 
                 throw new RuntimeException("transient error");
             }
-            ctx.put("success", true); // GH-90000
-            return Promise.of(ctx); // GH-90000
+            ctx.put("success", true); 
+            return Promise.of(ctx); 
         });
 
-        DurableWorkflowRuntime retryRuntime = DurableWorkflowRuntime.builder() // GH-90000
-            .definitionRegistry(definitionRegistry) // GH-90000
-            .stateStore(new InMemoryWorkflowStateStore()) // GH-90000
-            .operatorRegistry(operatorRegistry) // GH-90000
-            .defaultMaxRetries(5) // GH-90000
-            .build(); // GH-90000
+        DurableWorkflowRuntime retryRuntime = DurableWorkflowRuntime.builder() 
+            .definitionRegistry(definitionRegistry) 
+            .stateStore(new InMemoryWorkflowStateStore()) 
+            .operatorRegistry(operatorRegistry) 
+            .defaultMaxRetries(5) 
+            .build(); 
 
-        WorkflowDefinition def = WorkflowDefinition.builder("retry-wf", "Retry WF") // GH-90000
-            .addStep(WorkflowStepDefinition.action("s1", "Flaky Step", "flaky-op") // GH-90000
-                .withRetries(5, Duration.ofMillis(10))) // GH-90000
-            .build(); // GH-90000
+        WorkflowDefinition def = WorkflowDefinition.builder("retry-wf", "Retry WF") 
+            .addStep(WorkflowStepDefinition.action("s1", "Flaky Step", "flaky-op") 
+                .withRetries(5, Duration.ofMillis(10))) 
+            .build(); 
 
-        runPromise(() -> definitionRegistry.register(def)); // GH-90000
+        runPromise(() -> definitionRegistry.register(def)); 
 
-        WorkflowRun result = runPromise(() -> retryRuntime.start( // GH-90000
-            "retry-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
+        WorkflowRun result = runPromise(() -> retryRuntime.start( 
+            "retry-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); 
 
-        assertThat(result.status()).isEqualTo(WorkflowRunStatus.COMPLETED); // GH-90000
-        assertThat(result.variables()).containsEntry("success", true); // GH-90000
-        assertThat(attempts.get()).isEqualTo(3); // GH-90000
+        assertThat(result.status()).isEqualTo(WorkflowRunStatus.COMPLETED); 
+        assertThat(result.variables()).containsEntry("success", true); 
+        assertThat(attempts.get()).isEqualTo(3); 
     }
 }

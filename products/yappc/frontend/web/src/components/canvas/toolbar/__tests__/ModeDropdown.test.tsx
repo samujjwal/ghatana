@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ModeDropdown Component Tests
  * 

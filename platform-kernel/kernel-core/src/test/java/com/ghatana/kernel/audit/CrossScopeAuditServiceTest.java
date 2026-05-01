@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.kernel.audit;
@@ -44,10 +44,10 @@ class CrossScopeAuditServiceTest {
     private CrossScopeAuditService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        auditStore = new InMemoryAuditStore(); // GH-90000
-        AuditPolicyResolver resolver = DefaultAuditPolicyResolver.withStandardMappings(); // GH-90000
-        service = new CrossScopeAuditService(resolver, auditStore); // GH-90000
+    void setUp() { 
+        auditStore = new InMemoryAuditStore(); 
+        AuditPolicyResolver resolver = DefaultAuditPolicyResolver.withStandardMappings(); 
+        service = new CrossScopeAuditService(resolver, auditStore); 
     }
 
     // ==================== Retention Resolution ====================
@@ -58,82 +58,82 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Healthcare classification resolves to 25 years per Nepal Directive 2081")
-        void healthcareRetention() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void healthcareRetention() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("phr"))
                     .targetScope(ScopeDescriptor.product("finance"))
                     .action("billing.request")
                     .userId("user-1")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( // GH-90000
+                    .classification(ClassificationDescriptor.of( 
                             "healthcare", SensitivityLevel.RESTRICTED, "nepal-2081"))
-                    .build(); // GH-90000
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            assertEquals(1, auditStore.records.size()); // GH-90000
-            assertEquals(25, auditStore.records.get(0).getRetentionYears()); // GH-90000
-            assertEquals("archive", auditStore.records.get(0).getStorageTier()); // GH-90000
+            assertEquals(1, auditStore.records.size()); 
+            assertEquals(25, auditStore.records.get(0).getRetentionYears()); 
+            assertEquals("archive", auditStore.records.get(0).getStorageTier()); 
         }
 
         @Test
         @DisplayName("Finance classification resolves to 10 years per SEBON regulation")
-        void financeRetention() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void financeRetention() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("finance"))
                     .targetScope(ScopeDescriptor.product("phr"))
                     .action("payment.complete")
                     .userId("user-2")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( // GH-90000
+                    .classification(ClassificationDescriptor.of( 
                             "finance", SensitivityLevel.CONFIDENTIAL, "sebon"))
-                    .build(); // GH-90000
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            assertEquals(1, auditStore.records.size()); // GH-90000
-            assertEquals(10, auditStore.records.get(0).getRetentionYears()); // GH-90000
-            assertEquals("compliance", auditStore.records.get(0).getStorageTier()); // GH-90000
+            assertEquals(1, auditStore.records.size()); 
+            assertEquals(10, auditStore.records.get(0).getRetentionYears()); 
+            assertEquals("compliance", auditStore.records.get(0).getStorageTier()); 
         }
 
         @Test
         @DisplayName("Default classification resolves to 7 years")
-        void defaultRetention() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void defaultRetention() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("flashit"))
                     .targetScope(ScopeDescriptor.product("aura"))
                     .action("recommendation.request")
                     .userId("user-3")
                     .tenantId("tenant-2")
-                    .classification(ClassificationDescriptor.of( // GH-90000
+                    .classification(ClassificationDescriptor.of( 
                             "general", SensitivityLevel.INTERNAL))
-                    .build(); // GH-90000
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            assertEquals(1, auditStore.records.size()); // GH-90000
-            assertEquals(7, auditStore.records.get(0).getRetentionYears()); // GH-90000
-            assertEquals("standard", auditStore.records.get(0).getStorageTier()); // GH-90000
+            assertEquals(1, auditStore.records.size()); 
+            assertEquals(7, auditStore.records.get(0).getRetentionYears()); 
+            assertEquals("standard", auditStore.records.get(0).getStorageTier()); 
         }
 
         @Test
         @DisplayName("Multiple compliance tags resolve to longest retention")
-        void multipleComplianceTags() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void multipleComplianceTags() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("phr"))
                     .targetScope(ScopeDescriptor.product("finance"))
                     .action("cross-domain.operation")
                     .userId("user-4")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( // GH-90000
+                    .classification(ClassificationDescriptor.of( 
                             "cross-domain", SensitivityLevel.RESTRICTED, "sebon", "nepal-2081"))
-                    .build(); // GH-90000
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            assertEquals(1, auditStore.records.size()); // GH-90000
-            // nepal-2081 (25 years) wins over sebon (10 years) // GH-90000
-            assertEquals(25, auditStore.records.get(0).getRetentionYears()); // GH-90000
+            assertEquals(1, auditStore.records.size()); 
+            // nepal-2081 (25 years) wins over sebon (10 years) 
+            assertEquals(25, auditStore.records.get(0).getRetentionYears()); 
         }
     }
 
@@ -145,48 +145,48 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Audit records carry source and target scope descriptors")
-        void recordsCarryScopeDescriptors() { // GH-90000
-            ScopeDescriptor source = new ScopeDescriptor( // GH-90000
-                    ScopeType.DOMAIN_PACK, "healthcare-pack", Map.of("region", "nepal")); // GH-90000
+        void recordsCarryScopeDescriptors() { 
+            ScopeDescriptor source = new ScopeDescriptor( 
+                    ScopeType.DOMAIN_PACK, "healthcare-pack", Map.of("region", "nepal")); 
             ScopeDescriptor target = ScopeDescriptor.product("finance");
 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(source) // GH-90000
-                    .targetScope(target) // GH-90000
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
+                    .sourceScope(source) 
+                    .targetScope(target) 
                     .action("data.access")
                     .userId("user-1")
                     .tenantId("tenant-1")
                     .capabilityId("data.storage")
-                    .classification(ClassificationDescriptor.of("healthcare", SensitivityLevel.RESTRICTED)) // GH-90000
-                    .build(); // GH-90000
+                    .classification(ClassificationDescriptor.of("healthcare", SensitivityLevel.RESTRICTED)) 
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            ScopeAuditRecord record = auditStore.records.get(0); // GH-90000
-            assertEquals(ScopeType.DOMAIN_PACK, record.getSourceScope().getScopeType()); // GH-90000
-            assertEquals("healthcare-pack", record.getSourceScope().getScopeId()); // GH-90000
-            assertEquals(ScopeType.PRODUCT, record.getTargetScope().getScopeType()); // GH-90000
-            assertEquals("finance", record.getTargetScope().getScopeId()); // GH-90000
-            assertEquals("data.storage", record.getCapabilityId()); // GH-90000
+            ScopeAuditRecord record = auditStore.records.get(0); 
+            assertEquals(ScopeType.DOMAIN_PACK, record.getSourceScope().getScopeType()); 
+            assertEquals("healthcare-pack", record.getSourceScope().getScopeId()); 
+            assertEquals(ScopeType.PRODUCT, record.getTargetScope().getScopeType()); 
+            assertEquals("finance", record.getTargetScope().getScopeId()); 
+            assertEquals("data.storage", record.getCapabilityId()); 
         }
 
         @Test
         @DisplayName("Works with non-product scope types (tenant, workflow, agent)")
-        void worksWithNonProductScopes() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void worksWithNonProductScopes() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.tenant("tenant-42"))
                     .targetScope(ScopeDescriptor.workflow("payment-flow-123"))
                     .action("workflow.start")
                     .userId("user-1")
                     .tenantId("tenant-42")
-                    .classification(ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)) // GH-90000
-                    .build(); // GH-90000
+                    .classification(ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)) 
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            ScopeAuditRecord record = auditStore.records.get(0); // GH-90000
-            assertEquals(ScopeType.TENANT, record.getSourceScope().getScopeType()); // GH-90000
-            assertEquals(ScopeType.WORKFLOW, record.getTargetScope().getScopeType()); // GH-90000
+            ScopeAuditRecord record = auditStore.records.get(0); 
+            assertEquals(ScopeType.TENANT, record.getSourceScope().getScopeType()); 
+            assertEquals(ScopeType.WORKFLOW, record.getTargetScope().getScopeType()); 
         }
     }
 
@@ -198,55 +198,55 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Confidential/restricted events get cryptographic signatures")
-        void restrictedEventsAreSigned() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void restrictedEventsAreSigned() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("finance"))
                     .targetScope(ScopeDescriptor.product("finance"))
                     .action("trade.execute")
                     .userId("trader-1")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( // GH-90000
+                    .classification(ClassificationDescriptor.of( 
                             "finance", SensitivityLevel.RESTRICTED, "sebon"))
-                    .build(); // GH-90000
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            ScopeAuditRecord record = auditStore.records.get(0); // GH-90000
-            assertNotNull(record.getSignature(), "Restricted events must be signed"); // GH-90000
+            ScopeAuditRecord record = auditStore.records.get(0); 
+            assertNotNull(record.getSignature(), "Restricted events must be signed"); 
         }
 
         @Test
         @DisplayName("Low-sensitivity events skip signature")
-        void lowSensitivityEventsSkipSignature() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void lowSensitivityEventsSkipSignature() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("flashit"))
                     .targetScope(ScopeDescriptor.product("flashit"))
                     .action("content.view")
                     .userId("user-1")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( // GH-90000
+                    .classification(ClassificationDescriptor.of( 
                             "general", SensitivityLevel.PUBLIC))
-                    .build(); // GH-90000
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            ScopeAuditRecord record = auditStore.records.get(0); // GH-90000
-            assertNull(record.getSignature(), "Public events should not require signature"); // GH-90000
+            ScopeAuditRecord record = auditStore.records.get(0); 
+            assertNull(record.getSignature(), "Public events should not require signature"); 
         }
 
         @Test
         @DisplayName("Audit ID is generated and non-null")
-        void auditIdIsGenerated() { // GH-90000
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
+        void auditIdIsGenerated() { 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(ScopeDescriptor.product("finance"))
                     .targetScope(ScopeDescriptor.product("phr"))
                     .action("data.share")
-                    .classification(ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)) // GH-90000
-                    .build(); // GH-90000
+                    .classification(ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)) 
+                    .build(); 
 
-            service.auditCrossScopeAction(event).getResult(); // GH-90000
+            service.auditCrossScopeAction(event).getResult(); 
 
-            assertNotNull(auditStore.records.get(0).getAuditId()); // GH-90000
+            assertNotNull(auditStore.records.get(0).getAuditId()); 
             assertTrue(auditStore.records.get(0).getAuditId().startsWith("AUDIT-"));
         }
     }
@@ -259,25 +259,25 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Returns default when no compliance tags match")
-        void defaultsTo7Years() { // GH-90000
-            RetentionPolicyResolver resolver = DefaultRetentionPolicyResolver.withStandardMappings(); // GH-90000
-            int years = resolver.resolveRetentionYears( // GH-90000
+        void defaultsTo7Years() { 
+            RetentionPolicyResolver resolver = DefaultRetentionPolicyResolver.withStandardMappings(); 
+            int years = resolver.resolveRetentionYears( 
                     ScopeDescriptor.product("any"),
                     ScopeDescriptor.product("any"),
-                    ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)); // GH-90000
-            assertEquals(7, years); // GH-90000
+                    ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)); 
+            assertEquals(7, years); 
         }
 
         @Test
         @DisplayName("Custom compliance tag mappings are honored")
-        void customMappingsWork() { // GH-90000
-            RetentionPolicyResolver resolver = new DefaultRetentionPolicyResolver( // GH-90000
-                    Map.of("custom-regulation", 15)); // GH-90000
-            int years = resolver.resolveRetentionYears( // GH-90000
+        void customMappingsWork() { 
+            RetentionPolicyResolver resolver = new DefaultRetentionPolicyResolver( 
+                    Map.of("custom-regulation", 15)); 
+            int years = resolver.resolveRetentionYears( 
                     ScopeDescriptor.product("any"),
                     ScopeDescriptor.product("any"),
-                    ClassificationDescriptor.of("custom", SensitivityLevel.CONFIDENTIAL, "custom-regulation")); // GH-90000
-            assertEquals(15, years); // GH-90000
+                    ClassificationDescriptor.of("custom", SensitivityLevel.CONFIDENTIAL, "custom-regulation")); 
+            assertEquals(15, years); 
         }
     }
 
@@ -285,50 +285,50 @@ class CrossScopeAuditServiceTest {
 
     @Test
     @DisplayName("Null event throws NullPointerException")
-    void nullEventThrows() { // GH-90000
-        assertThrows(NullPointerException.class, () -> service.auditCrossScopeAction(null)); // GH-90000
+    void nullEventThrows() { 
+        assertThrows(NullPointerException.class, () -> service.auditCrossScopeAction(null)); 
     }
 
     @Test
     @DisplayName("Event without classification throws NullPointerException")
-    void eventWithoutClassificationThrows() { // GH-90000
-        assertThrows(NullPointerException.class, () -> // GH-90000
-                CrossScopeAuditEvent.builder() // GH-90000
+    void eventWithoutClassificationThrows() { 
+        assertThrows(NullPointerException.class, () -> 
+                CrossScopeAuditEvent.builder() 
                         .sourceScope(ScopeDescriptor.product("a"))
                         .targetScope(ScopeDescriptor.product("b"))
                         .action("test")
-                        .classification(null) // GH-90000
-                        .build()); // GH-90000
+                        .classification(null) 
+                        .build()); 
     }
 
     // ==================== In-Memory Test Store ====================
 
     private static class InMemoryAuditStore implements AuditEventStore {
-        final List<ScopeAuditRecord> records = new CopyOnWriteArrayList<>(); // GH-90000
+        final List<ScopeAuditRecord> records = new CopyOnWriteArrayList<>(); 
 
         @Override
-        public Promise<Void> store(ScopeAuditRecord record) { // GH-90000
-            records.add(record); // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> store(ScopeAuditRecord record) { 
+            records.add(record); 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Set<ScopeAuditRecord>> query(Instant startDate, Instant endDate, // GH-90000
+        public Promise<Set<ScopeAuditRecord>> query(Instant startDate, Instant endDate, 
                                                       ScopeDescriptor sourceScope,
                                                       ScopeDescriptor targetScope) {
-            Set<ScopeAuditRecord> result = new HashSet<>(); // GH-90000
-            for (ScopeAuditRecord r : records) { // GH-90000
-                if (r.getTimestamp() != null && // GH-90000
-                        !r.getTimestamp().isBefore(startDate) && // GH-90000
-                        !r.getTimestamp().isAfter(endDate)) { // GH-90000
-                    if (sourceScope == null || sourceScope.equals(r.getSourceScope())) { // GH-90000
-                        if (targetScope == null || targetScope.equals(r.getTargetScope())) { // GH-90000
-                            result.add(r); // GH-90000
+            Set<ScopeAuditRecord> result = new HashSet<>(); 
+            for (ScopeAuditRecord r : records) { 
+                if (r.getTimestamp() != null && 
+                        !r.getTimestamp().isBefore(startDate) && 
+                        !r.getTimestamp().isAfter(endDate)) { 
+                    if (sourceScope == null || sourceScope.equals(r.getSourceScope())) { 
+                        if (targetScope == null || targetScope.equals(r.getTargetScope())) { 
+                            result.add(r); 
                         }
                     }
                 }
             }
-            return Promise.of(result); // GH-90000
+            return Promise.of(result); 
         }
     }
 }

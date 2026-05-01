@@ -7,7 +7,7 @@
  *
  * <p><b>Usage</b><br>
  * <pre>{@code
- * import liveEditPlugin from '@yappc/vite-plugin-live-edit';
+ * import liveEditPlugin from '@ghatana/yappc-vite-plugin-live-edit';
  *
  * export default {
  *   plugins: [

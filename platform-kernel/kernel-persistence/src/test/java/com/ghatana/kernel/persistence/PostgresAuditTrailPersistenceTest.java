@@ -26,20 +26,20 @@ class PostgresAuditTrailPersistenceTest {
     private PostgresAuditTrailPersistence persistence;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        JdbcDataSource dataSource = new JdbcDataSource(); // GH-90000
+    void setUp() { 
+        JdbcDataSource dataSource = new JdbcDataSource(); 
         dataSource.setURL("jdbc:h2:mem:audit;MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         dataSource.setUser("sa");
         dataSource.setPassword("sa");
 
-        persistence = new PostgresAuditTrailPersistence(dataSource, new ObjectMapper()); // GH-90000
-        persistence.ensureSchema(); // GH-90000
+        persistence = new PostgresAuditTrailPersistence(dataSource, new ObjectMapper()); 
+        persistence.ensureSchema(); 
     }
 
     @Test
     @DisplayName("persists and loads audit events with payload and hash")
-    void persistsAndLoadsEvents() { // GH-90000
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() // GH-90000
+    void persistsAndLoadsEvents() { 
+        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() 
             .eventId("evt-1")
             .eventType("PATIENT_READ")
             .entityId("patient-1")
@@ -49,14 +49,14 @@ class PostgresAuditTrailPersistenceTest {
             .data(Map.of("resource", "Patient", "field", "allergies"))
             .timestamp(12345L)
             .previousHash("genesis")
-            .build(); // GH-90000
+            .build(); 
 
-        persistence.persist(new DefaultAuditTrailService.StoredAuditEvent(event, "hash-1")); // GH-90000
+        persistence.persist(new DefaultAuditTrailService.StoredAuditEvent(event, "hash-1")); 
 
-        List<DefaultAuditTrailService.StoredAuditEvent> loaded = persistence.loadAll(); // GH-90000
-        assertEquals(1, loaded.size()); // GH-90000
-        assertEquals("evt-1", loaded.getFirst().event().getEventId()); // GH-90000
-        assertEquals("hash-1", loaded.getFirst().hash()); // GH-90000
-        assertFalse(loaded.getFirst().event().getData().isEmpty()); // GH-90000
+        List<DefaultAuditTrailService.StoredAuditEvent> loaded = persistence.loadAll(); 
+        assertEquals(1, loaded.size()); 
+        assertEquals("evt-1", loaded.getFirst().event().getEventId()); 
+        assertEquals("hash-1", loaded.getFirst().hash()); 
+        assertFalse(loaded.getFirst().event().getData().isEmpty()); 
     }
 }

@@ -21,44 +21,44 @@ import java.util.Optional;
  */
 public class TestKernelContextFactory {
 
-    public static KernelContext create(KernelRegistry registry) { // GH-90000
-        return create(registry, Eventloop.create()); // GH-90000
+    public static KernelContext create(KernelRegistry registry) { 
+        return create(registry, Eventloop.create()); 
     }
 
-    public static KernelContext create(KernelRegistry registry, Eventloop eventloop) { // GH-90000
-        KernelConfigResolver mockConfigResolver = new MockConfigResolver(); // GH-90000
-        return new DefaultKernelContext(registry, mockConfigResolver, eventloop, "1.0.0", "test"); // GH-90000
+    public static KernelContext create(KernelRegistry registry, Eventloop eventloop) { 
+        KernelConfigResolver mockConfigResolver = new MockConfigResolver(); 
+        return new DefaultKernelContext(registry, mockConfigResolver, eventloop, "1.0.0", "test"); 
     }
 
     private static class MockConfigResolver implements KernelConfigResolver {
         @Override
-        public <T> T resolve(String configKey, Class<T> type, KernelTenantContext context) { // GH-90000
-            throw new IllegalArgumentException("Config not found: " + configKey); // GH-90000
+        public <T> T resolve(String configKey, Class<T> type, KernelTenantContext context) { 
+            throw new IllegalArgumentException("Config not found: " + configKey); 
         }
 
         @Override
-        public <T> T resolveWithDefault(String configKey, Class<T> type, T defaultValue, KernelTenantContext context) { // GH-90000
+        public <T> T resolveWithDefault(String configKey, Class<T> type, T defaultValue, KernelTenantContext context) { 
             return defaultValue;
         }
 
         @Override
-        public <T> Optional<T> resolveOptional(String configKey, Class<T> type, KernelTenantContext context) { // GH-90000
-            return Optional.empty(); // GH-90000
+        public <T> Optional<T> resolveOptional(String configKey, Class<T> type, KernelTenantContext context) { 
+            return Optional.empty(); 
         }
 
         @Override
-        public void addConfigProvider(ConfigProvider provider) { // GH-90000
+        public void addConfigProvider(ConfigProvider provider) { 
             // No-op for test
         }
 
         @Override
-        public Promise<Void> reloadConfig(String tenantId) { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> reloadConfig(String tenantId) { 
+            return Promise.complete(); 
         }
 
         @Override
-        public List<String> getAvailableKeys(KernelTenantContext context) { // GH-90000
-            return List.of(); // GH-90000
+        public List<String> getAvailableKeys(KernelTenantContext context) { 
+            return List.of(); 
         }
     }
 }

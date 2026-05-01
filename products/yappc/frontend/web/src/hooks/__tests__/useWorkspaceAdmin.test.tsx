@@ -140,8 +140,7 @@ describe('useWorkspaceAdmin', () => {
 
     // Set currentMembership AFTER initial effects have run to avoid it being reset
     act(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      store.set(currentMembershipAtom, { userId: 'user-1', role: 'admin', personas: [] } as any);
+      store.set(currentMembershipAtom, { userId: 'user-1', role: 'admin', personas: [] } as never);
     });
 
     expect(result.current.hasPermission('read')).toBe(true);

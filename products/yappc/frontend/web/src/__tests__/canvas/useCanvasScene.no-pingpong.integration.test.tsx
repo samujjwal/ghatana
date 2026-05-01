@@ -1,18 +1,17 @@
-// @ts-nocheck
 // All tests skipped - incomplete feature
 import { render, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // We'll mock jotai's useAtom to provide a shared canvas state and a setter we can control.
-let mockCanvasState: any = null;
+let mockCanvasState: Record<string, unknown> | null = null;
 const mockSetCanvasState = vi.fn();
 
 vi.mock('jotai', async () => {
     const actual = await vi.importActual('jotai');
     return {
         ...actual,
-        useAtom: (_: unknown) => [mockCanvasState, mockSetCanvasState],
+        useAtom: () => [mockCanvasState, mockSetCanvasState],
     };
 });
 
@@ -49,18 +48,18 @@ describe('useCanvasScene integration - no ping-pong', () => {
         mockSetCanvasState.mockImplementation((arg: unknown) => {
             if (typeof arg === 'function') {
                 const prev = mockCanvasState;
-                const next = arg(prev);
+                const next = (arg as (prev: unknown) => unknown)(prev);
                 if (next !== prev) {
-                    mockCanvasState = next;
+                    mockCanvasState = next as Record<string, unknown> | null;
                     updateCount++;
                 }
             } else {
                 if (arg !== mockCanvasState) {
-                    mockCanvasState = arg;
+                    mockCanvasState = arg as Record<string, unknown> | null;
                     updateCount++;
                 }
             }
-            (mockSetCanvasState as unknown)._updateCount = updateCount;
+            (mockSetCanvasState as unknown as Record<string, unknown>)._updateCount = updateCount;
             return mockCanvasState;
         });
     });
@@ -72,14 +71,14 @@ describe('useCanvasScene integration - no ping-pong', () => {
         mockSetCanvasState((prev: unknown) => ({ ...prev }));
 
         // Record actual updates after external update
-        const callsAfterExternal = (mockSetCanvasState as unknown)._updateCount || 0;
+        const callsAfterExternal = (mockSetCanvasState as unknown as Record<string, unknown>)._updateCount || 0;
 
         // Now call handleNodesChange with an identical position (no-op)
         getByTestId('call-change').click();
 
         await waitFor(() => {
             // The hook should not make additional real changes (no-op)
-            const after = (mockSetCanvasState as unknown)._updateCount || 0;
+            const after = (mockSetCanvasState as unknown as Record<string, unknown>)._updateCount || 0;
             expect(after).toBe(callsAfterExternal);
         });
     });

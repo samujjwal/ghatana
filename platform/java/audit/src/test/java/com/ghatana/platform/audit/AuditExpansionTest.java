@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.audit;
@@ -30,12 +30,12 @@ class AuditExpansionTest extends EventloopTestBase {
     private InMemoryAuditQueryService queryService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        queryService = new InMemoryAuditQueryService(); // GH-90000
+    void setUp() { 
+        queryService = new InMemoryAuditQueryService(); 
     }
 
     // ============================================
-    // EVENT CREATION EXPANSION (4 tests) // GH-90000
+    // EVENT CREATION EXPANSION (4 tests) 
     // ============================================
 
     @Nested
@@ -44,31 +44,31 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Multiple audit events can be recorded")
-        void multipleEvents() { // GH-90000
-            runPromise(() -> { // GH-90000
-                AuditEvent event1 = AuditEvent.builder() // GH-90000
+        void multipleEvents() { 
+            runPromise(() -> { 
+                AuditEvent event1 = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("LOGIN")
                         .principal("user-1")
                         .resourceType("Session")
                         .resourceId("session-1")
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .success(true) 
+                        .build(); 
 
-                AuditEvent event2 = AuditEvent.builder() // GH-90000
+                AuditEvent event2 = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("LOGOUT")
                         .principal("user-1")
                         .resourceType("Session")
                         .resourceId("session-1")
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .success(true) 
+                        .build(); 
 
-                return queryService.record(event1) // GH-90000
-                        .then(() -> queryService.record(event2)) // GH-90000
+                return queryService.record(event1) 
+                        .then(() -> queryService.record(event2)) 
                         .then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(2); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(2); 
                             return null;
                         });
             });
@@ -76,36 +76,36 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Events with various timestamps")
-        void eventsWithTimestamps() { // GH-90000
-            runPromise(() -> { // GH-90000
-                Instant baseTime = Instant.now(); // GH-90000
+        void eventsWithTimestamps() { 
+            runPromise(() -> { 
+                Instant baseTime = Instant.now(); 
 
-                AuditEvent event1 = AuditEvent.builder() // GH-90000
+                AuditEvent event1 = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("ACTION_1")
                         .principal("user")
                         .resourceType("Resource")
                         .resourceId("res-1")
-                        .timestamp(baseTime) // GH-90000
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .timestamp(baseTime) 
+                        .success(true) 
+                        .build(); 
 
-                AuditEvent event2 = AuditEvent.builder() // GH-90000
+                AuditEvent event2 = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("ACTION_2")
                         .principal("user")
                         .resourceType("Resource")
                         .resourceId("res-2")
-                        .timestamp(baseTime.plus(1, ChronoUnit.SECONDS)) // GH-90000
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .timestamp(baseTime.plus(1, ChronoUnit.SECONDS)) 
+                        .success(true) 
+                        .build(); 
 
-                return queryService.record(event1) // GH-90000
-                        .then(() -> queryService.record(event2)) // GH-90000
+                return queryService.record(event1) 
+                        .then(() -> queryService.record(event2)) 
                         .then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(2); // GH-90000
-                            assertThat(events.get(0).getTimestamp()).isBefore(events.get(1).getTimestamp()); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(2); 
+                            assertThat(events.get(0).getTimestamp()).isBefore(events.get(1).getTimestamp()); 
                             return null;
                         });
             });
@@ -113,24 +113,24 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Many rapid sequential events")
-        void sequentialEvents() { // GH-90000
-            runPromise(() -> { // GH-90000
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
-                for (int i = 0; i < 50; i++) { // GH-90000
+        void sequentialEvents() { 
+            runPromise(() -> { 
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
+                for (int i = 0; i < 50; i++) { 
                     final int idx = i;
-                    AuditEvent event = AuditEvent.builder() // GH-90000
+                    AuditEvent event = AuditEvent.builder() 
                             .tenantId("tenant-1")
-                            .eventType("ACTION_" + idx) // GH-90000
-                            .principal("user-" + (idx % 5)) // GH-90000
+                            .eventType("ACTION_" + idx) 
+                            .principal("user-" + (idx % 5)) 
                             .resourceType("Resource")
-                            .resourceId("res-" + idx) // GH-90000
-                            .success(true) // GH-90000
-                            .build(); // GH-90000
-                    result = result.then(() -> queryService.record(event)); // GH-90000
+                            .resourceId("res-" + idx) 
+                            .success(true) 
+                            .build(); 
+                    result = result.then(() -> queryService.record(event)); 
                 }
                 return result.then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(50); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(50); 
                             return null;
                         });
             });
@@ -138,40 +138,40 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Multi-tenant event isolation")
-        void multiTenantIsolation() { // GH-90000
-            runPromise(() -> { // GH-90000
-                AuditEvent event1 = AuditEvent.builder() // GH-90000
+        void multiTenantIsolation() { 
+            runPromise(() -> { 
+                AuditEvent event1 = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("LOGIN")
                         .principal("user")
                         .resourceType("Session")
                         .resourceId("session-1")
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .success(true) 
+                        .build(); 
 
-                AuditEvent event2 = AuditEvent.builder() // GH-90000
+                AuditEvent event2 = AuditEvent.builder() 
                         .tenantId("tenant-2")
                         .eventType("LOGIN")
                         .principal("user")
                         .resourceType("Session")
                         .resourceId("session-2")
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .success(true) 
+                        .build(); 
 
-                return queryService.record(event1) // GH-90000
-                        .then(() -> queryService.record(event2)) // GH-90000
+                return queryService.record(event1) 
+                        .then(() -> queryService.record(event2)) 
                         .then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(t1Events -> { // GH-90000
-                            assertThat(t1Events).hasSize(1); // GH-90000
+                        .map(t1Events -> { 
+                            assertThat(t1Events).hasSize(1); 
                             return queryService.findByTenantId("tenant-2")
-                                    .map(t2Events -> { // GH-90000
-                                        assertThat(t2Events).hasSize(1); // GH-90000
+                                    .map(t2Events -> { 
+                                        assertThat(t2Events).hasSize(1); 
                                         return null;
                                     });
                         })
                         .then(v -> queryService.findByTenantId("nonexistent"))
-                        .map(emptyEvents -> { // GH-90000
-                            assertThat(emptyEvents).isEmpty(); // GH-90000
+                        .map(emptyEvents -> { 
+                            assertThat(emptyEvents).isEmpty(); 
                             return null;
                         });
             });
@@ -179,7 +179,7 @@ class AuditExpansionTest extends EventloopTestBase {
     }
 
     // ============================================
-    // EVENT TYPES EXPANSION (3 tests) // GH-90000
+    // EVENT TYPES EXPANSION (3 tests) 
     // ============================================
 
     @Nested
@@ -188,26 +188,26 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Various event types")
-        void variousEventTypes() { // GH-90000
-            runPromise(() -> { // GH-90000
+        void variousEventTypes() { 
+            runPromise(() -> { 
                 String[] eventTypes = {"LOGIN", "LOGOUT", "VIEW", "EDIT", "DELETE", "EXPORT", "IMPORT"};
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
 
-                for (String eventType : eventTypes) { // GH-90000
-                    AuditEvent event = AuditEvent.builder() // GH-90000
+                for (String eventType : eventTypes) { 
+                    AuditEvent event = AuditEvent.builder() 
                             .tenantId("tenant-1")
-                            .eventType(eventType) // GH-90000
+                            .eventType(eventType) 
                             .principal("user")
                             .resourceType("Resource")
                             .resourceId("res-1")
-                            .success(true) // GH-90000
-                            .build(); // GH-90000
-                    result = result.then(() -> queryService.record(event)); // GH-90000
+                            .success(true) 
+                            .build(); 
+                    result = result.then(() -> queryService.record(event)); 
                 }
 
                 return result.then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(7); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(7); 
                             return null;
                         });
             });
@@ -215,35 +215,35 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Events with various success flags")
-        void successFlags() { // GH-90000
-            runPromise(() -> { // GH-90000
-                AuditEvent success = AuditEvent.builder() // GH-90000
+        void successFlags() { 
+            runPromise(() -> { 
+                AuditEvent success = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("ACTION")
                         .principal("user")
                         .resourceType("Resource")
                         .resourceId("res-1")
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .success(true) 
+                        .build(); 
 
-                AuditEvent failure = AuditEvent.builder() // GH-90000
+                AuditEvent failure = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("ACTION")
                         .principal("user")
                         .resourceType("Resource")
                         .resourceId("res-2")
-                        .success(false) // GH-90000
-                        .build(); // GH-90000
+                        .success(false) 
+                        .build(); 
 
-                return queryService.record(success) // GH-90000
-                        .then(() -> queryService.record(failure)) // GH-90000
+                return queryService.record(success) 
+                        .then(() -> queryService.record(failure)) 
                         .then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(2); // GH-90000
-                            long successCount = events.stream().filter(AuditEvent::getSuccess).count(); // GH-90000
-                            long failureCount = events.stream().filter(e -> !e.getSuccess()).count(); // GH-90000
-                            assertThat(successCount).isEqualTo(1); // GH-90000
-                            assertThat(failureCount).isEqualTo(1); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(2); 
+                            long successCount = events.stream().filter(AuditEvent::getSuccess).count(); 
+                            long failureCount = events.stream().filter(e -> !e.getSuccess()).count(); 
+                            assertThat(successCount).isEqualTo(1); 
+                            assertThat(failureCount).isEqualTo(1); 
                             return null;
                         });
             });
@@ -251,26 +251,26 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Many different principals")
-        void manyPrincipals() { // GH-90000
-            runPromise(() -> { // GH-90000
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
+        void manyPrincipals() { 
+            runPromise(() -> { 
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
 
-                for (int i = 0; i < 30; i++) { // GH-90000
+                for (int i = 0; i < 30; i++) { 
                     final int idx = i;
-                    AuditEvent event = AuditEvent.builder() // GH-90000
+                    AuditEvent event = AuditEvent.builder() 
                             .tenantId("tenant-1")
                             .eventType("ACTION")
-                            .principal("user-" + idx) // GH-90000
+                            .principal("user-" + idx) 
                             .resourceType("Resource")
-                            .resourceId("res-" + idx) // GH-90000
-                            .success(true) // GH-90000
-                            .build(); // GH-90000
-                    result = result.then(() -> queryService.record(event)); // GH-90000
+                            .resourceId("res-" + idx) 
+                            .success(true) 
+                            .build(); 
+                    result = result.then(() -> queryService.record(event)); 
                 }
 
                 return result.then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(30); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(30); 
                             return null;
                         });
             });
@@ -278,7 +278,7 @@ class AuditExpansionTest extends EventloopTestBase {
     }
 
     // ============================================
-    // EDGE CASES (2 tests) // GH-90000
+    // EDGE CASES (2 tests) 
     // ============================================
 
     @Nested
@@ -287,26 +287,26 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Very long event details and IDs")
-        void veryLongDetails() { // GH-90000
-            runPromise(() -> { // GH-90000
-                String longId = "id-" + "x".repeat(500); // GH-90000
-                String longPrincipal = "user-" + "a".repeat(200); // GH-90000
+        void veryLongDetails() { 
+            runPromise(() -> { 
+                String longId = "id-" + "x".repeat(500); 
+                String longPrincipal = "user-" + "a".repeat(200); 
 
-                AuditEvent event = AuditEvent.builder() // GH-90000
+                AuditEvent event = AuditEvent.builder() 
                         .tenantId("tenant-1")
                         .eventType("ACTION")
-                        .principal(longPrincipal) // GH-90000
+                        .principal(longPrincipal) 
                         .resourceType("Resource")
-                        .resourceId(longId) // GH-90000
-                        .detail("long-key", "value-" + "y".repeat(1000)) // GH-90000
-                        .success(true) // GH-90000
-                        .build(); // GH-90000
+                        .resourceId(longId) 
+                        .detail("long-key", "value-" + "y".repeat(1000)) 
+                        .success(true) 
+                        .build(); 
 
-                return queryService.record(event) // GH-90000
+                return queryService.record(event) 
                         .then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(1); // GH-90000
-                            assertThat(events.get(0).getPrincipal()).isEqualTo(longPrincipal); // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(1); 
+                            assertThat(events.get(0).getPrincipal()).isEqualTo(longPrincipal); 
                             return null;
                         });
             });
@@ -314,28 +314,28 @@ class AuditExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Concurrent event recording")
-        void concurrentRecording() { // GH-90000
-            runPromise(() -> { // GH-90000
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
+        void concurrentRecording() { 
+            runPromise(() -> { 
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
 
-                for (int i = 0; i < 25; i++) { // GH-90000
+                for (int i = 0; i < 25; i++) { 
                     final int idx = i;
-                    AuditEvent event = AuditEvent.builder() // GH-90000
+                    AuditEvent event = AuditEvent.builder() 
                             .tenantId("tenant-1")
-                            .eventType("CONCURRENT_EVENT_" + idx) // GH-90000
-                            .principal("user-" + (idx % 5)) // GH-90000
+                            .eventType("CONCURRENT_EVENT_" + idx) 
+                            .principal("user-" + (idx % 5)) 
                             .resourceType("Resource")
-                            .resourceId("res-" + idx) // GH-90000
-                            .success(idx % 3 == 0) // GH-90000
-                            .build(); // GH-90000
-                    result = result.then(() -> queryService.record(event)); // GH-90000
+                            .resourceId("res-" + idx) 
+                            .success(idx % 3 == 0) 
+                            .build(); 
+                    result = result.then(() -> queryService.record(event)); 
                 }
 
                 return result.then(() -> queryService.findByTenantId("tenant-1"))
-                        .map(events -> { // GH-90000
-                            assertThat(events).hasSize(25); // GH-90000
-                            long successCount = events.stream().filter(AuditEvent::getSuccess).count(); // GH-90000
-                            assertThat(successCount).isEqualTo(9); // 0, 3, 6, 9, 12, 15, 18, 21, 24 // GH-90000
+                        .map(events -> { 
+                            assertThat(events).hasSize(25); 
+                            long successCount = events.stream().filter(AuditEvent::getSuccess).count(); 
+                            assertThat(successCount).isEqualTo(9); // 0, 3, 6, 9, 12, 15, 18, 21, 24 
                             return null;
                         });
             });

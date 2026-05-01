@@ -18,6 +18,15 @@ import { Navigate } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
+import {
+  isAgentCatalogSurfaceEnabled,
+  isAlertsSurfaceEnabled,
+  isContextSurfaceEnabled,
+  isEntityBrowserSurfaceEnabled,
+  isFabricSurfaceEnabled,
+  isMemorySurfaceEnabled,
+  isSettingsSurfaceEnabled,
+} from './lib/feature-gates';
 
 /** Warn in dev when a lazy chunk takes longer than this to load. */
 const SLOW_LOAD_WARN_MS = 3_000;
@@ -280,7 +289,7 @@ export const routes: RouteObject[] = [
       // Alerts - operator-facing alert triage console (restored as canonical route)
       {
         path: 'alerts',
-        element: withSuspense(AlertsPage),
+        element: isAlertsSurfaceEnabled() ? withSuspense(AlertsPage) : withSuspense(NotFound),
       },
 
       // Operations Console - Operator-facing diagnostics and tools
@@ -302,33 +311,33 @@ export const routes: RouteObject[] = [
       // Memory Plane Viewer — restored as canonical route
       {
         path: 'memory',
-        element: withSuspense(MemoryPlaneViewerPage),
+        element: isMemorySurfaceEnabled() ? withSuspense(MemoryPlaneViewerPage) : withSuspense(NotFound),
       },
       // Entity Browser — restored as canonical route
       {
         path: 'entities',
-        element: withSuspense(EntityBrowserPage),
+        element: isEntityBrowserSurfaceEnabled() ? withSuspense(EntityBrowserPage) : withSuspense(NotFound),
       },
       // Context Explorer — restored as canonical route
       {
         path: 'context',
-        element: withSuspense(ContextExplorerPage),
+        element: isContextSurfaceEnabled() ? withSuspense(ContextExplorerPage) : withSuspense(NotFound),
       },
       // Data Fabric — restored as canonical operator-facing route
       {
         path: 'fabric',
-        element: withSuspense(DataFabricPage),
+        element: isFabricSurfaceEnabled() ? withSuspense(DataFabricPage) : withSuspense(NotFound),
       },
       // Agent Catalog — restored as canonical operator-facing route
       {
         path: 'agents',
-        element: withSuspense(AgentPluginManagerPage),
+        element: isAgentCatalogSurfaceEnabled() ? withSuspense(AgentPluginManagerPage) : withSuspense(NotFound),
       },
 
       // Settings
       {
         path: 'settings',
-        element: withSuspense(SettingsPage),
+        element: isSettingsSurfaceEnabled() ? withSuspense(SettingsPage) : withSuspense(NotFound),
       },
 
       // Plugins

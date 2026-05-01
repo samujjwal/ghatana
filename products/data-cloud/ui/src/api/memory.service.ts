@@ -10,6 +10,11 @@
  */
 
 import { apiClient } from '../lib/api/client';
+import { isMemorySurfaceEnabled } from '../lib/feature-gates';
+import {
+  MEMORY_SURFACE_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from '../lib/runtime-boundaries';
 import {
   AgentMemorySummaryResponseSchema,
   LearningStatusResponseSchema,
@@ -44,6 +49,12 @@ export interface MemoryConsolidationStatus {
   nextScheduled?: string;
 }
 
+function assertMemorySurfaceEnabled(): void {
+  if (!isMemorySurfaceEnabled()) {
+    throw createRuntimeBoundaryError(MEMORY_SURFACE_BOUNDARY_MESSAGE);
+  }
+}
+
 // =============================================================================
 // Client
 // =============================================================================
@@ -68,6 +79,7 @@ export class MemoryService {
 
   /** Get memory summary (count per tier) for an agent */
   async getAgentMemorySummary(agentId: string, tenantId?: string): Promise<Record<string, number>> {
+    assertMemorySurfaceEnabled();
     const rawResponse = await apiClient.get(
       `/memory/${agentId}`,
       { params: tenantId ? { tenantId } : {} },
@@ -78,6 +90,7 @@ export class MemoryService {
 
   /** List memory items for an agent by tier */
   async listMemoryByTier(agentId: string, tier: MemoryType, params: { limit?: number; offset?: number; tenantId?: string } = {}): Promise<MemoryItem[]> {
+    assertMemorySurfaceEnabled();
     const rawResponse = await apiClient.get(
       `/memory/${agentId}/${tier.toLowerCase()}`,
       { params },
@@ -88,6 +101,7 @@ export class MemoryService {
 
   /** List memory items for an agent/tenant (all tiers) */
   async listMemoryItems(params: MemorySearchParams = {}): Promise<MemoryItem[]> {
+    assertMemorySurfaceEnabled();
     const { agentId, type, ...rest } = params;
     if (agentId && type) {
       return this.listMemoryByTier(agentId, type, rest);
@@ -104,16 +118,19 @@ export class MemoryService {
 
   /** Delete a memory item */
   async deleteMemoryItem(agentId: string, memoryId: string): Promise<void> {
+    assertMemorySurfaceEnabled();
     await apiClient.delete<void>(`/memory/${agentId}/${memoryId}`);
   }
 
   /** Mark a memory item as retained (bypass decay) */
   async retainMemoryItem(agentId: string, memoryId: string): Promise<void> {
+    assertMemorySurfaceEnabled();
     await apiClient.put<void>(`/memory/${agentId}/${memoryId}/retain`, {});
   }
 
   /** Semantic search across agent memory */
   async searchMemory(agentId: string, query: string, tenantId?: string): Promise<MemoryItem[]> {
+    assertMemorySurfaceEnabled();
     const request = MemorySearchRequestSchema.parse({ query });
     const rawResponse = await apiClient.post(
       `/memory/${agentId}/search`,
@@ -126,6 +143,7 @@ export class MemoryService {
 
   /** Get consolidation status */
   async getConsolidationStatus(tenantId?: string): Promise<MemoryConsolidationStatus> {
+    assertMemorySurfaceEnabled();
     const rawResponse = await apiClient.get(
       '/learning/status',
       { params: tenantId ? { tenantId } : {} },

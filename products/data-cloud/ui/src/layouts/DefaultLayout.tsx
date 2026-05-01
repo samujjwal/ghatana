@@ -55,6 +55,7 @@ import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
 import { getDiscoverableRoutes } from '../lib/routing/RouteCapabilityRegistry';
 import { OperationsProvider } from '../contexts/OperationsContext';
 import { ActiveOperationsBar } from '../components/common/ActiveOperationsBar';
+import { isAlertsSurfaceEnabled, isFabricSurfaceEnabled } from '../lib/feature-gates';
 
 /**
  * Navigation section configuration
@@ -175,6 +176,13 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
  */
 export function getNavigationSectionsForShellRole(role: ShellRole): NavSection[] {
     const accessiblePaths = new Set(getDiscoverableRoutes(role).map((r) => r.path));
+
+    if (!isAlertsSurfaceEnabled()) {
+        accessiblePaths.delete('/alerts');
+    }
+    if (!isFabricSurfaceEnabled()) {
+        accessiblePaths.delete('/fabric');
+    }
 
     return navSections
         .map((section: NavSection) => ({

@@ -23,10 +23,10 @@ class OperatorEnumsTest {
 
         @Test
         @DisplayName("should have all expected states")
-        void shouldHaveAllStates() { // GH-90000
-            assertThat(OperatorState.values()) // GH-90000
-                    .extracting(OperatorState::name) // GH-90000
-                    .containsExactlyInAnyOrder("CREATED", "INITIALIZED", "RUNNING", "STOPPED", "FAILED"); // GH-90000
+        void shouldHaveAllStates() { 
+            assertThat(OperatorState.values()) 
+                    .extracting(OperatorState::name) 
+                    .containsExactlyInAnyOrder("CREATED", "INITIALIZED", "RUNNING", "STOPPED", "FAILED"); 
         }
     }
 
@@ -36,10 +36,10 @@ class OperatorEnumsTest {
 
         @Test
         @DisplayName("should have all expected types")
-        void shouldHaveAllTypes() { // GH-90000
-            assertThat(OperatorType.values()) // GH-90000
-                    .extracting(OperatorType::name) // GH-90000
-                    .containsExactlyInAnyOrder("STREAM", "PATTERN", "LEARNING"); // GH-90000
+        void shouldHaveAllTypes() { 
+            assertThat(OperatorType.values()) 
+                    .extracting(OperatorType::name) 
+                    .containsExactlyInAnyOrder("STREAM", "PATTERN", "LEARNING"); 
         }
     }
 }

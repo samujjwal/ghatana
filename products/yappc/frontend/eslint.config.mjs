@@ -239,7 +239,7 @@ export default tseslint.config(
           alphabetize: { order: 'asc', caseInsensitive: true },
           pathGroups: [
             {
-              pattern: '@yappc/**',
+              pattern: '@ghatana/yappc-*',
               group: 'internal',
               position: 'before',
             },
@@ -335,9 +335,9 @@ export default tseslint.config(
                 '@yappc/config-hooks has been deleted. Use useConfigData from libs/config.',
             },
             {
-              group: ['@yappc/development-ui', '@yappc/development-ui/*'],
+              group: ['@ghatana/yappc-development-ui', '@ghatana/yappc-development-ui/*'],
               message:
-                '@yappc/development-ui is deprecated (F-Y036). Migrate: BurndownChart / StoryCard / VelocityChart → @ghatana/design-system or @yappc/ui. Do not add new imports.',
+                '@ghatana/yappc-development-ui is deprecated (F-Y036). Migrate: BurndownChart / StoryCard / VelocityChart → @ghatana/design-system or yappc-ui. Do not add new imports.',
             },
             {
               group: ['@yappc/initialization-ui', '@yappc/initialization-ui/*'],

@@ -180,13 +180,30 @@ class DataCloudHttpServerPluginInstallTest {
     class UpgradePluginTests {
 
         @Test
-        @DisplayName("reloads runtime plugins without restarting the launcher")
-        void upgradePlugin_reloadRuntimePlugin() throws Exception { // GH-90000
-            startServer(); // GH-90000
+        @DisplayName("returns 501 by default when pluginUpgradeEnabled is false")
+        void upgradePlugin_disabledByDefault_returns501() throws Exception {
+            startServer(); // pluginUpgradeEnabled defaults to false
 
             HttpResponse<String> response = post("/api/v1/plugins/workflow-execution/upgrade");
 
-            assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode()).isEqualTo(501);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = mapper.readValue(response.body(), Map.class);
+            assertThat(body).containsKey("error");
+        }
+
+        @Test
+        @DisplayName("returns 404 for unknown plugin when pluginUpgradeEnabled is true")
+        void upgradePlugin_unknownPlugin_enabledMode_returns404() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                    .withMetricsCollector(mockMetrics)
+                    .withPluginUpgradeEnabled(true);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/upgrade");
+
+            assertThat(response.statusCode()).isEqualTo(404);
         }
     }
 }

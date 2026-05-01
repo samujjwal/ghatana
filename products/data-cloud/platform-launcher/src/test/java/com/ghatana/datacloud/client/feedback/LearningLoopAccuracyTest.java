@@ -385,7 +385,8 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
 
             LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
 
-            assertThat(report.getDuration()).isPositive(); // GH-90000
+            // Fast local execution may complete within the same clock tick and report 0ms.
+            assertThat(report.getDuration().toMillis()).isGreaterThanOrEqualTo(0L); // GH-90000
             assertThat(report.getDuration().toMillis()).isLessThan(Duration.ofSeconds(30).toMillis()); // GH-90000 - relaxed timeout
         }
 

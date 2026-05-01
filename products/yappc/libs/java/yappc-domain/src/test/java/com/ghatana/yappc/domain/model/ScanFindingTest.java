@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("ScanFinding Domain Model Tests")
 class ScanFindingTest {
 
-    private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
-    private static final UUID SCAN_JOB_ID = UUID.randomUUID(); // GH-90000
+    private static final UUID WORKSPACE_ID = UUID.randomUUID(); 
+    private static final UUID SCAN_JOB_ID = UUID.randomUUID(); 
     private static final String FINDING_TYPE = "VULNERABILITY";
     private static final String SEVERITY = "HIGH";
     private static final String TITLE = "SQL Injection in UserController";
@@ -33,43 +33,43 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("of() creates finding with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // WHEN
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); // GH-90000
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); 
 
             // THEN
-            assertThat(finding.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(finding.getScanJobId()).isEqualTo(SCAN_JOB_ID); // GH-90000
-            assertThat(finding.getFindingType()).isEqualTo(FINDING_TYPE); // GH-90000
-            assertThat(finding.getSeverity()).isEqualTo(SEVERITY); // GH-90000
-            assertThat(finding.getTitle()).isEqualTo(TITLE); // GH-90000
+            assertThat(finding.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(finding.getScanJobId()).isEqualTo(SCAN_JOB_ID); 
+            assertThat(finding.getFindingType()).isEqualTo(FINDING_TYPE); 
+            assertThat(finding.getSeverity()).isEqualTo(SEVERITY); 
+            assertThat(finding.getTitle()).isEqualTo(TITLE); 
             assertThat(finding.getStatus()).isEqualTo("OPEN");
-            assertThat(finding.isFalsePositive()).isFalse(); // GH-90000
-            assertThat(finding.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(finding.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(finding.isFalsePositive()).isFalse(); 
+            assertThat(finding.getCreatedAt()).isNotNull(); 
+            assertThat(finding.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException for null required fields")
-        void ofThrowsForNullRequiredFields() { // GH-90000
-            assertThatThrownBy(() -> ScanFinding.of(null, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsForNullRequiredFields() { 
+            assertThatThrownBy(() -> ScanFinding.of(null, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
 
-            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, null, FINDING_TYPE, SEVERITY, TITLE)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, null, FINDING_TYPE, SEVERITY, TITLE)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("scanJobId must not be null");
 
-            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, null, SEVERITY, TITLE)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, null, SEVERITY, TITLE)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("findingType must not be null");
 
-            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, null, TITLE)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, null, TITLE)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("severity must not be null");
 
-            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("title must not be null");
         }
     }
@@ -80,47 +80,47 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("resolve() sets status to RESOLVED")
-        void resolveSetsStatusResolved() { // GH-90000
+        void resolveSetsStatusResolved() { 
             // GIVEN
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); // GH-90000
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); 
             assertThat(finding.getStatus()).isEqualTo("OPEN");
 
             // WHEN
-            ScanFinding result = finding.resolve(); // GH-90000
+            ScanFinding result = finding.resolve(); 
 
             // THEN
-            assertThat(result).isSameAs(finding); // GH-90000
+            assertThat(result).isSameAs(finding); 
             assertThat(finding.getStatus()).isEqualTo("RESOLVED");
         }
 
         @Test
         @DisplayName("markFalsePositive() sets falsePositive flag and status")
-        void markFalsePositiveSetsFlags() { // GH-90000
+        void markFalsePositiveSetsFlags() { 
             // GIVEN
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); // GH-90000
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); 
 
             // WHEN
-            ScanFinding result = finding.markFalsePositive(); // GH-90000
+            ScanFinding result = finding.markFalsePositive(); 
 
             // THEN
-            assertThat(result).isSameAs(finding); // GH-90000
-            assertThat(finding.isFalsePositive()).isTrue(); // GH-90000
+            assertThat(result).isSameAs(finding); 
+            assertThat(finding.isFalsePositive()).isTrue(); 
             assertThat(finding.getStatus()).isEqualTo("FALSE_POSITIVE");
         }
 
         @Test
         @DisplayName("transitions update updatedAt")
-        void transitionsUpdateTimestamp() throws InterruptedException { // GH-90000
+        void transitionsUpdateTimestamp() throws InterruptedException { 
             // GIVEN
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); // GH-90000
-            Instant original = finding.getUpdatedAt(); // GH-90000
-            Thread.sleep(10); // GH-90000
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, SEVERITY, TITLE); 
+            Instant original = finding.getUpdatedAt(); 
+            Thread.sleep(10); 
 
             // WHEN
-            finding.resolve(); // GH-90000
+            finding.resolve(); 
 
             // THEN
-            assertThat(finding.getUpdatedAt()).isAfter(original); // GH-90000
+            assertThat(finding.getUpdatedAt()).isAfter(original); 
         }
     }
 
@@ -130,40 +130,40 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("isCriticalOrHigh() returns true for CRITICAL")
-        void isCriticalOrHighReturnsTrueForCritical() { // GH-90000
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "CRITICAL", TITLE); // GH-90000
-            assertThat(finding.isCriticalOrHigh()).isTrue(); // GH-90000
+        void isCriticalOrHighReturnsTrueForCritical() { 
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "CRITICAL", TITLE); 
+            assertThat(finding.isCriticalOrHigh()).isTrue(); 
         }
 
         @Test
         @DisplayName("isCriticalOrHigh() returns true for HIGH")
-        void isCriticalOrHighReturnsTrueForHigh() { // GH-90000
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "HIGH", TITLE); // GH-90000
-            assertThat(finding.isCriticalOrHigh()).isTrue(); // GH-90000
+        void isCriticalOrHighReturnsTrueForHigh() { 
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "HIGH", TITLE); 
+            assertThat(finding.isCriticalOrHigh()).isTrue(); 
         }
 
         @Test
         @DisplayName("isCriticalOrHigh() returns false for MEDIUM")
-        void isCriticalOrHighReturnsFalseForMedium() { // GH-90000
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "MEDIUM", TITLE); // GH-90000
-            assertThat(finding.isCriticalOrHigh()).isFalse(); // GH-90000
+        void isCriticalOrHighReturnsFalseForMedium() { 
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "MEDIUM", TITLE); 
+            assertThat(finding.isCriticalOrHigh()).isFalse(); 
         }
 
         @Test
         @DisplayName("isCriticalOrHigh() returns false for LOW")
-        void isCriticalOrHighReturnsFalseForLow() { // GH-90000
-            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "LOW", TITLE); // GH-90000
-            assertThat(finding.isCriticalOrHigh()).isFalse(); // GH-90000
+        void isCriticalOrHighReturnsFalseForLow() { 
+            ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "LOW", TITLE); 
+            assertThat(finding.isCriticalOrHigh()).isFalse(); 
         }
 
         @Test
         @DisplayName("isCriticalOrHigh() is case-insensitive")
-        void isCriticalOrHighIsCaseInsensitive() { // GH-90000
-            ScanFinding finding1 = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "critical", TITLE); // GH-90000
-            ScanFinding finding2 = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "High", TITLE); // GH-90000
+        void isCriticalOrHighIsCaseInsensitive() { 
+            ScanFinding finding1 = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "critical", TITLE); 
+            ScanFinding finding2 = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, FINDING_TYPE, "High", TITLE); 
 
-            assertThat(finding1.isCriticalOrHigh()).isTrue(); // GH-90000
-            assertThat(finding2.isCriticalOrHigh()).isTrue(); // GH-90000
+            assertThat(finding1.isCriticalOrHigh()).isTrue(); 
+            assertThat(finding2.isCriticalOrHigh()).isTrue(); 
         }
     }
 
@@ -173,66 +173,66 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("builder creates finding with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            ScanFinding finding = ScanFinding.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .scanJobId(SCAN_JOB_ID) // GH-90000
-                    .findingType(FINDING_TYPE) // GH-90000
-                    .severity(SEVERITY) // GH-90000
-                    .title(TITLE) // GH-90000
+            ScanFinding finding = ScanFinding.builder() 
+                    .id(id) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .scanJobId(SCAN_JOB_ID) 
+                    .findingType(FINDING_TYPE) 
+                    .severity(SEVERITY) 
+                    .title(TITLE) 
                     .description("Detailed description of the SQL injection vulnerability")
                     .remediation("Use parameterized queries instead of string concatenation")
                     .status("OPEN")
-                    .falsePositive(false) // GH-90000
+                    .falsePositive(false) 
                     .cweId("CWE-89")
                     .cveId("CVE-2024-1234")
-                    .cvssScore(9.8) // GH-90000
-                    .createdAt(now) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .version(1) // GH-90000
-                    .build(); // GH-90000
+                    .cvssScore(9.8) 
+                    .createdAt(now) 
+                    .updatedAt(now) 
+                    .version(1) 
+                    .build(); 
 
             // THEN
-            assertThat(finding.getId()).isEqualTo(id); // GH-90000
+            assertThat(finding.getId()).isEqualTo(id); 
             assertThat(finding.getCweId()).isEqualTo("CWE-89");
             assertThat(finding.getCveId()).isEqualTo("CVE-2024-1234");
-            assertThat(finding.getCvssScore()).isEqualTo(9.8); // GH-90000
+            assertThat(finding.getCvssScore()).isEqualTo(9.8); 
             assertThat(finding.getDescription()).contains("SQL injection");
             assertThat(finding.getRemediation()).contains("parameterized queries");
         }
 
         @Test
         @DisplayName("builder defaults status to OPEN")
-        void builderDefaultsStatusToOpen() { // GH-90000
-            ScanFinding finding = ScanFinding.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .scanJobId(SCAN_JOB_ID) // GH-90000
-                    .findingType(FINDING_TYPE) // GH-90000
-                    .severity(SEVERITY) // GH-90000
-                    .title(TITLE) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsStatusToOpen() { 
+            ScanFinding finding = ScanFinding.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .scanJobId(SCAN_JOB_ID) 
+                    .findingType(FINDING_TYPE) 
+                    .severity(SEVERITY) 
+                    .title(TITLE) 
+                    .build(); 
 
             assertThat(finding.getStatus()).isEqualTo("OPEN");
         }
 
         @Test
         @DisplayName("builder defaults falsePositive to false")
-        void builderDefaultsFalsePositiveToFalse() { // GH-90000
-            ScanFinding finding = ScanFinding.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .scanJobId(SCAN_JOB_ID) // GH-90000
-                    .findingType(FINDING_TYPE) // GH-90000
-                    .severity(SEVERITY) // GH-90000
-                    .title(TITLE) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsFalsePositiveToFalse() { 
+            ScanFinding finding = ScanFinding.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .scanJobId(SCAN_JOB_ID) 
+                    .findingType(FINDING_TYPE) 
+                    .severity(SEVERITY) 
+                    .title(TITLE) 
+                    .build(); 
 
-            assertThat(finding.isFalsePositive()).isFalse(); // GH-90000
+            assertThat(finding.isFalsePositive()).isFalse(); 
         }
     }
 
@@ -242,22 +242,22 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
             ScanFinding finding1 = ScanFinding.builder().id(id).severity("HIGH").build();
             ScanFinding finding2 = ScanFinding.builder().id(id).severity("LOW").build();
 
-            assertThat(finding1).isEqualTo(finding2); // GH-90000
-            assertThat(finding1.hashCode()).isEqualTo(finding2.hashCode()); // GH-90000
+            assertThat(finding1).isEqualTo(finding2); 
+            assertThat(finding1.hashCode()).isEqualTo(finding2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            ScanFinding finding1 = ScanFinding.builder().id(UUID.randomUUID()).build(); // GH-90000
-            ScanFinding finding2 = ScanFinding.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            ScanFinding finding1 = ScanFinding.builder().id(UUID.randomUUID()).build(); 
+            ScanFinding finding2 = ScanFinding.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(finding1).isNotEqualTo(finding2); // GH-90000
+            assertThat(finding1).isNotEqualTo(finding2); 
         }
     }
 
@@ -267,12 +267,12 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("can set various finding types")
-        void canSetVariousFindingTypes() { // GH-90000
+        void canSetVariousFindingTypes() { 
             String[] types = {"VULNERABILITY", "CODE_SMELL", "BUG", "SECURITY_HOTSPOT", "DEPENDENCY"};
 
-            for (String type : types) { // GH-90000
-                ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, type, SEVERITY, TITLE); // GH-90000
-                assertThat(finding.getFindingType()).isEqualTo(type); // GH-90000
+            for (String type : types) { 
+                ScanFinding finding = ScanFinding.of(WORKSPACE_ID, SCAN_JOB_ID, type, SEVERITY, TITLE); 
+                assertThat(finding.getFindingType()).isEqualTo(type); 
             }
         }
     }
@@ -283,47 +283,47 @@ class ScanFindingTest {
 
         @Test
         @DisplayName("can store CVE identifiers")
-        void canStoreCveIdentifiers() { // GH-90000
-            ScanFinding finding = ScanFinding.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .scanJobId(SCAN_JOB_ID) // GH-90000
-                    .findingType(FINDING_TYPE) // GH-90000
-                    .severity(SEVERITY) // GH-90000
-                    .title(TITLE) // GH-90000
+        void canStoreCveIdentifiers() { 
+            ScanFinding finding = ScanFinding.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .scanJobId(SCAN_JOB_ID) 
+                    .findingType(FINDING_TYPE) 
+                    .severity(SEVERITY) 
+                    .title(TITLE) 
                     .cveId("CVE-2024-12345")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(finding.getCveId()).isEqualTo("CVE-2024-12345");
         }
 
         @Test
         @DisplayName("can store CWE identifiers")
-        void canStoreCweIdentifiers() { // GH-90000
-            ScanFinding finding = ScanFinding.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .scanJobId(SCAN_JOB_ID) // GH-90000
-                    .findingType(FINDING_TYPE) // GH-90000
-                    .severity(SEVERITY) // GH-90000
-                    .title(TITLE) // GH-90000
+        void canStoreCweIdentifiers() { 
+            ScanFinding finding = ScanFinding.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .scanJobId(SCAN_JOB_ID) 
+                    .findingType(FINDING_TYPE) 
+                    .severity(SEVERITY) 
+                    .title(TITLE) 
                     .cweId("CWE-79")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(finding.getCweId()).isEqualTo("CWE-79");
         }
 
         @Test
         @DisplayName("can store CVSS scores")
-        void canStoreCvssScores() { // GH-90000
-            ScanFinding finding = ScanFinding.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .scanJobId(SCAN_JOB_ID) // GH-90000
-                    .findingType(FINDING_TYPE) // GH-90000
-                    .severity(SEVERITY) // GH-90000
-                    .title(TITLE) // GH-90000
-                    .cvssScore(7.5) // GH-90000
-                    .build(); // GH-90000
+        void canStoreCvssScores() { 
+            ScanFinding finding = ScanFinding.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .scanJobId(SCAN_JOB_ID) 
+                    .findingType(FINDING_TYPE) 
+                    .severity(SEVERITY) 
+                    .title(TITLE) 
+                    .cvssScore(7.5) 
+                    .build(); 
 
-            assertThat(finding.getCvssScore()).isEqualTo(7.5); // GH-90000
+            assertThat(finding.getCvssScore()).isEqualTo(7.5); 
         }
     }
 }

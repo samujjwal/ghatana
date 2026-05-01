@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SessionBootstrap from '../../lib/auth/session';
 import { TEST_TENANT_ID } from '../test-utils/tenants';
 import { getAiQualitySummary } from '../../api/ai-observability.service';
+import { UnsupportedRuntimeBoundaryError, AI_OBSERVABILITY_DISABLED_BOUNDARY_MESSAGE } from '../../lib/runtime-boundaries';
 
 const { getMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
@@ -17,6 +18,11 @@ describe('ai-observability.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     SessionBootstrap.setTenantId(TEST_TENANT_ID);
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('loads the canonical AI quality summary with tenant scoping', async () => {
@@ -59,5 +65,13 @@ describe('ai-observability.service', () => {
     });
     expect(result.summary.requestCount).toBe(8);
     expect(result.types[0]?.type).toBe('analytics_suggest');
+  });
+
+  it('getAiQualitySummary throws UnsupportedRuntimeBoundaryError when AI operations gate is off', async () => {
+    vi.stubEnv('VITE_FEATURE_AI_OPERATIONS', 'false');
+
+    await expect(getAiQualitySummary()).rejects.toThrow(UnsupportedRuntimeBoundaryError);
+    await expect(getAiQualitySummary()).rejects.toThrow(AI_OBSERVABILITY_DISABLED_BOUNDARY_MESSAGE);
+    expect(getMock).not.toHaveBeenCalled();
   });
 });

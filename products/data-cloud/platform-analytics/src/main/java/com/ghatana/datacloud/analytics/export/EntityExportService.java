@@ -60,6 +60,11 @@ public final class EntityExportService {
     /** RFC 4180 CSV delimiter. */
     private static final char CSV_DELIMITER = ',';
     private static final String CSV_LINE_SEPARATOR = "\r\n";
+        private static final String REDACTED_VALUE = "[REDACTED]";
+        private static final Set<String> GLOBAL_PII_FIELDS = Set.of(
+            "email", "phone", "ssn", "passport_number", "date_of_birth",
+            "full_name", "ip_address", "credit_card", "bank_account"
+        );
 
     // ── Dependencies ───────────────────────────────────────────────────────────
 
@@ -149,6 +154,57 @@ public final class EntityExportService {
                 .then(entities -> {
                     LOG.debug("Exporting {} entities as NDJSON for tenant={} collection={}",
                             entities.size(), tenantId, collectionName);
+                    try {
+                        return Promise.of(buildNdjson(entities));
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
+    }
+
+    /**
+     * Exports entities in CSV format with a fail-closed PII redaction pre-check.
+     *
+     * <p>This governed export path rejects payloads containing globally-recognized
+     * PII fields unless values are already redacted as {@code [REDACTED]}.
+     */
+    public Promise<String> exportCsvGoverned(String tenantId, String collectionName,
+                                             Map<String, Object> filter, int limit) {
+        Objects.requireNonNull(tenantId, "tenantId");
+        Objects.requireNonNull(collectionName, "collectionName");
+        int effectiveLimit = clampLimit(limit);
+
+        return fetchAll(tenantId, collectionName, filter, effectiveLimit)
+                .then(entities -> {
+                    Optional<String> blockingReason = findFirstUnredactedPii(entities);
+                    if (blockingReason.isPresent()) {
+                        return Promise.ofException(new IllegalStateException(
+                                "Governed export blocked by unredacted PII: " + blockingReason.get()));
+                    }
+                    try {
+                        return Promise.of(buildCsv(entities));
+                    } catch (Exception e) {
+                        return Promise.ofException(e);
+                    }
+                });
+    }
+
+    /**
+     * Exports entities in NDJSON format with a fail-closed PII redaction pre-check.
+     */
+    public Promise<String> exportNdjsonGoverned(String tenantId, String collectionName,
+                                                Map<String, Object> filter, int limit) {
+        Objects.requireNonNull(tenantId, "tenantId");
+        Objects.requireNonNull(collectionName, "collectionName");
+        int effectiveLimit = clampLimit(limit);
+
+        return fetchAll(tenantId, collectionName, filter, effectiveLimit)
+                .then(entities -> {
+                    Optional<String> blockingReason = findFirstUnredactedPii(entities);
+                    if (blockingReason.isPresent()) {
+                        return Promise.ofException(new IllegalStateException(
+                                "Governed export blocked by unredacted PII: " + blockingReason.get()));
+                    }
                     try {
                         return Promise.of(buildNdjson(entities));
                     } catch (Exception e) {
@@ -293,5 +349,25 @@ public final class EntityExportService {
 
     private static String nullToEmpty(Object value) {
         return value == null ? "" : value.toString();
+    }
+
+    private static Optional<String> findFirstUnredactedPii(List<Entity> entities) {
+        for (Entity entity : entities) {
+            Map<String, Object> data = entity.getData();
+            if (data == null || data.isEmpty()) {
+                continue;
+            }
+            for (String field : GLOBAL_PII_FIELDS) {
+                if (!data.containsKey(field)) {
+                    continue;
+                }
+                Object value = data.get(field);
+                if (value == null || REDACTED_VALUE.equals(value)) {
+                    continue;
+                }
+                return Optional.of("entityId=" + entity.getId() + ", field=" + field);
+            }
+        }
+        return Optional.empty();
     }
 }

@@ -17,25 +17,25 @@ class InMemoryAuditQueryServiceTest extends EventloopTestBase {
     private InMemoryAuditQueryService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new InMemoryAuditQueryService(); // GH-90000
+    void setUp() { 
+        service = new InMemoryAuditQueryService(); 
     }
 
     @Test
     @DisplayName("should record and retrieve audit events")
-    void shouldRecordAndRetrieve() { // GH-90000
-        var event = AuditEvent.builder() // GH-90000
+    void shouldRecordAndRetrieve() { 
+        var event = AuditEvent.builder() 
                 .tenantId("tenant-1")
                 .eventType("USER_LOGIN")
                 .principal("user@example.com")
                 .resourceType("Session")
                 .resourceId("session-123")
-                .build(); // GH-90000
+                .build(); 
 
-        runPromise(() -> service.record(event) // GH-90000
+        runPromise(() -> service.record(event) 
                 .then(() -> service.findByTenantId("tenant-1"))
-                .map(events -> { // GH-90000
-                    assertThat(events).hasSize(1); // GH-90000
+                .map(events -> { 
+                    assertThat(events).hasSize(1); 
                     assertThat(events.get(0).getEventType()).isEqualTo("USER_LOGIN");
                     return null;
                 }));
@@ -43,21 +43,21 @@ class InMemoryAuditQueryServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should isolate events by tenant")
-    void shouldIsolateByTenant() { // GH-90000
-        var event1 = AuditEvent.builder() // GH-90000
+    void shouldIsolateByTenant() { 
+        var event1 = AuditEvent.builder() 
                 .tenantId("tenant-1")
                 .eventType("ACTION_A")
-                .build(); // GH-90000
-        var event2 = AuditEvent.builder() // GH-90000
+                .build(); 
+        var event2 = AuditEvent.builder() 
                 .tenantId("tenant-2")
                 .eventType("ACTION_B")
-                .build(); // GH-90000
+                .build(); 
 
-        runPromise(() -> service.record(event1) // GH-90000
-                .then(() -> service.record(event2)) // GH-90000
+        runPromise(() -> service.record(event1) 
+                .then(() -> service.record(event2)) 
                 .then(() -> service.findByTenantId("tenant-1"))
-                .map(events -> { // GH-90000
-                    assertThat(events).hasSize(1); // GH-90000
+                .map(events -> { 
+                    assertThat(events).hasSize(1); 
                     assertThat(events.get(0).getEventType()).isEqualTo("ACTION_A");
                     return null;
                 }));
@@ -65,10 +65,10 @@ class InMemoryAuditQueryServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should return empty list for unknown tenant")
-    void shouldReturnEmptyForUnknownTenant() { // GH-90000
+    void shouldReturnEmptyForUnknownTenant() { 
         runPromise(() -> service.findByTenantId("nonexistent")
-                .map(events -> { // GH-90000
-                    assertThat(events).isEmpty(); // GH-90000
+                .map(events -> { 
+                    assertThat(events).isEmpty(); 
                     return null;
                 }));
     }

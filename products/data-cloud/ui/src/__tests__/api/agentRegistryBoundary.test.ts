@@ -1,17 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AGENT_REGISTRY_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
 
-const { mockApiClient } = vi.hoisted(() => ({
+const { mockApiClient, mockIsAgentCatalogSurfaceEnabled } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
   },
+  mockIsAgentCatalogSurfaceEnabled: vi.fn(() => true),
 }));
 
 vi.mock('../../lib/api/client', () => ({
   apiClient: mockApiClient,
+}));
+vi.mock('@/lib/feature-gates', () => ({
+  isAgentCatalogSurfaceEnabled: mockIsAgentCatalogSurfaceEnabled,
 }));
 
 import { agentRegistryService } from '../../api/agent-registry.service';
@@ -19,6 +23,21 @@ import { agentRegistryService } from '../../api/agent-registry.service';
 describe('agentRegistryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsAgentCatalogSurfaceEnabled.mockReturnValue(true);
+  });
+
+  it('fails closed before network calls when agent catalog gate is disabled', async () => {
+    mockIsAgentCatalogSurfaceEnabled.mockReturnValue(false);
+
+    await expect(agentRegistryService.listAgents()).rejects.toThrow(AGENT_REGISTRY_BOUNDARY_MESSAGE);
+    await expect(agentRegistryService.getAgent('catalog-2')).rejects.toThrow(
+      AGENT_REGISTRY_BOUNDARY_MESSAGE,
+    );
+
+    expect(mockApiClient.get).not.toHaveBeenCalled();
+    expect(mockApiClient.post).not.toHaveBeenCalled();
+    expect(mockApiClient.put).not.toHaveBeenCalled();
+    expect(mockApiClient.delete).not.toHaveBeenCalled();
   });
 
   it('maps the launcher agent catalog to AgentDefinition entries', async () => {

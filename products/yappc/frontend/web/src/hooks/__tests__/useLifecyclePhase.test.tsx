@@ -1,7 +1,6 @@
 /**
  * useLifecyclePhase Hook Tests
  */
-// @ts-nocheck
 import React from 'react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi } from 'vitest';

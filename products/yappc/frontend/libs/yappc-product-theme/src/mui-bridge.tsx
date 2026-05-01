@@ -5,7 +5,7 @@
  * - it imports YAPPC MUI theme objects (lightTheme, darkTheme) from yappc-ui
  * - it merges platform @ghatana/theme resolved values into MUI palette overrides
  *
- * Consumers: app-theme.tsx in @yappc/web-app
+ * Consumers: app-theme.tsx in @ghatana/yappc-web-app
  *
  * @doc.type module
  * @doc.purpose MUI theme bridge for YAPPC app

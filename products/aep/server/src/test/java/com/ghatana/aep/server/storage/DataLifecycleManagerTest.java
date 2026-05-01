@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.storage;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("DataLifecycleManager")
 class DataLifecycleManagerTest {
 
@@ -48,13 +48,13 @@ class DataLifecycleManagerTest {
     private DataLifecycleManager mgr;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        mgr = new DataLifecycleManager( // GH-90000
+    void setUp() { 
+        mgr = new DataLifecycleManager( 
                 tierManager,
-                Duration.ofHours(1), // GH-90000
-                Duration.ofDays(7), // GH-90000
-                Duration.ofDays(90), // GH-90000
-                new SimpleMeterRegistry() // GH-90000
+                Duration.ofHours(1), 
+                Duration.ofDays(7), 
+                Duration.ofDays(90), 
+                new SimpleMeterRegistry() 
         );
     }
 
@@ -68,35 +68,35 @@ class DataLifecycleManagerTest {
 
         @Test
         @DisplayName("registerCollection: adds new collection to inventory")
-        void registerCollection_addsEntry() { // GH-90000
-            assertThat(mgr.registeredCollectionCount()).isZero(); // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            assertThat(mgr.registeredCollectionCount()).isEqualTo(1); // GH-90000
+        void registerCollection_addsEntry() { 
+            assertThat(mgr.registeredCollectionCount()).isZero(); 
+            mgr.registerCollection(TENANT, COLL_1); 
+            assertThat(mgr.registeredCollectionCount()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("registerCollection: duplicate registration is idempotent")
-        void registerCollection_duplicateIsIdempotent() { // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            assertThat(mgr.registeredCollectionCount()).isEqualTo(1); // GH-90000
+        void registerCollection_duplicateIsIdempotent() { 
+            mgr.registerCollection(TENANT, COLL_1); 
+            mgr.registerCollection(TENANT, COLL_1); 
+            assertThat(mgr.registeredCollectionCount()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("registerCollection: registers multiple distinct collections")
-        void registerCollection_multipleCollections() { // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            mgr.registerCollection(TENANT, COLL_2); // GH-90000
-            mgr.registerCollection("other-tenant", COLL_1); // GH-90000
-            assertThat(mgr.registeredCollectionCount()).isEqualTo(3); // GH-90000
+        void registerCollection_multipleCollections() { 
+            mgr.registerCollection(TENANT, COLL_1); 
+            mgr.registerCollection(TENANT, COLL_2); 
+            mgr.registerCollection("other-tenant", COLL_1); 
+            assertThat(mgr.registeredCollectionCount()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("deregisterCollection: removes collection from inventory")
-        void deregisterCollection_removesEntry() { // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            mgr.deregisterCollection(TENANT, COLL_1); // GH-90000
-            assertThat(mgr.registeredCollectionCount()).isZero(); // GH-90000
+        void deregisterCollection_removesEntry() { 
+            mgr.registerCollection(TENANT, COLL_1); 
+            mgr.deregisterCollection(TENANT, COLL_1); 
+            assertThat(mgr.registeredCollectionCount()).isZero(); 
         }
     }
 
@@ -109,81 +109,81 @@ class DataLifecycleManagerTest {
     class SweepTests {
 
         @BeforeEach
-        void stubTierManager() { // GH-90000
-            lenient().when(tierManager.demoteCoolToCold(anyString(), anyString(), any(Instant.class))) // GH-90000
-                    .thenReturn(Promise.of(3)); // GH-90000
-            lenient().when(tierManager.demoteWarmToCool(anyString(), anyString(), any(Instant.class))) // GH-90000
-                    .thenReturn(Promise.of(2)); // GH-90000
-            lenient().when(tierManager.demoteIdleEntities(anyString(), anyString(), any(Instant.class))) // GH-90000
-                    .thenReturn(Promise.of(5)); // GH-90000
+        void stubTierManager() { 
+            lenient().when(tierManager.demoteCoolToCold(anyString(), anyString(), any(Instant.class))) 
+                    .thenReturn(Promise.of(3)); 
+            lenient().when(tierManager.demoteWarmToCool(anyString(), anyString(), any(Instant.class))) 
+                    .thenReturn(Promise.of(2)); 
+            lenient().when(tierManager.demoteIdleEntities(anyString(), anyString(), any(Instant.class))) 
+                    .thenReturn(Promise.of(5)); 
         }
 
         @Test
         @DisplayName("runLifecycleSweep: returns skipped=true when no collections registered")
-        void sweep_noCollections_returnsSkipped() { // GH-90000
+        void sweep_noCollections_returnsSkipped() { 
             // mgr has no registered collections
-            SweepReport report = mgr.runLifecycleSweep().getResult(); // GH-90000
+            SweepReport report = mgr.runLifecycleSweep().getResult(); 
 
-            assertThat(report.totalDemotions()).isZero(); // GH-90000
+            assertThat(report.totalDemotions()).isZero(); 
         }
 
         @Test
         @DisplayName("runLifecycleSweep: processes all registered collections exactly once")
-        void sweep_oneCollection_callsTierManagerEachMethod() { // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
+        void sweep_oneCollection_callsTierManagerEachMethod() { 
+            mgr.registerCollection(TENANT, COLL_1); 
 
-            SweepReport report = mgr.runLifecycleSweep().getResult(); // GH-90000
+            SweepReport report = mgr.runLifecycleSweep().getResult(); 
 
-            assertThat(report.skipped()).isFalse(); // GH-90000
+            assertThat(report.skipped()).isFalse(); 
             // COOL→COLD + WARM→COOL + HOT→WARM per collection = 3+2+5 = 10
-            assertThat(report.totalDemotions()).isEqualTo(10); // GH-90000
-            assertThat(report.coolToCold()).isEqualTo(3); // GH-90000
-            assertThat(report.warmToCool()).isEqualTo(2); // GH-90000
-            assertThat(report.hotToWarm()).isEqualTo(5); // GH-90000
+            assertThat(report.totalDemotions()).isEqualTo(10); 
+            assertThat(report.coolToCold()).isEqualTo(3); 
+            assertThat(report.warmToCool()).isEqualTo(2); 
+            assertThat(report.hotToWarm()).isEqualTo(5); 
         }
 
         @Test
         @DisplayName("runLifecycleSweep: aggregates demotions across multiple collections")
-        void sweep_multipleCollections_aggregatesResults() { // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            mgr.registerCollection(TENANT, COLL_2); // GH-90000
+        void sweep_multipleCollections_aggregatesResults() { 
+            mgr.registerCollection(TENANT, COLL_1); 
+            mgr.registerCollection(TENANT, COLL_2); 
 
-            SweepReport report = mgr.runLifecycleSweep().getResult(); // GH-90000
+            SweepReport report = mgr.runLifecycleSweep().getResult(); 
 
-            // 2 collections × (3+2+5) = 20 total // GH-90000
-            assertThat(report.totalDemotions()).isEqualTo(20); // GH-90000
+            // 2 collections × (3+2+5) = 20 total 
+            assertThat(report.totalDemotions()).isEqualTo(20); 
         }
 
         @Test
         @DisplayName("runLifecycleSweep: cascade order is COOL→COLD first, HOT→WARM last")
-        void sweep_invocationsInCorrectCascadeOrder() { // GH-90000
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
+        void sweep_invocationsInCorrectCascadeOrder() { 
+            mgr.registerCollection(TENANT, COLL_1); 
 
-            mgr.runLifecycleSweep().getResult(); // GH-90000
+            mgr.runLifecycleSweep().getResult(); 
 
-            var inOrder = inOrder(tierManager); // GH-90000
-            inOrder.verify(tierManager).demoteCoolToCold(eq(TENANT), eq(COLL_1), any()); // GH-90000
-            inOrder.verify(tierManager).demoteWarmToCool(eq(TENANT), eq(COLL_1), any()); // GH-90000
-            inOrder.verify(tierManager).demoteIdleEntities(eq(TENANT), eq(COLL_1), any()); // GH-90000
+            var inOrder = inOrder(tierManager); 
+            inOrder.verify(tierManager).demoteCoolToCold(eq(TENANT), eq(COLL_1), any()); 
+            inOrder.verify(tierManager).demoteWarmToCool(eq(TENANT), eq(COLL_1), any()); 
+            inOrder.verify(tierManager).demoteIdleEntities(eq(TENANT), eq(COLL_1), any()); 
         }
 
         @Test
         @DisplayName("runLifecycleSweep: collection failure is absorbed; other collections continue")
-        void sweep_oneCollectionFails_othersComplete() { // GH-90000
-            when(tierManager.demoteCoolToCold(eq(TENANT), eq(COLL_1), any())) // GH-90000
+        void sweep_oneCollectionFails_othersComplete() { 
+            when(tierManager.demoteCoolToCold(eq(TENANT), eq(COLL_1), any())) 
                     .thenReturn(Promise.ofException(new RuntimeException("COLL_1 failed")));
-            when(tierManager.demoteCoolToCold(eq(TENANT), eq(COLL_2), any())) // GH-90000
-                    .thenReturn(Promise.of(3)); // GH-90000
+            when(tierManager.demoteCoolToCold(eq(TENANT), eq(COLL_2), any())) 
+                    .thenReturn(Promise.of(3)); 
 
-            mgr.registerCollection(TENANT, COLL_1); // GH-90000
-            mgr.registerCollection(TENANT, COLL_2); // GH-90000
+            mgr.registerCollection(TENANT, COLL_1); 
+            mgr.registerCollection(TENANT, COLL_2); 
 
             // Should complete without throwing
-            SweepReport report = mgr.runLifecycleSweep().getResult(); // GH-90000
+            SweepReport report = mgr.runLifecycleSweep().getResult(); 
 
-            assertThat(report.skipped()).isFalse(); // GH-90000
+            assertThat(report.skipped()).isFalse(); 
             // COLL_1 contributed 0 due to error; COLL_2 contributed 3+2+5 = 10
-            assertThat(report.totalDemotions()).isEqualTo(10); // GH-90000
+            assertThat(report.totalDemotions()).isEqualTo(10); 
         }
     }
 
@@ -197,31 +197,31 @@ class DataLifecycleManagerTest {
 
         @Test
         @DisplayName("archiveCollection: runs HOT→WARM, WARM→COOL, COOL→COLD in sequence")
-        void archiveCollection_runsFullCascade() { // GH-90000
-            when(tierManager.demoteIdleEntities(anyString(), anyString(), any(Instant.class))) // GH-90000
-                    .thenReturn(Promise.of(4)); // GH-90000
-            when(tierManager.demoteWarmToCool(anyString(), anyString(), any(Instant.class))) // GH-90000
-                    .thenReturn(Promise.of(2)); // GH-90000
-            when(tierManager.demoteCoolToCold(anyString(), anyString(), any(Instant.class))) // GH-90000
-                    .thenReturn(Promise.of(1)); // GH-90000
+        void archiveCollection_runsFullCascade() { 
+            when(tierManager.demoteIdleEntities(anyString(), anyString(), any(Instant.class))) 
+                    .thenReturn(Promise.of(4)); 
+            when(tierManager.demoteWarmToCool(anyString(), anyString(), any(Instant.class))) 
+                    .thenReturn(Promise.of(2)); 
+            when(tierManager.demoteCoolToCold(anyString(), anyString(), any(Instant.class))) 
+                    .thenReturn(Promise.of(1)); 
 
-            int total = mgr.archiveCollection(TENANT, COLL_1).getResult(); // GH-90000
+            int total = mgr.archiveCollection(TENANT, COLL_1).getResult(); 
 
-            assertThat(total).isEqualTo(7); // 4+2+1 // GH-90000
+            assertThat(total).isEqualTo(7); // 4+2+1 
         }
 
         @Test
         @DisplayName("archiveCollection: calls all three tier manager methods")
-        void archiveCollection_invokesAllThreeMethods() { // GH-90000
-            when(tierManager.demoteIdleEntities(anyString(), anyString(), any())).thenReturn(Promise.of(0)); // GH-90000
-            when(tierManager.demoteWarmToCool(anyString(), anyString(), any())).thenReturn(Promise.of(0)); // GH-90000
-            when(tierManager.demoteCoolToCold(anyString(), anyString(), any())).thenReturn(Promise.of(0)); // GH-90000
+        void archiveCollection_invokesAllThreeMethods() { 
+            when(tierManager.demoteIdleEntities(anyString(), anyString(), any())).thenReturn(Promise.of(0)); 
+            when(tierManager.demoteWarmToCool(anyString(), anyString(), any())).thenReturn(Promise.of(0)); 
+            when(tierManager.demoteCoolToCold(anyString(), anyString(), any())).thenReturn(Promise.of(0)); 
 
-            mgr.archiveCollection(TENANT, COLL_1).getResult(); // GH-90000
+            mgr.archiveCollection(TENANT, COLL_1).getResult(); 
 
-            verify(tierManager).demoteIdleEntities(eq(TENANT), eq(COLL_1), any()); // GH-90000
-            verify(tierManager).demoteWarmToCool(eq(TENANT), eq(COLL_1), any()); // GH-90000
-            verify(tierManager).demoteCoolToCold(eq(TENANT), eq(COLL_1), any()); // GH-90000
+            verify(tierManager).demoteIdleEntities(eq(TENANT), eq(COLL_1), any()); 
+            verify(tierManager).demoteWarmToCool(eq(TENANT), eq(COLL_1), any()); 
+            verify(tierManager).demoteCoolToCold(eq(TENANT), eq(COLL_1), any()); 
         }
     }
 
@@ -231,15 +231,15 @@ class DataLifecycleManagerTest {
 
     @Test
     @DisplayName("SweepReport.totalDemotions: sums all three demotion counts")
-    void sweepReport_totalDemotions_sumsAll() { // GH-90000
-        SweepReport r = new SweepReport(5, 3, 2, Duration.ZERO, false); // GH-90000
-        assertThat(r.totalDemotions()).isEqualTo(10); // GH-90000
+    void sweepReport_totalDemotions_sumsAll() { 
+        SweepReport r = new SweepReport(5, 3, 2, Duration.ZERO, false); 
+        assertThat(r.totalDemotions()).isEqualTo(10); 
     }
 
     @Test
     @DisplayName("SweepReport.skipped(): returns true when constructed as skipped")
-    void sweepReport_skipped_returnsTrue() { // GH-90000
-        SweepReport r = new SweepReport(0, 0, 0, Duration.ZERO, true); // GH-90000
-        assertThat(r.skipped()).isTrue(); // GH-90000
+    void sweepReport_skipped_returnsTrue() { 
+        SweepReport r = new SweepReport(0, 0, 0, Duration.ZERO, true); 
+        assertThat(r.skipped()).isTrue(); 
     }
 }

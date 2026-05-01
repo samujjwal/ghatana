@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("PluginRegistry Enable/Disable Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class PluginRegistryEnableDisableTest extends EventloopTestBase {
 
     @Mock
@@ -42,25 +42,25 @@ class PluginRegistryEnableDisableTest extends EventloopTestBase {
     private PluginRegistry pluginRegistry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        lenient().doNothing().when(capabilityRegistry).registerCapability(any(KernelCapability.class)); // GH-90000
-        pluginRegistry = new PluginRegistry(capabilityRegistry); // GH-90000
+    void setUp() { 
+        lenient().doNothing().when(capabilityRegistry).registerCapability(any(KernelCapability.class)); 
+        pluginRegistry = new PluginRegistry(capabilityRegistry); 
     }
 
     @Test
     @DisplayName("Newly registered plugin is enabled by default")
-    void newPluginIsEnabledByDefault() { // GH-90000
+    void newPluginIsEnabledByDefault() { 
         StubPlugin plugin = new StubPlugin("plugin-a");
-        pluginRegistry.registerPlugin(plugin); // GH-90000
+        pluginRegistry.registerPlugin(plugin); 
 
         assertThat(pluginRegistry.isPluginEnabled("plugin-a")).isTrue();
     }
 
     @Test
     @DisplayName("disablePlugin marks plugin as disabled")
-    void disablePluginMarksAsDisabled() { // GH-90000
+    void disablePluginMarksAsDisabled() { 
         StubPlugin plugin = new StubPlugin("plugin-a");
-        pluginRegistry.registerPlugin(plugin); // GH-90000
+        pluginRegistry.registerPlugin(plugin); 
 
         runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
@@ -70,9 +70,9 @@ class PluginRegistryEnableDisableTest extends EventloopTestBase {
 
     @Test
     @DisplayName("enablePlugin re-enables a disabled plugin")
-    void enablePluginReEnablesDisabled() { // GH-90000
+    void enablePluginReEnablesDisabled() { 
         StubPlugin plugin = new StubPlugin("plugin-a");
-        pluginRegistry.registerPlugin(plugin); // GH-90000
+        pluginRegistry.registerPlugin(plugin); 
         runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
         pluginRegistry.enablePlugin("plugin-a");
@@ -83,98 +83,98 @@ class PluginRegistryEnableDisableTest extends EventloopTestBase {
 
     @Test
     @DisplayName("startAllPlugins skips disabled plugins")
-    void startAllSkipsDisabledPlugin() { // GH-90000
+    void startAllSkipsDisabledPlugin() { 
         StubPlugin enabled = new StubPlugin("plugin-enabled");
         StubPlugin disabled = new StubPlugin("plugin-disabled");
 
-        pluginRegistry.registerPlugin(enabled); // GH-90000
-        pluginRegistry.registerPlugin(disabled); // GH-90000
+        pluginRegistry.registerPlugin(enabled); 
+        pluginRegistry.registerPlugin(disabled); 
         runPromise(() -> pluginRegistry.disablePlugin("plugin-disabled"));
 
-        runPromise(pluginRegistry::startAllPlugins); // GH-90000
+        runPromise(pluginRegistry::startAllPlugins); 
 
-        assertThat(enabled.started.get()).isTrue(); // GH-90000
-        assertThat(disabled.started.get()).isFalse(); // GH-90000
+        assertThat(enabled.started.get()).isTrue(); 
+        assertThat(disabled.started.get()).isFalse(); 
     }
 
     @Test
     @DisplayName("disablePlugin calls stop() on a running plugin")
-    void disablePluginStopsRunningPlugin() { // GH-90000
+    void disablePluginStopsRunningPlugin() { 
         StubPlugin plugin = new StubPlugin("plugin-a");
-        pluginRegistry.registerPlugin(plugin); // GH-90000
-        runPromise(plugin::start); // GH-90000
+        pluginRegistry.registerPlugin(plugin); 
+        runPromise(plugin::start); 
 
         runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
-        assertThat(plugin.stopped.get()).isTrue(); // GH-90000
+        assertThat(plugin.stopped.get()).isTrue(); 
     }
 
     @Test
     @DisplayName("disablePlugin throws for unregistered plugin id")
-    void disableUnregisteredPluginThrows() { // GH-90000
+    void disableUnregisteredPluginThrows() { 
         assertThatThrownBy(() -> pluginRegistry.disablePlugin("ghost"))
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("not registered");
     }
 
     @Test
     @DisplayName("enablePlugin throws for unregistered plugin id")
-    void enableUnregisteredPluginThrows() { // GH-90000
+    void enableUnregisteredPluginThrows() { 
         assertThatThrownBy(() -> pluginRegistry.enablePlugin("ghost"))
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("not registered");
     }
 
     @Test
     @DisplayName("getDisabledPluginIds returns unmodifiable view")
-    void disabledIdsViewIsUnmodifiable() { // GH-90000
+    void disabledIdsViewIsUnmodifiable() { 
         StubPlugin plugin = new StubPlugin("plugin-a");
-        pluginRegistry.registerPlugin(plugin); // GH-90000
+        pluginRegistry.registerPlugin(plugin); 
         runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
-        Set<String> disabled = pluginRegistry.getDisabledPluginIds(); // GH-90000
+        Set<String> disabled = pluginRegistry.getDisabledPluginIds(); 
         assertThatThrownBy(() -> disabled.add("other"))
-            .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+            .isInstanceOf(UnsupportedOperationException.class); 
     }
 
     // ==================== Test fixture ====================
 
     static class StubPlugin implements KernelPlugin {
         private final String id;
-        final AtomicBoolean started = new AtomicBoolean(false); // GH-90000
-        final AtomicBoolean stopped = new AtomicBoolean(false); // GH-90000
+        final AtomicBoolean started = new AtomicBoolean(false); 
+        final AtomicBoolean stopped = new AtomicBoolean(false); 
 
-        StubPlugin(String id) { // GH-90000
+        StubPlugin(String id) { 
             this.id = id;
         }
 
-        @Override public String getModuleId() { return id; } // GH-90000
-        @Override public String getVersion() { return "1.0.0"; } // GH-90000
-        @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
-        @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
-        @Override public void initialize(KernelContext ctx) { } // GH-90000
+        @Override public String getModuleId() { return id; } 
+        @Override public String getVersion() { return "1.0.0"; } 
+        @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } 
+        @Override public Set<KernelDependency> getDependencies() { return Set.of(); } 
+        @Override public void initialize(KernelContext ctx) { } 
 
         @Override
-        public Promise<Void> start() { // GH-90000
-            started.set(true); // GH-90000
-            stopped.set(false); // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> start() { 
+            started.set(true); 
+            stopped.set(false); 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> stop() { // GH-90000
-            started.set(false); // GH-90000
-            stopped.set(true); // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> stop() { 
+            started.set(false); 
+            stopped.set(true); 
+            return Promise.complete(); 
         }
 
         @Override
-        public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
+        public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } 
 
-        @Override public PluginManifest getManifest() { return null; } // GH-90000
-        @Override public Set<String> getExportedContracts() { return Set.of(); } // GH-90000
-        @Override public Set<String> getRequiredContracts() { return Set.of(); } // GH-90000
-        @Override public Promise<Void> install() { return Promise.complete(); } // GH-90000
-        @Override public Promise<Void> uninstall() { return Promise.complete(); } // GH-90000
+        @Override public PluginManifest getManifest() { return null; } 
+        @Override public Set<String> getExportedContracts() { return Set.of(); } 
+        @Override public Set<String> getRequiredContracts() { return Set.of(); } 
+        @Override public Promise<Void> install() { return Promise.complete(); } 
+        @Override public Promise<Void> uninstall() { return Promise.complete(); } 
     }
 }

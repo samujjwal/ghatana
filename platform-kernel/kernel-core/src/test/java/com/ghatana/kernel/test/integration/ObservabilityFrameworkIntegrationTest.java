@@ -27,346 +27,346 @@ class ObservabilityFrameworkIntegrationTest {
     private MockExplainabilityFramework explainabilityFramework;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        telemetryManager = new MockKernelTelemetryManager(); // GH-90000
-        auditTrailService = new MockAuditTrailService(); // GH-90000
-        explainabilityFramework = new MockExplainabilityFramework(); // GH-90000
+    void setUp() { 
+        telemetryManager = new MockKernelTelemetryManager(); 
+        auditTrailService = new MockAuditTrailService(); 
+        explainabilityFramework = new MockExplainabilityFramework(); 
     }
 
     @Test
     @DisplayName("Should record metric with tags")
-    void testRecordMetric() { // GH-90000
-        assertDoesNotThrow(() -> // GH-90000
-            telemetryManager.recordMetric("test.metric", 42.0, "tag1", "value1") // GH-90000
+    void testRecordMetric() { 
+        assertDoesNotThrow(() -> 
+            telemetryManager.recordMetric("test.metric", 42.0, "tag1", "value1") 
         );
     }
 
     @Test
     @DisplayName("Should record event")
-    void testRecordEvent() { // GH-90000
-        KernelTelemetryManager.Event event = new KernelTelemetryManager.Event( // GH-90000
-            "test.event", "test-source", Map.of("key", "value") // GH-90000
+    void testRecordEvent() { 
+        KernelTelemetryManager.Event event = new KernelTelemetryManager.Event( 
+            "test.event", "test-source", Map.of("key", "value") 
         );
 
-        assertDoesNotThrow(() -> telemetryManager.recordEvent(event)); // GH-90000
+        assertDoesNotThrow(() -> telemetryManager.recordEvent(event)); 
     }
 
     @Test
     @DisplayName("Should create explainability context")
-    void testCreateExplainabilityContext() { // GH-90000
-        KernelTelemetryManager.AgentAction action = new KernelTelemetryManager.AgentAction( // GH-90000
-            "test-agent", "classify", Map.of("input", "test") // GH-90000
+    void testCreateExplainabilityContext() { 
+        KernelTelemetryManager.AgentAction action = new KernelTelemetryManager.AgentAction( 
+            "test-agent", "classify", Map.of("input", "test") 
         );
 
-        ExplainabilityContext context = telemetryManager.createExplainabilityContext(action); // GH-90000
+        ExplainabilityContext context = telemetryManager.createExplainabilityContext(action); 
 
-        assertNotNull(context); // GH-90000
-        assertEquals("test-agent", context.getAgentId()); // GH-90000
+        assertNotNull(context); 
+        assertEquals("test-agent", context.getAgentId()); 
     }
 
     @Test
     @DisplayName("Should start and stop timer")
-    void testTimer() { // GH-90000
+    void testTimer() { 
         KernelTelemetryManager.Timer timer = telemetryManager.startTimer("test.timer");
 
-        assertNotNull(timer); // GH-90000
+        assertNotNull(timer); 
 
         try {
-            Thread.sleep(10); // GH-90000
-        } catch (InterruptedException e) { // GH-90000
-            Thread.currentThread().interrupt(); // GH-90000
+            Thread.sleep(10); 
+        } catch (InterruptedException e) { 
+            Thread.currentThread().interrupt(); 
         }
 
-        timer.stop(); // GH-90000
-        assertTrue(timer.getElapsedMillis() >= 10); // GH-90000
+        timer.stop(); 
+        assertTrue(timer.getElapsedMillis() >= 10); 
     }
 
     @Test
     @DisplayName("Should record audit event")
-    void testRecordAuditEvent() { // GH-90000
-        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() // GH-90000
+    void testRecordAuditEvent() { 
+        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() 
             .eventId("event-1")
             .eventType("user.login")
             .entityId("user-1")
             .userId("user-1")
             .tenantId("tenant-1")
             .action("login")
-            .data(Map.of("ip", "192.168.1.1")) // GH-90000
-            .build(); // GH-90000
+            .data(Map.of("ip", "192.168.1.1")) 
+            .build(); 
 
-        assertDoesNotThrow(() -> auditTrailService.recordAuditEvent(event)); // GH-90000
+        assertDoesNotThrow(() -> auditTrailService.recordAuditEvent(event)); 
     }
 
     @Test
     @DisplayName("Should query audit events")
-    void testQueryAuditEvents() { // GH-90000
-        AuditTrailService.AuditQuery query = AuditTrailService.AuditQuery.builder() // GH-90000
+    void testQueryAuditEvents() { 
+        AuditTrailService.AuditQuery query = AuditTrailService.AuditQuery.builder() 
             .entityId("user-1")
             .tenantId("tenant-1")
-            .limit(10) // GH-90000
-            .build(); // GH-90000
+            .limit(10) 
+            .build(); 
 
-        var events = auditTrailService.queryAuditEvents(query); // GH-90000
+        var events = auditTrailService.queryAuditEvents(query); 
 
-        assertNotNull(events); // GH-90000
+        assertNotNull(events); 
     }
 
     @Test
     @DisplayName("Should verify audit trail integrity")
-    void testVerifyTrailIntegrity() { // GH-90000
+    void testVerifyTrailIntegrity() { 
         AuditTrailService.VerificationResult result =
             auditTrailService.verifyTrailIntegrity("entity-1");
 
-        assertNotNull(result); // GH-90000
-        assertTrue(result.isValid()); // GH-90000
+        assertNotNull(result); 
+        assertTrue(result.isValid()); 
     }
 
     @Test
     @DisplayName("Should generate explanation for agent action")
-    void testGenerateExplanation() { // GH-90000
-        KernelTelemetryManager.AgentAction action = new KernelTelemetryManager.AgentAction( // GH-90000
-            "test-agent", "classify", Map.of("input", "test") // GH-90000
+    void testGenerateExplanation() { 
+        KernelTelemetryManager.AgentAction action = new KernelTelemetryManager.AgentAction( 
+            "test-agent", "classify", Map.of("input", "test") 
         );
-        MockExecutionContext context = new MockExecutionContext(); // GH-90000
+        MockExecutionContext context = new MockExecutionContext(); 
 
         ExplainabilityFramework.Explanation explanation =
-            explainabilityFramework.generateExplanation(action, context); // GH-90000
+            explainabilityFramework.generateExplanation(action, context); 
 
-        assertNotNull(explanation); // GH-90000
-        assertNotNull(explanation.getSummary()); // GH-90000
+        assertNotNull(explanation); 
+        assertNotNull(explanation.getSummary()); 
     }
 
     @Test
     @DisplayName("Should record and retrieve decision explanation")
-    void testRecordDecisionExplanation() { // GH-90000
+    void testRecordDecisionExplanation() { 
         ExplainabilityFramework.Explanation explanation =
-            ExplainabilityFramework.Explanation.builder() // GH-90000
+            ExplainabilityFramework.Explanation.builder() 
                 .decisionId("decision-1")
                 .summary("Test decision")
                 .detailedReasoning("Detailed reasoning")
-                .confidence(0.95) // GH-90000
+                .confidence(0.95) 
                 .modelId("model-1")
-                .build(); // GH-90000
+                .build(); 
 
-        explainabilityFramework.recordDecisionExplanation("decision-1", explanation); // GH-90000
+        explainabilityFramework.recordDecisionExplanation("decision-1", explanation); 
 
         ExplainabilityFramework.Explanation retrieved =
             explainabilityFramework.getExplanation("decision-1");
 
-        assertNotNull(retrieved); // GH-90000
-        assertEquals("decision-1", retrieved.getDecisionId()); // GH-90000
+        assertNotNull(retrieved); 
+        assertEquals("decision-1", retrieved.getDecisionId()); 
     }
 
     // Mock implementations for testing
 
     private static class MockKernelTelemetryManager implements KernelTelemetryManager {
         @Override
-        public void recordMetric(String name, double value, String... tags) { // GH-90000
+        public void recordMetric(String name, double value, String... tags) { 
         }
 
         @Override
-        public void recordEvent(Event event) { // GH-90000
+        public void recordEvent(Event event) { 
         }
 
         @Override
-        public ExplainabilityContext createExplainabilityContext(AgentAction action) { // GH-90000
-            return new MockExplainabilityContext(action.getAgentId()); // GH-90000
+        public ExplainabilityContext createExplainabilityContext(AgentAction action) { 
+            return new MockExplainabilityContext(action.getAgentId()); 
         }
 
         @Override
-        public Timer startTimer(String name, String... tags) { // GH-90000
-            return new MockTimer(); // GH-90000
+        public Timer startTimer(String name, String... tags) { 
+            return new MockTimer(); 
         }
 
         @Override
-        public void incrementCounter(String name, long increment, String... tags) { // GH-90000
+        public void incrementCounter(String name, long increment, String... tags) { 
         }
 
         @Override
-        public void recordGauge(String name, double value, String... tags) { // GH-90000
+        public void recordGauge(String name, double value, String... tags) { 
         }
 
         @Override
-        public void recordHistogram(String name, double value, String... tags) { // GH-90000
+        public void recordHistogram(String name, double value, String... tags) { 
         }
     }
 
     private static class MockTimer implements KernelTelemetryManager.Timer {
-        private final long startTime = System.currentTimeMillis(); // GH-90000
+        private final long startTime = System.currentTimeMillis(); 
 
         @Override
-        public void stop() { // GH-90000
+        public void stop() { 
         }
 
         @Override
-        public long getElapsedMillis() { // GH-90000
-            return System.currentTimeMillis() - startTime; // GH-90000
+        public long getElapsedMillis() { 
+            return System.currentTimeMillis() - startTime; 
         }
     }
 
     private static class MockExplainabilityContext implements ExplainabilityContext {
         private final String agentId;
-        private final Map<String, Double> featureImportance = new HashMap<>(); // GH-90000
+        private final Map<String, Double> featureImportance = new HashMap<>(); 
         private String explanation;
 
-        MockExplainabilityContext(String agentId) { // GH-90000
+        MockExplainabilityContext(String agentId) { 
             this.agentId = agentId;
         }
 
         @Override
-        public String getDecisionId() { // GH-90000
+        public String getDecisionId() { 
             return "decision-1";
         }
 
         @Override
-        public String getAgentId() { // GH-90000
+        public String getAgentId() { 
             return agentId;
         }
 
         @Override
-        public String getModelId() { // GH-90000
+        public String getModelId() { 
             return "model-1";
         }
 
         @Override
-        public Map<String, Object> getInputs() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getInputs() { 
+            return Map.of(); 
         }
 
         @Override
-        public Map<String, Object> getOutputs() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getOutputs() { 
+            return Map.of(); 
         }
 
         @Override
-        public String getExplanation() { // GH-90000
+        public String getExplanation() { 
             return explanation;
         }
 
         @Override
-        public double getConfidence() { // GH-90000
+        public double getConfidence() { 
             return 0.95;
         }
 
         @Override
-        public Map<String, Double> getFeatureImportance() { // GH-90000
+        public Map<String, Double> getFeatureImportance() { 
             return featureImportance;
         }
 
         @Override
-        public long getTimestamp() { // GH-90000
-            return System.currentTimeMillis(); // GH-90000
+        public long getTimestamp() { 
+            return System.currentTimeMillis(); 
         }
 
         @Override
-        public void recordExplanation(String explanation) { // GH-90000
+        public void recordExplanation(String explanation) { 
             this.explanation = explanation;
         }
 
         @Override
-        public void recordFeatureImportance(String feature, double importance) { // GH-90000
-            featureImportance.put(feature, importance); // GH-90000
+        public void recordFeatureImportance(String feature, double importance) { 
+            featureImportance.put(feature, importance); 
         }
     }
 
     private static class MockAuditTrailService implements AuditTrailService {
         @Override
-        public void recordAuditEvent(AuditEvent event) { // GH-90000
+        public void recordAuditEvent(AuditEvent event) { 
         }
 
         @Override
-        public java.util.List<AuditEvent> queryAuditEvents(AuditQuery query) { // GH-90000
-            return java.util.List.of(); // GH-90000
+        public java.util.List<AuditEvent> queryAuditEvents(AuditQuery query) { 
+            return java.util.List.of(); 
         }
 
         @Override
-        public ImmutableAuditTrail getImmutableTrail(String entityId) { // GH-90000
-            return new MockImmutableAuditTrail(entityId); // GH-90000
+        public ImmutableAuditTrail getImmutableTrail(String entityId) { 
+            return new MockImmutableAuditTrail(entityId); 
         }
 
         @Override
-        public VerificationResult verifyTrailIntegrity(String entityId) { // GH-90000
-            return new VerificationResult(true, "Valid", java.util.List.of()); // GH-90000
+        public VerificationResult verifyTrailIntegrity(String entityId) { 
+            return new VerificationResult(true, "Valid", java.util.List.of()); 
         }
     }
 
     private static class MockImmutableAuditTrail implements AuditTrailService.ImmutableAuditTrail {
         private final String entityId;
 
-        MockImmutableAuditTrail(String entityId) { // GH-90000
+        MockImmutableAuditTrail(String entityId) { 
             this.entityId = entityId;
         }
 
         @Override
-        public String getEntityId() { // GH-90000
+        public String getEntityId() { 
             return entityId;
         }
 
         @Override
-        public java.util.List<AuditTrailService.AuditEvent> getEvents() { // GH-90000
-            return java.util.List.of(); // GH-90000
+        public java.util.List<AuditTrailService.AuditEvent> getEvents() { 
+            return java.util.List.of(); 
         }
 
         @Override
-        public String getMerkleRoot() { // GH-90000
+        public String getMerkleRoot() { 
             return "mock-merkle-root";
         }
 
         @Override
-        public boolean isIntact() { // GH-90000
+        public boolean isIntact() { 
             return true;
         }
     }
 
     private static class MockExplainabilityFramework implements ExplainabilityFramework {
-        private final Map<String, Explanation> explanations = new HashMap<>(); // GH-90000
+        private final Map<String, Explanation> explanations = new HashMap<>(); 
 
         @Override
-        public Explanation generateExplanation(KernelTelemetryManager.AgentAction action, // GH-90000
+        public Explanation generateExplanation(KernelTelemetryManager.AgentAction action, 
                                                ExecutionContext context) {
-            return Explanation.builder() // GH-90000
+            return Explanation.builder() 
                 .decisionId("decision-1")
-                .summary("Mock explanation for " + action.getActionType()) // GH-90000
+                .summary("Mock explanation for " + action.getActionType()) 
                 .detailedReasoning("Detailed reasoning")
-                .confidence(0.95) // GH-90000
+                .confidence(0.95) 
                 .modelId("model-1")
-                .build(); // GH-90000
+                .build(); 
         }
 
         @Override
-        public void recordDecisionExplanation(String decisionId, Explanation explanation) { // GH-90000
-            explanations.put(decisionId, explanation); // GH-90000
+        public void recordDecisionExplanation(String decisionId, Explanation explanation) { 
+            explanations.put(decisionId, explanation); 
         }
 
         @Override
-        public Explanation getExplanation(String decisionId) { // GH-90000
-            return explanations.get(decisionId); // GH-90000
+        public Explanation getExplanation(String decisionId) { 
+            return explanations.get(decisionId); 
         }
 
         @Override
-        public ValidationResult validateExplanation(Explanation explanation) { // GH-90000
-            return new ValidationResult(true, 1.0, "Valid"); // GH-90000
+        public ValidationResult validateExplanation(Explanation explanation) { 
+            return new ValidationResult(true, 1.0, "Valid"); 
         }
     }
 
     private static class MockExecutionContext implements ExplainabilityFramework.ExecutionContext {
         @Override
-        public com.ghatana.kernel.context.KernelContext getKernelContext() { // GH-90000
+        public com.ghatana.kernel.context.KernelContext getKernelContext() { 
             return null;
         }
 
         @Override
-        public Map<String, Object> getInputs() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getInputs() { 
+            return Map.of(); 
         }
 
         @Override
-        public Map<String, Object> getOutputs() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getOutputs() { 
+            return Map.of(); 
         }
 
         @Override
-        public String getAgentId() { // GH-90000
+        public String getAgentId() { 
             return "test-agent";
         }
     }

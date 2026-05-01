@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.launcher.http;
 
+import com.ghatana.datacloud.launcher.settings.SettingsStore;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -14,6 +15,42 @@ import static org.mockito.Mockito.mock;
 
 @DisplayName("DataCloudHttpServer production dependency validation (P0.5)")
 class DataCloudHttpServerProductionDependencyTest {
+
+    @Test
+    @DisplayName("blocks startup when settings store is missing in production profile")
+    void blocksStartupWhenSettingsStoreMissingInProduction() {
+        Logger logger = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateSettingsStorageConfiguration(
+            true, "production", null, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P0.1: Persistent settings storage is required");
+    }
+
+    @Test
+    @DisplayName("blocks startup when settings store is in-memory in production profile")
+    void blocksStartupWhenSettingsStoreIsInMemoryInProduction() {
+        Logger logger = mock(Logger.class);
+        SettingsStore store = mock(SettingsStore.class);
+        org.mockito.Mockito.when(store.getStorageMode()).thenReturn("in-memory");
+
+        assertThatThrownBy(() -> DataCloudHttpServer.validateSettingsStorageConfiguration(
+            true, "production", store, logger))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("P0.1: In-memory settings storage is not allowed");
+    }
+
+    @Test
+    @DisplayName("allows startup when durable settings store is configured in production profile")
+    void allowsStartupWhenDurableSettingsStoreConfiguredInProduction() {
+        Logger logger = mock(Logger.class);
+        SettingsStore store = mock(SettingsStore.class);
+        org.mockito.Mockito.when(store.getStorageMode()).thenReturn("jdbc");
+
+        assertThatCode(() -> DataCloudHttpServer.validateSettingsStorageConfiguration(
+            true, "production", store, logger))
+            .doesNotThrowAnyException();
+    }
 
     @Test
     @DisplayName("blocks startup when audit service is missing in production profile")

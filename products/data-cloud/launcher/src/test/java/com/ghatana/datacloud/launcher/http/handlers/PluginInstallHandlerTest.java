@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,6 +53,8 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     void setUp() { // GH-90000
         handler = new PluginInstallHandler(http, pluginRegistry, runtimePluginManager, metrics); // GH-90000
         when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+        lenient().when(http.errorResponse(501, "Plugin hot-swap upgrade is not enabled on this instance")) // GH-90000
+            .thenReturn(errorResponse); // GH-90000
     }
 
     @Test
@@ -82,6 +85,8 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     @Test
     @DisplayName("upgrade rejects missing tenant before reading body")
     void upgradeRejectsMissingTenant() { // GH-90000
+        // Enable upgrade path so tenant validation is exercised before body loading.
+        handler.withPluginUpgradeEnabled(true); // GH-90000
         when(request.getPathParameter("id")).thenReturn("plugin-1");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

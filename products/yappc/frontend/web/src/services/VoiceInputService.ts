@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * VoiceInputService
  * 
@@ -42,14 +41,38 @@ interface SpeechRecognitionErrorEventLike {
   error: string;
 }
 
+// Define a minimal SpeechRecognition interface for type safety
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
+
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+}
+
 // Check for browser support
 const SpeechRecognition =
   typeof window !== 'undefined'
-    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    ? (window as unknown as SpeechRecognitionWindow).SpeechRecognition || (window as unknown as SpeechRecognitionWindow).webkitSpeechRecognition
     : null;
 
 export class VoiceInputService {
-  private recognition: any = null;
+  private recognition: SpeechRecognitionInstance | null = null;
   private status: VoiceInputStatus = 'idle';
   private options: VoiceInputOptions = {};
   private listeners: Set<(status: VoiceInputStatus) => void> = new Set();

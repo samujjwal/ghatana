@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/docs",
+  "name": "@ghatana/yappc-docs",
   "version": "1.0.0",
   "private": true,
   "scripts": {

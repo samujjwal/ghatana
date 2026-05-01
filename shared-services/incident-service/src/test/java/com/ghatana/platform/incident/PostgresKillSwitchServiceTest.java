@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.incident;
@@ -46,16 +46,16 @@ class PostgresKillSwitchServiceTest extends EventloopTestBase {
     private PostgresKillSwitchService service;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
-        config.setMaximumPoolSize(5); // GH-90000
-        dataSource = new HikariDataSource(config); // GH-90000
+    void setUp() throws Exception { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
+        config.setMaximumPoolSize(5); 
+        dataSource = new HikariDataSource(config); 
 
-        try (Connection conn = dataSource.getConnection(); // GH-90000
-             Statement stmt = conn.createStatement()) { // GH-90000
+        try (Connection conn = dataSource.getConnection(); 
+             Statement stmt = conn.createStatement()) { 
             stmt.execute("""
                     CREATE TABLE IF NOT EXISTS kill_switch_state (
                         scope           VARCHAR(512) PRIMARY KEY,
@@ -71,56 +71,56 @@ class PostgresKillSwitchServiceTest extends EventloopTestBase {
             stmt.execute("INSERT INTO kill_switch_state (scope, active) VALUES ('global', FALSE) ON CONFLICT DO NOTHING");
         }
 
-        service = new PostgresKillSwitchService(dataSource); // GH-90000
+        service = new PostgresKillSwitchService(dataSource); 
     }
 
     @AfterEach
-    void tearDown() throws Exception { // GH-90000
-        try (Connection conn = dataSource.getConnection(); // GH-90000
-             Statement stmt = conn.createStatement()) { // GH-90000
+    void tearDown() throws Exception { 
+        try (Connection conn = dataSource.getConnection(); 
+             Statement stmt = conn.createStatement()) { 
             stmt.execute("DROP TABLE IF EXISTS kill_switch_state");
         }
-        dataSource.close(); // GH-90000
+        dataSource.close(); 
     }
 
     @Test
     @DisplayName("isActive returns false for a tenant with no kill-switch record")
-    void isActive_unknownTenant_returnsFalse() { // GH-90000
+    void isActive_unknownTenant_returnsFalse() { 
         boolean active = runPromise(() -> service.isActive("tenant-unknown"));
-        assertThat(active).isFalse(); // GH-90000
+        assertThat(active).isFalse(); 
     }
 
     @Test
     @DisplayName("activate sets isActive to true for the given tenant")
-    void activate_thenIsActive_returnsTrue() { // GH-90000
-        runPromise(() -> service.activate("tenant-1", "security incident", "INC-001")); // GH-90000
+    void activate_thenIsActive_returnsTrue() { 
+        runPromise(() -> service.activate("tenant-1", "security incident", "INC-001")); 
         boolean active = runPromise(() -> service.isActive("tenant-1"));
-        assertThat(active).isTrue(); // GH-90000
+        assertThat(active).isTrue(); 
     }
 
     @Test
     @DisplayName("deactivate after activate sets isActive back to false")
-    void deactivate_afterActivate_returnsFalse() { // GH-90000
-        runPromise(() -> service.activate("tenant-2", "security incident", "INC-002")); // GH-90000
-        runPromise(() -> service.deactivate("tenant-2", "incident resolved")); // GH-90000
+    void deactivate_afterActivate_returnsFalse() { 
+        runPromise(() -> service.activate("tenant-2", "security incident", "INC-002")); 
+        runPromise(() -> service.deactivate("tenant-2", "incident resolved")); 
         boolean active = runPromise(() -> service.isActive("tenant-2"));
-        assertThat(active).isFalse(); // GH-90000
+        assertThat(active).isFalse(); 
     }
 
     @Test
     @DisplayName("activateGlobal sets global kill-switch to active")
-    void activateGlobal_setsGlobalActive() { // GH-90000
-        runPromise(() -> service.activateGlobal("platform-wide incident", "INC-GLOBAL-001")); // GH-90000
-        boolean globalActive = runPromise(() -> service.isGlobalActive()); // GH-90000
-        assertThat(globalActive).isTrue(); // GH-90000
+    void activateGlobal_setsGlobalActive() { 
+        runPromise(() -> service.activateGlobal("platform-wide incident", "INC-GLOBAL-001")); 
+        boolean globalActive = runPromise(() -> service.isGlobalActive()); 
+        assertThat(globalActive).isTrue(); 
     }
 
     @Test
     @DisplayName("activate and deactivate complete without error")
-    void activateDeactivate_completeWithoutError() { // GH-90000
-        assertThatCode(() -> { // GH-90000
-            runPromise(() -> service.activate("tenant-3", "test reason", "INC-003")); // GH-90000
-            runPromise(() -> service.deactivate("tenant-3", "test deactivation")); // GH-90000
-        }).doesNotThrowAnyException(); // GH-90000
+    void activateDeactivate_completeWithoutError() { 
+        assertThatCode(() -> { 
+            runPromise(() -> service.activate("tenant-3", "test reason", "INC-003")); 
+            runPromise(() -> service.deactivate("tenant-3", "test deactivation")); 
+        }).doesNotThrowAnyException(); 
     }
 }

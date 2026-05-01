@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.workflow;
@@ -15,36 +15,36 @@ import static org.assertj.core.api.Assertions.*;
 class WorkflowLifecycleEventTest {
 
     @Test
-    void shouldCreateWithFactoryMethod() { // GH-90000
-        WorkflowLifecycleEvent event = WorkflowLifecycleEvent.of( // GH-90000
+    void shouldCreateWithFactoryMethod() { 
+        WorkflowLifecycleEvent event = WorkflowLifecycleEvent.of( 
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED);
 
         assertThat(event.runId()).isEqualTo("run-1");
         assertThat(event.workflowId()).isEqualTo("wf-1");
-        assertThat(event.phase()).isEqualTo(WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED); // GH-90000
-        assertThat(event.timestamp()).isBeforeOrEqualTo(Instant.now()); // GH-90000
-        assertThat(event.stepId()).isNull(); // GH-90000
+        assertThat(event.phase()).isEqualTo(WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED); 
+        assertThat(event.timestamp()).isBeforeOrEqualTo(Instant.now()); 
+        assertThat(event.stepId()).isNull(); 
     }
 
     @Test
-    void shouldCreateStepEvent() { // GH-90000
-        WorkflowLifecycleEvent event = WorkflowLifecycleEvent.forStep( // GH-90000
+    void shouldCreateStepEvent() { 
+        WorkflowLifecycleEvent event = WorkflowLifecycleEvent.forStep( 
             "run-1", "wf-1",
             WorkflowLifecycleEvent.Phase.STEP_STARTED, "step-validate");
 
         assertThat(event.stepId()).isEqualTo("step-validate");
-        assertThat(event.phase()).isEqualTo(WorkflowLifecycleEvent.Phase.STEP_STARTED); // GH-90000
+        assertThat(event.phase()).isEqualTo(WorkflowLifecycleEvent.Phase.STEP_STARTED); 
     }
 
     @Test
-    void shouldHaveAllPhases() { // GH-90000
-        assertThat(WorkflowLifecycleEvent.Phase.values()) // GH-90000
-            .hasSizeGreaterThanOrEqualTo(10); // GH-90000
+    void shouldHaveAllPhases() { 
+        assertThat(WorkflowLifecycleEvent.Phase.values()) 
+            .hasSizeGreaterThanOrEqualTo(10); 
     }
 
     @Test
-    void shouldRejectNullPhase() { // GH-90000
-        assertThatThrownBy(() -> WorkflowLifecycleEvent.of("r", "w", null)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void shouldRejectNullPhase() { 
+        assertThatThrownBy(() -> WorkflowLifecycleEvent.of("r", "w", null)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 }

@@ -8,34 +8,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PipelineEdgeSpecTest {
 
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory()); 
 
     @Test
-    void shouldSerializeAndDeserializeFromYaml() throws Exception { // GH-90000
+    void shouldSerializeAndDeserializeFromYaml() throws Exception { 
         // Given
-        PipelineEdgeSpec original = PipelineEdgeSpec.builder() // GH-90000
+        PipelineEdgeSpec original = PipelineEdgeSpec.builder() 
             .fromStageId("stage-1")
             .toStageId("stage-2")
             .label("primary")
-            .build(); // GH-90000
+            .build(); 
 
         // When
-        String yaml = yamlMapper.writeValueAsString(original); // GH-90000
-        PipelineEdgeSpec deserialized = yamlMapper.readValue(yaml, PipelineEdgeSpec.class); // GH-90000
+        String yaml = yamlMapper.writeValueAsString(original); 
+        PipelineEdgeSpec deserialized = yamlMapper.readValue(yaml, PipelineEdgeSpec.class); 
 
         // Then
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getFromStageId()).isEqualTo("stage-1");
         assertThat(deserialized.getToStageId()).isEqualTo("stage-2");
         assertThat(deserialized.getLabel()).isEqualTo("primary");
     }
 
     @Test
-    void shouldHandleNullValues() { // GH-90000
-        PipelineEdgeSpec edgeSpec = new PipelineEdgeSpec(); // GH-90000
+    void shouldHandleNullValues() { 
+        PipelineEdgeSpec edgeSpec = new PipelineEdgeSpec(); 
 
-        assertThat(edgeSpec.getFromStageId()).isNull(); // GH-90000
-        assertThat(edgeSpec.getToStageId()).isNull(); // GH-90000
-        assertThat(edgeSpec.getLabel()).isNull(); // GH-90000
+        assertThat(edgeSpec.getFromStageId()).isNull(); 
+        assertThat(edgeSpec.getToStageId()).isNull(); 
+        assertThat(edgeSpec.getLabel()).isNull(); 
     }
 }

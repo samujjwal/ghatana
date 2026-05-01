@@ -35,7 +35,7 @@ export const ConfigRenderer: React.FC<ConfigRendererProps> = ({ config, mockData
       <Alert severity="info" className="mb-4">
         <Typography variant="body2">
           This is a placeholder renderer. In production, this would use ComponentRenderer from
-          @yappc/yappc-ui to render the actual components.
+          @ghatana/yappc-ui to render the actual components.
         </Typography>
       </Alert>
 
@@ -62,9 +62,8 @@ function renderComponent(component: PageConfig['components'][number], mockData: 
   };
 
   const childElements = children
-    ? children.map((childId) => {
-        const child = component as any;
-        return renderComponent(child, mockData);
+    ? children.map((child) => {
+        return renderComponent(child as unknown as PageConfig['components'][number], mockData);
       })
     : null;
 

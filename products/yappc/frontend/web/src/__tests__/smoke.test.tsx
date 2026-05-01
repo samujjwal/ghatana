@@ -1,28 +1,46 @@
-// @ts-nocheck
-// All tests skipped - incomplete feature
-import { InMemoryCache } from '@apollo/client';
-import { MockedProvider } from '@apollo/client/testing';
 import { render, screen } from '@testing-library/react';
-import React from 'react';
-import { BrowserRouter } from 'react-router';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
-// WorkspaceListPage is a stub — not yet implemented
-const WorkspaceListPage = () => <div>Workspaces</div>;
+import { CapabilityGate } from '../components/common/CapabilityGate';
+import * as useCapabilityGateModule from '../hooks/useCapabilityGate';
 
-describe('WorkspaceListPage', () => {
-  it('renders the workspace list page without crashing', () => {
-    const cache = new InMemoryCache();
+vi.mock('../hooks/useCapabilityGate', () => ({
+  useCapabilityGate: vi.fn(),
+}));
+
+describe('Smoke test — real component rendering', () => {
+  it('renders CapabilityGate children when capability is granted', () => {
+    vi.spyOn(useCapabilityGateModule, 'useCapabilityGate').mockReturnValue({
+      granted: true,
+      reason: undefined,
+    });
 
     render(
-      <MockedProvider cache={cache}>
-        <BrowserRouter>
-          <WorkspaceListPage />
-        </BrowserRouter>
-      </MockedProvider>
+      <CapabilityGate capability="admin:billing">
+        <div data-testid="granted-content">Billing Dashboard</div>
+      </CapabilityGate>
     );
-    
-    // Check that the stub page content is rendered
-    expect(screen.getByText('Workspaces')).toBeInTheDocument();
+
+    expect(screen.getByTestId('granted-content')).toBeInTheDocument();
+    expect(screen.getByText('Billing Dashboard')).toBeInTheDocument();
+  });
+
+  it('renders fallback when capability is denied', () => {
+    vi.spyOn(useCapabilityGateModule, 'useCapabilityGate').mockReturnValue({
+      granted: false,
+      reason: 'backend-not-live',
+    });
+
+    render(
+      <CapabilityGate
+        capability="admin:billing"
+        fallback={<div data-testid="denied-fallback">Coming soon</div>}
+      >
+        <div data-testid="granted-content">Billing Dashboard</div>
+      </CapabilityGate>
+    );
+
+    expect(screen.queryByTestId('granted-content')).not.toBeInTheDocument();
+    expect(screen.getByTestId('denied-fallback')).toBeInTheDocument();
   });
 });

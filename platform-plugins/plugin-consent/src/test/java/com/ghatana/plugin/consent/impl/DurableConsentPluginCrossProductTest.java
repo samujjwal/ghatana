@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Test
  */
 @DisplayName("KP-013 — DurableConsentPlugin cross-product isolation tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DurableConsentPluginCrossProductTest extends EventloopTestBase {
 
     @Mock
@@ -39,19 +39,19 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     private DurableConsentPlugin plugin;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        JdbcDataSource ds = new JdbcDataSource(); // GH-90000
-        ds.setURL("jdbc:h2:mem:consent_xp_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1"); // GH-90000
-        plugin = new DurableConsentPlugin(ds); // GH-90000
-        plugin.ensureSchema(); // GH-90000
-        runPromise(() -> plugin.initialize(mockContext)); // GH-90000
-        runPromise(() -> plugin.start()); // GH-90000
+    void setUp() { 
+        JdbcDataSource ds = new JdbcDataSource(); 
+        ds.setURL("jdbc:h2:mem:consent_xp_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1"); 
+        plugin = new DurableConsentPlugin(ds); 
+        plugin.ensureSchema(); 
+        runPromise(() -> plugin.initialize(mockContext)); 
+        runPromise(() -> plugin.start()); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        runPromise(() -> plugin.stop()); // GH-90000
-        runPromise(() -> plugin.shutdown()); // GH-90000
+    void tearDown() { 
+        runPromise(() -> plugin.stop()); 
+        runPromise(() -> plugin.shutdown()); 
     }
 
     // -------------------------------------------------------------------------
@@ -60,95 +60,95 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
 
     @Test
     @DisplayName("PHR consent grant must NOT satisfy a Finance purpose consent check")
-    void testPhrConsentDoesNotSatisfyFinancePurpose() { // GH-90000
-        runPromise(() -> plugin.recordConsent( // GH-90000
+    void testPhrConsentDoesNotSatisfyFinancePurpose() { 
+        runPromise(() -> plugin.recordConsent( 
                 "patient-001", "phr.data-sharing", ConsentPlugin.ConsentAction.GRANT));
 
-        boolean phrConsent = runPromise(() -> // GH-90000
-                plugin.verifyConsent("patient-001", "phr.data-sharing")); // GH-90000
-        boolean financeConsent = runPromise(() -> // GH-90000
-                plugin.verifyConsent("patient-001", "finance.transactions")); // GH-90000
+        boolean phrConsent = runPromise(() -> 
+                plugin.verifyConsent("patient-001", "phr.data-sharing")); 
+        boolean financeConsent = runPromise(() -> 
+                plugin.verifyConsent("patient-001", "finance.transactions")); 
 
-        assertThat(phrConsent).isTrue(); // GH-90000
-        assertThat(financeConsent).isFalse(); // GH-90000
+        assertThat(phrConsent).isTrue(); 
+        assertThat(financeConsent).isFalse(); 
     }
 
     @Test
     @DisplayName("Finance consent grant must NOT satisfy a PHR medical-records purpose check")
-    void testFinanceConsentDoesNotSatisfyPhrPurpose() { // GH-90000
-        runPromise(() -> plugin.recordConsent( // GH-90000
+    void testFinanceConsentDoesNotSatisfyPhrPurpose() { 
+        runPromise(() -> plugin.recordConsent( 
                 "customer-001", "finance.transactions", ConsentPlugin.ConsentAction.GRANT));
 
-        boolean financeConsent = runPromise(() -> // GH-90000
-                plugin.verifyConsent("customer-001", "finance.transactions")); // GH-90000
-        boolean phrConsent = runPromise(() -> // GH-90000
-                plugin.verifyConsent("customer-001", "phr.medical-records")); // GH-90000
+        boolean financeConsent = runPromise(() -> 
+                plugin.verifyConsent("customer-001", "finance.transactions")); 
+        boolean phrConsent = runPromise(() -> 
+                plugin.verifyConsent("customer-001", "phr.medical-records")); 
 
-        assertThat(financeConsent).isTrue(); // GH-90000
-        assertThat(phrConsent).isFalse(); // GH-90000
+        assertThat(financeConsent).isTrue(); 
+        assertThat(phrConsent).isFalse(); 
     }
 
     @Test
     @DisplayName("Revoking a PHR consent must not affect a separately granted Finance consent")
-    void testRevocationIsPurposeScoped() { // GH-90000
-        runPromise(() -> plugin.recordConsent( // GH-90000
+    void testRevocationIsPurposeScoped() { 
+        runPromise(() -> plugin.recordConsent( 
                 "multi-consent-user", "phr.data-sharing", ConsentPlugin.ConsentAction.GRANT));
-        ConsentPlugin.ConsentRecord financeGrant = runPromise(() -> // GH-90000
-                plugin.recordConsent("multi-consent-user", "finance.transactions", // GH-90000
+        ConsentPlugin.ConsentRecord financeGrant = runPromise(() -> 
+                plugin.recordConsent("multi-consent-user", "finance.transactions", 
                         ConsentPlugin.ConsentAction.GRANT));
 
         // Revoke PHR consent by withdrawing
-        runPromise(() -> plugin.recordConsent( // GH-90000
+        runPromise(() -> plugin.recordConsent( 
                 "multi-consent-user", "phr.data-sharing", ConsentPlugin.ConsentAction.WITHDRAW));
 
-        boolean phrAfterRevoke = runPromise(() -> // GH-90000
-                plugin.verifyConsent("multi-consent-user", "phr.data-sharing")); // GH-90000
-        boolean financeAfterRevoke = runPromise(() -> // GH-90000
-                plugin.verifyConsent("multi-consent-user", "finance.transactions")); // GH-90000
+        boolean phrAfterRevoke = runPromise(() -> 
+                plugin.verifyConsent("multi-consent-user", "phr.data-sharing")); 
+        boolean financeAfterRevoke = runPromise(() -> 
+                plugin.verifyConsent("multi-consent-user", "finance.transactions")); 
 
-        assertThat(phrAfterRevoke).isFalse(); // GH-90000
-        assertThat(financeAfterRevoke).isTrue(); // GH-90000
+        assertThat(phrAfterRevoke).isFalse(); 
+        assertThat(financeAfterRevoke).isTrue(); 
     }
 
     @Test
     @DisplayName("Consent history is subject-scoped — different subjects have independent histories")
-    void testSubjectIsolation() { // GH-90000
-        runPromise(() -> plugin.recordConsent("subj-a", "shared.purpose", ConsentPlugin.ConsentAction.GRANT)); // GH-90000
-        runPromise(() -> plugin.recordConsent("subj-a", "shared.purpose", ConsentPlugin.ConsentAction.WITHDRAW)); // GH-90000
-        runPromise(() -> plugin.recordConsent("subj-b", "shared.purpose", ConsentPlugin.ConsentAction.GRANT)); // GH-90000
+    void testSubjectIsolation() { 
+        runPromise(() -> plugin.recordConsent("subj-a", "shared.purpose", ConsentPlugin.ConsentAction.GRANT)); 
+        runPromise(() -> plugin.recordConsent("subj-a", "shared.purpose", ConsentPlugin.ConsentAction.WITHDRAW)); 
+        runPromise(() -> plugin.recordConsent("subj-b", "shared.purpose", ConsentPlugin.ConsentAction.GRANT)); 
 
         List<ConsentPlugin.ConsentRecord> histA =
                 runPromise(() -> plugin.getConsentHistory("subj-a"));
         List<ConsentPlugin.ConsentRecord> histB =
                 runPromise(() -> plugin.getConsentHistory("subj-b"));
 
-        assertThat(histA).hasSize(2); // GH-90000
-        assertThat(histA).allMatch(r -> "subj-a".equals(r.subjectId())); // GH-90000
+        assertThat(histA).hasSize(2); 
+        assertThat(histA).allMatch(r -> "subj-a".equals(r.subjectId())); 
 
-        assertThat(histB).hasSize(1); // GH-90000
-        assertThat(histB).allMatch(r -> "subj-b".equals(r.subjectId())); // GH-90000
+        assertThat(histB).hasSize(1); 
+        assertThat(histB).allMatch(r -> "subj-b".equals(r.subjectId())); 
     }
 
     @Test
     @DisplayName("revokeConsent by ID must update status to REVOKED")
-    void testRevokeConsentById() { // GH-90000
-        ConsentPlugin.ConsentRecord record = runPromise(() -> // GH-90000
-                plugin.recordConsent("subj-revoke", "phr.imaging", ConsentPlugin.ConsentAction.GRANT)); // GH-90000
+    void testRevokeConsentById() { 
+        ConsentPlugin.ConsentRecord record = runPromise(() -> 
+                plugin.recordConsent("subj-revoke", "phr.imaging", ConsentPlugin.ConsentAction.GRANT)); 
 
-        runPromise(() -> plugin.revokeConsent(record.consentId())); // GH-90000
+        runPromise(() -> plugin.revokeConsent(record.consentId())); 
 
         ConsentPlugin.ConsentStatus status =
-                runPromise(() -> plugin.getCurrentConsent("subj-revoke", "phr.imaging")); // GH-90000
+                runPromise(() -> plugin.getCurrentConsent("subj-revoke", "phr.imaging")); 
 
-        assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.REVOKED); // GH-90000
+        assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.REVOKED); 
     }
 
     @Test
     @DisplayName("NOT_REQUESTED status must be returned for a subject-purpose pair with no history")
-    void testNotRequestedStatus() { // GH-90000
+    void testNotRequestedStatus() { 
         ConsentPlugin.ConsentStatus status =
-                runPromise(() -> plugin.getCurrentConsent("unknown-subject", "any.purpose")); // GH-90000
+                runPromise(() -> plugin.getCurrentConsent("unknown-subject", "any.purpose")); 
 
-        assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.NOT_REQUESTED); // GH-90000
+        assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.NOT_REQUESTED); 
     }
 }

@@ -26,12 +26,7 @@ class JdbcSettingsStoreTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        DataSource dataSource = com.zaxxer.hikari.HikariDataSource.class
-            .getConstructor()
-            .newInstance();
-        ((com.zaxxer.hikari.HikariDataSource) dataSource).setJdbcUrl("jdbc:h2:mem:test_settings;DB_CLOSE_DELAY=-1");
-        ((com.zaxxer.hikari.HikariDataSource) dataSource).setUsername("sa");
-        ((com.zaxxer.hikari.HikariDataSource) dataSource).setPassword("");
+        DataSource dataSource = createDataSource("jdbc:h2:mem:test_settings;DB_CLOSE_DELAY=-1");
         ObjectMapper objectMapper = new ObjectMapper();
         store = new JdbcSettingsStore(dataSource, objectMapper);
         
@@ -152,6 +147,28 @@ class JdbcSettingsStoreTest {
     }
 
     @Test
+    void settingsPersistAcrossStoreReinitialization() throws Exception {
+        DataSource dataSource = createDataSource("jdbc:h2:mem:test_settings_restart;DB_CLOSE_DELAY=-1");
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        JdbcSettingsStore firstBootStore = new JdbcSettingsStore(dataSource, objectMapper);
+        firstBootStore.updateGeneralSettings("tenant-restart", Map.of("theme", "dark", "language", "en"));
+        firstBootStore.updateSecuritySettings("tenant-restart", Map.of("mfa", true));
+
+        JdbcSettingsStore restartedStore = new JdbcSettingsStore(dataSource, objectMapper);
+
+        assertThat(restartedStore.getGeneralSettings("tenant-restart"))
+            .containsEntry("theme", "dark")
+            .containsEntry("language", "en");
+        assertThat(restartedStore.getSecuritySettings("tenant-restart"))
+            .containsEntry("mfa", true);
+
+        if (dataSource instanceof com.zaxxer.hikari.HikariDataSource hikariDataSource) {
+            hikariDataSource.close();
+        }
+    }
+
+    @Test
     void tenantIsolation() {
         store.updateGeneralSettings("tenant-x", Map.of("language", "de"));
         store.updateGeneralSettings("tenant-y", Map.of("language", "fr"));
@@ -173,5 +190,15 @@ class JdbcSettingsStoreTest {
         assertThatThrownBy(() -> new JdbcSettingsStore(ds, null))
             .isInstanceOf(NullPointerException.class)
             .hasMessageContaining("objectMapper");
+    }
+
+    private static DataSource createDataSource(String jdbcUrl) throws Exception {
+        DataSource dataSource = com.zaxxer.hikari.HikariDataSource.class
+            .getConstructor()
+            .newInstance();
+        ((com.zaxxer.hikari.HikariDataSource) dataSource).setJdbcUrl(jdbcUrl);
+        ((com.zaxxer.hikari.HikariDataSource) dataSource).setUsername("sa");
+        ((com.zaxxer.hikari.HikariDataSource) dataSource).setPassword("");
+        return dataSource;
     }
 }

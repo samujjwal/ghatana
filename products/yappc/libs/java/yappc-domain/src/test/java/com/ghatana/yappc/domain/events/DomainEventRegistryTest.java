@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies // GH-90000
+ * Copyright (c) 2026 Ghatana Technologies 
  * YAPPC Domain — DomainEventRegistry Tests
  */
 package com.ghatana.yappc.domain.events;
@@ -34,35 +34,35 @@ class DomainEventRegistryTest {
 
     /** Minimal concrete event — uses default schemaVersion=1 inferred from class name. */
     static final class OrderPlacedEvent extends DomainEvent {
-        OrderPlacedEvent() { // GH-90000
-            super("OrderPlaced", "agg-1", "Order", "tenant-1", "user-1"); // GH-90000
+        OrderPlacedEvent() { 
+            super("OrderPlaced", "agg-1", "Order", "tenant-1", "user-1"); 
         }
-        @Override public Map<String, Object> toPayload() { return Map.of("orderId", "o1"); } // GH-90000
+        @Override public Map<String, Object> toPayload() { return Map.of("orderId", "o1"); } 
     }
 
     /** Event annotated with explicit metadata. */
-    @DomainEventMetaInfo(eventType = "UserRegistered", schemaVersion = 2) // GH-90000
+    @DomainEventMetaInfo(eventType = "UserRegistered", schemaVersion = 2) 
     static final class UserSignedUpEvent extends DomainEvent {
-        UserSignedUpEvent() { // GH-90000
-            super("UserRegistered", "agg-2", "User", "tenant-1", "user-1"); // GH-90000
+        UserSignedUpEvent() { 
+            super("UserRegistered", "agg-2", "User", "tenant-1", "user-1"); 
         }
-        @Override public Map<String, Object> toPayload() { return Map.of("email", "u@example.com"); } // GH-90000
+        @Override public Map<String, Object> toPayload() { return Map.of("email", "u@example.com"); } 
     }
 
-    /** Malformed event subclass whose declared schema version is 0 (simulates a bug). */ // GH-90000
-    @DomainEventMetaInfo(eventType = "BrokenEvent", schemaVersion = 0) // GH-90000
+    /** Malformed event subclass whose declared schema version is 0 (simulates a bug). */ 
+    @DomainEventMetaInfo(eventType = "BrokenEvent", schemaVersion = 0) 
     static final class BrokenEvent extends DomainEvent {
-        BrokenEvent() { // GH-90000
-            super("BrokenEvent", "agg-3", "Thing", "tenant-1", "user-1"); // GH-90000
+        BrokenEvent() { 
+            super("BrokenEvent", "agg-3", "Thing", "tenant-1", "user-1"); 
         }
-        @Override public Map<String, Object> toPayload() { return Map.of(); } // GH-90000
+        @Override public Map<String, Object> toPayload() { return Map.of(); } 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Use a fresh instance per test to avoid cross-test pollution.
         // DomainEventRegistry.INSTANCE is the production singleton; tests use a local one.
-        registry = new DomainEventRegistry() {}; // GH-90000
+        registry = new DomainEventRegistry() {}; 
     }
 
     // ─── Nested: Registration ──────────────────────────────────────────────────
@@ -73,58 +73,58 @@ class DomainEventRegistryTest {
 
         @Test
         @DisplayName("infers event type by stripping 'Event' suffix when no annotation")
-        void shouldInferEventTypeFromClassName() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
+        void shouldInferEventTypeFromClassName() { 
+            registry.register(OrderPlacedEvent.class); 
 
             assertThat(registry.registeredTypes()).containsExactly("OrderPlaced");
         }
 
         @Test
         @DisplayName("uses @DomainEventMetaInfo annotation eventType when present")
-        void shouldUseAnnotationEventType() { // GH-90000
-            registry.register(UserSignedUpEvent.class); // GH-90000
+        void shouldUseAnnotationEventType() { 
+            registry.register(UserSignedUpEvent.class); 
 
             assertThat(registry.registeredTypes()).containsExactly("UserRegistered");
         }
 
         @Test
         @DisplayName("uses annotation schemaVersion=2 from @DomainEventMetaInfo")
-        void shouldUseAnnotationSchemaVersion() { // GH-90000
-            registry.register(UserSignedUpEvent.class); // GH-90000
+        void shouldUseAnnotationSchemaVersion() { 
+            registry.register(UserSignedUpEvent.class); 
 
             DomainEventRegistry.EventTypeMetadata meta = registry.getMetadata("UserRegistered");
-            assertThat(meta).isNotNull(); // GH-90000
-            assertThat(meta.schemaVersion()).isEqualTo(2); // GH-90000
+            assertThat(meta).isNotNull(); 
+            assertThat(meta.schemaVersion()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("defaults schemaVersion to 1 when no annotation present")
-        void shouldDefaultSchemaVersionToOne() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
+        void shouldDefaultSchemaVersionToOne() { 
+            registry.register(OrderPlacedEvent.class); 
 
             DomainEventRegistry.EventTypeMetadata meta = registry.getMetadata("OrderPlaced");
-            assertThat(meta).isNotNull(); // GH-90000
-            assertThat(meta.schemaVersion()).isEqualTo(1); // GH-90000
+            assertThat(meta).isNotNull(); 
+            assertThat(meta.schemaVersion()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("registers multiple event types independently")
-        void shouldRegisterMultipleTypes() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
-            registry.register(UserSignedUpEvent.class); // GH-90000
+        void shouldRegisterMultipleTypes() { 
+            registry.register(OrderPlacedEvent.class); 
+            registry.register(UserSignedUpEvent.class); 
 
-            assertThat(registry.registeredTypes()).containsExactlyInAnyOrder("OrderPlaced", "UserRegistered"); // GH-90000
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
+            assertThat(registry.registeredTypes()).containsExactlyInAnyOrder("OrderPlaced", "UserRegistered"); 
+            assertThat(registry.size()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("stores fully qualified class name in metadata")
-        void shouldStoreFullyQualifiedClassName() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
+        void shouldStoreFullyQualifiedClassName() { 
+            registry.register(OrderPlacedEvent.class); 
 
             DomainEventRegistry.EventTypeMetadata meta = registry.getMetadata("OrderPlaced");
-            assertThat(meta).isNotNull(); // GH-90000
-            assertThat(meta.className()).isEqualTo(OrderPlacedEvent.class.getName()); // GH-90000
+            assertThat(meta).isNotNull(); 
+            assertThat(meta.className()).isEqualTo(OrderPlacedEvent.class.getName()); 
         }
     }
 
@@ -136,48 +136,48 @@ class DomainEventRegistryTest {
 
         @Test
         @DisplayName("passes when all registered events have schemaVersion >= 1")
-        void shouldPassForValidEvents() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
-            registry.register(UserSignedUpEvent.class); // GH-90000
+        void shouldPassForValidEvents() { 
+            registry.register(OrderPlacedEvent.class); 
+            registry.register(UserSignedUpEvent.class); 
 
             // Must not throw
-            assertThatCode(() -> registry.validate()).doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> registry.validate()).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("throws InvalidEventRegistrationException when event has schemaVersion=0")
-        void shouldFailForZeroSchemaVersion() { // GH-90000
-            registry.register(BrokenEvent.class); // GH-90000
+        void shouldFailForZeroSchemaVersion() { 
+            registry.register(BrokenEvent.class); 
 
-            assertThatThrownBy(() -> registry.validate()) // GH-90000
-                    .isInstanceOf(DomainEventRegistry.InvalidEventRegistrationException.class) // GH-90000
+            assertThatThrownBy(() -> registry.validate()) 
+                    .isInstanceOf(DomainEventRegistry.InvalidEventRegistrationException.class) 
                     .hasMessageContaining("BrokenEvent")
                     .hasMessageContaining("schemaVersion=0");
         }
 
         @Test
         @DisplayName("lists ALL violations in a single exception message")
-        void shouldListAllViolations() { // GH-90000
-            registry.register(BrokenEvent.class); // GH-90000
+        void shouldListAllViolations() { 
+            registry.register(BrokenEvent.class); 
 
             // Two violations registered
-            @DomainEventMetaInfo(eventType = "AnotherBroken", schemaVersion = 0) // GH-90000
+            @DomainEventMetaInfo(eventType = "AnotherBroken", schemaVersion = 0) 
             class AnotherBrokenEvent extends DomainEvent {
-                AnotherBrokenEvent() { super("AnotherBroken", "a", "A", "t", "u"); } // GH-90000
-                @Override public Map<String, Object> toPayload() { return Map.of(); } // GH-90000
+                AnotherBrokenEvent() { super("AnotherBroken", "a", "A", "t", "u"); } 
+                @Override public Map<String, Object> toPayload() { return Map.of(); } 
             }
-            registry.register(AnotherBrokenEvent.class); // GH-90000
+            registry.register(AnotherBrokenEvent.class); 
 
-            assertThatThrownBy(() -> registry.validate()) // GH-90000
-                    .isInstanceOf(DomainEventRegistry.InvalidEventRegistrationException.class) // GH-90000
+            assertThatThrownBy(() -> registry.validate()) 
+                    .isInstanceOf(DomainEventRegistry.InvalidEventRegistrationException.class) 
                     .hasMessageContaining("BrokenEvent")
                     .hasMessageContaining("AnotherBroken");
         }
 
         @Test
         @DisplayName("logs warning but does not throw when no events registered")
-        void shouldWarnOnEmptyRegistry() { // GH-90000
-            assertThatCode(() -> registry.validate()).doesNotThrowAnyException(); // GH-90000
+        void shouldWarnOnEmptyRegistry() { 
+            assertThatCode(() -> registry.validate()).doesNotThrowAnyException(); 
         }
     }
 
@@ -189,43 +189,43 @@ class DomainEventRegistryTest {
 
         @Test
         @DisplayName("isRegistered returns true for registered type")
-        void shouldReturnTrueForRegisteredType() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
+        void shouldReturnTrueForRegisteredType() { 
+            registry.register(OrderPlacedEvent.class); 
 
             assertThat(registry.isRegistered("OrderPlaced")).isTrue();
         }
 
         @Test
         @DisplayName("isRegistered returns false for unknown type")
-        void shouldReturnFalseForUnknownType() { // GH-90000
+        void shouldReturnFalseForUnknownType() { 
             assertThat(registry.isRegistered("Unknown")).isFalse();
         }
 
         @Test
         @DisplayName("getMetadata returns null for unregistered type")
-        void shouldReturnNullForUnregisteredType() { // GH-90000
+        void shouldReturnNullForUnregisteredType() { 
             assertThat(registry.getMetadata("Ghost")).isNull();
         }
 
         @Test
         @DisplayName("registeredTypes returns unmodifiable set")
-        void shouldReturnUnmodifiableSet() { // GH-90000
-            registry.register(OrderPlacedEvent.class); // GH-90000
+        void shouldReturnUnmodifiableSet() { 
+            registry.register(OrderPlacedEvent.class); 
 
             assertThatThrownBy(() -> registry.registeredTypes().add("Hacked"))
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("size() reflects the number of registered types")
-        void shouldTrackSize() { // GH-90000
-            assertThat(registry.size()).isEqualTo(0); // GH-90000
+        void shouldTrackSize() { 
+            assertThat(registry.size()).isEqualTo(0); 
 
-            registry.register(OrderPlacedEvent.class); // GH-90000
-            assertThat(registry.size()).isEqualTo(1); // GH-90000
+            registry.register(OrderPlacedEvent.class); 
+            assertThat(registry.size()).isEqualTo(1); 
 
-            registry.register(UserSignedUpEvent.class); // GH-90000
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
+            registry.register(UserSignedUpEvent.class); 
+            assertThat(registry.size()).isEqualTo(2); 
         }
     }
 }

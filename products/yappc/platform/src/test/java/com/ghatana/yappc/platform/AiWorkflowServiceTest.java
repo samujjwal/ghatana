@@ -34,11 +34,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
     private static final String TENANT_ID = "test-tenant";
 
     @BeforeEach
-    void setUp() { // GH-90000
-        workflowRepository = new InMemoryAiWorkflowRepository(); // GH-90000
-        planRepository = new InMemoryAiPlanRepository(); // GH-90000
-        agentRegistry = mock(AgentRegistry.class); // GH-90000
-        service = new AiWorkflowService(workflowRepository, planRepository, agentRegistry); // GH-90000
+    void setUp() { 
+        workflowRepository = new InMemoryAiWorkflowRepository(); 
+        planRepository = new InMemoryAiPlanRepository(); 
+        agentRegistry = mock(AgentRegistry.class); 
+        service = new AiWorkflowService(workflowRepository, planRepository, agentRegistry); 
     }
 
     @Nested
@@ -47,10 +47,10 @@ class AiWorkflowServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create workflow with DRAFT status")
-        void shouldCreateWorkflowWithDraftStatus() { // GH-90000
+        void shouldCreateWorkflowWithDraftStatus() { 
             // GIVEN
             AiWorkflowService.CreateWorkflowRequest request =
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Test Workflow",
                     "A test workflow description",
@@ -59,64 +59,64 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                 );
 
             // WHEN
-            AiWorkflowInstance result = runPromise(() -> service.createWorkflow(request)); // GH-90000
+            AiWorkflowInstance result = runPromise(() -> service.createWorkflow(request)); 
 
             // THEN
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.id()).isNotEmpty(); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result.id()).isNotEmpty(); 
             assertThat(result.name()).isEqualTo("Test Workflow");
             assertThat(result.description()).isEqualTo("A test workflow description");
-            assertThat(result.type()).isEqualTo(AiWorkflowInstance.WorkflowType.APP_CREATION); // GH-90000
-            assertThat(result.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.DRAFT); // GH-90000
-            assertThat(result.tenantId()).isEqualTo(TENANT_ID); // GH-90000
+            assertThat(result.type()).isEqualTo(AiWorkflowInstance.WorkflowType.APP_CREATION); 
+            assertThat(result.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.DRAFT); 
+            assertThat(result.tenantId()).isEqualTo(TENANT_ID); 
         }
 
         @Test
         @DisplayName("should retrieve workflow by ID")
-        void shouldRetrieveWorkflowById() { // GH-90000
+        void shouldRetrieveWorkflowById() { 
             // GIVEN
             AiWorkflowService.CreateWorkflowRequest request =
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Get Test Workflow",
                     "Description",
                     AiWorkflowInstance.WorkflowType.BUG_FIX,
                     null
                 );
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(request)); // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow(request)); 
 
             // WHEN
-            Optional<AiWorkflowInstance> result = runPromise(() -> // GH-90000
-                service.getWorkflow(created.id(), TENANT_ID) // GH-90000
+            Optional<AiWorkflowInstance> result = runPromise(() -> 
+                service.getWorkflow(created.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().id()).isEqualTo(created.id()); // GH-90000
+            assertThat(result).isPresent(); 
+            assertThat(result.get().id()).isEqualTo(created.id()); 
             assertThat(result.get().name()).isEqualTo("Get Test Workflow");
         }
 
         @Test
         @DisplayName("should return empty for non-existent workflow")
-        void shouldReturnEmptyForNonExistentWorkflow() { // GH-90000
+        void shouldReturnEmptyForNonExistentWorkflow() { 
             // WHEN
-            Optional<AiWorkflowInstance> result = runPromise(() -> // GH-90000
-                service.getWorkflow("non-existent-id", TENANT_ID) // GH-90000
+            Optional<AiWorkflowInstance> result = runPromise(() -> 
+                service.getWorkflow("non-existent-id", TENANT_ID) 
             );
 
             // THEN
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("should list workflows by tenant")
-        void shouldListWorkflowsByTenant() { // GH-90000
+        void shouldListWorkflowsByTenant() { 
             // GIVEN
-            for (int i = 0; i < 5; i++) { // GH-90000
-                runPromise(() -> service.createWorkflow( // GH-90000
-                    new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            for (int i = 0; i < 5; i++) { 
+                runPromise(() -> service.createWorkflow( 
+                    new AiWorkflowService.CreateWorkflowRequest( 
                         TENANT_ID,
-                        "Workflow " + System.currentTimeMillis(), // GH-90000
+                        "Workflow " + System.currentTimeMillis(), 
                         "Description",
                         AiWorkflowInstance.WorkflowType.FEATURE_DEVELOPMENT,
                         null
@@ -125,20 +125,20 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             }
 
             // WHEN
-            List<AiWorkflowInstance> result = runPromise(() -> // GH-90000
-                service.listWorkflows(TENANT_ID, null, 10, 0) // GH-90000
+            List<AiWorkflowInstance> result = runPromise(() -> 
+                service.listWorkflows(TENANT_ID, null, 10, 0) 
             );
 
             // THEN
-            assertThat(result).hasSize(5); // GH-90000
+            assertThat(result).hasSize(5); 
         }
 
         @Test
         @DisplayName("should filter workflows by status")
-        void shouldFilterWorkflowsByStatus() { // GH-90000
+        void shouldFilterWorkflowsByStatus() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Draft Workflow",
                     "Description",
@@ -148,25 +148,25 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             ));
 
             // Start one workflow to change its status
-            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); 
 
             // WHEN - filter by IN_PROGRESS
-            List<AiWorkflowInstance> inProgress = runPromise(() -> // GH-90000
-                service.listWorkflows(TENANT_ID, AiWorkflowInstance.WorkflowStatus.IN_PROGRESS, 10, 0) // GH-90000
+            List<AiWorkflowInstance> inProgress = runPromise(() -> 
+                service.listWorkflows(TENANT_ID, AiWorkflowInstance.WorkflowStatus.IN_PROGRESS, 10, 0) 
             );
 
             // THEN
-            assertThat(inProgress).hasSize(1); // GH-90000
-            assertThat(inProgress.get(0).status()) // GH-90000
-                .isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); // GH-90000
+            assertThat(inProgress).hasSize(1); 
+            assertThat(inProgress.get(0).status()) 
+                .isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); 
         }
 
         @Test
         @DisplayName("should delete workflow")
-        void shouldDeleteWorkflow() { // GH-90000
+        void shouldDeleteWorkflow() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "To Delete",
                     "Description",
@@ -176,13 +176,13 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             ));
 
             // WHEN
-            Boolean deleted = runPromise(() -> // GH-90000
-                service.deleteWorkflow(created.id(), TENANT_ID) // GH-90000
+            Boolean deleted = runPromise(() -> 
+                service.deleteWorkflow(created.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(deleted).isTrue(); // GH-90000
-            assertThat(runPromise(() -> service.getWorkflow(created.id(), TENANT_ID))).isEmpty(); // GH-90000
+            assertThat(deleted).isTrue(); 
+            assertThat(runPromise(() -> service.getWorkflow(created.id(), TENANT_ID))).isEmpty(); 
         }
     }
 
@@ -192,10 +192,10 @@ class AiWorkflowServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should start draft workflow")
-        void shouldStartDraftWorkflow() { // GH-90000
+        void shouldStartDraftWorkflow() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Start Test",
                     "Description",
@@ -205,20 +205,20 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             ));
 
             // WHEN
-            AiWorkflowInstance started = runPromise(() -> // GH-90000
-                service.startWorkflow(created.id(), TENANT_ID) // GH-90000
+            AiWorkflowInstance started = runPromise(() -> 
+                service.startWorkflow(created.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(started.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); // GH-90000
+            assertThat(started.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); 
         }
 
         @Test
         @DisplayName("should pause running workflow")
-        void shouldPauseRunningWorkflow() { // GH-90000
+        void shouldPauseRunningWorkflow() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Pause Test",
                     "Description",
@@ -226,23 +226,23 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                     null
                 )
             ));
-            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); 
 
             // WHEN
-            AiWorkflowInstance paused = runPromise(() -> // GH-90000
-                service.pauseWorkflow(created.id(), TENANT_ID) // GH-90000
+            AiWorkflowInstance paused = runPromise(() -> 
+                service.pauseWorkflow(created.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(paused.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.PAUSED); // GH-90000
+            assertThat(paused.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.PAUSED); 
         }
 
         @Test
         @DisplayName("should resume paused workflow")
-        void shouldResumePausedWorkflow() { // GH-90000
+        void shouldResumePausedWorkflow() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Resume Test",
                     "Description",
@@ -250,24 +250,24 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                     null
                 )
             ));
-            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); // GH-90000
-            runPromise(() -> service.pauseWorkflow(created.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); 
+            runPromise(() -> service.pauseWorkflow(created.id(), TENANT_ID)); 
 
             // WHEN
-            AiWorkflowInstance resumed = runPromise(() -> // GH-90000
-                service.resumeWorkflow(created.id(), TENANT_ID) // GH-90000
+            AiWorkflowInstance resumed = runPromise(() -> 
+                service.resumeWorkflow(created.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(resumed.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); // GH-90000
+            assertThat(resumed.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); 
         }
 
         @Test
         @DisplayName("should cancel workflow")
-        void shouldCancelWorkflow() { // GH-90000
+        void shouldCancelWorkflow() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Cancel Test",
                     "Description",
@@ -275,24 +275,24 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                     null
                 )
             ));
-            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); 
 
             // WHEN
-            AiWorkflowInstance cancelled = runPromise(() -> // GH-90000
-                service.cancelWorkflow(created.id(), TENANT_ID, "test-user", "test reason") // GH-90000
+            AiWorkflowInstance cancelled = runPromise(() -> 
+                service.cancelWorkflow(created.id(), TENANT_ID, "test-user", "test reason") 
             );
 
             // THEN
-            assertThat(cancelled.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED); // GH-90000
-            assertThat(cancelled.isTerminal()).isTrue(); // GH-90000
+            assertThat(cancelled.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED); 
+            assertThat(cancelled.isTerminal()).isTrue(); 
         }
 
         @Test
         @DisplayName("should throw when starting already running workflow")
-        void shouldThrowWhenStartingRunningWorkflow() { // GH-90000
+        void shouldThrowWhenStartingRunningWorkflow() { 
             // GIVEN
-            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance created = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID,
                     "Invalid Start Test",
                     "Description",
@@ -300,21 +300,21 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                     null
                 )
             ));
-            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)); 
 
             // WHEN/THEN
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)) // GH-90000
-            ).isInstanceOf(AiWorkflowService.InvalidWorkflowStateException.class); // GH-90000
+            assertThatThrownBy(() -> 
+                runPromise(() -> service.startWorkflow(created.id(), TENANT_ID)) 
+            ).isInstanceOf(AiWorkflowService.InvalidWorkflowStateException.class); 
         }
 
         @Test
         @DisplayName("should throw for non-existent workflow")
-        void shouldThrowForNonExistentWorkflow() { // GH-90000
+        void shouldThrowForNonExistentWorkflow() { 
             // WHEN/THEN
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> service.startWorkflow("non-existent", TENANT_ID)) // GH-90000
-            ).isInstanceOf(AiWorkflowService.WorkflowNotFoundException.class); // GH-90000
+            assertThatThrownBy(() -> 
+                runPromise(() -> service.startWorkflow("non-existent", TENANT_ID)) 
+            ).isInstanceOf(AiWorkflowService.WorkflowNotFoundException.class); 
         }
     }
 
@@ -324,9 +324,9 @@ class AiWorkflowServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should calculate progress correctly")
-        void shouldCalculateProgressCorrectly() { // GH-90000
+        void shouldCalculateProgressCorrectly() { 
             // GIVEN
-            AiWorkflowInstance workflow = new AiWorkflowInstance( // GH-90000
+            AiWorkflowInstance workflow = new AiWorkflowInstance( 
                 "test-id",
                 TENANT_ID,
                 "Progress Test",
@@ -336,12 +336,12 @@ class AiWorkflowServiceTest extends EventloopTestBase {
                 "step-3",
                 2,
                 5,
-                java.util.Map.of(), // GH-90000
-                java.util.Map.of(), // GH-90000
+                java.util.Map.of(), 
+                java.util.Map.of(), 
                 null,
                 null,
-                java.time.Instant.now(), // GH-90000
-                java.time.Instant.now(), // GH-90000
+                java.time.Instant.now(), 
+                java.time.Instant.now(), 
                 null,
                 null,
                 null,
@@ -352,17 +352,17 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             );
 
             // WHEN
-            double progress = workflow.getProgress(); // GH-90000
+            double progress = workflow.getProgress(); 
 
             // THEN
-            assertThat(progress).isEqualTo(40.0); // 2/5 * 100 // GH-90000
+            assertThat(progress).isEqualTo(40.0); // 2/5 * 100 
         }
 
         @Test
         @DisplayName("should return zero progress for empty workflow")
-        void shouldReturnZeroProgressForEmptyWorkflow() { // GH-90000
+        void shouldReturnZeroProgressForEmptyWorkflow() { 
             // GIVEN
-            AiWorkflowInstance workflow = AiWorkflowInstance.create( // GH-90000
+            AiWorkflowInstance workflow = AiWorkflowInstance.create( 
                 "test-id",
                 TENANT_ID,
                 "Empty Progress Test",
@@ -371,10 +371,10 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             );
 
             // WHEN
-            double progress = workflow.getProgress(); // GH-90000
+            double progress = workflow.getProgress(); 
 
             // THEN
-            assertThat(progress).isEqualTo(0.0); // GH-90000
+            assertThat(progress).isEqualTo(0.0); 
         }
     }
 
@@ -384,43 +384,43 @@ class AiWorkflowServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should count workflows by status")
-        void shouldCountWorkflowsByStatus() { // GH-90000
+        void shouldCountWorkflowsByStatus() { 
             // GIVEN - create workflows in various states
-            AiWorkflowInstance w1 = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance w1 = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID, "Draft 1", "Desc",
                     AiWorkflowInstance.WorkflowType.APP_CREATION, null
                 )
             ));
 
-            AiWorkflowInstance w2 = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance w2 = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID, "Started", "Desc",
                     AiWorkflowInstance.WorkflowType.BUG_FIX, null
                 )
             ));
-            runPromise(() -> service.startWorkflow(w2.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(w2.id(), TENANT_ID)); 
 
-            AiWorkflowInstance w3 = runPromise(() -> service.createWorkflow( // GH-90000
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+            AiWorkflowInstance w3 = runPromise(() -> service.createWorkflow( 
+                new AiWorkflowService.CreateWorkflowRequest( 
                     TENANT_ID, "Paused", "Desc",
                     AiWorkflowInstance.WorkflowType.TESTING, null
                 )
             ));
-            runPromise(() -> service.startWorkflow(w3.id(), TENANT_ID)); // GH-90000
-            runPromise(() -> service.pauseWorkflow(w3.id(), TENANT_ID)); // GH-90000
+            runPromise(() -> service.startWorkflow(w3.id(), TENANT_ID)); 
+            runPromise(() -> service.pauseWorkflow(w3.id(), TENANT_ID)); 
 
             // WHEN
-            AiWorkflowRepository.WorkflowStatusCounts counts = runPromise(() -> // GH-90000
-                workflowRepository.countByStatus(TENANT_ID) // GH-90000
+            AiWorkflowRepository.WorkflowStatusCounts counts = runPromise(() -> 
+                workflowRepository.countByStatus(TENANT_ID) 
             );
 
             // THEN
-            assertThat(counts.draft()).isEqualTo(1); // GH-90000
-            assertThat(counts.inProgress()).isEqualTo(1); // GH-90000
-            assertThat(counts.paused()).isEqualTo(1); // GH-90000
-            assertThat(counts.total()).isEqualTo(3); // GH-90000
-            assertThat(counts.active()).isEqualTo(1); // only in-progress // GH-90000
+            assertThat(counts.draft()).isEqualTo(1); 
+            assertThat(counts.inProgress()).isEqualTo(1); 
+            assertThat(counts.paused()).isEqualTo(1); 
+            assertThat(counts.total()).isEqualTo(3); 
+            assertThat(counts.active()).isEqualTo(1); // only in-progress 
         }
     }
 }

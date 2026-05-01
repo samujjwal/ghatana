@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Test
  */
 @DisplayName("StandardFraudDetectionPlugin Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class StandardFraudDetectionPluginTest extends EventloopTestBase {
 
     @Mock
@@ -34,132 +34,132 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     private StandardFraudDetectionPlugin fraudPlugin;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        fraudPlugin = new StandardFraudDetectionPlugin(); // GH-90000
+    void setUp() { 
+        fraudPlugin = new StandardFraudDetectionPlugin(); 
     }
 
     @Test
     @DisplayName("Should initialize fraud detection plugin")
-    void testInitialize() { // GH-90000
-        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
-        Promise<Void> result = fraudPlugin.initialize(mockContext); // GH-90000
-        runPromise(() -> result); // GH-90000
-        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.INITIALIZED); // GH-90000
+    void testInitialize() { 
+        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.UNLOADED); 
+        Promise<Void> result = fraudPlugin.initialize(mockContext); 
+        runPromise(() -> result); 
+        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.INITIALIZED); 
     }
 
     @Test
     @DisplayName("Should start fraud detection plugin")
-    void testStart() { // GH-90000
-        runPromise(() -> fraudPlugin.initialize(mockContext)); // GH-90000
-        Promise<Void> result = fraudPlugin.start(); // GH-90000
-        runPromise(() -> result); // GH-90000
-        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.STARTED); // GH-90000
+    void testStart() { 
+        runPromise(() -> fraudPlugin.initialize(mockContext)); 
+        Promise<Void> result = fraudPlugin.start(); 
+        runPromise(() -> result); 
+        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.STARTED); 
     }
 
     @Test
     @DisplayName("Should return correct metadata")
-    void testMetadata() { // GH-90000
-        var metadata = fraudPlugin.metadata(); // GH-90000
+    void testMetadata() { 
+        var metadata = fraudPlugin.metadata(); 
         assertThat(metadata.name()).isEqualTo("Fraud Detection Plugin");
         assertThat(metadata.version()).isEqualTo("1.0.0");
     }
 
     @Test
     @DisplayName("Should assess transaction for fraud")
-    void testAssessTransaction() { // GH-90000
-        runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
-                .then(v -> fraudPlugin.start())); // GH-90000
+    void testAssessTransaction() { 
+        runPromise(() -> fraudPlugin.initialize(mockContext) 
+                .then(v -> fraudPlugin.start())); 
 
         FraudDetectionPlugin.FraudDetectionRequest request =
-            new FraudDetectionPlugin.FraudDetectionRequest( // GH-90000
-                "txn123", "TRANSACTION", Map.of("amount", 100, "mcc", 5411), // GH-90000
+            new FraudDetectionPlugin.FraudDetectionRequest( 
+                "txn123", "TRANSACTION", Map.of("amount", 100, "mcc", 5411), 
                 "model_v1");
 
         Promise<FraudDetectionPlugin.FraudAssessment> result =
-                fraudPlugin.assessTransaction("txn123", request); // GH-90000
-        FraudDetectionPlugin.FraudAssessment assessment = runPromise(() -> result); // GH-90000
+                fraudPlugin.assessTransaction("txn123", request); 
+        FraudDetectionPlugin.FraudAssessment assessment = runPromise(() -> result); 
 
         assertThat(assessment.transactionId()).isEqualTo("txn123");
-        assertThat(assessment.riskScore()).isBetween(0.0, 1.0); // GH-90000
-        assertThat(assessment.assessedAt()).isNotNull(); // GH-90000
+        assertThat(assessment.riskScore()).isBetween(0.0, 1.0); 
+        assertThat(assessment.assessedAt()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should register fraud rule")
-    void testRegisterRule() { // GH-90000
-        runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
-                .then(v -> fraudPlugin.start())); // GH-90000
+    void testRegisterRule() { 
+        runPromise(() -> fraudPlugin.initialize(mockContext) 
+                .then(v -> fraudPlugin.start())); 
 
-        FraudDetectionPlugin.FraudRule rule = new FraudDetectionPlugin.FraudRule( // GH-90000
+        FraudDetectionPlugin.FraudRule rule = new FraudDetectionPlugin.FraudRule( 
             "RULE_001", "AMOUNT_THRESHOLD", "Amount exceeds threshold", 0.5);
 
-        Promise<Void> result = fraudPlugin.registerRule("product_finance", rule); // GH-90000
-        runPromise(() -> result); // GH-90000
+        Promise<Void> result = fraudPlugin.registerRule("product_finance", rule); 
+        runPromise(() -> result); 
 
         // Verify rule was registered by assessing with product
         FraudDetectionPlugin.FraudDetectionRequest request =
-            new FraudDetectionPlugin.FraudDetectionRequest( // GH-90000
-                "txn999", "product_finance", Map.of("amount", 50000), "model_v1"); // GH-90000
+            new FraudDetectionPlugin.FraudDetectionRequest( 
+                "txn999", "product_finance", Map.of("amount", 50000), "model_v1"); 
 
         Promise<FraudDetectionPlugin.FraudAssessment> assessResult =
-                fraudPlugin.assessTransaction("txn999", request); // GH-90000
-        FraudDetectionPlugin.FraudAssessment assessment = runPromise(() -> assessResult); // GH-90000
+                fraudPlugin.assessTransaction("txn999", request); 
+        FraudDetectionPlugin.FraudAssessment assessment = runPromise(() -> assessResult); 
 
-        assertThat(assessment).isNotNull(); // GH-90000
+        assertThat(assessment).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should detect fraud patterns")
-    void testDetectPatterns() { // GH-90000
-        runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
-                .then(v -> fraudPlugin.start())); // GH-90000
+    void testDetectPatterns() { 
+        runPromise(() -> fraudPlugin.initialize(mockContext) 
+                .then(v -> fraudPlugin.start())); 
 
-        Instant now = Instant.now(); // GH-90000
-        if (fraudPlugin.detectPatterns("product1", // GH-90000
-            new FraudDetectionPlugin.TimeWindow(now.minusSeconds(3600), now)) != null) { // GH-90000
+        Instant now = Instant.now(); 
+        if (fraudPlugin.detectPatterns("product1", 
+            new FraudDetectionPlugin.TimeWindow(now.minusSeconds(3600), now)) != null) { 
             // Pattern detected - may vary based on current state
         }
         // Just verify the method returns a result
-        assertThat(fraudPlugin).isNotNull(); // GH-90000
+        assertThat(fraudPlugin).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should train fraud model")
-    void testTrainModel() { // GH-90000
-        runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
-                .then(v -> fraudPlugin.start())); // GH-90000
+    void testTrainModel() { 
+        runPromise(() -> fraudPlugin.initialize(mockContext) 
+                .then(v -> fraudPlugin.start())); 
 
-        var examples = Arrays.asList( // GH-90000
-            new FraudDetectionPlugin.TrainingData.TrainingExample( // GH-90000
-                Map.of("amount", 100.0, "country", "US"), false), // GH-90000
-            new FraudDetectionPlugin.TrainingData.TrainingExample( // GH-90000
-                Map.of("amount", 50000.0, "country", "CN"), true) // GH-90000
+        var examples = Arrays.asList( 
+            new FraudDetectionPlugin.TrainingData.TrainingExample( 
+                Map.of("amount", 100.0, "country", "US"), false), 
+            new FraudDetectionPlugin.TrainingData.TrainingExample( 
+                Map.of("amount", 50000.0, "country", "CN"), true) 
         );
 
         FraudDetectionPlugin.TrainingData trainingData =
-            new FraudDetectionPlugin.TrainingData(examples, Map.of()); // GH-90000
+            new FraudDetectionPlugin.TrainingData(examples, Map.of()); 
 
-        Promise<Void> result = fraudPlugin.trainModel("model_v2", trainingData); // GH-90000
-        runPromise(() -> result); // GH-90000
+        Promise<Void> result = fraudPlugin.trainModel("model_v2", trainingData); 
+        runPromise(() -> result); 
 
         // Verify model was trained
         Promise<FraudDetectionPlugin.ModelMetrics> metricsResult =
                 fraudPlugin.getModelMetrics("model_v2");
-        FraudDetectionPlugin.ModelMetrics metrics = runPromise(() -> metricsResult); // GH-90000
+        FraudDetectionPlugin.ModelMetrics metrics = runPromise(() -> metricsResult); 
 
-        assertThat(metrics).isNotNull(); // GH-90000
-        assertThat(metrics.precision()).isGreaterThan(0); // GH-90000
+        assertThat(metrics).isNotNull(); 
+        assertThat(metrics.precision()).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("Should shutdown fraud detection plugin")
-    void testShutdown() { // GH-90000
-        runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
-                .then(v -> fraudPlugin.start())); // GH-90000
+    void testShutdown() { 
+        runPromise(() -> fraudPlugin.initialize(mockContext) 
+                .then(v -> fraudPlugin.start())); 
 
-        Promise<Void> result = fraudPlugin.shutdown(); // GH-90000
-        runPromise(() -> result); // GH-90000
+        Promise<Void> result = fraudPlugin.shutdown(); 
+        runPromise(() -> result); 
 
-        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
+        assertThat(fraudPlugin.getState()).isEqualTo(PluginState.UNLOADED); 
     }
 }

@@ -161,8 +161,10 @@ public class YappcScaffoldService extends UnifiedApplicationLauncher {
                                 .toPromise())
                 .build();
 
+            com.ghatana.platform.security.rbac.PolicyRepository policyRepository =
+                injector.getInstance(com.ghatana.platform.security.rbac.PolicyRepository.class);
             YappcApiSecurity.SecurityRoutes securedApi =
-                YappcApiSecurity.secureApi(apiServlet, "yappc:scaffold-api");
+                YappcApiSecurity.secureApi(apiServlet, "yappc:scaffold-api", policyRepository);
             AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(
                 request -> io.activej.http.HttpResponse.ok200()
                         .withHeader(io.activej.http.HttpHeaders.of("Content-Type"),
@@ -170,7 +172,8 @@ public class YappcScaffoldService extends UnifiedApplicationLauncher {
                         .withBody(io.activej.bytebuf.ByteBuf.wrapForReading(
                                 prometheusRegistry.scrape().getBytes(java.nio.charset.StandardCharsets.UTF_8)))
                         .toPromise(),
-                "yappc:scaffold-metrics");
+                "yappc:scaffold-metrics",
+                policyRepository);
 
             var router = io.activej.http.RoutingServlet.builder(eventloop)
                 .with(GET, "/health", request ->

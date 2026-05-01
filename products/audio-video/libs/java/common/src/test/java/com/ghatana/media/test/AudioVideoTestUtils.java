@@ -36,7 +36,7 @@ import io.activej.promise.Promise;
  */
 public final class AudioVideoTestUtils {
 
-    private AudioVideoTestUtils() {} // Utility class // GH-90000
+    private AudioVideoTestUtils() {} // Utility class 
 
     /**
      * Creates a failing STT engine for testing error handling.
@@ -44,9 +44,9 @@ public final class AudioVideoTestUtils {
      * @param failureRate rate 0.0-1.0 of operations that should fail
      * @param exceptionType type of exception to throw
      */
-    public static SttEngine createFailingSttEngine(double failureRate, // GH-90000
+    public static SttEngine createFailingSttEngine(double failureRate, 
                                                     Class<? extends Exception> exceptionType) {
-        return new FailingSttEngine(failureRate, exceptionType); // GH-90000
+        return new FailingSttEngine(failureRate, exceptionType); 
     }
 
     /**
@@ -54,8 +54,8 @@ public final class AudioVideoTestUtils {
      *
      * @param delayMs delay per operation in milliseconds
      */
-    public static SttEngine createSlowSttEngine(long delayMs) { // GH-90000
-        return new SlowSttEngine(delayMs); // GH-90000
+    public static SttEngine createSlowSttEngine(long delayMs) { 
+        return new SlowSttEngine(delayMs); 
     }
 
     /**
@@ -63,8 +63,8 @@ public final class AudioVideoTestUtils {
      *
      * @param maxConcurrent max concurrent operations before failing
      */
-    public static SttEngine createResourceExhaustedEngine(int maxConcurrent) { // GH-90000
-        return new ResourceExhaustedSttEngine(maxConcurrent); // GH-90000
+    public static SttEngine createResourceExhaustedEngine(int maxConcurrent) { 
+        return new ResourceExhaustedSttEngine(maxConcurrent); 
     }
 
     /**
@@ -76,9 +76,9 @@ public final class AudioVideoTestUtils {
      * @return the result
      * @throws TimeoutException if operation times out
      */
-    public static <T> T awaitWithTimeout(CompletableFuture<T> future, Duration timeout) // GH-90000
+    public static <T> T awaitWithTimeout(CompletableFuture<T> future, Duration timeout) 
             throws TimeoutException, ExecutionException, InterruptedException {
-        return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS); // GH-90000
+        return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS); 
     }
 
     /**
@@ -86,12 +86,12 @@ public final class AudioVideoTestUtils {
      *
      * @param duration duration to sleep
      */
-    public static void simulateLatency(Duration duration) { // GH-90000
+    public static void simulateLatency(Duration duration) { 
         try {
-            Thread.sleep(duration.toMillis()); // GH-90000
-        } catch (InterruptedException e) { // GH-90000
-            Thread.currentThread().interrupt(); // GH-90000
-            throw new RuntimeException("Interrupted during latency simulation", e); // GH-90000
+            Thread.sleep(duration.toMillis()); 
+        } catch (InterruptedException e) { 
+            Thread.currentThread().interrupt(); 
+            throw new RuntimeException("Interrupted during latency simulation", e); 
         }
     }
 
@@ -101,107 +101,107 @@ public final class AudioVideoTestUtils {
     private static class FailingSttEngine implements SttEngine {
         private final double failureRate;
         private final Class<? extends Exception> exceptionType;
-        private final AtomicInteger callCount = new AtomicInteger(0); // GH-90000
-        private final AtomicBoolean closed = new AtomicBoolean(false); // GH-90000
+        private final AtomicInteger callCount = new AtomicInteger(0); 
+        private final AtomicBoolean closed = new AtomicBoolean(false); 
 
-        FailingSttEngine(double failureRate, Class<? extends Exception> exceptionType) { // GH-90000
+        FailingSttEngine(double failureRate, Class<? extends Exception> exceptionType) { 
             this.failureRate = failureRate;
             this.exceptionType = exceptionType;
         }
 
         @Override
-        public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { // GH-90000
-            ensureOpen(); // GH-90000
-            ValidationFramework.validateAudio(audio); // GH-90000
-            int call = callCount.incrementAndGet(); // GH-90000
-            if (shouldFail(call)) { // GH-90000
-                throw new RuntimeException("Simulated failure", createException()); // GH-90000
+        public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { 
+            ensureOpen(); 
+            ValidationFramework.validateAudio(audio); 
+            int call = callCount.incrementAndGet(); 
+            if (shouldFail(call)) { 
+                throw new RuntimeException("Simulated failure", createException()); 
             }
-            return new TranscriptionResult( // GH-90000
-                "test", 0.9, List.of(), List.of(), Duration.ofMillis(100), "en", "test-model" // GH-90000
+            return new TranscriptionResult( 
+                "test", 0.9, List.of(), List.of(), Duration.ofMillis(100), "en", "test-model" 
             );
         }
 
         @Override
-        public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), // GH-90000
-                () -> transcribe(audio, options)); // GH-90000
+        public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) { 
+            return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), 
+                () -> transcribe(audio, options)); 
         }
 
         @Override
-        public StreamingSession createStreamingSession() { // GH-90000
-            return createStreamingSession(null); // GH-90000
+        public StreamingSession createStreamingSession() { 
+            return createStreamingSession(null); 
         }
 
         @Override
-        public StreamingSession createStreamingSession(UserProfile profile) { // GH-90000
-            ensureOpen(); // GH-90000
-            return new FailingStreamingSession(failureRate, exceptionType); // GH-90000
+        public StreamingSession createStreamingSession(UserProfile profile) { 
+            ensureOpen(); 
+            return new FailingStreamingSession(failureRate, exceptionType); 
         }
 
         @Override
-        public UserProfile createProfile(String profileId, List<AudioData> enrollmentAudio) { // GH-90000
-            return new UserProfile(profileId, "Test", Locale.ENGLISH, List.of(), new byte[0]); // GH-90000
+        public UserProfile createProfile(String profileId, List<AudioData> enrollmentAudio) { 
+            return new UserProfile(profileId, "Test", Locale.ENGLISH, List.of(), new byte[0]); 
         }
 
         @Override
-        public java.util.Optional<UserProfile> loadProfile(String profileId) { // GH-90000
-            return java.util.Optional.of(createProfile(profileId, List.of())); // GH-90000
+        public java.util.Optional<UserProfile> loadProfile(String profileId) { 
+            return java.util.Optional.of(createProfile(profileId, List.of())); 
         }
 
         @Override
-        public void saveProfile(UserProfile profile) {} // GH-90000
+        public void saveProfile(UserProfile profile) {} 
 
         @Override
-        public boolean deleteProfile(String profileId) { return true; } // GH-90000
+        public boolean deleteProfile(String profileId) { return true; } 
 
         @Override
-        public List<String> listProfiles() { return List.of(); } // GH-90000
+        public List<String> listProfiles() { return List.of(); } 
 
         @Override
-        public List<ModelInfo> getAvailableModels() { // GH-90000
-            return List.of(new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
+        public List<ModelInfo> getAvailableModels() { 
+            return List.of(new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); 
         }
 
         @Override
-        public void loadModel(String modelId) {} // GH-90000
+        public void loadModel(String modelId) {} 
 
         @Override
-        public ModelInfo getActiveModel() { // GH-90000
-            return new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false); // GH-90000
+        public ModelInfo getActiveModel() { 
+            return new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false); 
         }
 
         @Override
-        public void warmup() {} // GH-90000
+        public void warmup() {} 
 
         @Override
-        public void close() { closed.set(true); } // GH-90000
+        public void close() { closed.set(true); } 
 
         @Override
-        public EngineStatus getStatus() { // GH-90000
-            return new EngineStatus( // GH-90000
-                closed.get() ? EngineStatus.State.CLOSED : EngineStatus.State.READY, // GH-90000
+        public EngineStatus getStatus() { 
+            return new EngineStatus( 
+                closed.get() ? EngineStatus.State.CLOSED : EngineStatus.State.READY, 
                 "test", "1.0", 0, null
             );
         }
 
         @Override
-        public EngineMetrics getMetrics() { // GH-90000
-            return new EngineMetrics(callCount.get(), (int)(callCount.get() * failureRate), 100, 0, 0); // GH-90000
+        public EngineMetrics getMetrics() { 
+            return new EngineMetrics(callCount.get(), (int)(callCount.get() * failureRate), 100, 0, 0); 
         }
 
-        private void ensureOpen() { // GH-90000
+        private void ensureOpen() { 
             if (closed.get()) throw new IllegalStateException("Engine closed");
         }
 
-        private boolean shouldFail(int callNumber) { // GH-90000
-            return (callNumber % (int)(1.0 / failureRate)) == 0; // GH-90000
+        private boolean shouldFail(int callNumber) { 
+            return (callNumber % (int)(1.0 / failureRate)) == 0; 
         }
 
-        private Exception createException() { // GH-90000
+        private Exception createException() { 
             try {
                 return exceptionType.getDeclaredConstructor(String.class).newInstance("Simulated");
-            } catch (Exception e) { // GH-90000
+            } catch (Exception e) { 
                 return new RuntimeException("Simulated");
             }
         }
@@ -213,74 +213,74 @@ public final class AudioVideoTestUtils {
     private static class SlowSttEngine implements SttEngine {
         private final long delayMs;
 
-        SlowSttEngine(long delayMs) { this.delayMs = delayMs; } // GH-90000
+        SlowSttEngine(long delayMs) { this.delayMs = delayMs; } 
 
         @Override
-        public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { // GH-90000
-            simulateLatency(Duration.ofMillis(delayMs)); // GH-90000
-            return new TranscriptionResult( // GH-90000
-                "slow result", 0.9, List.of(), List.of(), Duration.ofMillis(delayMs), "en", "test-model" // GH-90000
+        public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { 
+            simulateLatency(Duration.ofMillis(delayMs)); 
+            return new TranscriptionResult( 
+                "slow result", 0.9, List.of(), List.of(), Duration.ofMillis(delayMs), "en", "test-model" 
             );
         }
 
         @Override
-        public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), // GH-90000
-                () -> transcribe(audio, options)); // GH-90000
+        public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) { 
+            return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), 
+                () -> transcribe(audio, options)); 
         }
 
         @Override
-        public StreamingSession createStreamingSession() { return new DummyStreamingSession(); } // GH-90000
+        public StreamingSession createStreamingSession() { return new DummyStreamingSession(); } 
 
         @Override
-        public StreamingSession createStreamingSession(UserProfile profile) { return new DummyStreamingSession(); } // GH-90000
+        public StreamingSession createStreamingSession(UserProfile profile) { return new DummyStreamingSession(); } 
 
         @Override
-        public UserProfile createProfile(String profileId, List<AudioData> enrollmentAudio) { // GH-90000
-            return new UserProfile(profileId, "Test", Locale.ENGLISH, List.of(), new byte[0]); // GH-90000
+        public UserProfile createProfile(String profileId, List<AudioData> enrollmentAudio) { 
+            return new UserProfile(profileId, "Test", Locale.ENGLISH, List.of(), new byte[0]); 
         }
 
         @Override
-        public java.util.Optional<UserProfile> loadProfile(String profileId) { // GH-90000
-            return java.util.Optional.of(createProfile(profileId, List.of())); // GH-90000
+        public java.util.Optional<UserProfile> loadProfile(String profileId) { 
+            return java.util.Optional.of(createProfile(profileId, List.of())); 
         }
 
         @Override
-        public void saveProfile(UserProfile profile) {} // GH-90000
+        public void saveProfile(UserProfile profile) {} 
 
         @Override
-        public boolean deleteProfile(String profileId) { return true; } // GH-90000
+        public boolean deleteProfile(String profileId) { return true; } 
 
         @Override
-        public List<String> listProfiles() { return List.of(); } // GH-90000
+        public List<String> listProfiles() { return List.of(); } 
 
         @Override
-        public List<ModelInfo> getAvailableModels() { // GH-90000
-            return List.of(new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
+        public List<ModelInfo> getAvailableModels() { 
+            return List.of(new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); 
         }
 
         @Override
-        public void loadModel(String modelId) {} // GH-90000
+        public void loadModel(String modelId) {} 
 
         @Override
-        public ModelInfo getActiveModel() { // GH-90000
-            return new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false); // GH-90000
+        public ModelInfo getActiveModel() { 
+            return new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false); 
         }
 
         @Override
-        public void warmup() {} // GH-90000
+        public void warmup() {} 
 
         @Override
-        public void close() {} // GH-90000
+        public void close() {} 
 
         @Override
-        public EngineStatus getStatus() { // GH-90000
-            return new EngineStatus(EngineStatus.State.READY, "test", "1.0", 0, null); // GH-90000
+        public EngineStatus getStatus() { 
+            return new EngineStatus(EngineStatus.State.READY, "test", "1.0", 0, null); 
         }
 
         @Override
-        public EngineMetrics getMetrics() { // GH-90000
-            return new EngineMetrics(0, 0, delayMs, 0, 0); // GH-90000
+        public EngineMetrics getMetrics() { 
+            return new EngineMetrics(0, 0, delayMs, 0, 0); 
         }
     }
 
@@ -290,82 +290,82 @@ public final class AudioVideoTestUtils {
     private static class ResourceExhaustedSttEngine implements SttEngine {
         private final Semaphore semaphore;
 
-        ResourceExhaustedSttEngine(int maxConcurrent) { // GH-90000
-            this.semaphore = new Semaphore(maxConcurrent); // GH-90000
+        ResourceExhaustedSttEngine(int maxConcurrent) { 
+            this.semaphore = new Semaphore(maxConcurrent); 
         }
 
         @Override
-        public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { // GH-90000
-            if (!semaphore.tryAcquire()) { // GH-90000
+        public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { 
+            if (!semaphore.tryAcquire()) { 
                 throw new RuntimeException("Resource exhausted: max concurrent operations reached");
             }
             try {
-                return new TranscriptionResult( // GH-90000
-                    "result", 0.9, List.of(), List.of(), Duration.ofMillis(100), "en", "test-model" // GH-90000
+                return new TranscriptionResult( 
+                    "result", 0.9, List.of(), List.of(), Duration.ofMillis(100), "en", "test-model" 
                 );
             } finally {
-                semaphore.release(); // GH-90000
+                semaphore.release(); 
             }
         }
 
         @Override
-        public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), // GH-90000
-                () -> transcribe(audio, options)); // GH-90000
+        public Promise<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) { 
+            return Promise.ofBlocking(java.util.concurrent.Executors.newSingleThreadExecutor(), 
+                () -> transcribe(audio, options)); 
         }
 
         @Override
-        public StreamingSession createStreamingSession() { return new DummyStreamingSession(); } // GH-90000
+        public StreamingSession createStreamingSession() { return new DummyStreamingSession(); } 
 
         @Override
-        public StreamingSession createStreamingSession(UserProfile profile) { return new DummyStreamingSession(); } // GH-90000
+        public StreamingSession createStreamingSession(UserProfile profile) { return new DummyStreamingSession(); } 
 
         @Override
-        public UserProfile createProfile(String profileId, List<AudioData> enrollmentAudio) { // GH-90000
-            return new UserProfile(profileId, "Test", Locale.ENGLISH, List.of(), new byte[0]); // GH-90000
+        public UserProfile createProfile(String profileId, List<AudioData> enrollmentAudio) { 
+            return new UserProfile(profileId, "Test", Locale.ENGLISH, List.of(), new byte[0]); 
         }
 
         @Override
-        public java.util.Optional<UserProfile> loadProfile(String profileId) { // GH-90000
-            return java.util.Optional.of(createProfile(profileId, List.of())); // GH-90000
+        public java.util.Optional<UserProfile> loadProfile(String profileId) { 
+            return java.util.Optional.of(createProfile(profileId, List.of())); 
         }
 
         @Override
-        public void saveProfile(UserProfile profile) {} // GH-90000
+        public void saveProfile(UserProfile profile) {} 
 
         @Override
-        public boolean deleteProfile(String profileId) { return true; } // GH-90000
+        public boolean deleteProfile(String profileId) { return true; } 
 
         @Override
-        public List<String> listProfiles() { return List.of(); } // GH-90000
+        public List<String> listProfiles() { return List.of(); } 
 
         @Override
-        public List<ModelInfo> getAvailableModels() { // GH-90000
-            return List.of(new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
+        public List<ModelInfo> getAvailableModels() { 
+            return List.of(new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); 
         }
 
         @Override
-        public void loadModel(String modelId) {} // GH-90000
+        public void loadModel(String modelId) {} 
 
         @Override
-        public ModelInfo getActiveModel() { // GH-90000
-            return new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false); // GH-90000
+        public ModelInfo getActiveModel() { 
+            return new ModelInfo("test", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false); 
         }
 
         @Override
-        public void warmup() {} // GH-90000
+        public void warmup() {} 
 
         @Override
-        public void close() {} // GH-90000
+        public void close() {} 
 
         @Override
-        public EngineStatus getStatus() { // GH-90000
-            return new EngineStatus(EngineStatus.State.READY, "test", "1.0", 0, null); // GH-90000
+        public EngineStatus getStatus() { 
+            return new EngineStatus(EngineStatus.State.READY, "test", "1.0", 0, null); 
         }
 
         @Override
-        public EngineMetrics getMetrics() { // GH-90000
-            return new EngineMetrics(0, 0, 100, semaphore.getQueueLength(), 0); // GH-90000
+        public EngineMetrics getMetrics() { 
+            return new EngineMetrics(0, 0, 100, semaphore.getQueueLength(), 0); 
         }
     }
 
@@ -375,39 +375,39 @@ public final class AudioVideoTestUtils {
     private static class FailingStreamingSession implements StreamingSession {
         private final double failureRate;
         private final Class<? extends Exception> exceptionType;
-        private final AtomicInteger chunkCount = new AtomicInteger(0); // GH-90000
+        private final AtomicInteger chunkCount = new AtomicInteger(0); 
 
-        FailingStreamingSession(double failureRate, Class<? extends Exception> exceptionType) { // GH-90000
+        FailingStreamingSession(double failureRate, Class<? extends Exception> exceptionType) { 
             this.failureRate = failureRate;
             this.exceptionType = exceptionType;
         }
 
         @Override
-        public void feedAudio(AudioChunk chunk) { // GH-90000
-            int count = chunkCount.incrementAndGet(); // GH-90000
-            if ((count % (int)(1.0 / failureRate)) == 0) { // GH-90000
+        public void feedAudio(AudioChunk chunk) { 
+            int count = chunkCount.incrementAndGet(); 
+            if ((count % (int)(1.0 / failureRate)) == 0) { 
                 throw new RuntimeException("Simulated streaming failure");
             }
         }
 
         @Override
-        public void onTranscription(Consumer<StreamingTranscription> callback) { // GH-90000
-            callback.accept(new StreamingTranscription("test", false, 0.9, List.of())); // GH-90000
+        public void onTranscription(Consumer<StreamingTranscription> callback) { 
+            callback.accept(new StreamingTranscription("test", false, 0.9, List.of())); 
         }
 
         @Override
-        public void onError(Consumer<ProcessingError> callback) { // GH-90000
-            callback.accept(new ProcessingError("Simulated error", ProcessingError.ErrorCategory.INTERNAL, true)); // GH-90000
+        public void onError(Consumer<ProcessingError> callback) { 
+            callback.accept(new ProcessingError("Simulated error", ProcessingError.ErrorCategory.INTERNAL, true)); 
         }
 
         @Override
-        public void endStream() {} // GH-90000
+        public void endStream() {} 
 
         @Override
-        public boolean isActive() { return true; } // GH-90000
+        public boolean isActive() { return true; } 
 
         @Override
-        public void close() {} // GH-90000
+        public void close() {} 
     }
 
     /**
@@ -415,21 +415,21 @@ public final class AudioVideoTestUtils {
      */
     private static class DummyStreamingSession implements StreamingSession {
         @Override
-        public void feedAudio(AudioChunk chunk) {} // GH-90000
+        public void feedAudio(AudioChunk chunk) {} 
 
         @Override
-        public void onTranscription(Consumer<StreamingTranscription> callback) {} // GH-90000
+        public void onTranscription(Consumer<StreamingTranscription> callback) {} 
 
         @Override
-        public void onError(Consumer<ProcessingError> callback) {} // GH-90000
+        public void onError(Consumer<ProcessingError> callback) {} 
 
         @Override
-        public void endStream() {} // GH-90000
+        public void endStream() {} 
 
         @Override
-        public boolean isActive() { return true; } // GH-90000
+        public boolean isActive() { return true; } 
 
         @Override
-        public void close() {} // GH-90000
+        public void close() {} 
     }
 }

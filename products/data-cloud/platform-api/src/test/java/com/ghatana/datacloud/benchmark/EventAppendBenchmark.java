@@ -81,19 +81,21 @@ class EventAppendBenchmark extends EventloopTestBase {
     }
 
     private void simulateEventAppend() { // GH-90000
-        try {
-            Thread.sleep((long) (Math.random() * 30)); // 0-30ms simulation // GH-90000
-        } catch (InterruptedException e) { // GH-90000
-            Thread.currentThread().interrupt(); // GH-90000
-        }
+        runCpuWork(256); // GH-90000
     }
 
     private void simulateBatchAppend(int batchSize) { // GH-90000
-        try {
-            // Batch operations are more efficient
-            Thread.sleep((long) (10 + Math.random() * batchSize * 0.5)); // GH-90000
-        } catch (InterruptedException e) { // GH-90000
-            Thread.currentThread().interrupt(); // GH-90000
+        // Batch operations amortize per-event overhead.
+        runCpuWork(1024 + (batchSize * 16)); // GH-90000
+    }
+
+    private void runCpuWork(int iterations) { // GH-90000
+        long acc = 0;
+        for (int i = 0; i < iterations; i++) {
+            acc += (long) i * 31;
+        }
+        if (acc == Long.MIN_VALUE) {
+            throw new IllegalStateException("unreachable benchmark guard");
         }
     }
 

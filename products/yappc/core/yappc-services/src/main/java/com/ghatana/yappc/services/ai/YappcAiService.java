@@ -133,15 +133,17 @@ public class YappcAiService extends UnifiedApplicationLauncher {
                                 }))
                 .build();
 
+        com.ghatana.platform.security.rbac.PolicyRepository policyRepository =
+                injector.getInstance(com.ghatana.platform.security.rbac.PolicyRepository.class);
         YappcApiSecurity.SecurityRoutes securedApi =
-                YappcApiSecurity.secureApi(apiServlet, "yappc:ai-api");
+                YappcApiSecurity.secureApi(apiServlet, "yappc:ai-api", policyRepository);
         AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(request -> {
             String metricsOutput = prometheusRegistry.scrape();
             return io.activej.http.HttpResponse.ok200()
                     .withBody(metricsOutput.getBytes(java.nio.charset.StandardCharsets.UTF_8))
                     .withHeader(HttpHeaders.CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")
                     .toPromise();
-        }, "yappc:ai-metrics");
+        }, "yappc:ai-metrics", policyRepository);
 
         var router = io.activej.http.RoutingServlet.builder(eventloop)
                 .with(GET, "/health", request ->

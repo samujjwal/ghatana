@@ -1,4 +1,3 @@
-// @ts-nocheck
 // All tests skipped - incomplete feature
 import { render, fireEvent } from '@testing-library/react';
 import React from 'react';
@@ -7,20 +6,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMockReactFlowInstance } from '../../test-utils/reactflow-mocks';
 
 // Mock jotai useAtom to provide a mutable canvas state and a setter we can observe
-let mockCanvasState: any = null;
+let mockCanvasState: Record<string, unknown> | null = null;
 const mockSetCanvasState = vi.fn();
 
 vi.mock('jotai', async () => {
     const actual = await vi.importActual('jotai');
     return {
         ...actual,
-        useAtom: (_: unknown) => [mockCanvasState, mockSetCanvasState],
+        useAtom: () => [mockCanvasState, mockSetCanvasState],
     };
 });
 
 import { useCanvasScene } from '../../routes/app/project/canvas/useCanvasScene';
 
-function HookHarness({ rf }: { rf: any }) {
+function HookHarness({ rf }: { rf: Record<string, unknown> }) {
     const hook = useCanvasScene({ projectId: 'p', canvasId: 'c' });
 
     React.useEffect(() => {
@@ -29,13 +28,13 @@ function HookHarness({ rf }: { rf: any }) {
     }, [rf]);
 
     const simulateDrop = () => {
-        const event: any = {
+        const event: Record<string, unknown> = {
             active: { data: { current: { id: 'comp-1', type: 'component', kind: 'component', defaultData: {} } } },
             over: { id: 'canvas-drop-zone' },
             delta: { x: 10, y: 20 },
         };
 
-        hook.handleDragEnd(event as unknown);
+        hook.handleDragEnd(event as Record<string, unknown>);
     };
 
     return (
@@ -52,7 +51,7 @@ describe('useCanvasScene integration with React Flow mock', () => {
     });
 
     it('calls reactflow.project and updates the canvas atom once when dropping a component', async () => {
-        const rf = createMockReactFlowInstance([], []) as unknown;
+        const rf = createMockReactFlowInstance([], []) as Record<string, unknown>;
         const spyProject = vi.spyOn(rf, 'project');
 
         const { getByTestId } = render(<HookHarness rf={rf} />);

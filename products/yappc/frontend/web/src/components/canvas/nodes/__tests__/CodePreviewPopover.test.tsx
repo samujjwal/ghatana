@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unit Tests for CodePreviewPopover Component
  * 

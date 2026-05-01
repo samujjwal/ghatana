@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * UnifiedProjectDashboard Component Tests
  *

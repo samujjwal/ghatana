@@ -45,5 +45,6 @@
         <Logger name="org.apache" level="WARN"/>
         <Logger name="com.zaxxer" level="WARN"/>
         <Logger name="io.netty" level="WARN"/>
+        <Logger name="com.tngtech.archunit" level="${sys:archunit.log.level:-WARN}"/>
     </Loggers>
 </Configuration>

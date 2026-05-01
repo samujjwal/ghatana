@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import com.ghatana.datacloud.brain.DataCloudBrain;
@@ -17,6 +17,8 @@ import com.ghatana.datacloud.launcher.DataCloudTransportStartupException;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.ai.AIModelManager;
+import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.Principal;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -34,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.DisplayName;
@@ -86,6 +89,101 @@ class DataCloudHttpLauncherBootstrapTest {
                 log))
             .isInstanceOf(IllegalStateException.class) // GH-90000
             .hasMessageContaining("must contain at least one non-blank API key");
+    }
+
+            @Test
+            @DisplayName("buildApiKeyResolver fails when keys are missing in production profile")
+            void buildApiKeyResolverFailsWhenKeysMissingInProductionProfile() {
+            Logger log = mock(Logger.class);
+
+            assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of("DATACLOUD_PROFILE", "production"),
+                log))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("DATACLOUD_API_KEYS environment variable must be set");
+            }
+
+            @Test
+            @DisplayName("buildApiKeyResolver generates non-secret principal id")
+            void buildApiKeyResolverGeneratesNonSecretPrincipalId() {
+            Logger log = mock(Logger.class);
+            String rawApiKey = "super-secret-api-key-123456";
+
+            ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+                Map.of(
+                    "DATACLOUD_PROFILE", "production",
+                    "DATACLOUD_API_KEYS", rawApiKey),
+                log);
+
+            Optional<Principal> principal = resolver.resolve(rawApiKey);
+            assertThat(principal).isPresent();
+            assertThat(principal.orElseThrow().getName()).startsWith("key-");
+            assertThat(principal.orElseThrow().getName()).doesNotContain("123456");
+            assertThat(principal.orElseThrow().getName()).doesNotContain("secret");
+            }
+
+    @Test
+    @DisplayName("fails fast when auth is missing in non-embedded mode")
+    void failsFastWhenAuthMissingInNonEmbeddedMode() {
+        Logger log = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.validateAuthenticationAndResolveBindHost(
+            false,
+            false,
+            false,
+            "",
+            log))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("SECURITY ERROR: No authentication configured");
+    }
+
+    @Test
+    @DisplayName("warns when auth is missing in embedded mode")
+    void warnsWhenAuthMissingInEmbeddedMode() {
+        Logger log = mock(Logger.class);
+
+        String bindHost = DataCloudHttpLauncherBootstrap.validateAuthenticationAndResolveBindHost(
+            false,
+            false,
+            true,
+            "",
+            log);
+
+        assertThat(bindHost).isEmpty();
+        verify(log).warn("[DC-E2] No authentication configured in embedded/local profile. " +
+            "Set DATACLOUD_API_KEYS or DATACLOUD_JWT_SECRET to enable authentication. " +
+            "To allow insecure mode, set DATACLOUD_INSECURE_MODE=true.");
+    }
+
+    @Test
+    @DisplayName("forces loopback bind host in insecure embedded mode when bind host is missing")
+    void forcesLoopbackBindHostInInsecureEmbeddedModeWhenMissing() {
+        Logger log = mock(Logger.class);
+
+        String bindHost = DataCloudHttpLauncherBootstrap.validateAuthenticationAndResolveBindHost(
+            true,
+            false,
+            true,
+            "",
+            log);
+
+        assertThat(bindHost).isEqualTo("127.0.0.1");
+        verify(log).warn("[DC-E2] DATACLOUD_BIND_HOST not set while running insecure embedded mode; forcing loopback bind host {}", "127.0.0.1");
+    }
+
+    @Test
+    @DisplayName("rejects insecure embedded mode when bind host is not loopback")
+    void rejectsInsecureEmbeddedModeWhenBindHostIsNotLoopback() {
+        Logger log = mock(Logger.class);
+
+        assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.validateAuthenticationAndResolveBindHost(
+            true,
+            false,
+            true,
+            "0.0.0.0",
+            log))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Insecure embedded mode requires loopback binding");
     }
 
     @Test
@@ -434,5 +532,97 @@ class DataCloudHttpLauncherBootstrapTest {
         public void close() { // GH-90000
             server.stop(0); // GH-90000
         }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // P1-03: Secret config validation and rotation-readiness coverage
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("buildApiKeyResolver accepts rotated API key set without a restart (P1-03 rotation-readiness)")
+    void buildApiKeyResolverAcceptsMultipleKeysForRotation() { // P1-03
+        Logger log = mock(Logger.class);
+
+        // Rotation scenario: two keys are present — an old key still valid during
+        // the rolling-update window, and a newly issued key for new callers.
+        String oldKey = "old-production-key-aaaabbbbccccdddd";
+        String newKey = "new-production-key-xxxxyyyyzzzz1111";
+
+        ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+            Map.of(
+                "DATACLOUD_PROFILE", "production",
+                "DATACLOUD_API_KEYS", oldKey + "," + newKey),
+            log);
+
+        // Both keys must resolve independently — enabling caller-transparent rotation.
+        Optional<Principal> oldPrincipal = resolver.resolve(oldKey);
+        Optional<Principal> newPrincipal = resolver.resolve(newKey);
+
+        assertThat(oldPrincipal).isPresent();
+        assertThat(newPrincipal).isPresent();
+        // Each key maps to a distinct principal so audit logs can distinguish them.
+        assertThat(oldPrincipal.orElseThrow().getName())
+            .isNotEqualTo(newPrincipal.orElseThrow().getName());
+    }
+
+    @Test
+    @DisplayName("buildApiKeyResolver rejects an expired/unknown key after rotation (P1-03 key invalidation)")
+    void buildApiKeyResolverRejectsRevokedKeyAfterRotation() { // P1-03
+        Logger log = mock(Logger.class);
+
+        String activeKey = "active-key-aaaabbbbccccddddeeeeffffgggg";
+        String revokedKey = "revoked-key-11112222333344445555666677778";
+
+        // Only the active key is configured — simulates post-rotation state.
+        ApiKeyResolver resolver = DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+            Map.of(
+                "DATACLOUD_PROFILE", "production",
+                "DATACLOUD_API_KEYS", activeKey),
+            log);
+
+        assertThat(resolver.resolve(activeKey)).isPresent();
+        assertThat(resolver.resolve(revokedKey))
+            .as("Revoked key must not resolve to a principal after rotation")
+            .isEmpty();
+    }
+
+    @Test
+    @DisplayName("buildApiKeyResolver never logs the raw API key value (P1-03 secret safety)")
+    void buildApiKeyResolverNeverLogsRawApiKeyValue() { // P1-03
+        Logger log = mock(Logger.class);
+
+        String sensitiveKey = "ultra-secret-key-0000000000000000";
+
+        DataCloudHttpLauncherBootstrap.buildApiKeyResolver(
+            Map.of(
+                "DATACLOUD_PROFILE", "production",
+                "DATACLOUD_API_KEYS", sensitiveKey),
+            log);
+
+        // Verify no logger call carried the raw key string.
+        // Mockito captures all invocations — none should reference the literal secret.
+        org.mockito.verification.VerificationMode never = org.mockito.Mockito.never();
+        verify(log, never).info(org.mockito.ArgumentMatchers.contains(sensitiveKey));
+        verify(log, never).debug(org.mockito.ArgumentMatchers.contains(sensitiveKey));
+        verify(log, never).warn(org.mockito.ArgumentMatchers.contains(sensitiveKey));
+        verify(log, never).error(org.mockito.ArgumentMatchers.contains(sensitiveKey));
+    }
+
+    @Test
+    @DisplayName("buildJwtProvider never logs the raw JWT secret (P1-03 secret safety)")
+    void buildJwtProviderNeverLogsRawJwtSecret() { // P1-03
+        Logger log = mock(Logger.class);
+
+        String sensitiveSecret = "super-secret-jwt-signing-key-9999";
+
+        DataCloudHttpLauncherBootstrap.buildJwtProvider(
+            Map.of(
+                "DATACLOUD_JWT_SECRET", sensitiveSecret),
+            log);
+
+        verify(log, org.mockito.Mockito.never()).info(org.mockito.ArgumentMatchers.contains(sensitiveSecret));
+        verify(log, org.mockito.Mockito.never()).debug(org.mockito.ArgumentMatchers.contains(sensitiveSecret));
+        verify(log, org.mockito.Mockito.never()).warn(org.mockito.ArgumentMatchers.contains(sensitiveSecret));
+        verify(log, org.mockito.Mockito.never()).error(org.mockito.ArgumentMatchers.contains(sensitiveSecret));
     }
 }

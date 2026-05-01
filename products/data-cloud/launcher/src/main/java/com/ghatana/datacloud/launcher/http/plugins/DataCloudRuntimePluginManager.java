@@ -139,7 +139,28 @@ public final class DataCloudRuntimePluginManager implements AutoCloseable {
             Plugin replacement = provider.create(config != null ? config : Map.of());
             registry.register(replacement);
             disabledPluginIds.remove(pluginId);
-            return initializePlugin(replacement).map(ignored -> replacement);
+            return initializePlugin(replacement)
+                .map(ignored -> replacement)
+                .then(
+                    Promise::of,
+                    exception -> {
+                        log.warn("Plugin hot-swap failed for {}. Restoring previous plugin instance", pluginId, exception);
+                        registry.unregister(pluginId);
+                        if (existing.isPresent()) {
+                            Plugin previous = existing.orElseThrow();
+                            registry.register(previous);
+                            disabledPluginIds.remove(pluginId);
+                            return previous.start().then(
+                                ignored -> Promise.ofException(exception),
+                                restoreFailure -> {
+                                    log.error("Failed to restore previous plugin {} after hot-swap failure", pluginId, restoreFailure);
+                                    return Promise.ofException(exception);
+                                }
+                            );
+                        }
+                        return Promise.ofException(exception);
+                    }
+                );
         });
     }
 

@@ -31,47 +31,47 @@ class ComplianceFrameworkTest {
 
         @Test
         @DisplayName("of() creates framework with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // WHEN
-            ComplianceFramework framework = ComplianceFramework.of(FRAMEWORK_NAME); // GH-90000
+            ComplianceFramework framework = ComplianceFramework.of(FRAMEWORK_NAME); 
 
             // THEN
-            assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); // GH-90000
-            assertThat(framework.isBuiltin()).isFalse(); // GH-90000
-            assertThat(framework.isEnabledByDefault()).isFalse(); // GH-90000
-            assertThat(framework.getControlCount()).isZero(); // GH-90000
-            assertThat(framework.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(framework.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); 
+            assertThat(framework.isBuiltin()).isFalse(); 
+            assertThat(framework.isEnabledByDefault()).isFalse(); 
+            assertThat(framework.getControlCount()).isZero(); 
+            assertThat(framework.getCreatedAt()).isNotNull(); 
+            assertThat(framework.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when name is null")
-        void ofThrowsWhenNameNull() { // GH-90000
-            assertThatThrownBy(() -> ComplianceFramework.of(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenNameNull() { 
+            assertThatThrownBy(() -> ComplianceFramework.of(null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("name must not be null");
         }
 
         @Test
         @DisplayName("builtin() creates built-in framework with all fields")
-        void builtinCreatesBuiltInFramework() { // GH-90000
+        void builtinCreatesBuiltInFramework() { 
             // WHEN
-            ComplianceFramework framework = ComplianceFramework.builtin(FRAMEWORK_NAME, DISPLAY_NAME, DESCRIPTION); // GH-90000
+            ComplianceFramework framework = ComplianceFramework.builtin(FRAMEWORK_NAME, DISPLAY_NAME, DESCRIPTION); 
 
             // THEN
-            assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); // GH-90000
-            assertThat(framework.getDisplayName()).isEqualTo(DISPLAY_NAME); // GH-90000
-            assertThat(framework.getDescription()).isEqualTo(DESCRIPTION); // GH-90000
-            assertThat(framework.isBuiltin()).isTrue(); // GH-90000
-            assertThat(framework.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(framework.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); 
+            assertThat(framework.getDisplayName()).isEqualTo(DISPLAY_NAME); 
+            assertThat(framework.getDescription()).isEqualTo(DESCRIPTION); 
+            assertThat(framework.isBuiltin()).isTrue(); 
+            assertThat(framework.getCreatedAt()).isNotNull(); 
+            assertThat(framework.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("builtin() throws NullPointerException when name is null")
-        void builtinThrowsWhenNameNull() { // GH-90000
-            assertThatThrownBy(() -> ComplianceFramework.builtin(null, DISPLAY_NAME, DESCRIPTION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void builtinThrowsWhenNameNull() { 
+            assertThatThrownBy(() -> ComplianceFramework.builtin(null, DISPLAY_NAME, DESCRIPTION)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("name must not be null");
         }
     }
@@ -82,70 +82,70 @@ class ComplianceFrameworkTest {
 
         @Test
         @DisplayName("builder creates framework with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .name(FRAMEWORK_NAME) // GH-90000
-                    .displayName(DISPLAY_NAME) // GH-90000
-                    .description(DESCRIPTION) // GH-90000
+            ComplianceFramework framework = ComplianceFramework.builder() 
+                    .id(id) 
+                    .name(FRAMEWORK_NAME) 
+                    .displayName(DISPLAY_NAME) 
+                    .description(DESCRIPTION) 
                     .frameworkVersion("2.0")
                     .category("SECURITY")
                     .documentationUrl("https://docs.example.com/soc2")
-                    .enabledByDefault(true) // GH-90000
-                    .isBuiltin(true) // GH-90000
-                    .controlCount(150) // GH-90000
-                    .createdAt(now) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .version(2) // GH-90000
-                    .build(); // GH-90000
+                    .enabledByDefault(true) 
+                    .isBuiltin(true) 
+                    .controlCount(150) 
+                    .createdAt(now) 
+                    .updatedAt(now) 
+                    .version(2) 
+                    .build(); 
 
             // THEN
-            assertThat(framework.getId()).isEqualTo(id); // GH-90000
-            assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); // GH-90000
-            assertThat(framework.getDisplayName()).isEqualTo(DISPLAY_NAME); // GH-90000
-            assertThat(framework.getDescription()).isEqualTo(DESCRIPTION); // GH-90000
+            assertThat(framework.getId()).isEqualTo(id); 
+            assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); 
+            assertThat(framework.getDisplayName()).isEqualTo(DISPLAY_NAME); 
+            assertThat(framework.getDescription()).isEqualTo(DESCRIPTION); 
             assertThat(framework.getFrameworkVersion()).isEqualTo("2.0");
             assertThat(framework.getCategory()).isEqualTo("SECURITY");
             assertThat(framework.getDocumentationUrl()).isEqualTo("https://docs.example.com/soc2");
-            assertThat(framework.isEnabledByDefault()).isTrue(); // GH-90000
-            assertThat(framework.isBuiltin()).isTrue(); // GH-90000
-            assertThat(framework.getControlCount()).isEqualTo(150); // GH-90000
-            assertThat(framework.getVersion()).isEqualTo(2); // GH-90000
+            assertThat(framework.isEnabledByDefault()).isTrue(); 
+            assertThat(framework.isBuiltin()).isTrue(); 
+            assertThat(framework.getControlCount()).isEqualTo(150); 
+            assertThat(framework.getVersion()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("builder defaults enabledByDefault to false")
-        void builderDefaultsEnabledByDefaultToFalse() { // GH-90000
-            ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
-                    .name(FRAMEWORK_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsEnabledByDefaultToFalse() { 
+            ComplianceFramework framework = ComplianceFramework.builder() 
+                    .name(FRAMEWORK_NAME) 
+                    .build(); 
 
-            assertThat(framework.isEnabledByDefault()).isFalse(); // GH-90000
+            assertThat(framework.isEnabledByDefault()).isFalse(); 
         }
 
         @Test
         @DisplayName("builder defaults isBuiltin to false")
-        void builderDefaultsIsBuiltinToFalse() { // GH-90000
-            ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
-                    .name(FRAMEWORK_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsIsBuiltinToFalse() { 
+            ComplianceFramework framework = ComplianceFramework.builder() 
+                    .name(FRAMEWORK_NAME) 
+                    .build(); 
 
-            assertThat(framework.isBuiltin()).isFalse(); // GH-90000
+            assertThat(framework.isBuiltin()).isFalse(); 
         }
 
         @Test
         @DisplayName("builder defaults controlCount to 0")
-        void builderDefaultsControlCountToZero() { // GH-90000
-            ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
-                    .name(FRAMEWORK_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsControlCountToZero() { 
+            ComplianceFramework framework = ComplianceFramework.builder() 
+                    .name(FRAMEWORK_NAME) 
+                    .build(); 
 
-            assertThat(framework.getControlCount()).isZero(); // GH-90000
+            assertThat(framework.getControlCount()).isZero(); 
         }
     }
 
@@ -155,22 +155,22 @@ class ComplianceFrameworkTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
             ComplianceFramework framework1 = ComplianceFramework.builder().id(id).name("SOC2").build();
             ComplianceFramework framework2 = ComplianceFramework.builder().id(id).name("PCI-DSS").build();
 
-            assertThat(framework1).isEqualTo(framework2); // GH-90000
-            assertThat(framework1.hashCode()).isEqualTo(framework2.hashCode()); // GH-90000
+            assertThat(framework1).isEqualTo(framework2); 
+            assertThat(framework1.hashCode()).isEqualTo(framework2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            ComplianceFramework framework1 = ComplianceFramework.builder().id(UUID.randomUUID()).build(); // GH-90000
-            ComplianceFramework framework2 = ComplianceFramework.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            ComplianceFramework framework1 = ComplianceFramework.builder().id(UUID.randomUUID()).build(); 
+            ComplianceFramework framework2 = ComplianceFramework.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(framework1).isNotEqualTo(framework2); // GH-90000
+            assertThat(framework1).isNotEqualTo(framework2); 
         }
     }
 
@@ -180,16 +180,16 @@ class ComplianceFrameworkTest {
 
         @Test
         @DisplayName("can set various framework categories")
-        void canSetVariousCategories() { // GH-90000
+        void canSetVariousCategories() { 
             String[] categories = {"SECURITY", "PRIVACY", "INDUSTRY", "GOVERNMENT", "FINANCIAL"};
 
-            for (String category : categories) { // GH-90000
-                ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
-                        .name(FRAMEWORK_NAME) // GH-90000
-                        .category(category) // GH-90000
-                        .build(); // GH-90000
+            for (String category : categories) { 
+                ComplianceFramework framework = ComplianceFramework.builder() 
+                        .name(FRAMEWORK_NAME) 
+                        .category(category) 
+                        .build(); 
 
-                assertThat(framework.getCategory()).isEqualTo(category); // GH-90000
+                assertThat(framework.getCategory()).isEqualTo(category); 
             }
         }
     }
@@ -200,54 +200,54 @@ class ComplianceFrameworkTest {
 
         @Test
         @DisplayName("can create SOC 2 framework")
-        void canCreateSoc2Framework() { // GH-90000
-            ComplianceFramework soc2 = ComplianceFramework.builtin( // GH-90000
+        void canCreateSoc2Framework() { 
+            ComplianceFramework soc2 = ComplianceFramework.builtin( 
                     "SOC2",
                     "Service Organization Control 2",
                     "SOC 2 Type II compliance for service organizations"
             );
 
             assertThat(soc2.getName()).isEqualTo("SOC2");
-            assertThat(soc2.isBuiltin()).isTrue(); // GH-90000
+            assertThat(soc2.isBuiltin()).isTrue(); 
         }
 
         @Test
         @DisplayName("can create PCI-DSS framework")
-        void canCreatePciDssFramework() { // GH-90000
-            ComplianceFramework pciDss = ComplianceFramework.builtin( // GH-90000
+        void canCreatePciDssFramework() { 
+            ComplianceFramework pciDss = ComplianceFramework.builtin( 
                     "PCI-DSS",
                     "Payment Card Industry Data Security Standard",
                     "Security standard for organizations handling credit card data"
             );
 
             assertThat(pciDss.getName()).isEqualTo("PCI-DSS");
-            assertThat(pciDss.isBuiltin()).isTrue(); // GH-90000
+            assertThat(pciDss.isBuiltin()).isTrue(); 
         }
 
         @Test
         @DisplayName("can create HIPAA framework")
-        void canCreateHipaaFramework() { // GH-90000
-            ComplianceFramework hipaa = ComplianceFramework.builtin( // GH-90000
+        void canCreateHipaaFramework() { 
+            ComplianceFramework hipaa = ComplianceFramework.builtin( 
                     "HIPAA",
                     "Health Insurance Portability and Accountability Act",
                     "Healthcare data protection standard"
             );
 
             assertThat(hipaa.getName()).isEqualTo("HIPAA");
-            assertThat(hipaa.isBuiltin()).isTrue(); // GH-90000
+            assertThat(hipaa.isBuiltin()).isTrue(); 
         }
 
         @Test
         @DisplayName("can create GDPR framework")
-        void canCreateGdprFramework() { // GH-90000
-            ComplianceFramework gdpr = ComplianceFramework.builtin( // GH-90000
+        void canCreateGdprFramework() { 
+            ComplianceFramework gdpr = ComplianceFramework.builtin( 
                     "GDPR",
                     "General Data Protection Regulation",
                     "EU data protection and privacy regulation"
             );
 
             assertThat(gdpr.getName()).isEqualTo("GDPR");
-            assertThat(gdpr.isBuiltin()).isTrue(); // GH-90000
+            assertThat(gdpr.isBuiltin()).isTrue(); 
         }
     }
 
@@ -257,11 +257,11 @@ class ComplianceFrameworkTest {
 
         @Test
         @DisplayName("can update control count")
-        void canUpdateControlCount() { // GH-90000
-            ComplianceFramework framework = ComplianceFramework.of(FRAMEWORK_NAME); // GH-90000
-            framework.setControlCount(125); // GH-90000
+        void canUpdateControlCount() { 
+            ComplianceFramework framework = ComplianceFramework.of(FRAMEWORK_NAME); 
+            framework.setControlCount(125); 
 
-            assertThat(framework.getControlCount()).isEqualTo(125); // GH-90000
+            assertThat(framework.getControlCount()).isEqualTo(125); 
         }
     }
 }

@@ -27,406 +27,406 @@ class AIFrameworkIntegrationTest {
     private MockAIEvaluationFramework evaluationFramework;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        orchestrator = new MockAgentOrchestrator(); // GH-90000
-        governance = new MockModelGovernanceService(); // GH-90000
-        autonomyManager = new MockAutonomyManager(); // GH-90000
-        evaluationFramework = new MockAIEvaluationFramework(); // GH-90000
+    void setUp() { 
+        orchestrator = new MockAgentOrchestrator(); 
+        governance = new MockModelGovernanceService(); 
+        autonomyManager = new MockAutonomyManager(); 
+        evaluationFramework = new MockAIEvaluationFramework(); 
     }
 
     @Test
     @DisplayName("Should register and execute agent")
-    void testRegisterAndExecuteAgent() { // GH-90000
+    void testRegisterAndExecuteAgent() { 
         MockAgent agent = new MockAgent("test-agent");
-        orchestrator.registerAgent(agent); // GH-90000
+        orchestrator.registerAgent(agent); 
 
-        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
-            "req-1", "classify", Map.of("input", "test"), Map.of() // GH-90000
+        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( 
+            "req-1", "classify", Map.of("input", "test"), Map.of() 
         );
 
-        AgentOrchestrator.AgentResponse response = orchestrator.executeAgent(agent, request); // GH-90000
+        AgentOrchestrator.AgentResponse response = orchestrator.executeAgent(agent, request); 
 
-        assertNotNull(response); // GH-90000
-        assertTrue(response.isSuccess()); // GH-90000
+        assertNotNull(response); 
+        assertTrue(response.isSuccess()); 
     }
 
     @Test
     @DisplayName("Should execute agent workflow")
-    void testExecuteAgentWorkflow() { // GH-90000
-        List<AgentOrchestrator.KernelAgent> agents = List.of( // GH-90000
+    void testExecuteAgentWorkflow() { 
+        List<AgentOrchestrator.KernelAgent> agents = List.of( 
             new MockAgent("agent-1"),
             new MockAgent("agent-2")
         );
 
-        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
-            "req-1", "process", Map.of(), Map.of() // GH-90000
+        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( 
+            "req-1", "process", Map.of(), Map.of() 
         );
 
-        AgentOrchestrator.WorkflowResult result = orchestrator.executeAgentWorkflow(agents, request); // GH-90000
+        AgentOrchestrator.WorkflowResult result = orchestrator.executeAgentWorkflow(agents, request); 
 
-        assertNotNull(result); // GH-90000
-        assertTrue(result.isSuccess()); // GH-90000
-        assertEquals(2, result.getResponses().size()); // GH-90000
+        assertNotNull(result); 
+        assertTrue(result.isSuccess()); 
+        assertEquals(2, result.getResponses().size()); 
     }
 
     @Test
     @DisplayName("Should validate model approval")
-    void testModelApproval() { // GH-90000
+    void testModelApproval() { 
         ModelGovernanceService.ModelApproval approval = governance.getModelApproval("model-1");
 
-        assertNotNull(approval); // GH-90000
-        assertTrue(approval.isApproved()); // GH-90000
+        assertNotNull(approval); 
+        assertTrue(approval.isApproved()); 
     }
 
     @Test
     @DisplayName("Should validate model usage")
-    void testValidateModelUsage() { // GH-90000
-        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
-            "req-1", "classify", Map.of(), Map.of() // GH-90000
+    void testValidateModelUsage() { 
+        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( 
+            "req-1", "classify", Map.of(), Map.of() 
         );
 
-        assertDoesNotThrow(() -> governance.validateModelUsage("model-1", request)); // GH-90000
+        assertDoesNotThrow(() -> governance.validateModelUsage("model-1", request)); 
     }
 
     @Test
     @DisplayName("Should record model performance")
-    void testRecordModelPerformance() { // GH-90000
+    void testRecordModelPerformance() { 
         ModelGovernanceService.ModelPerformanceMetrics metrics =
-            new ModelGovernanceService.ModelPerformanceMetrics(0.95, 0.92); // GH-90000
+            new ModelGovernanceService.ModelPerformanceMetrics(0.95, 0.92); 
 
-        assertDoesNotThrow(() -> governance.recordModelPerformance("model-1", metrics)); // GH-90000
+        assertDoesNotThrow(() -> governance.recordModelPerformance("model-1", metrics)); 
     }
 
     @Test
     @DisplayName("Should configure autonomy level")
-    void testConfigureAutonomyLevel() { // GH-90000
-        assertDoesNotThrow(() -> // GH-90000
-            autonomyManager.configureAutonomyLevel("agent-1", AutonomyManager.AutonomyLevel.MEDIUM) // GH-90000
+    void testConfigureAutonomyLevel() { 
+        assertDoesNotThrow(() -> 
+            autonomyManager.configureAutonomyLevel("agent-1", AutonomyManager.AutonomyLevel.MEDIUM) 
         );
 
         AutonomyManager.AutonomyLevel level = autonomyManager.getAutonomyLevel("agent-1");
-        assertEquals(AutonomyManager.AutonomyLevel.MEDIUM, level); // GH-90000
+        assertEquals(AutonomyManager.AutonomyLevel.MEDIUM, level); 
     }
 
     @Test
     @DisplayName("Should determine human review requirement")
-    void testRequiresHumanReview() { // GH-90000
+    void testRequiresHumanReview() { 
         MockAgent agent = new MockAgent("test-agent");
-        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
-            "req-1", "critical-decision", Map.of(), Map.of() // GH-90000
+        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( 
+            "req-1", "critical-decision", Map.of(), Map.of() 
         );
 
-        boolean requiresReview = autonomyManager.requiresHumanReview(request, agent); // GH-90000
+        boolean requiresReview = autonomyManager.requiresHumanReview(request, agent); 
 
-        assertTrue(requiresReview); // GH-90000
+        assertTrue(requiresReview); 
     }
 
     @Test
     @DisplayName("Should record autonomous decision")
-    void testRecordAutonomousDecision() { // GH-90000
+    void testRecordAutonomousDecision() { 
         MockAgent agent = new MockAgent("test-agent");
-        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
-            "req-1", "classify", Map.of(), Map.of() // GH-90000
+        AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( 
+            "req-1", "classify", Map.of(), Map.of() 
         );
 
-        AutonomyManager.AutonomousDecision decision = new AutonomyManager.AutonomousDecision( // GH-90000
-            agent.getAgentId(), request, Map.of("result", "positive"), false // GH-90000
+        AutonomyManager.AutonomousDecision decision = new AutonomyManager.AutonomousDecision( 
+            agent.getAgentId(), request, Map.of("result", "positive"), false 
         );
 
-        assertDoesNotThrow(() -> autonomyManager.recordAutonomousDecision(decision)); // GH-90000
+        assertDoesNotThrow(() -> autonomyManager.recordAutonomousDecision(decision)); 
     }
 
     @Test
     @DisplayName("Should evaluate agent performance")
-    void testEvaluateAgent() { // GH-90000
+    void testEvaluateAgent() { 
         MockAgent agent = new MockAgent("test-agent");
         AIEvaluationFramework.EvaluationCriteria criteria =
-            AIEvaluationFramework.EvaluationCriteria.builder() // GH-90000
-                .withAccuracyThreshold(0.9) // GH-90000
-                .withPerformanceThreshold(100) // GH-90000
-                .build(); // GH-90000
+            AIEvaluationFramework.EvaluationCriteria.builder() 
+                .withAccuracyThreshold(0.9) 
+                .withPerformanceThreshold(100) 
+                .build(); 
 
         AIEvaluationFramework.EvaluationResult result =
-            evaluationFramework.evaluateAgent(agent, criteria); // GH-90000
+            evaluationFramework.evaluateAgent(agent, criteria); 
 
-        assertNotNull(result); // GH-90000
-        assertTrue(result.isPassed()); // GH-90000
+        assertNotNull(result); 
+        assertTrue(result.isPassed()); 
     }
 
     @Test
     @DisplayName("Should compare multiple agents")
-    void testCompareAgents() { // GH-90000
-        List<String> agentIds = List.of("agent-1", "agent-2", "agent-3"); // GH-90000
-        MockComparisonCriteria criteria = new MockComparisonCriteria(); // GH-90000
+    void testCompareAgents() { 
+        List<String> agentIds = List.of("agent-1", "agent-2", "agent-3"); 
+        MockComparisonCriteria criteria = new MockComparisonCriteria(); 
 
         AIEvaluationFramework.ComparisonReport report =
-            evaluationFramework.compareAgents(agentIds, criteria); // GH-90000
+            evaluationFramework.compareAgents(agentIds, criteria); 
 
-        assertNotNull(report); // GH-90000
-        assertEquals(3, report.getAgentIds().size()); // GH-90000
+        assertNotNull(report); 
+        assertEquals(3, report.getAgentIds().size()); 
     }
 
     // Mock implementations for testing
 
     private static class MockAgentOrchestrator implements AgentOrchestrator {
-        private final Map<String, KernelAgent> agents = new HashMap<>(); // GH-90000
+        private final Map<String, KernelAgent> agents = new HashMap<>(); 
 
         @Override
-        public AgentResponse executeAgent(KernelAgent agent, AgentRequest request) { // GH-90000
-            return AgentResponse.builder() // GH-90000
-                .requestId(request.getRequestId()) // GH-90000
-                .success(true) // GH-90000
-                .result(Map.of("status", "completed")) // GH-90000
-                .confidence(0.95) // GH-90000
-                .build(); // GH-90000
+        public AgentResponse executeAgent(KernelAgent agent, AgentRequest request) { 
+            return AgentResponse.builder() 
+                .requestId(request.getRequestId()) 
+                .success(true) 
+                .result(Map.of("status", "completed")) 
+                .confidence(0.95) 
+                .build(); 
         }
 
         @Override
-        public void registerAgent(KernelAgent agent) { // GH-90000
-            agents.put(agent.getAgentId(), agent); // GH-90000
+        public void registerAgent(KernelAgent agent) { 
+            agents.put(agent.getAgentId(), agent); 
         }
 
         @Override
-        public void unregisterAgent(String agentId) { // GH-90000
-            agents.remove(agentId); // GH-90000
+        public void unregisterAgent(String agentId) { 
+            agents.remove(agentId); 
         }
 
         @Override
-        public List<KernelAgent> getAvailableAgents() { // GH-90000
-            return new ArrayList<>(agents.values()); // GH-90000
+        public List<KernelAgent> getAvailableAgents() { 
+            return new ArrayList<>(agents.values()); 
         }
 
         @Override
-        public WorkflowResult executeAgentWorkflow(List<KernelAgent> agents, AgentRequest request) { // GH-90000
-            List<AgentResponse> responses = new ArrayList<>(); // GH-90000
-            for (KernelAgent agent : agents) { // GH-90000
-                responses.add(executeAgent(agent, request)); // GH-90000
+        public WorkflowResult executeAgentWorkflow(List<KernelAgent> agents, AgentRequest request) { 
+            List<AgentResponse> responses = new ArrayList<>(); 
+            for (KernelAgent agent : agents) { 
+                responses.add(executeAgent(agent, request)); 
             }
-            return new WorkflowResult(true, responses, null); // GH-90000
+            return new WorkflowResult(true, responses, null); 
         }
 
         @Override
-        public KernelAgent getAgent(String agentId) { // GH-90000
-            return agents.get(agentId); // GH-90000
+        public KernelAgent getAgent(String agentId) { 
+            return agents.get(agentId); 
         }
 
         @Override
-        public io.activej.promise.Promise<AgentResponse> executeAgentAsync(KernelAgent agent, AgentRequest request) { // GH-90000
-            return io.activej.promise.Promise.of(executeAgent(agent, request)); // GH-90000
+        public io.activej.promise.Promise<AgentResponse> executeAgentAsync(KernelAgent agent, AgentRequest request) { 
+            return io.activej.promise.Promise.of(executeAgent(agent, request)); 
         }
     }
 
     private static class MockAgent implements AgentOrchestrator.KernelAgent {
         private final String agentId;
 
-        MockAgent(String agentId) { // GH-90000
+        MockAgent(String agentId) { 
             this.agentId = agentId;
         }
 
         @Override
-        public String getAgentId() { // GH-90000
+        public String getAgentId() { 
             return agentId;
         }
 
         @Override
-        public String getName() { // GH-90000
+        public String getName() { 
             return "Mock Agent";
         }
 
         @Override
-        public String getDescription() { // GH-90000
+        public String getDescription() { 
             return "Mock agent for testing";
         }
 
         @Override
-        public AgentOrchestrator.AgentResponse execute(AgentOrchestrator.AgentRequest request) { // GH-90000
-            return AgentOrchestrator.AgentResponse.builder() // GH-90000
-                .requestId(request.getRequestId()) // GH-90000
-                .success(true) // GH-90000
-                .result(Map.of("status", "completed")) // GH-90000
-                .build(); // GH-90000
+        public AgentOrchestrator.AgentResponse execute(AgentOrchestrator.AgentRequest request) { 
+            return AgentOrchestrator.AgentResponse.builder() 
+                .requestId(request.getRequestId()) 
+                .success(true) 
+                .result(Map.of("status", "completed")) 
+                .build(); 
         }
 
         @Override
-        public AgentOrchestrator.AgentCapabilities getCapabilities() { // GH-90000
-            return new MockAgentCapabilities(); // GH-90000
+        public AgentOrchestrator.AgentCapabilities getCapabilities() { 
+            return new MockAgentCapabilities(); 
         }
     }
 
     private static class MockAgentCapabilities implements AgentOrchestrator.AgentCapabilities {
         @Override
-        public List<String> getSupportedOperations() { // GH-90000
-            return List.of("classify", "process"); // GH-90000
+        public List<String> getSupportedOperations() { 
+            return List.of("classify", "process"); 
         }
 
         @Override
-        public Map<String, Object> getMetadata() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getMetadata() { 
+            return Map.of(); 
         }
 
         @Override
-        public boolean supportsOperation(String operation) { // GH-90000
-            return getSupportedOperations().contains(operation); // GH-90000
+        public boolean supportsOperation(String operation) { 
+            return getSupportedOperations().contains(operation); 
         }
     }
 
     private static class MockModelGovernanceService implements ModelGovernanceService {
         @Override
-        public ModelApproval getModelApproval(String modelId) { // GH-90000
-            return ModelApproval.builder() // GH-90000
-                .modelId(modelId) // GH-90000
-                .approved(true) // GH-90000
+        public ModelApproval getModelApproval(String modelId) { 
+            return ModelApproval.builder() 
+                .modelId(modelId) 
+                .approved(true) 
                 .approver("admin")
                 .version("1.0")
-                .build(); // GH-90000
+                .build(); 
         }
 
         @Override
-        public void validateModelUsage(String modelId, AgentOrchestrator.AgentRequest request) { // GH-90000
+        public void validateModelUsage(String modelId, AgentOrchestrator.AgentRequest request) { 
         }
 
         @Override
-        public void recordModelPerformance(String modelId, ModelPerformanceMetrics metrics) { // GH-90000
+        public void recordModelPerformance(String modelId, ModelPerformanceMetrics metrics) { 
         }
 
         @Override
-        public boolean isModelCompliant(String modelId, CompliancePolicy policy) { // GH-90000
+        public boolean isModelCompliant(String modelId, CompliancePolicy policy) { 
             return true;
         }
 
         @Override
-        public void registerModel(ModelRegistration model) { // GH-90000
+        public void registerModel(ModelRegistration model) { 
         }
 
         @Override
-        public ModelMetadata getModelMetadata(String modelId) { // GH-90000
-            return new MockModelMetadata(modelId); // GH-90000
+        public ModelMetadata getModelMetadata(String modelId) { 
+            return new MockModelMetadata(modelId); 
         }
     }
 
     private static class MockModelMetadata implements ModelGovernanceService.ModelMetadata {
         private final String modelId;
 
-        MockModelMetadata(String modelId) { // GH-90000
+        MockModelMetadata(String modelId) { 
             this.modelId = modelId;
         }
 
         @Override
-        public String getModelId() { // GH-90000
+        public String getModelId() { 
             return modelId;
         }
 
         @Override
-        public String getName() { // GH-90000
+        public String getName() { 
             return "Mock Model";
         }
 
         @Override
-        public String getVersion() { // GH-90000
+        public String getVersion() { 
             return "1.0";
         }
 
         @Override
-        public String getType() { // GH-90000
+        public String getType() { 
             return "classification";
         }
 
         @Override
-        public Map<String, Object> getAttributes() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getAttributes() { 
+            return Map.of(); 
         }
 
         @Override
-        public long getCreatedDate() { // GH-90000
-            return System.currentTimeMillis(); // GH-90000
+        public long getCreatedDate() { 
+            return System.currentTimeMillis(); 
         }
 
         @Override
-        public long getLastUpdated() { // GH-90000
-            return System.currentTimeMillis(); // GH-90000
+        public long getLastUpdated() { 
+            return System.currentTimeMillis(); 
         }
     }
 
     private static class MockAutonomyManager implements AutonomyManager {
-        private final Map<String, AutonomyLevel> levels = new HashMap<>(); // GH-90000
+        private final Map<String, AutonomyLevel> levels = new HashMap<>(); 
 
         @Override
-        public void configureAutonomyLevel(String agentId, AutonomyLevel level) { // GH-90000
-            levels.put(agentId, level); // GH-90000
+        public void configureAutonomyLevel(String agentId, AutonomyLevel level) { 
+            levels.put(agentId, level); 
         }
 
         @Override
-        public boolean requiresHumanReview(AgentOrchestrator.AgentRequest request, // GH-90000
+        public boolean requiresHumanReview(AgentOrchestrator.AgentRequest request, 
                                           AgentOrchestrator.KernelAgent agent) {
-            return "critical-decision".equals(request.getOperation()); // GH-90000
+            return "critical-decision".equals(request.getOperation()); 
         }
 
         @Override
-        public void recordAutonomousDecision(AutonomousDecision decision) { // GH-90000
+        public void recordAutonomousDecision(AutonomousDecision decision) { 
         }
 
         @Override
-        public List<AutonomousDecision> getAutonomousDecisions(String agentId, TimeWindow window) { // GH-90000
-            return List.of(); // GH-90000
+        public List<AutonomousDecision> getAutonomousDecisions(String agentId, TimeWindow window) { 
+            return List.of(); 
         }
 
         @Override
-        public AutonomyLevel getAutonomyLevel(String agentId) { // GH-90000
-            return levels.getOrDefault(agentId, AutonomyLevel.MEDIUM); // GH-90000
+        public AutonomyLevel getAutonomyLevel(String agentId) { 
+            return levels.getOrDefault(agentId, AutonomyLevel.MEDIUM); 
         }
 
         @Override
-        public void approveDecision(String decisionId, String approver) { // GH-90000
+        public void approveDecision(String decisionId, String approver) { 
         }
 
         @Override
-        public void rejectDecision(String decisionId, String rejector, String reason) { // GH-90000
+        public void rejectDecision(String decisionId, String rejector, String reason) { 
         }
     }
 
     private static class MockAIEvaluationFramework implements AIEvaluationFramework {
         @Override
-        public EvaluationResult evaluateAgent(AgentOrchestrator.KernelAgent agent, // GH-90000
+        public EvaluationResult evaluateAgent(AgentOrchestrator.KernelAgent agent, 
                                              EvaluationCriteria criteria) {
-            return EvaluationResult.builder() // GH-90000
-                .agentId(agent.getAgentId()) // GH-90000
-                .passed(true) // GH-90000
-                .accuracy(0.95) // GH-90000
-                .precision(0.93) // GH-90000
-                .recall(0.94) // GH-90000
-                .f1Score(0.935) // GH-90000
-                .latencyMillis(50) // GH-90000
-                .build(); // GH-90000
+            return EvaluationResult.builder() 
+                .agentId(agent.getAgentId()) 
+                .passed(true) 
+                .accuracy(0.95) 
+                .precision(0.93) 
+                .recall(0.94) 
+                .f1Score(0.935) 
+                .latencyMillis(50) 
+                .build(); 
         }
 
         @Override
-        public void recordEvaluationMetrics(String agentId, EvaluationMetrics metrics) { // GH-90000
+        public void recordEvaluationMetrics(String agentId, EvaluationMetrics metrics) { 
         }
 
         @Override
-        public ComparisonReport compareAgents(List<String> agentIds, ComparisonCriteria criteria) { // GH-90000
-            return new MockComparisonReport(agentIds); // GH-90000
+        public ComparisonReport compareAgents(List<String> agentIds, ComparisonCriteria criteria) { 
+            return new MockComparisonReport(agentIds); 
         }
 
         @Override
-        public List<EvaluationResult> getEvaluationHistory(String agentId) { // GH-90000
-            return List.of(); // GH-90000
+        public List<EvaluationResult> getEvaluationHistory(String agentId) { 
+            return List.of(); 
         }
     }
 
     private static class MockComparisonCriteria implements AIEvaluationFramework.ComparisonCriteria {
         @Override
-        public List<String> getMetrics() { // GH-90000
-            return List.of("accuracy", "latency"); // GH-90000
+        public List<String> getMetrics() { 
+            return List.of("accuracy", "latency"); 
         }
 
         @Override
-        public String getSortBy() { // GH-90000
+        public String getSortBy() { 
             return "accuracy";
         }
 
         @Override
-        public boolean isAscending() { // GH-90000
+        public boolean isAscending() { 
             return false;
         }
     }
@@ -434,28 +434,28 @@ class AIFrameworkIntegrationTest {
     private static class MockComparisonReport implements AIEvaluationFramework.ComparisonReport {
         private final List<String> agentIds;
 
-        MockComparisonReport(List<String> agentIds) { // GH-90000
+        MockComparisonReport(List<String> agentIds) { 
             this.agentIds = agentIds;
         }
 
         @Override
-        public List<String> getAgentIds() { // GH-90000
+        public List<String> getAgentIds() { 
             return agentIds;
         }
 
         @Override
-        public Map<String, AIEvaluationFramework.EvaluationResult> getResults() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, AIEvaluationFramework.EvaluationResult> getResults() { 
+            return Map.of(); 
         }
 
         @Override
-        public String getBestAgent() { // GH-90000
-            return agentIds.isEmpty() ? null : agentIds.get(0); // GH-90000
+        public String getBestAgent() { 
+            return agentIds.isEmpty() ? null : agentIds.get(0); 
         }
 
         @Override
-        public Map<String, Object> getSummary() { // GH-90000
-            return Map.of("total_agents", agentIds.size()); // GH-90000
+        public Map<String, Object> getSummary() { 
+            return Map.of("total_agents", agentIds.size()); 
         }
     }
 }

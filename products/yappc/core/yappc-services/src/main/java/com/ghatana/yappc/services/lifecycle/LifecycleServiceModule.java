@@ -390,6 +390,13 @@ public class LifecycleServiceModule extends AbstractModule {
         return new JdbcAuditLogger(dataSource, mapper);
     }
 
+    /** Provides the durable {@link com.ghatana.platform.security.rbac.PolicyRepository} for RBAC policy persistence. */
+    @Provides
+    com.ghatana.platform.security.rbac.PolicyRepository policyRepository(DataSource dataSource) {
+        logger.info("Creating JdbcPolicyRepository — RBAC policies persisted to PostgreSQL");
+        return new com.ghatana.platform.security.rbac.JdbcPolicyRepository(dataSource);
+    }
+
     /** Provides IntentApiController for Phase 1 (Intent) HTTP routes. */
     @Provides
     IntentApiController intentApiController(IntentService intentService, YappcArtifactRepository repo) {
@@ -1059,6 +1066,7 @@ public class LifecycleServiceModule extends AbstractModule {
             Eventloop eventloop,
             MemoryStore memoryStore,
             AepEventPublisher aepEventPublisher,
+            YappcAgentRegistryAdapter sdlcRegistry,
             MetricsCollector metrics) {
         Map<String, String> env = System.getenv();
         YappcAgentSystem.AiRuntimeMode aiRuntimeMode = resolveAiRuntimeMode(env);
@@ -1079,6 +1087,7 @@ public class LifecycleServiceModule extends AbstractModule {
             .aiRuntimeMode(aiRuntimeMode)
             .llmGateway(adaptedGateway)
                 .aepEventPublisher(aepEventPublisher)
+                .sdlcRegistry(sdlcRegistry)
                 .build();
     }
 

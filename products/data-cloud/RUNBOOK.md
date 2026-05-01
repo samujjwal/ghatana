@@ -37,6 +37,16 @@ The UI's shell-role mode is a disclosure and diagnostics aid only. It does not c
 
 The PostgreSQL provider is discovered via `META-INF/services/com.ghatana.datacloud.spi.EntityStore`. If the plugin is present but the database variables are missing, the provider fails with a clear configuration error on first use.
 
+### HTTP security and settings-store startup guardrails
+
+- Non-embedded profiles fail startup when both API key and JWT authentication are missing.
+- Configure one of:
+  - `DATACLOUD_API_KEYS`
+  - `DATACLOUD_JWT_SECRET` or `DATACLOUD_JWT_JWKS_URL`
+- Insecure mode (`DATACLOUD_INSECURE_MODE=true`) is only intended for local/embedded workflows.
+- In insecure embedded mode, bind host must be loopback (`127.0.0.1`, `localhost`, or `::1`).
+- Strict/production-like profiles require durable settings storage; in-memory settings storage is blocked at startup.
+
 ### Kafka-backed durable event storage
 
 - `DATACLOUD_KAFKA_BOOTSTRAP_SERVERS=host:9092`
@@ -145,3 +155,114 @@ Results are written under `products/data-cloud/platform-launcher/build/reports/j
 - For sovereign mode, restore from the data directory snapshot and restart with the same `DATACLOUD_SOVEREIGN_DATA_DIR`
 - For PostgreSQL mode, recover the database first, then restart the service so the provider reconnects through HikariCP
 - After any recovery, rerun the focused provider tests or the health-probe flow before reopening traffic
+
+## Production Startup Checklist (P0-01 Durable Storage Gate)
+
+The following sequence must succeed before Data Cloud accepts production traffic. Each step is validated by automated tests in the launcher and platform-launcher suites.
+
+### Step 1 — Verify durable storage configuration
+
+Set all required environment variables before launching:
+
+```bash
+# PostgreSQL-backed entity + event storage (production mandatory)
+export DATACLOUD_PROFILE=production
+export DATACLOUD_DB_URL=jdbc:postgresql://db-host:5432/datacloud
+export DATACLOUD_DB_USER=datacloud
+export DATACLOUD_DB_PASSWORD=<vault-resolved>
+export DATACLOUD_KAFKA_BOOTSTRAP_SERVERS=kafka-host:9092
+
+# Settings store (required in production; in-memory is rejected at startup)
+export DATACLOUD_DB_SETTINGS_TABLE=dc_settings
+```
+
+Non-durable (`in-memory`) settings storage is blocked at startup when `DATACLOUD_PROFILE` is `production` or `strict`. The launcher throws `DataCloudTransportStartupException` and exits with a non-zero code. Validated by `DataCloudHttpServerProductionDependencyTest`.
+
+### Step 2 — Verify authentication is configured
+
+At least one of the following must be set for non-embedded profiles:
+
+```bash
+# Option A: static API key list (comma-separated; supports rotation)
+export DATACLOUD_API_KEYS=<current-key>,<previous-key>
+
+# Option B: JWT with shared secret
+export DATACLOUD_JWT_SECRET=<secret>
+
+# Option C: JWT with JWKS endpoint
+export DATACLOUD_JWT_JWKS_URL=https://idp.example.com/.well-known/jwks.json
+```
+
+Missing auth configuration causes a startup failure validated by `DataCloudHttpLauncherBootstrapTest`.
+
+### Step 3 — Verify health probes
+
+After startup, confirm the health endpoints respond correctly:
+
+```bash
+curl http://localhost:8080/health/ready     # must return 200 {"status":"UP"}
+curl http://localhost:8080/health/live      # must return 200
+curl http://localhost:8080/metrics          # must return Prometheus text format
+```
+
+The readiness probe returns `503` until all durable stores (PostgreSQL, Kafka) have established their connections.
+
+### Step 4 — Run migration contract checks
+
+Before cutting traffic, verify schema migrations have been applied cleanly:
+
+```bash
+./gradlew :products:data-cloud:platform-launcher:test \
+  --tests "com.ghatana.datacloud.migration.DatabaseMigrationContractTest" \
+  --no-daemon
+```
+
+All 10 migration contract tests must pass. This confirms: version contiguity, tenant_id NOT NULL enforcement across all domain tables, no DEFAULT NULL loopholes, tenant-scoped unique constraints, workload-path lookup indexes, and RLS tenant isolation policy installation.
+
+### Step 5 — Confirm no in-memory storage
+
+In production the service must NOT log:
+
+```
+WARN  DataCloudHttpLauncherBootstrap - Settings store missing; defaulting to IN-MEMORY
+WARN  DataCloudHttpLauncherBootstrap - Embedded profile detected; authentication is OPTIONAL
+```
+
+If these warnings appear with `DATACLOUD_PROFILE=production`, the startup guard has been bypassed and the deployment must not receive traffic.
+
+### Launch-mode summary
+
+| Profile | EntityStore | EventStore | Auth required | Settings store |
+|---|---|---|---|---|
+| `local` | In-memory | In-memory | Optional | In-memory (allowed) |
+| `sovereign` | H2 file-backed | In-memory | Optional | JDBC or in-memory |
+| `staging` | PostgreSQL | Kafka | Required | JDBC (required) |
+| `production` | PostgreSQL | Kafka | Required | JDBC (required) |
+
+Profiles `staging` and `production` use the strict profile policy. In-memory settings storage is rejected at startup in both.
+
+## Production Tenant Isolation Verification
+
+After deployment, confirm cross-tenant isolation is operational at the HTTP layer:
+
+```bash
+# Generate two API keys for different tenants
+TENANT_A_KEY="key-tenant-a-..."
+TENANT_B_KEY="key-tenant-b-..."
+
+# Write an entity as tenant A
+curl -X POST http://localhost:8080/api/v1/entities/my-collection \
+  -H "Authorization: Bearer $TENANT_A_KEY" \
+  -H "X-Tenant-ID: tenant-a" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"product","data":{"name":"Widget"}}'
+
+# Attempt to read as tenant B — must return 403
+curl -o /dev/null -w "%{http_code}" \
+  http://localhost:8080/api/v1/entities/my-collection \
+  -H "Authorization: Bearer $TENANT_B_KEY" \
+  -H "X-Tenant-ID: tenant-a"
+# Expected: 403
+```
+
+Cross-tenant access denial is validated by `DataCloudHttpServerCriticalRouteTenantEnforcementTest`, `DataCloudHttpServerGovernanceTest.CrossTenantEnforcementTests`, and `TenantIsolationTest`.

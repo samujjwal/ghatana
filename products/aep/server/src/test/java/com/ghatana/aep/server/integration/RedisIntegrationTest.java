@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.integration;
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("integration")
 @Tag("infrastructure-backed")
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("RedisIntegrationTest")
 class RedisIntegrationTest {
 
@@ -32,14 +32,14 @@ class RedisIntegrationTest {
     @SuppressWarnings("resource")
     private static final GenericContainer<?> REDIS =
         new GenericContainer<>("redis:7-alpine")
-            .withExposedPorts(6379); // GH-90000
+            .withExposedPorts(6379); 
 
     @Test
     @DisplayName("can ping and round-trip a key")
-    void canPingAndRoundTripKey() { // GH-90000
-        try (Jedis jedis = new Jedis(REDIS.getHost(), REDIS.getMappedPort(6379))) { // GH-90000
+    void canPingAndRoundTripKey() { 
+        try (Jedis jedis = new Jedis(REDIS.getHost(), REDIS.getMappedPort(6379))) { 
             assertThat(jedis.ping()).isEqualTo("PONG");
-            jedis.set("aep:probe", "ok"); // GH-90000
+            jedis.set("aep:probe", "ok"); 
             assertThat(jedis.get("aep:probe")).isEqualTo("ok");
         }
     }

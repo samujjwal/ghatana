@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests the complete lifecycle from Intent through Evolve with real service interactions.
  */
 @DisplayName("YAPPC Full Workflow E2E Tests")
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class) 
 class FullWorkflowE2ETest extends EventloopTestBase {
 
     private static FullWorkflowPlatform platform;
@@ -42,142 +42,142 @@ class FullWorkflowE2ETest extends EventloopTestBase {
     private static String codeReviewerAgentId;
 
     @BeforeAll
-    static void setUpPlatform() { // GH-90000
-        platform = new MockFullWorkflowPlatform(); // GH-90000
+    static void setUpPlatform() { 
+        platform = new MockFullWorkflowPlatform(); 
     }
 
     // ── Phase 1: Intent & Project Creation ───────────────────────────────────────
 
     @Test
-    @Order(1) // GH-90000
+    @Order(1) 
     @DisplayName("Full Workflow: Should create project with intent")
-    void testCreateProjectWithIntent() throws Exception { // GH-90000
-        CreateProjectRequest request = CreateProjectRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
+    void testCreateProjectWithIntent() throws Exception { 
+        CreateProjectRequest request = CreateProjectRequest.builder() 
+                .tenantId(tenantId) 
                 .projectName("E2E Full Workflow Microservice")
                 .intent("Build a user authentication microservice with JWT, OAuth2 integration, and role-based access control")
-                .techStack(List.of("Java", "Spring Boot", "PostgreSQL", "Redis")) // GH-90000
-                .build(); // GH-90000
+                .techStack(List.of("Java", "Spring Boot", "PostgreSQL", "Redis")) 
+                .build(); 
 
-        Promise<Project> promise = platform.createProject(request); // GH-90000
-        Project project = runPromise(() -> promise); // GH-90000
+        Promise<Project> promise = platform.createProject(request); 
+        Project project = runPromise(() -> promise); 
 
-        assertThat(project).isNotNull(); // GH-90000
-        assertThat(project.id()).isNotNull(); // GH-90000
+        assertThat(project).isNotNull(); 
+        assertThat(project.id()).isNotNull(); 
         assertThat(project.name()).isEqualTo("E2E Full Workflow Microservice");
         assertThat(project.status()).isEqualTo("CREATED");
         assertThat(project.currentPhase()).isEqualTo("PLANNING");
-        assertThat(project.techStack()).contains("Java", "Spring Boot"); // GH-90000
+        assertThat(project.techStack()).contains("Java", "Spring Boot"); 
 
-        projectId = project.id(); // GH-90000
+        projectId = project.id(); 
     }
 
     @Test
-    @Order(2) // GH-90000
+    @Order(2) 
     @DisplayName("Full Workflow: Should register agents for the workflow")
-    void testRegisterAgentsForWorkflow() throws Exception { // GH-90000
-        AgentRegistrationRequest javaRequest = AgentRegistrationRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
+    void testRegisterAgentsForWorkflow() throws Exception { 
+        AgentRegistrationRequest javaRequest = AgentRegistrationRequest.builder() 
+                .tenantId(tenantId) 
                 .agentConfigPath("agents/java-expert.yaml")
-                .build(); // GH-90000
+                .build(); 
 
-        AgentRegistrationResult javaResult = runPromise(() -> platform.registerAgent(javaRequest)); // GH-90000
-        assertThat(javaResult.agentId()).isNotNull(); // GH-90000
+        AgentRegistrationResult javaResult = runPromise(() -> platform.registerAgent(javaRequest)); 
+        assertThat(javaResult.agentId()).isNotNull(); 
         assertThat(javaResult.agentName()).isEqualTo("Java Expert");
-        javaExpertAgentId = javaResult.agentId(); // GH-90000
+        javaExpertAgentId = javaResult.agentId(); 
 
-        AgentRegistrationRequest reviewerRequest = AgentRegistrationRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
+        AgentRegistrationRequest reviewerRequest = AgentRegistrationRequest.builder() 
+                .tenantId(tenantId) 
                 .agentConfigPath("agents/code-reviewer.yaml")
-                .build(); // GH-90000
+                .build(); 
 
-        AgentRegistrationResult reviewerResult = runPromise(() -> platform.registerAgent(reviewerRequest)); // GH-90000
-        assertThat(reviewerResult.agentId()).isNotNull(); // GH-90000
+        AgentRegistrationResult reviewerResult = runPromise(() -> platform.registerAgent(reviewerRequest)); 
+        assertThat(reviewerResult.agentId()).isNotNull(); 
         assertThat(reviewerResult.agentName()).isEqualTo("Code Reviewer");
-        codeReviewerAgentId = reviewerResult.agentId(); // GH-90000
+        codeReviewerAgentId = reviewerResult.agentId(); 
     }
 
     // ── Phase 2: Planning ──────────────────────────────────────────────────────
 
     @Test
-    @Order(3) // GH-90000
+    @Order(3) 
     @DisplayName("Full Workflow: Should complete PLANNING phase with AI-generated plan")
-    void testCompletePlanningPhase() throws Exception { // GH-90000
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
-                .projectId(projectId) // GH-90000
+    void testCompletePlanningPhase() throws Exception { 
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() 
+                .projectId(projectId) 
                 .phase("PLANNING")
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
-                .build(); // GH-90000
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
+                .build(); 
 
-        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
-        PhaseResult result = runPromise(() -> promise); // GH-90000
+        Promise<PhaseResult> promise = platform.executePhase(request); 
+        PhaseResult result = runPromise(() -> promise); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.success()).isTrue(); 
         assertThat(result.phase()).isEqualTo("PLANNING");
         assertThat(result.artifacts()).containsKey("requirements");
         assertThat(result.artifacts()).containsKey("architecture");
         assertThat(result.artifacts()).containsKey("techStack");
-        assertThat(result.executionTimeMs()).isGreaterThan(0); // GH-90000
+        assertThat(result.executionTimeMs()).isGreaterThan(0); 
     }
 
     @Test
-    @Order(4) // GH-90000
+    @Order(4) 
     @DisplayName("Full Workflow: Should generate AI workflow plan")
-    void testGenerateAiWorkflowPlan() throws Exception { // GH-90000
-        CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .projectId(projectId) // GH-90000
+    void testGenerateAiWorkflowPlan() throws Exception { 
+        CreateWorkflowRequest request = CreateWorkflowRequest.builder() 
+                .tenantId(tenantId) 
+                .projectId(projectId) 
                 .name("Auth Microservice Workflow")
                 .description("Complete workflow for auth microservice development")
                 .objective("Implement JWT-based authentication with OAuth2 integration")
-                .build(); // GH-90000
+                .build(); 
 
-        Promise<AiWorkflow> promise = platform.createWorkflow(request); // GH-90000
-        AiWorkflow workflow = runPromise(() -> promise); // GH-90000
+        Promise<AiWorkflow> promise = platform.createWorkflow(request); 
+        AiWorkflow workflow = runPromise(() -> promise); 
 
-        assertThat(workflow).isNotNull(); // GH-90000
-        assertThat(workflow.id()).isNotNull(); // GH-90000
+        assertThat(workflow).isNotNull(); 
+        assertThat(workflow.id()).isNotNull(); 
         assertThat(workflow.status()).isEqualTo("DRAFT");
-        workflowId = workflow.id(); // GH-90000
+        workflowId = workflow.id(); 
     }
 
     @Test
-    @Order(5) // GH-90000
+    @Order(5) 
     @DisplayName("Full Workflow: Should approve and start AI workflow")
-    void testApproveAndStartAiWorkflow() throws Exception { // GH-90000
+    void testApproveAndStartAiWorkflow() throws Exception { 
         // Generate plan
-        AiPlan plan = runPromise(() -> platform.generatePlan(workflowId, tenantId, "Implement auth microservice")); // GH-90000
-        assertThat(plan).isNotNull(); // GH-90000
-        assertThat(plan.steps()).isNotEmpty(); // GH-90000
+        AiPlan plan = runPromise(() -> platform.generatePlan(workflowId, tenantId, "Implement auth microservice")); 
+        assertThat(plan).isNotNull(); 
+        assertThat(plan.steps()).isNotEmpty(); 
 
         // Approve plan
-        AiPlan approvedPlan = runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
+        AiPlan approvedPlan = runPromise(() -> platform.approvePlan(plan.id(), tenantId)); 
         assertThat(approvedPlan.status()).isEqualTo("APPROVED");
 
         // Start workflow
-        AiWorkflow startedWorkflow = runPromise(() -> platform.startWorkflow(workflowId, tenantId)); // GH-90000
+        AiWorkflow startedWorkflow = runPromise(() -> platform.startWorkflow(workflowId, tenantId)); 
         assertThat(startedWorkflow.status()).isEqualTo("IN_PROGRESS");
     }
 
     // ── Phase 3: Design ────────────────────────────────────────────────────────
 
     @Test
-    @Order(6) // GH-90000
+    @Order(6) 
     @DisplayName("Full Workflow: Should complete DESIGN phase with API spec and data model")
-    void testCompleteDesignPhase() throws Exception { // GH-90000
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
-                .projectId(projectId) // GH-90000
+    void testCompleteDesignPhase() throws Exception { 
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() 
+                .projectId(projectId) 
                 .phase("DESIGN")
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
-                .build(); // GH-90000
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
+                .build(); 
 
-        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
-        PhaseResult result = runPromise(() -> promise); // GH-90000
+        Promise<PhaseResult> promise = platform.executePhase(request); 
+        PhaseResult result = runPromise(() -> promise); 
 
-        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.success()).isTrue(); 
         assertThat(result.phase()).isEqualTo("DESIGN");
         assertThat(result.artifacts()).containsKey("apiSpec");
         assertThat(result.artifacts()).containsKey("dataModel");
@@ -185,120 +185,120 @@ class FullWorkflowE2ETest extends EventloopTestBase {
     }
 
     @Test
-    @Order(7) // GH-90000
+    @Order(7) 
     @DisplayName("Full Workflow: Should perform code review on design artifacts")
-    void testCodeReviewOnDesignArtifacts() throws Exception { // GH-90000
+    void testCodeReviewOnDesignArtifacts() throws Exception { 
         String designCode = """
                 public class AuthController {
                     @PostMapping("/login")
-                    public ResponseEntity<AuthToken> login(@RequestBody LoginRequest request) { // GH-90000
-                        return authService.authenticate(request); // GH-90000
+                    public ResponseEntity<AuthToken> login(@RequestBody LoginRequest request) { 
+                        return authService.authenticate(request); 
                     }
                 }
                 """;
 
-        CodeReviewRequest request = CodeReviewRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .agentId(codeReviewerAgentId) // GH-90000
-                .code(designCode) // GH-90000
+        CodeReviewRequest request = CodeReviewRequest.builder() 
+                .tenantId(tenantId) 
+                .agentId(codeReviewerAgentId) 
+                .code(designCode) 
                 .language("java")
                 .reviewType("security")
-                .build(); // GH-90000
+                .build(); 
 
-        CodeReviewResult result = runPromise(() -> platform.reviewCode(request)); // GH-90000
+        CodeReviewResult result = runPromise(() -> platform.reviewCode(request)); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.issues()).isNotNull(); // GH-90000
-        assertThat(result.overallScore()).isBetween(0, 100); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.success()).isTrue(); 
+        assertThat(result.issues()).isNotNull(); 
+        assertThat(result.overallScore()).isBetween(0, 100); 
     }
 
     // ── Phase 4: Implementation ─────────────────────────────────────────────────
 
     @Test
-    @Order(8) // GH-90000
+    @Order(8) 
     @DisplayName("Full Workflow: Should complete IMPLEMENTATION phase with generated code")
-    void testCompleteImplementationPhase() throws Exception { // GH-90000
-        CodeGenerationRequest codeRequest = CodeGenerationRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
+    void testCompleteImplementationPhase() throws Exception { 
+        CodeGenerationRequest codeRequest = CodeGenerationRequest.builder() 
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
                 .language("java")
                 .framework("spring-boot")
                 .description("Generate authentication microservice implementation")
-                .requirements(List.of( // GH-90000
+                .requirements(List.of( 
                         "JWT token generation and validation",
                         "OAuth2 integration",
                         "Role-based access control",
                         "User entity with roles",
                         "Refresh token support"
                 ))
-                .build(); // GH-90000
+                .build(); 
 
-        Promise<CodeGenerationResult> codePromise = platform.generateCode(codeRequest); // GH-90000
-        CodeGenerationResult codeResult = runPromise(() -> codePromise); // GH-90000
+        Promise<CodeGenerationResult> codePromise = platform.generateCode(codeRequest); 
+        CodeGenerationResult codeResult = runPromise(() -> codePromise); 
 
-        assertThat(codeResult).isNotNull(); // GH-90000
-        assertThat(codeResult.success()).isTrue(); // GH-90000
-        assertThat(codeResult.generatedFiles()).isNotEmpty(); // GH-90000
+        assertThat(codeResult).isNotNull(); 
+        assertThat(codeResult.success()).isTrue(); 
+        assertThat(codeResult.generatedFiles()).isNotEmpty(); 
         assertThat(codeResult.generatedFiles()).containsKey("AuthController.java");
         assertThat(codeResult.generatedFiles()).containsKey("AuthService.java");
 
-        PhaseExecutionRequest phaseRequest = PhaseExecutionRequest.builder() // GH-90000
-                .projectId(projectId) // GH-90000
+        PhaseExecutionRequest phaseRequest = PhaseExecutionRequest.builder() 
+                .projectId(projectId) 
                 .phase("IMPLEMENTATION")
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
-                .artifacts(codeResult.generatedFiles()) // GH-90000
-                .build(); // GH-90000
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
+                .artifacts(codeResult.generatedFiles()) 
+                .build(); 
 
-        Promise<PhaseResult> phasePromise = platform.executePhase(phaseRequest); // GH-90000
-        PhaseResult phaseResult = runPromise(() -> phasePromise); // GH-90000
+        Promise<PhaseResult> phasePromise = platform.executePhase(phaseRequest); 
+        PhaseResult phaseResult = runPromise(() -> phasePromise); 
 
-        assertThat(phaseResult.success()).isTrue(); // GH-90000
+        assertThat(phaseResult.success()).isTrue(); 
         assertThat(phaseResult.phase()).isEqualTo("IMPLEMENTATION");
         assertThat(phaseResult.artifacts()).containsKey("sourceCode");
         assertThat(phaseResult.artifacts()).containsKey("buildConfig");
     }
 
     @Test
-    @Order(9) // GH-90000
+    @Order(9) 
     @DisplayName("Full Workflow: Should execute workflow steps via agent routing")
-    void testWorkflowStepsViaAgentRouting() throws Exception { // GH-90000
-        AepEvent stepEvent = AepEvent.builder() // GH-90000
+    void testWorkflowStepsViaAgentRouting() throws Exception { 
+        AepEvent stepEvent = AepEvent.builder() 
                 .eventType("workflow.step.requested")
-                .tenantId(tenantId) // GH-90000
-                .correlationId(UUID.randomUUID().toString()) // GH-90000
-                .payload(Map.of( // GH-90000
+                .tenantId(tenantId) 
+                .correlationId(UUID.randomUUID().toString()) 
+                .payload(Map.of( 
                         "workflowId", workflowId,
                         "stepId", "step-implementation",
                         "stepType", "CODE_GENERATION"
                 ))
-                .build(); // GH-90000
+                .build(); 
 
-        AepEvent result = runPromise(() -> platform.routeEvent(stepEvent)); // GH-90000
+        AepEvent result = runPromise(() -> platform.routeEvent(stepEvent)); 
 
-        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result).isNotNull(); 
         assertThat(result.eventType()).isEqualTo("workflow.step.completed");
-        assertThat(result.tenantId()).isEqualTo(tenantId); // GH-90000
+        assertThat(result.tenantId()).isEqualTo(tenantId); 
     }
 
     // ── Phase 5: Testing ───────────────────────────────────────────────────────
 
     @Test
-    @Order(10) // GH-90000
+    @Order(10) 
     @DisplayName("Full Workflow: Should complete TESTING phase with test results")
-    void testCompleteTestingPhase() throws Exception { // GH-90000
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
-                .projectId(projectId) // GH-90000
+    void testCompleteTestingPhase() throws Exception { 
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() 
+                .projectId(projectId) 
                 .phase("TESTING")
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
-                .build(); // GH-90000
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
+                .build(); 
 
-        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
-        PhaseResult result = runPromise(() -> promise); // GH-90000
+        Promise<PhaseResult> promise = platform.executePhase(request); 
+        PhaseResult result = runPromise(() -> promise); 
 
-        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.success()).isTrue(); 
         assertThat(result.phase()).isEqualTo("TESTING");
         assertThat(result.artifacts()).containsKey("testResults");
         assertThat(result.artifacts()).containsKey("coverageReport");
@@ -306,34 +306,34 @@ class FullWorkflowE2ETest extends EventloopTestBase {
     }
 
     @Test
-    @Order(11) // GH-90000
+    @Order(11) 
     @DisplayName("Full Workflow: Should verify test coverage meets threshold")
-    void testVerifyTestCoverageThreshold() throws Exception { // GH-90000
-        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
-        ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
+    void testVerifyTestCoverageThreshold() throws Exception { 
+        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); 
+        ProjectMetrics metrics = runPromise(() -> promise); 
 
-        assertThat(metrics).isNotNull(); // GH-90000
-        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80); // GH-90000
-        assertThat(metrics.totalTests()).isGreaterThan(0); // GH-90000
+        assertThat(metrics).isNotNull(); 
+        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80); 
+        assertThat(metrics.totalTests()).isGreaterThan(0); 
     }
 
     // ── Phase 6: Deploy ────────────────────────────────────────────────────────
 
     @Test
-    @Order(12) // GH-90000
+    @Order(12) 
     @DisplayName("Full Workflow: Should complete DEPLOY phase with deployment artifacts")
-    void testCompleteDeployPhase() throws Exception { // GH-90000
-        PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
-                .projectId(projectId) // GH-90000
+    void testCompleteDeployPhase() throws Exception { 
+        PhaseExecutionRequest request = PhaseExecutionRequest.builder() 
+                .projectId(projectId) 
                 .phase("DEPLOY")
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
-                .build(); // GH-90000
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
+                .build(); 
 
-        Promise<PhaseResult> promise = platform.executePhase(request); // GH-90000
-        PhaseResult result = runPromise(() -> promise); // GH-90000
+        Promise<PhaseResult> promise = platform.executePhase(request); 
+        PhaseResult result = runPromise(() -> promise); 
 
-        assertThat(result.success()).isTrue(); // GH-90000
+        assertThat(result.success()).isTrue(); 
         assertThat(result.phase()).isEqualTo("DEPLOY");
         assertThat(result.artifacts()).containsKey("dockerImage");
         assertThat(result.artifacts()).containsKey("k8sManifest");
@@ -341,185 +341,185 @@ class FullWorkflowE2ETest extends EventloopTestBase {
     }
 
     @Test
-    @Order(13) // GH-90000
+    @Order(13) 
     @DisplayName("Full Workflow: Should verify deployment health check")
-    void testVerifyDeploymentHealthCheck() throws Exception { // GH-90000
-        DeploymentHealthCheck check = runPromise(() -> platform.checkDeploymentHealth(projectId, tenantId)); // GH-90000
+    void testVerifyDeploymentHealthCheck() throws Exception { 
+        DeploymentHealthCheck check = runPromise(() -> platform.checkDeploymentHealth(projectId, tenantId)); 
 
-        assertThat(check).isNotNull(); // GH-90000
-        assertThat(check.healthy()).isTrue(); // GH-90000
-        assertThat(check.uptimeSeconds()).isGreaterThan(0); // GH-90000
-        assertThat(check.memoryUsageMb()).isGreaterThan(0); // GH-90000
+        assertThat(check).isNotNull(); 
+        assertThat(check.healthy()).isTrue(); 
+        assertThat(check.uptimeSeconds()).isGreaterThan(0); 
+        assertThat(check.memoryUsageMb()).isGreaterThan(0); 
     }
 
     // ── Phase 7: Evolve ────────────────────────────────────────────────────────
 
     @Test
-    @Order(14) // GH-90000
+    @Order(14) 
     @DisplayName("Full Workflow: Should handle EVOLVE phase with feature additions")
-    void testCompleteEvolvePhase() throws Exception { // GH-90000
-        EvolveRequest request = EvolveRequest.builder() // GH-90000
-                .projectId(projectId) // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .agentId(javaExpertAgentId) // GH-90000
-                .newFeatures(List.of( // GH-90000
+    void testCompleteEvolvePhase() throws Exception { 
+        EvolveRequest request = EvolveRequest.builder() 
+                .projectId(projectId) 
+                .tenantId(tenantId) 
+                .agentId(javaExpertAgentId) 
+                .newFeatures(List.of( 
                         "Add multi-factor authentication support",
                         "Implement audit logging for all auth events",
                         "Add rate limiting per user"
                 ))
-                .build(); // GH-90000
+                .build(); 
 
-        Promise<EvolveResult> promise = platform.evolve(request); // GH-90000
-        EvolveResult result = runPromise(() -> promise); // GH-90000
+        Promise<EvolveResult> promise = platform.evolve(request); 
+        EvolveResult result = runPromise(() -> promise); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.addedFeatures()).hasSize(3); // GH-90000
-        assertThat(result.modifiedFiles()).isNotEmpty(); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.success()).isTrue(); 
+        assertThat(result.addedFeatures()).hasSize(3); 
+        assertThat(result.modifiedFiles()).isNotEmpty(); 
     }
 
     // ── Complete Workflow Verification ───────────────────────────────────────────
 
     @Test
-    @Order(15) // GH-90000
+    @Order(15) 
     @DisplayName("Full Workflow: Should retrieve complete project with all phases")
-    void testGetCompleteProject() throws Exception { // GH-90000
-        Promise<Project> promise = platform.getProject(projectId, tenantId); // GH-90000
-        Project project = runPromise(() -> promise); // GH-90000
+    void testGetCompleteProject() throws Exception { 
+        Promise<Project> promise = platform.getProject(projectId, tenantId); 
+        Project project = runPromise(() -> promise); 
 
-        assertThat(project).isNotNull(); // GH-90000
-        assertThat(project.id()).isEqualTo(projectId); // GH-90000
-        assertThat(project.completedPhases()).hasSizeGreaterThanOrEqualTo(6); // GH-90000
-        assertThat(project.completedPhases()).contains( // GH-90000
+        assertThat(project).isNotNull(); 
+        assertThat(project.id()).isEqualTo(projectId); 
+        assertThat(project.completedPhases()).hasSizeGreaterThanOrEqualTo(6); 
+        assertThat(project.completedPhases()).contains( 
                 "PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE"
         );
         assertThat(project.status()).isEqualTo("COMPLETED");
     }
 
     @Test
-    @Order(16) // GH-90000
+    @Order(16) 
     @DisplayName("Full Workflow: Should track complete workflow metrics")
-    void testCompleteWorkflowMetrics() throws Exception { // GH-90000
-        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
-        ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
+    void testCompleteWorkflowMetrics() throws Exception { 
+        Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); 
+        ProjectMetrics metrics = runPromise(() -> promise); 
 
-        assertThat(metrics).isNotNull(); // GH-90000
-        assertThat(metrics.totalPhases()).isGreaterThanOrEqualTo(6); // GH-90000
-        assertThat(metrics.completedPhases()).isGreaterThanOrEqualTo(6); // GH-90000
-        assertThat(metrics.totalExecutionTimeMs()).isGreaterThan(0); // GH-90000
-        assertThat(metrics.agentInvocations()).isGreaterThan(0); // GH-90000
-        assertThat(metrics.codeFilesGenerated()).isGreaterThan(0); // GH-90000
-        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80); // GH-90000
+        assertThat(metrics).isNotNull(); 
+        assertThat(metrics.totalPhases()).isGreaterThanOrEqualTo(6); 
+        assertThat(metrics.completedPhases()).isGreaterThanOrEqualTo(6); 
+        assertThat(metrics.totalExecutionTimeMs()).isGreaterThan(0); 
+        assertThat(metrics.agentInvocations()).isGreaterThan(0); 
+        assertThat(metrics.codeFilesGenerated()).isGreaterThan(0); 
+        assertThat(metrics.testCoverage()).isGreaterThanOrEqualTo(80); 
     }
 
     @Test
-    @Order(17) // GH-90000
+    @Order(17) 
     @DisplayName("Full Workflow: Should verify AI workflow completion")
-    void testVerifyAiWorkflowCompletion() throws Exception { // GH-90000
-        Promise<AiWorkflow> promise = platform.getWorkflow(workflowId, tenantId); // GH-90000
-        AiWorkflow workflow = runPromise(() -> promise); // GH-90000
+    void testVerifyAiWorkflowCompletion() throws Exception { 
+        Promise<AiWorkflow> promise = platform.getWorkflow(workflowId, tenantId); 
+        AiWorkflow workflow = runPromise(() -> promise); 
 
-        assertThat(workflow).isNotNull(); // GH-90000
+        assertThat(workflow).isNotNull(); 
         assertThat(workflow.status()).isEqualTo("COMPLETED");
-        assertThat(workflow.completedSteps()).isGreaterThan(0); // GH-90000
+        assertThat(workflow.completedSteps()).isGreaterThan(0); 
     }
 
     // ── Error Handling and Edge Cases ───────────────────────────────────────────
 
     @Test
-    @Order(18) // GH-90000
+    @Order(18) 
     @DisplayName("Full Workflow: Should handle workflow pause and resume")
-    void testWorkflowPauseAndResume() throws Exception { // GH-90000
+    void testWorkflowPauseAndResume() throws Exception { 
         // Create new workflow for pause test
-        CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .projectId(projectId) // GH-90000
+        CreateWorkflowRequest request = CreateWorkflowRequest.builder() 
+                .tenantId(tenantId) 
+                .projectId(projectId) 
                 .name("Pause Test Workflow")
                 .description("Test pause and resume")
                 .objective("Test pause functionality")
-                .build(); // GH-90000
+                .build(); 
 
-        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
-        String pauseWorkflowId = workflow.id(); // GH-90000
+        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); 
+        String pauseWorkflowId = workflow.id(); 
 
-        AiPlan plan = runPromise(() -> platform.generatePlan(pauseWorkflowId, tenantId, "Test objective")); // GH-90000
-        runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
-        runPromise(() -> platform.startWorkflow(pauseWorkflowId, tenantId)); // GH-90000
+        AiPlan plan = runPromise(() -> platform.generatePlan(pauseWorkflowId, tenantId, "Test objective")); 
+        runPromise(() -> platform.approvePlan(plan.id(), tenantId)); 
+        runPromise(() -> platform.startWorkflow(pauseWorkflowId, tenantId)); 
 
         // Pause
-        AiWorkflow paused = runPromise(() -> platform.pauseWorkflow(pauseWorkflowId, tenantId)); // GH-90000
+        AiWorkflow paused = runPromise(() -> platform.pauseWorkflow(pauseWorkflowId, tenantId)); 
         assertThat(paused.status()).isEqualTo("PAUSED");
 
         // Resume
-        AiWorkflow resumed = runPromise(() -> platform.resumeWorkflow(pauseWorkflowId, tenantId)); // GH-90000
+        AiWorkflow resumed = runPromise(() -> platform.resumeWorkflow(pauseWorkflowId, tenantId)); 
         assertThat(resumed.status()).isEqualTo("IN_PROGRESS");
     }
 
     @Test
-    @Order(19) // GH-90000
+    @Order(19) 
     @DisplayName("Full Workflow: Should handle workflow cancellation")
-    void testWorkflowCancellation() throws Exception { // GH-90000
-        CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .projectId(projectId) // GH-90000
+    void testWorkflowCancellation() throws Exception { 
+        CreateWorkflowRequest request = CreateWorkflowRequest.builder() 
+                .tenantId(tenantId) 
+                .projectId(projectId) 
                 .name("Cancel Test Workflow")
                 .description("Test cancellation")
                 .objective("Test cancel functionality")
-                .build(); // GH-90000
+                .build(); 
 
-        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
-        String cancelWorkflowId = workflow.id(); // GH-90000
+        AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); 
+        String cancelWorkflowId = workflow.id(); 
 
-        AiWorkflow cancelled = runPromise(() -> platform.cancelWorkflow(cancelWorkflowId, tenantId)); // GH-90000
+        AiWorkflow cancelled = runPromise(() -> platform.cancelWorkflow(cancelWorkflowId, tenantId)); 
         assertThat(cancelled.status()).isEqualTo("CANCELLED");
     }
 
-    @ParameterizedTest(name = "concurrent={0}") // GH-90000
-    @Order(20) // GH-90000
-    @ValueSource(ints = {2, 5, 10}) // GH-90000
+    @ParameterizedTest(name = "concurrent={0}") 
+    @Order(20) 
+    @ValueSource(ints = {2, 5, 10}) 
     @DisplayName("Full Workflow: Should handle concurrent workflow executions")
-    void testConcurrentWorkflowExecutions(int concurrentCount) throws Exception { // GH-90000
-        AtomicInteger successCount = new AtomicInteger(0); // GH-90000
+    void testConcurrentWorkflowExecutions(int concurrentCount) throws Exception { 
+        AtomicInteger successCount = new AtomicInteger(0); 
 
-        for (int i = 0; i < concurrentCount; i++) { // GH-90000
-            CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
-                    .tenantId(tenantId) // GH-90000
-                    .projectId(projectId) // GH-90000
-                    .name("Concurrent Workflow " + i) // GH-90000
+        for (int i = 0; i < concurrentCount; i++) { 
+            CreateWorkflowRequest request = CreateWorkflowRequest.builder() 
+                    .tenantId(tenantId) 
+                    .projectId(projectId) 
+                    .name("Concurrent Workflow " + i) 
                     .description("Test concurrent execution")
-                    .objective("Concurrent test " + i) // GH-90000
-                    .build(); // GH-90000
+                    .objective("Concurrent test " + i) 
+                    .build(); 
 
             try {
-                AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
-                AiPlan plan = runPromise(() -> platform.generatePlan(workflow.id(), tenantId, "Objective " + i)); // GH-90000
-                runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
-                runPromise(() -> platform.startWorkflow(workflow.id(), tenantId)); // GH-90000
-                successCount.incrementAndGet(); // GH-90000
-            } catch (Exception e) { // GH-90000
+                AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); 
+                AiPlan plan = runPromise(() -> platform.generatePlan(workflow.id(), tenantId, "Objective " + i)); 
+                runPromise(() -> platform.approvePlan(plan.id(), tenantId)); 
+                runPromise(() -> platform.startWorkflow(workflow.id(), tenantId)); 
+                successCount.incrementAndGet(); 
+            } catch (Exception e) { 
                 // Handle errors
             }
         }
 
-        assertThat(successCount.get()).isEqualTo(concurrentCount); // GH-90000
+        assertThat(successCount.get()).isEqualTo(concurrentCount); 
     }
 
     // ── Supporting types and mock ───────────────────────────────────────────────
 
     interface FullWorkflowPlatform {
-        Promise<Project> createProject(CreateProjectRequest request); // GH-90000
-        Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request); // GH-90000
-        Promise<PhaseResult> executePhase(PhaseExecutionRequest request); // GH-90000
-        Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request); // GH-90000
-        Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective); // GH-90000
-        Promise<AiPlan> approvePlan(String planId, String tenantId); // GH-90000
-        Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId); // GH-90000
-        Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId); // GH-90000
-        Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId); // GH-90000
-        Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId); // GH-90000
-        Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId); // GH-90000
-        Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request); // GH-90000
-        Promise<CodeReviewResult> reviewCode(CodeReviewRequest request); // GH-90000
+        Promise<Project> createProject(CreateProjectRequest request); 
+        Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request); 
+        Promise<PhaseResult> executePhase(PhaseExecutionRequest request); 
+        Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request); 
+        Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective); 
+        Promise<AiPlan> approvePlan(String planId, String tenantId); 
+        Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId); 
+        Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId); 
+        Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId); 
+        Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId); 
+        Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId); 
+        Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request); 
+        Promise<CodeReviewResult> reviewCode(CodeReviewRequest request); 
         Promise<AepEvent> routeEvent(AepEvent event); // GH-90000
         Promise<Project> getProject(String projectId, String tenantId); // GH-90000
         Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId); // GH-90000

@@ -25,8 +25,10 @@ import {
   SETTINGS_PROFILE_BOUNDARY_MESSAGE,
   SETTINGS_PREFERENCES_BOUNDARY_MESSAGE,
   SETTINGS_NOTIFICATION_PREFS_BOUNDARY_MESSAGE,
+  SETTINGS_SURFACE_DISABLED_MESSAGE,
   createRuntimeBoundaryError,
 } from '../lib/runtime-boundaries';
+import { isSettingsSurfaceEnabled } from '../lib/feature-gates';
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -155,6 +157,12 @@ function normaliseSettingsApiError(error: unknown, boundaryMessage: string): nev
   throw error instanceof Error ? error : new Error('Unknown settings API error');
 }
 
+function assertSettingsSurfaceEnabled(): void {
+  if (!isSettingsSurfaceEnabled()) {
+    throw createRuntimeBoundaryError(SETTINGS_SURFACE_DISABLED_MESSAGE);
+  }
+}
+
 // ── Service class ─────────────────────────────────────────────────────────────
 
 /**
@@ -185,6 +193,7 @@ export class SettingsService {
    * GET /api/v1/settings/keys
    */
   async listApiKeys(): Promise<ApiKey[]> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get('/settings/keys', {
@@ -204,6 +213,7 @@ export class SettingsService {
    * POST /api/v1/settings/keys
    */
   async createApiKey(request: ApiKeyCreateRequest): Promise<ApiKeyCreateResponse> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     const validated = ApiKeyCreateRequestSchema.parse(request);
     try {
@@ -222,6 +232,7 @@ export class SettingsService {
    * DELETE /api/v1/settings/keys/:id/revoke
    */
   async revokeApiKey(keyId: string): Promise<ApiKey> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.delete(`/settings/keys/${keyId}/revoke`, {
@@ -241,6 +252,7 @@ export class SettingsService {
    * GET /api/v1/settings/profile
    */
   async getProfile(): Promise<UserProfile> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get('/settings/profile', {
@@ -258,6 +270,7 @@ export class SettingsService {
    * PATCH /api/v1/settings/profile
    */
   async updateProfile(request: UserProfileUpdateRequest): Promise<UserProfile> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     const validated = UserProfileUpdateRequestSchema.parse(request);
     try {
@@ -278,6 +291,7 @@ export class SettingsService {
    * GET /api/v1/settings/preferences
    */
   async getPreferences(): Promise<UserPreferences> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get('/settings/preferences', {
@@ -295,6 +309,7 @@ export class SettingsService {
    * PATCH /api/v1/settings/preferences
    */
   async updatePreferences(request: UserPreferencesUpdateRequest): Promise<UserPreferences> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     const validated = UserPreferencesUpdateRequestSchema.parse(request);
     try {
@@ -315,6 +330,7 @@ export class SettingsService {
    * GET /api/v1/settings/notifications
    */
   async getNotificationPreferences(): Promise<NotificationPreferences> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get('/settings/notifications', {
@@ -334,6 +350,7 @@ export class SettingsService {
   async updateNotificationPreferences(
     request: NotificationPreferencesUpdateRequest,
   ): Promise<NotificationPreferences> {
+    assertSettingsSurfaceEnabled();
     const tenantId = getTenantId();
     const validated = NotificationPreferencesUpdateRequestSchema.parse(request);
     try {

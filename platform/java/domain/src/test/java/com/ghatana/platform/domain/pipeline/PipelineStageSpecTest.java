@@ -9,43 +9,43 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PipelineStageSpecTest {
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory()); 
 
     @Test
-    void shouldSerializeAndDeserializeFromYaml() throws Exception { // GH-90000
+    void shouldSerializeAndDeserializeFromYaml() throws Exception { 
         // Given
-        PipelineStageSpec original = PipelineStageSpec.builder() // GH-90000
+        PipelineStageSpec original = PipelineStageSpec.builder() 
                 .name("test-stage")
-                .type(PipelineStageSpec.StageType.PATTERN) // GH-90000
+                .type(PipelineStageSpec.StageType.PATTERN) 
                 .connectorId("event-cloud-source-1")
-                .workflow(List.of( // GH-90000
-                    AgentSpec.builder() // GH-90000
+                .workflow(List.of( 
+                    AgentSpec.builder() 
                         .id("agent-1")
                         .agent("test-agent")
-                        .build() // GH-90000
+                        .build() 
                 ))
-                .build(); // GH-90000
+                .build(); 
 
         // When
-        String yaml = yamlMapper.writeValueAsString(original); // GH-90000
-        PipelineStageSpec deserialized = yamlMapper.readValue(yaml, PipelineStageSpec.class); // GH-90000
+        String yaml = yamlMapper.writeValueAsString(original); 
+        PipelineStageSpec deserialized = yamlMapper.readValue(yaml, PipelineStageSpec.class); 
 
         // Then
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getName()).isEqualTo("test-stage");
-        assertThat(deserialized.getType()).isEqualTo(PipelineStageSpec.StageType.PATTERN); // GH-90000
+        assertThat(deserialized.getType()).isEqualTo(PipelineStageSpec.StageType.PATTERN); 
         assertThat(deserialized.getConnectorId()).isEqualTo("event-cloud-source-1");
-        assertThat(deserialized.getWorkflow()).hasSize(1); // GH-90000
+        assertThat(deserialized.getWorkflow()).hasSize(1); 
         assertThat(deserialized.getWorkflow().get(0).getId()).isEqualTo("agent-1");
     }
 
     @Test
-    void shouldHandleNullValues() { // GH-90000
+    void shouldHandleNullValues() { 
         // Given
-        PipelineStageSpec stageSpec = new PipelineStageSpec(); // GH-90000
+        PipelineStageSpec stageSpec = new PipelineStageSpec(); 
 
         // Then
-        assertThat(stageSpec.getName()).isNull(); // GH-90000
-        assertThat(stageSpec.getWorkflow()).isNull(); // GH-90000
+        assertThat(stageSpec.getName()).isNull(); 
+        assertThat(stageSpec.getWorkflow()).isNull(); 
     }
 }

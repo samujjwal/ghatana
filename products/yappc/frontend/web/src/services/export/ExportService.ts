@@ -46,8 +46,6 @@ class ExportServiceClass {
           return this.exportPNG(canvasState, options);
         case 'svg':
           return this.exportSVG(canvasState, options);
-        case 'pdf':
-          return this.exportPDF(canvasState, options);
         default:
           return {
             success: false,
@@ -580,20 +578,6 @@ class ExportServiceClass {
       success: true,
       data: svg,
       filename,
-    };
-  }
-
-  /**
-   * Export as PDF
-   */
-  private async exportPDF(
-    canvasState: CanvasState,
-    options: ExportOptions,
-  ): Promise<ExportResult> {
-    // PDF export would require svg2pdf.js or similar
-    return {
-      success: false,
-      error: 'PDF export requires svg2pdf.js (not yet implemented)',
     };
   }
 

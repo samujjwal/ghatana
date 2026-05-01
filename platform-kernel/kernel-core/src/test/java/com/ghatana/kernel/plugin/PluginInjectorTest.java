@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("PluginInjector Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class PluginInjectorTest {
 
     @Mock
@@ -38,109 +38,109 @@ class PluginInjectorTest {
     private PluginInjector injector;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        injector = new PluginInjector(); // GH-90000
+    void setUp() { 
+        injector = new PluginInjector(); 
     }
 
     @Test
     @DisplayName("Should inject required dependency into annotated field")
-    void shouldInjectRequiredDependency() { // GH-90000
+    void shouldInjectRequiredDependency() { 
         // GIVEN
-        FakeService service = new FakeService(); // GH-90000
-        when(context.getDependency(FakeService.class)).thenReturn(service); // GH-90000
-        PluginWithRequiredDep plugin = new PluginWithRequiredDep(); // GH-90000
+        FakeService service = new FakeService(); 
+        when(context.getDependency(FakeService.class)).thenReturn(service); 
+        PluginWithRequiredDep plugin = new PluginWithRequiredDep(); 
 
         // WHEN
-        injector.inject(plugin, context); // GH-90000
+        injector.inject(plugin, context); 
 
         // THEN
-        assertThat(plugin.fakeService).isSameAs(service); // GH-90000
+        assertThat(plugin.fakeService).isSameAs(service); 
     }
 
     @Test
     @DisplayName("Should inject optional dependency when present")
-    void shouldInjectOptionalDependencyWhenPresent() { // GH-90000
+    void shouldInjectOptionalDependencyWhenPresent() { 
         // GIVEN
-        FakeService service = new FakeService(); // GH-90000
-        when(context.getOptionalDependency(FakeService.class)).thenReturn(Optional.of(service)); // GH-90000
-        PluginWithOptionalDep plugin = new PluginWithOptionalDep(); // GH-90000
+        FakeService service = new FakeService(); 
+        when(context.getOptionalDependency(FakeService.class)).thenReturn(Optional.of(service)); 
+        PluginWithOptionalDep plugin = new PluginWithOptionalDep(); 
 
         // WHEN
-        injector.inject(plugin, context); // GH-90000
+        injector.inject(plugin, context); 
 
         // THEN
-        assertThat(plugin.fakeService).isSameAs(service); // GH-90000
+        assertThat(plugin.fakeService).isSameAs(service); 
     }
 
     @Test
     @DisplayName("Should leave optional field null when dependency absent")
-    void shouldLeaveOptionalFieldNullWhenAbsent() { // GH-90000
+    void shouldLeaveOptionalFieldNullWhenAbsent() { 
         // GIVEN
-        when(context.getOptionalDependency(FakeService.class)).thenReturn(Optional.empty()); // GH-90000
-        PluginWithOptionalDep plugin = new PluginWithOptionalDep(); // GH-90000
+        when(context.getOptionalDependency(FakeService.class)).thenReturn(Optional.empty()); 
+        PluginWithOptionalDep plugin = new PluginWithOptionalDep(); 
 
         // WHEN
-        injector.inject(plugin, context); // GH-90000
+        injector.inject(plugin, context); 
 
         // THEN — no exception; field stays null
-        assertThat(plugin.fakeService).isNull(); // GH-90000
+        assertThat(plugin.fakeService).isNull(); 
     }
 
     @Test
     @DisplayName("Should throw PluginInjectionException when required dependency missing")
-    void shouldThrowWhenRequiredDependencyMissing() { // GH-90000
+    void shouldThrowWhenRequiredDependencyMissing() { 
         // GIVEN
-        when(context.getDependency(FakeService.class)) // GH-90000
+        when(context.getDependency(FakeService.class)) 
             .thenThrow(new IllegalStateException("Dependency not found: FakeService"));
-        PluginWithRequiredDep plugin = new PluginWithRequiredDep(); // GH-90000
+        PluginWithRequiredDep plugin = new PluginWithRequiredDep(); 
 
         // WHEN / THEN
-        assertThatThrownBy(() -> injector.inject(plugin, context)) // GH-90000
-            .isInstanceOf(PluginInjector.PluginInjectionException.class) // GH-90000
+        assertThatThrownBy(() -> injector.inject(plugin, context)) 
+            .isInstanceOf(PluginInjector.PluginInjectionException.class) 
             .hasMessageContaining("fakeService");
     }
 
     @Test
     @DisplayName("Should inject fields from superclass hierarchy")
-    void shouldInjectSuperclassFields() { // GH-90000
+    void shouldInjectSuperclassFields() { 
         // GIVEN
-        FakeService service = new FakeService(); // GH-90000
-        AnotherService other = new AnotherService(); // GH-90000
-        when(context.getDependency(FakeService.class)).thenReturn(service); // GH-90000
-        when(context.getDependency(AnotherService.class)).thenReturn(other); // GH-90000
-        PluginWithInheritedDeps plugin = new PluginWithInheritedDeps(); // GH-90000
+        FakeService service = new FakeService(); 
+        AnotherService other = new AnotherService(); 
+        when(context.getDependency(FakeService.class)).thenReturn(service); 
+        when(context.getDependency(AnotherService.class)).thenReturn(other); 
+        PluginWithInheritedDeps plugin = new PluginWithInheritedDeps(); 
 
         // WHEN
-        injector.inject(plugin, context); // GH-90000
+        injector.inject(plugin, context); 
 
         // THEN
-        assertThat(plugin.fakeService).isSameAs(service); // GH-90000
-        assertThat(plugin.anotherService).isSameAs(other); // GH-90000
+        assertThat(plugin.fakeService).isSameAs(service); 
+        assertThat(plugin.anotherService).isSameAs(other); 
     }
 
     @Test
     @DisplayName("Should throw NullPointerException when target is null")
-    void shouldRejectNullTarget() { // GH-90000
-        assertThatThrownBy(() -> injector.inject(null, context)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void shouldRejectNullTarget() { 
+        assertThatThrownBy(() -> injector.inject(null, context)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("Should throw NullPointerException when context is null")
-    void shouldRejectNullContext() { // GH-90000
-        assertThatThrownBy(() -> injector.inject(new PluginWithRequiredDep(), null)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void shouldRejectNullContext() { 
+        assertThatThrownBy(() -> injector.inject(new PluginWithRequiredDep(), null)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("Should do nothing on plugin with no annotated fields")
-    void shouldHandlePluginWithNoInjectFields() { // GH-90000
+    void shouldHandlePluginWithNoInjectFields() { 
         // GIVEN
-        PluginWithNoInject plugin = new PluginWithNoInject(); // GH-90000
+        PluginWithNoInject plugin = new PluginWithNoInject(); 
 
         // WHEN / THEN — no interaction with context, no exception
-        injector.inject(plugin, context); // GH-90000
-        verifyNoInteractions(context); // GH-90000
+        injector.inject(plugin, context); 
+        verifyNoInteractions(context); 
     }
 
     // ==================== Test fixtures ====================
@@ -151,14 +151,14 @@ class PluginInjectorTest {
 
     /** Minimal KernelModule stub — lifecycle not exercised in these tests. */
     abstract static class StubModule implements com.ghatana.kernel.module.KernelModule {
-        @Override public String getModuleId() { return "stub"; } // GH-90000
-        @Override public String getVersion() { return "1.0.0"; } // GH-90000
-        @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
-        @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
-        @Override public void initialize(KernelContext ctx) { } // GH-90000
-        @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
-        @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
-        @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } // GH-90000
+        @Override public String getModuleId() { return "stub"; } 
+        @Override public String getVersion() { return "1.0.0"; } 
+        @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } 
+        @Override public Set<KernelDependency> getDependencies() { return Set.of(); } 
+        @Override public void initialize(KernelContext ctx) { } 
+        @Override public Promise<Void> start() { return Promise.complete(); } 
+        @Override public Promise<Void> stop() { return Promise.complete(); } 
+        @Override public HealthStatus getHealthStatus() { return HealthStatus.healthy(); } 
     }
 
     static class PluginWithRequiredDep extends StubModule {
@@ -167,7 +167,7 @@ class PluginInjectorTest {
     }
 
     static class PluginWithOptionalDep extends StubModule {
-        @PluginInject(optional = true) // GH-90000
+        @PluginInject(optional = true) 
         FakeService fakeService;
     }
 

@@ -31,17 +31,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Resilience pattern tests for the Vision circuit breaker (AV-P2-02). // GH-90000
+ * Resilience pattern tests for the Vision circuit breaker (AV-P2-02). 
  *
  * <p>Verifies the circuit breaker open → half-open → closed lifecycle and that
- * degraded empty responses are returned when the circuit is open (cascade failure prevention). // GH-90000
+ * degraded empty responses are returned when the circuit is open (cascade failure prevention). 
  *
  * @doc.type class
- * @doc.purpose Circuit breaker resilience tests for Vision engine cascading failure prevention (AV-P2-02) // GH-90000
+ * @doc.purpose Circuit breaker resilience tests for Vision engine cascading failure prevention (AV-P2-02) 
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("Vision Engine Circuit Breaker Resilience Tests (AV-P2-02)")
 class VisionCircuitBreakerResilienceTest {
 
@@ -53,130 +53,130 @@ class VisionCircuitBreakerResilienceTest {
     private CircuitBreakerVisionEngine protectedEngine;
 
     private static final ImageData DUMMY_IMAGE =
-            new ImageData(new byte[]{1, 2, 3, 4}, 2, 2, ImageFormat.JPEG, ColorSpace.RGB); // GH-90000
+            new ImageData(new byte[]{1, 2, 3, 4}, 2, 2, ImageFormat.JPEG, ColorSpace.RGB); 
 
     @BeforeEach
-    void setUp() { // GH-90000
-        eventloop = Eventloop.create(); // GH-90000
+    void setUp() { 
+        eventloop = Eventloop.create(); 
 
         circuitBreaker = CircuitBreaker.builder("vision-test-circuit")
-                .failureThreshold(3) // GH-90000
-                .successThreshold(1) // GH-90000
-                .resetTimeout(java.time.Duration.ofMillis(200)) // fast for tests // GH-90000
-                .maxBackoff(java.time.Duration.ofSeconds(2)) // GH-90000
-                .backoffMultiplier(1.0) // GH-90000
-                .build(); // GH-90000
+                .failureThreshold(3) 
+                .successThreshold(1) 
+                .resetTimeout(java.time.Duration.ofMillis(200)) // fast for tests 
+                .maxBackoff(java.time.Duration.ofSeconds(2)) 
+                .backoffMultiplier(1.0) 
+                .build(); 
 
-        protectedEngine = new CircuitBreakerVisionEngine(mockEngine, eventloop, circuitBreaker); // GH-90000
+        protectedEngine = new CircuitBreakerVisionEngine(mockEngine, eventloop, circuitBreaker); 
 
-        // Default stub for getMetrics (always needed by getMetrics()) // GH-90000
-        lenient().when(mockEngine.getMetrics()).thenReturn( // GH-90000
-                new EngineMetrics(0, 0, 0.0, 0, 0)); // GH-90000
+        // Default stub for getMetrics (always needed by getMetrics()) 
+        lenient().when(mockEngine.getMetrics()).thenReturn( 
+                new EngineMetrics(0, 0, 0.0, 0, 0)); 
     }
 
     @Test
     @DisplayName("Circuit stays CLOSED and delegates to engine on success")
-    void shouldDelegateToEngineWhenCircuitClosed() { // GH-90000
-        var emptyResult = new DetectionResult(List.of(), 0, 0, 0L, "ok"); // GH-90000
-        when(mockEngine.detect(any(), any())).thenReturn(emptyResult); // GH-90000
+    void shouldDelegateToEngineWhenCircuitClosed() { 
+        var emptyResult = new DetectionResult(List.of(), 0, 0, 0L, "ok"); 
+        when(mockEngine.detect(any(), any())).thenReturn(emptyResult); 
 
-        var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
+        var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
 
-        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.CLOSED); // GH-90000
+        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.CLOSED); 
         assertThat(result.modelId()).isEqualTo("ok");
     }
 
     @Test
     @DisplayName("Circuit opens after reaching failure threshold")
-    void shouldOpenAfterFailureThreshold() { // GH-90000
-        when(mockEngine.detect(any(), any())) // GH-90000
+    void shouldOpenAfterFailureThreshold() { 
+        when(mockEngine.detect(any(), any())) 
                 .thenThrow(new RuntimeException("upstream failure #1"))
                 .thenThrow(new RuntimeException("upstream failure #2"))
                 .thenThrow(new RuntimeException("upstream failure #3"));
 
-        for (int i = 0; i < 3; i++) { // GH-90000
+        for (int i = 0; i < 3; i++) { 
             try {
-                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
-            } catch (RuntimeException ignored) { // GH-90000
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
+            } catch (RuntimeException ignored) { 
                 // each individual failure propagates — that's expected
             }
         }
 
-        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
+        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN); 
     }
 
     @Test
     @DisplayName("Returns degraded empty result when circuit is OPEN (cascade prevention)")
-    void shouldReturnDegradedResultWhenCircuitOpen() { // GH-90000
-        when(mockEngine.detect(any(), any())) // GH-90000
+    void shouldReturnDegradedResultWhenCircuitOpen() { 
+        when(mockEngine.detect(any(), any())) 
                 .thenThrow(new RuntimeException("service down"));
 
         // Trip the circuit
-        for (int i = 0; i < 3; i++) { // GH-90000
+        for (int i = 0; i < 3; i++) { 
             try {
-                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
-            } catch (RuntimeException ignored) {} // GH-90000
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
+            } catch (RuntimeException ignored) {} 
         }
-        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
+        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN); 
 
-        // Next call should fast-fail with degraded response (not propagate exception) // GH-90000
-        var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
+        // Next call should fast-fail with degraded response (not propagate exception) 
+        var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.objects()).isEmpty(); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.objects()).isEmpty(); 
         assertThat(result.modelId()).isEqualTo("degraded");
     }
 
     @Test
     @DisplayName("Circuit transitions to CLOSED after successful probe in HALF_OPEN")
-    void shouldRecoverAfterHalfOpenProbeSucceeds() throws InterruptedException { // GH-90000
-        when(mockEngine.detect(any(), any())) // GH-90000
+    void shouldRecoverAfterHalfOpenProbeSucceeds() throws InterruptedException { 
+        when(mockEngine.detect(any(), any())) 
                 .thenThrow(new RuntimeException("down"))
                 .thenThrow(new RuntimeException("down"))
                 .thenThrow(new RuntimeException("down"))
                 // Recovery call succeeds
-                .thenReturn(new DetectionResult(List.of(), 0, 0, 0L, "recovered")); // GH-90000
+                .thenReturn(new DetectionResult(List.of(), 0, 0, 0L, "recovered")); 
 
-        for (int i = 0; i < 3; i++) { // GH-90000
+        for (int i = 0; i < 3; i++) { 
             try {
-                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
-            } catch (RuntimeException ignored) {} // GH-90000
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
+            } catch (RuntimeException ignored) {} 
         }
-        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
+        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.OPEN); 
 
         // Wait for reset timeout to expire → circuit becomes HALF_OPEN
-        Thread.sleep(300); // GH-90000
+        Thread.sleep(300); 
 
         // Single probe call succeeds → circuit closes
-        var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
+        var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
 
         assertThat(result.modelId()).isEqualTo("recovered");
-        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.CLOSED); // GH-90000
+        assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.CLOSED); 
     }
 
     @Test
     @DisplayName("getMetrics merges circuit breaker rejections into engine metrics")
-    void shouldMergeCircuitBreakerRejectionsIntoMetrics() { // GH-90000
-        when(mockEngine.getMetrics()).thenReturn( // GH-90000
-                new EngineMetrics(10, 0, 50.0, 1, 0)); // GH-90000
-        when(mockEngine.detect(any(), any())) // GH-90000
+    void shouldMergeCircuitBreakerRejectionsIntoMetrics() { 
+        when(mockEngine.getMetrics()).thenReturn( 
+                new EngineMetrics(10, 0, 50.0, 1, 0)); 
+        when(mockEngine.detect(any(), any())) 
                 .thenThrow(new RuntimeException("down"))
                 .thenThrow(new RuntimeException("down"))
                 .thenThrow(new RuntimeException("down"));
 
-        for (int i = 0; i < 3; i++) { // GH-90000
+        for (int i = 0; i < 3; i++) { 
             try {
-                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
-            } catch (RuntimeException ignored) {} // GH-90000
+                protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
+            } catch (RuntimeException ignored) {} 
         }
-        // One additional call after circuit opens → rejection (returns degraded, no exception) // GH-90000
-        protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
+        // One additional call after circuit opens → rejection (returns degraded, no exception) 
+        protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); 
 
-        EngineMetrics metrics = protectedEngine.getMetrics(); // GH-90000
+        EngineMetrics metrics = protectedEngine.getMetrics(); 
 
-        assertThat(metrics.requestCount()).isEqualTo(10); // GH-90000
-        assertThat(metrics.errorCount()).isGreaterThanOrEqualTo(3); // GH-90000
-        assertThat(metrics.activeRequests()).isGreaterThanOrEqualTo(1); // rejections stored here // GH-90000
+        assertThat(metrics.requestCount()).isEqualTo(10); 
+        assertThat(metrics.errorCount()).isGreaterThanOrEqualTo(3); 
+        assertThat(metrics.activeRequests()).isGreaterThanOrEqualTo(1); // rejections stored here 
     }
 }
 

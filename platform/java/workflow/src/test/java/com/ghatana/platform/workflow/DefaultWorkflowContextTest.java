@@ -26,8 +26,8 @@ class DefaultWorkflowContextTest {
 
         @Test
         @DisplayName("should set workflowId and tenantId")
-        void shouldSetIds() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1"); // GH-90000
+        void shouldSetIds() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1"); 
 
             assertThat(ctx.getWorkflowId()).isEqualTo("wf-1");
             assertThat(ctx.getTenantId()).isEqualTo("tenant-1");
@@ -35,32 +35,32 @@ class DefaultWorkflowContextTest {
 
         @Test
         @DisplayName("should auto-generate correlationId")
-        void shouldAutoGenerateCorrelationId() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1"); // GH-90000
+        void shouldAutoGenerateCorrelationId() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1"); 
 
-            assertThat(ctx.getCorrelationId()).isNotNull().isNotEmpty(); // GH-90000
+            assertThat(ctx.getCorrelationId()).isNotNull().isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should accept explicit correlationId")
-        void shouldAcceptExplicitCorrelationId() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1", "corr-42"); // GH-90000
+        void shouldAcceptExplicitCorrelationId() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "tenant-1", "corr-42"); 
 
             assertThat(ctx.getCorrelationId()).isEqualTo("corr-42");
         }
 
         @Test
         @DisplayName("should reject null workflowId")
-        void shouldRejectNullWorkflowId() { // GH-90000
-            assertThatThrownBy(() -> new DefaultWorkflowContext(null, "tenant-1")) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldRejectNullWorkflowId() { 
+            assertThatThrownBy(() -> new DefaultWorkflowContext(null, "tenant-1")) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should reject null tenantId")
-        void shouldRejectNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> new DefaultWorkflowContext("wf-1", null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldRejectNullTenantId() { 
+            assertThatThrownBy(() -> new DefaultWorkflowContext("wf-1", null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -70,42 +70,42 @@ class DefaultWorkflowContextTest {
 
         @Test
         @DisplayName("should store and retrieve variables")
-        void shouldStoreAndRetrieve() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
-            ctx.setVariable("key", "value"); // GH-90000
+        void shouldStoreAndRetrieve() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
+            ctx.setVariable("key", "value"); 
 
             assertThat(ctx.getVariable("key")).isEqualTo("value");
         }
 
         @Test
         @DisplayName("should return null for missing variable")
-        void shouldReturnNullForMissing() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+        void shouldReturnNullForMissing() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
 
             assertThat(ctx.getVariable("nonexistent")).isNull();
         }
 
         @Test
         @DisplayName("should remove variable when set to null")
-        void shouldRemoveOnNull() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
-            ctx.setVariable("key", "value"); // GH-90000
-            ctx.setVariable("key", null); // GH-90000
+        void shouldRemoveOnNull() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
+            ctx.setVariable("key", "value"); 
+            ctx.setVariable("key", null); 
 
             assertThat(ctx.getVariable("key")).isNull();
         }
 
         @Test
         @DisplayName("should return immutable copy of variables map")
-        void shouldReturnImmutableVariables() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
-            ctx.setVariable("a", 1); // GH-90000
+        void shouldReturnImmutableVariables() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
+            ctx.setVariable("a", 1); 
 
-            Map<String, Object> vars = ctx.getVariables(); // GH-90000
-            assertThat(vars).containsEntry("a", 1); // GH-90000
+            Map<String, Object> vars = ctx.getVariables(); 
+            assertThat(vars).containsEntry("a", 1); 
 
             // Modifying original should not affect returned map
-            ctx.setVariable("b", 2); // GH-90000
+            ctx.setVariable("b", 2); 
             assertThat(vars).doesNotContainKey("b");
         }
     }
@@ -116,13 +116,13 @@ class DefaultWorkflowContextTest {
 
         @Test
         @DisplayName("should create independent copy")
-        void shouldCreateIndependentCopy() { // GH-90000
-            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1", "corr-1"); // GH-90000
-            original.setVariable("x", 42); // GH-90000
+        void shouldCreateIndependentCopy() { 
+            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1", "corr-1"); 
+            original.setVariable("x", 42); 
             original.setCurrentStep("step-1");
             original.setCategory("cat-A");
 
-            WorkflowContext copy = original.copy(); // GH-90000
+            WorkflowContext copy = original.copy(); 
 
             assertThat(copy.getWorkflowId()).isEqualTo("wf-1");
             assertThat(copy.getTenantId()).isEqualTo("t-1");
@@ -134,12 +134,12 @@ class DefaultWorkflowContextTest {
 
         @Test
         @DisplayName("should not share variable state with original")
-        void shouldNotShareState() { // GH-90000
-            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
-            original.setVariable("key", "original"); // GH-90000
+        void shouldNotShareState() { 
+            DefaultWorkflowContext original = new DefaultWorkflowContext("wf-1", "t-1"); 
+            original.setVariable("key", "original"); 
 
-            WorkflowContext copy = original.copy(); // GH-90000
-            original.setVariable("key", "changed"); // GH-90000
+            WorkflowContext copy = original.copy(); 
+            original.setVariable("key", "changed"); 
 
             assertThat(copy.getVariable("key")).isEqualTo("original");
         }
@@ -151,23 +151,23 @@ class DefaultWorkflowContextTest {
 
         @Test
         @DisplayName("should initially have null currentStep")
-        void shouldHaveNullStep() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
-            assertThat(ctx.getCurrentStep()).isNull(); // GH-90000
+        void shouldHaveNullStep() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
+            assertThat(ctx.getCurrentStep()).isNull(); 
         }
 
         @Test
         @DisplayName("should set and get currentStep")
-        void shouldSetStep() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+        void shouldSetStep() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
             ctx.setCurrentStep("step-2");
             assertThat(ctx.getCurrentStep()).isEqualTo("step-2");
         }
 
         @Test
         @DisplayName("should set and get category")
-        void shouldSetCategory() { // GH-90000
-            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); // GH-90000
+        void shouldSetCategory() { 
+            DefaultWorkflowContext ctx = new DefaultWorkflowContext("wf-1", "t-1"); 
             ctx.setCategory("analysis");
             assertThat(ctx.getCategory()).isEqualTo("analysis");
         }

@@ -22,19 +22,19 @@ class AgentMarketplaceServiceTest {
     private static final String TENANT_ID = "tenant-a";
 
     @Test
-    void shouldMergeCatalogEntriesWithTenantPublishedListings() { // GH-90000
-        AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
+    void shouldMergeCatalogEntriesWithTenantPublishedListings() { 
+        AgentMarketplaceService service = new AgentMarketplaceService( 
                 null,
-                List.of(CatalogAgentEntry.builder() // GH-90000
+                List.of(CatalogAgentEntry.builder() 
                         .id("catalog-agent")
                         .name("Catalog Agent")
                         .description("Built into the central catalog")
                         .catalogId("platform")
                         .metadata(Map.of("level", "expert", "domain", "governance", "tags", List.of("trusted")))
-                        .capabilities(Set.of("triage", "explain")) // GH-90000
-                        .build())); // GH-90000
+                        .capabilities(Set.of("triage", "explain")) 
+                        .build())); 
 
-        AgentMarketplaceService.PublishAgentRequest publishRequest = new AgentMarketplaceService.PublishAgentRequest( // GH-90000
+        AgentMarketplaceService.PublishAgentRequest publishRequest = new AgentMarketplaceService.PublishAgentRequest( 
                 "tenant-agent",
                 "Tenant Agent",
                 "Published from the tenant workspace",
@@ -45,75 +45,75 @@ class AgentMarketplaceServiceTest {
                 List.of("beta"),
                 "tenant-a");
 
-        service.publishAgent(TENANT_ID, publishRequest); // GH-90000
+        service.publishAgent(TENANT_ID, publishRequest); 
         List<AgentMarketplaceService.MarketplaceAgentListing> listings = service
-                .listAgents(TENANT_ID, null, null, 20) // GH-90000
-                .getResult(); // GH-90000
+                .listAgents(TENANT_ID, null, null, 20) 
+                .getResult(); 
 
-        assertThat(listings).extracting(AgentMarketplaceService.MarketplaceAgentListing::id) // GH-90000
-                .contains("catalog-agent", "tenant-agent"); // GH-90000
+        assertThat(listings).extracting(AgentMarketplaceService.MarketplaceAgentListing::id) 
+                .contains("catalog-agent", "tenant-agent"); 
         assertThat(listings).filteredOn(listing -> listing.id().equals("tenant-agent"))
-                .singleElement() // GH-90000
-                .satisfies(listing -> { // GH-90000
+                .singleElement() 
+                .satisfies(listing -> { 
                     assertThat(listing.source()).isEqualTo("tenant");
                     assertThat(listing.owner()).isEqualTo("tenant-a");
                 });
     }
 
     @Test
-    void shouldAggregateMarketplaceReviews() { // GH-90000
-        AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
+    void shouldAggregateMarketplaceReviews() { 
+        AgentMarketplaceService service = new AgentMarketplaceService( 
                 null,
-                List.of(CatalogAgentEntry.builder() // GH-90000
+                List.of(CatalogAgentEntry.builder() 
                         .id("reviewed-agent")
                         .name("Reviewed Agent")
                         .catalogId("platform")
                         .capabilities(Set.of("triage"))
-                        .build())); // GH-90000
+                        .build())); 
 
-        Promise<AgentMarketplaceService.MarketplaceReview> first = service.addReview( // GH-90000
+        Promise<AgentMarketplaceService.MarketplaceReview> first = service.addReview( 
                 TENANT_ID,
                 "reviewed-agent",
-                new AgentMarketplaceService.CreateReviewRequest("sam", 5, "Excellent", "Strong operator fit")); // GH-90000
-        Promise<AgentMarketplaceService.MarketplaceReview> second = service.addReview( // GH-90000
+                new AgentMarketplaceService.CreateReviewRequest("sam", 5, "Excellent", "Strong operator fit")); 
+        Promise<AgentMarketplaceService.MarketplaceReview> second = service.addReview( 
                 TENANT_ID,
                 "reviewed-agent",
-                new AgentMarketplaceService.CreateReviewRequest("alex", 3, "Good", "Needs more docs")); // GH-90000
+                new AgentMarketplaceService.CreateReviewRequest("alex", 3, "Good", "Needs more docs")); 
 
-        first.getResult(); // GH-90000
-        second.getResult(); // GH-90000
+        first.getResult(); 
+        second.getResult(); 
 
         AgentMarketplaceService.MarketplaceAgentDetail detail = service
-                .getAgent(TENANT_ID, "reviewed-agent") // GH-90000
-                .getResult() // GH-90000
-                .orElseThrow(); // GH-90000
+                .getAgent(TENANT_ID, "reviewed-agent") 
+                .getResult() 
+                .orElseThrow(); 
 
-        assertThat(detail.reviews()).hasSize(2); // GH-90000
-        assertThat(detail.listing().averageRating()).isEqualTo(4.0); // GH-90000
-        assertThat(detail.listing().reviewCount()).isEqualTo(2); // GH-90000
+        assertThat(detail.reviews()).hasSize(2); 
+        assertThat(detail.listing().averageRating()).isEqualTo(4.0); 
+        assertThat(detail.listing().reviewCount()).isEqualTo(2); 
     }
 
     @Test
-    void shouldSimulatePinnedInstallWithSandboxExecutionTruth() { // GH-90000
-        AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
+    void shouldSimulatePinnedInstallWithSandboxExecutionTruth() { 
+        AgentMarketplaceService service = new AgentMarketplaceService( 
                 null,
-                List.of(CatalogAgentEntry.builder() // GH-90000
+                List.of(CatalogAgentEntry.builder() 
                         .id("ops-agent")
                         .name("Ops Agent")
                         .version("2.4.0")
                         .catalogId("platform")
                         .metadata(Map.of("level", "worker", "domain", "operations"))
                         .capabilities(Set.of("triage", "explain"))
-                        .build())); // GH-90000
+                        .build())); 
 
         AgentMarketplaceService.MarketplaceInstallSimulation simulation = service
                 .simulateInstallAgent(
                         TENANT_ID,
                         "ops-agent",
                         new AgentMarketplaceService.InstallAgentRequest("sandbox", Map.of(), "2.4.0"))
-                .getResult(); // GH-90000
+                .getResult(); 
 
-        assertThat(simulation.versionPinned()).isTrue(); // GH-90000
+        assertThat(simulation.versionPinned()).isTrue(); 
         assertThat(simulation.compatibilityStatus()).isEqualTo("COMPATIBLE");
         assertThat(simulation.directExecutionMode()).isEqualTo("SANDBOX_ONLY");
         assertThat(simulation.productionExecutionMode()).isEqualTo("PIPELINE_HITL_REQUIRED");
@@ -121,24 +121,24 @@ class AgentMarketplaceServiceTest {
     }
 
     @Test
-    void shouldBlockInstallWhenRequestedVersionDoesNotMatchPublishedVersion() { // GH-90000
-        AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
+    void shouldBlockInstallWhenRequestedVersionDoesNotMatchPublishedVersion() { 
+        AgentMarketplaceService service = new AgentMarketplaceService( 
                 null,
-                List.of(CatalogAgentEntry.builder() // GH-90000
+                List.of(CatalogAgentEntry.builder() 
                         .id("ops-agent")
                         .name("Ops Agent")
                         .version("2.4.0")
                         .catalogId("platform")
                         .metadata(Map.of("level", "worker", "domain", "operations"))
                         .capabilities(Set.of("triage"))
-                        .build())); // GH-90000
+                        .build())); 
 
         AgentMarketplaceService.MarketplaceInstallSimulation simulation = service
                 .simulateInstallAgent(
                         TENANT_ID,
                         "ops-agent",
                         new AgentMarketplaceService.InstallAgentRequest("production", Map.of(), "1.9.0"))
-                .getResult(); // GH-90000
+                .getResult(); 
 
         assertThat(simulation.compatibilityStatus()).isEqualTo("BLOCKED");
         assertThat(simulation.allowedToInstall()).isFalse();

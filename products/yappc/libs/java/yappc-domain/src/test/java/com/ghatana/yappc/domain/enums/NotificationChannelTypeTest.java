@@ -25,11 +25,11 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("should have all expected notification channel types")
-        void shouldHaveAllExpectedTypes() { // GH-90000
-            NotificationChannelType[] values = NotificationChannelType.values(); // GH-90000
+        void shouldHaveAllExpectedTypes() { 
+            NotificationChannelType[] values = NotificationChannelType.values(); 
 
-            assertThat(values).hasSize(8); // GH-90000
-            assertThat(values).contains( // GH-90000
+            assertThat(values).hasSize(8); 
+            assertThat(values).contains( 
                     NotificationChannelType.EMAIL,
                     NotificationChannelType.SLACK,
                     NotificationChannelType.TEAMS,
@@ -42,11 +42,11 @@ class NotificationChannelTypeTest {
         }
 
         @ParameterizedTest
-        @EnumSource(NotificationChannelType.class) // GH-90000
+        @EnumSource(NotificationChannelType.class) 
         @DisplayName("all enum values should have non-null display name")
-        void allValuesShouldHaveDisplayName(NotificationChannelType type) { // GH-90000
-            assertThat(type.getDisplayName()).isNotNull(); // GH-90000
-            assertThat(type.getDisplayName()).isNotBlank(); // GH-90000
+        void allValuesShouldHaveDisplayName(NotificationChannelType type) { 
+            assertThat(type.getDisplayName()).isNotNull(); 
+            assertThat(type.getDisplayName()).isNotBlank(); 
         }
     }
 
@@ -56,49 +56,49 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("EMAIL should have display name 'Email'")
-        void emailDisplayName() { // GH-90000
+        void emailDisplayName() { 
             assertThat(NotificationChannelType.EMAIL.getDisplayName()).isEqualTo("Email");
         }
 
         @Test
         @DisplayName("SLACK should have display name 'Slack'")
-        void slackDisplayName() { // GH-90000
+        void slackDisplayName() { 
             assertThat(NotificationChannelType.SLACK.getDisplayName()).isEqualTo("Slack");
         }
 
         @Test
         @DisplayName("TEAMS should have display name 'Microsoft Teams'")
-        void teamsDisplayName() { // GH-90000
+        void teamsDisplayName() { 
             assertThat(NotificationChannelType.TEAMS.getDisplayName()).isEqualTo("Microsoft Teams");
         }
 
         @Test
         @DisplayName("WEBHOOK should have display name 'Webhook'")
-        void webhookDisplayName() { // GH-90000
+        void webhookDisplayName() { 
             assertThat(NotificationChannelType.WEBHOOK.getDisplayName()).isEqualTo("Webhook");
         }
 
         @Test
         @DisplayName("PAGERDUTY should have display name 'PagerDuty'")
-        void pagerdutyDisplayName() { // GH-90000
+        void pagerdutyDisplayName() { 
             assertThat(NotificationChannelType.PAGERDUTY.getDisplayName()).isEqualTo("PagerDuty");
         }
 
         @Test
         @DisplayName("OPSGENIE should have display name 'Opsgenie'")
-        void opsgenieDisplayName() { // GH-90000
+        void opsgenieDisplayName() { 
             assertThat(NotificationChannelType.OPSGENIE.getDisplayName()).isEqualTo("Opsgenie");
         }
 
         @Test
         @DisplayName("JIRA should have display name 'Jira'")
-        void jiraDisplayName() { // GH-90000
+        void jiraDisplayName() { 
             assertThat(NotificationChannelType.JIRA.getDisplayName()).isEqualTo("Jira");
         }
 
         @Test
         @DisplayName("SMS should have display name 'SMS'")
-        void smsDisplayName() { // GH-90000
+        void smsDisplayName() { 
             assertThat(NotificationChannelType.SMS.getDisplayName()).isEqualTo("SMS");
         }
     }
@@ -109,50 +109,50 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("EMAIL should support rich content")
-        void emailSupportsRichContent() { // GH-90000
-            assertThat(NotificationChannelType.EMAIL.supportsRichContent()).isTrue(); // GH-90000
+        void emailSupportsRichContent() { 
+            assertThat(NotificationChannelType.EMAIL.supportsRichContent()).isTrue(); 
         }
 
         @Test
         @DisplayName("SLACK should support rich content")
-        void slackSupportsRichContent() { // GH-90000
-            assertThat(NotificationChannelType.SLACK.supportsRichContent()).isTrue(); // GH-90000
+        void slackSupportsRichContent() { 
+            assertThat(NotificationChannelType.SLACK.supportsRichContent()).isTrue(); 
         }
 
         @Test
         @DisplayName("TEAMS should support rich content")
-        void teamsSupportsRichContent() { // GH-90000
-            assertThat(NotificationChannelType.TEAMS.supportsRichContent()).isTrue(); // GH-90000
+        void teamsSupportsRichContent() { 
+            assertThat(NotificationChannelType.TEAMS.supportsRichContent()).isTrue(); 
         }
 
         @Test
         @DisplayName("WEBHOOK should not support rich content")
-        void webhookDoesNotSupportRichContent() { // GH-90000
-            assertThat(NotificationChannelType.WEBHOOK.supportsRichContent()).isFalse(); // GH-90000
+        void webhookDoesNotSupportRichContent() { 
+            assertThat(NotificationChannelType.WEBHOOK.supportsRichContent()).isFalse(); 
         }
 
         @Test
         @DisplayName("PAGERDUTY should support rich content")
-        void pagerdutySupportsRichContent() { // GH-90000
-            assertThat(NotificationChannelType.PAGERDUTY.supportsRichContent()).isTrue(); // GH-90000
+        void pagerdutySupportsRichContent() { 
+            assertThat(NotificationChannelType.PAGERDUTY.supportsRichContent()).isTrue(); 
         }
 
         @Test
         @DisplayName("OPSGENIE should support rich content")
-        void opsgenieSupportsRichContent() { // GH-90000
-            assertThat(NotificationChannelType.OPSGENIE.supportsRichContent()).isTrue(); // GH-90000
+        void opsgenieSupportsRichContent() { 
+            assertThat(NotificationChannelType.OPSGENIE.supportsRichContent()).isTrue(); 
         }
 
         @Test
         @DisplayName("JIRA should not support rich content")
-        void jiraDoesNotSupportRichContent() { // GH-90000
-            assertThat(NotificationChannelType.JIRA.supportsRichContent()).isFalse(); // GH-90000
+        void jiraDoesNotSupportRichContent() { 
+            assertThat(NotificationChannelType.JIRA.supportsRichContent()).isFalse(); 
         }
 
         @Test
         @DisplayName("SMS should support rich content")
-        void smsSupportsRichContent() { // GH-90000
-            assertThat(NotificationChannelType.SMS.supportsRichContent()).isTrue(); // GH-90000
+        void smsSupportsRichContent() { 
+            assertThat(NotificationChannelType.SMS.supportsRichContent()).isTrue(); 
         }
     }
 
@@ -162,32 +162,32 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("PAGERDUTY should be incident management")
-        void pagerdutyIsIncidentManagement() { // GH-90000
-            assertThat(NotificationChannelType.PAGERDUTY.isIncidentManagement()).isTrue(); // GH-90000
+        void pagerdutyIsIncidentManagement() { 
+            assertThat(NotificationChannelType.PAGERDUTY.isIncidentManagement()).isTrue(); 
         }
 
         @Test
         @DisplayName("OPSGENIE should be incident management")
-        void opsgenieIsIncidentManagement() { // GH-90000
-            assertThat(NotificationChannelType.OPSGENIE.isIncidentManagement()).isTrue(); // GH-90000
+        void opsgenieIsIncidentManagement() { 
+            assertThat(NotificationChannelType.OPSGENIE.isIncidentManagement()).isTrue(); 
         }
 
         @Test
         @DisplayName("EMAIL should not be incident management")
-        void emailIsNotIncidentManagement() { // GH-90000
-            assertThat(NotificationChannelType.EMAIL.isIncidentManagement()).isFalse(); // GH-90000
+        void emailIsNotIncidentManagement() { 
+            assertThat(NotificationChannelType.EMAIL.isIncidentManagement()).isFalse(); 
         }
 
         @Test
         @DisplayName("SLACK should not be incident management")
-        void slackIsNotIncidentManagement() { // GH-90000
-            assertThat(NotificationChannelType.SLACK.isIncidentManagement()).isFalse(); // GH-90000
+        void slackIsNotIncidentManagement() { 
+            assertThat(NotificationChannelType.SLACK.isIncidentManagement()).isFalse(); 
         }
 
         @Test
         @DisplayName("JIRA should not be incident management")
-        void jiraIsNotIncidentManagement() { // GH-90000
-            assertThat(NotificationChannelType.JIRA.isIncidentManagement()).isFalse(); // GH-90000
+        void jiraIsNotIncidentManagement() { 
+            assertThat(NotificationChannelType.JIRA.isIncidentManagement()).isFalse(); 
         }
     }
 
@@ -197,38 +197,38 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("SLACK should be real-time messaging")
-        void slackIsRealTimeMessaging() { // GH-90000
-            assertThat(NotificationChannelType.SLACK.isRealTimeMessaging()).isTrue(); // GH-90000
+        void slackIsRealTimeMessaging() { 
+            assertThat(NotificationChannelType.SLACK.isRealTimeMessaging()).isTrue(); 
         }
 
         @Test
         @DisplayName("TEAMS should be real-time messaging")
-        void teamsIsRealTimeMessaging() { // GH-90000
-            assertThat(NotificationChannelType.TEAMS.isRealTimeMessaging()).isTrue(); // GH-90000
+        void teamsIsRealTimeMessaging() { 
+            assertThat(NotificationChannelType.TEAMS.isRealTimeMessaging()).isTrue(); 
         }
 
         @Test
         @DisplayName("SMS should be real-time messaging")
-        void smsIsRealTimeMessaging() { // GH-90000
-            assertThat(NotificationChannelType.SMS.isRealTimeMessaging()).isTrue(); // GH-90000
+        void smsIsRealTimeMessaging() { 
+            assertThat(NotificationChannelType.SMS.isRealTimeMessaging()).isTrue(); 
         }
 
         @Test
         @DisplayName("EMAIL should not be real-time messaging")
-        void emailIsNotRealTimeMessaging() { // GH-90000
-            assertThat(NotificationChannelType.EMAIL.isRealTimeMessaging()).isFalse(); // GH-90000
+        void emailIsNotRealTimeMessaging() { 
+            assertThat(NotificationChannelType.EMAIL.isRealTimeMessaging()).isFalse(); 
         }
 
         @Test
         @DisplayName("WEBHOOK should not be real-time messaging")
-        void webhookIsNotRealTimeMessaging() { // GH-90000
-            assertThat(NotificationChannelType.WEBHOOK.isRealTimeMessaging()).isFalse(); // GH-90000
+        void webhookIsNotRealTimeMessaging() { 
+            assertThat(NotificationChannelType.WEBHOOK.isRealTimeMessaging()).isFalse(); 
         }
 
         @Test
         @DisplayName("PAGERDUTY should not be real-time messaging")
-        void pagerdutyIsNotRealTimeMessaging() { // GH-90000
-            assertThat(NotificationChannelType.PAGERDUTY.isRealTimeMessaging()).isFalse(); // GH-90000
+        void pagerdutyIsNotRealTimeMessaging() { 
+            assertThat(NotificationChannelType.PAGERDUTY.isRealTimeMessaging()).isFalse(); 
         }
     }
 
@@ -238,7 +238,7 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("valueOf should return correct enum for valid string")
-        void valueOfReturnsCorrectEnum() { // GH-90000
+        void valueOfReturnsCorrectEnum() { 
             assertThat(NotificationChannelType.valueOf("EMAIL")).isEqualTo(NotificationChannelType.EMAIL);
             assertThat(NotificationChannelType.valueOf("SLACK")).isEqualTo(NotificationChannelType.SLACK);
             assertThat(NotificationChannelType.valueOf("TEAMS")).isEqualTo(NotificationChannelType.TEAMS);
@@ -256,32 +256,32 @@ class NotificationChannelTypeTest {
 
         @Test
         @DisplayName("should have exactly 2 incident management channels")
-        void shouldHaveTwoIncidentManagementChannels() { // GH-90000
-            long count = java.util.Arrays.stream(NotificationChannelType.values()) // GH-90000
-                    .filter(NotificationChannelType::isIncidentManagement) // GH-90000
-                    .count(); // GH-90000
+        void shouldHaveTwoIncidentManagementChannels() { 
+            long count = java.util.Arrays.stream(NotificationChannelType.values()) 
+                    .filter(NotificationChannelType::isIncidentManagement) 
+                    .count(); 
 
-            assertThat(count).isEqualTo(2); // GH-90000
+            assertThat(count).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("should have exactly 3 real-time messaging channels")
-        void shouldHaveThreeRealTimeMessagingChannels() { // GH-90000
-            long count = java.util.Arrays.stream(NotificationChannelType.values()) // GH-90000
-                    .filter(NotificationChannelType::isRealTimeMessaging) // GH-90000
-                    .count(); // GH-90000
+        void shouldHaveThreeRealTimeMessagingChannels() { 
+            long count = java.util.Arrays.stream(NotificationChannelType.values()) 
+                    .filter(NotificationChannelType::isRealTimeMessaging) 
+                    .count(); 
 
-            assertThat(count).isEqualTo(3); // GH-90000
+            assertThat(count).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("should have exactly 6 channels supporting rich content")
-        void shouldHaveSixRichContentChannels() { // GH-90000
-            long count = java.util.Arrays.stream(NotificationChannelType.values()) // GH-90000
-                    .filter(NotificationChannelType::supportsRichContent) // GH-90000
-                    .count(); // GH-90000
+        void shouldHaveSixRichContentChannels() { 
+            long count = java.util.Arrays.stream(NotificationChannelType.values()) 
+                    .filter(NotificationChannelType::supportsRichContent) 
+                    .count(); 
 
-            assertThat(count).isEqualTo(6); // GH-90000
+            assertThat(count).isEqualTo(6); 
         }
     }
 }

@@ -316,6 +316,37 @@ class EntityExportServiceTest extends EventloopTestBase {
         }
     }
 
+    @Nested
+    @DisplayName("Governed export redaction gate")
+    class GovernedExportTests {
+
+        @Test
+        @DisplayName("governed CSV export fails when global PII field is not redacted")
+        void governedCsvFailsWhenUnredactedPiiPresent() {
+            Entity entity = entityWith(Map.of("email", "person@example.com", "status", "ACTIVE"));
+            stub(List.of(entity));
+
+            assertThatThrownBy(() -> runPromise(() ->
+                    service.exportCsvGoverned(TENANT, COLLECTION, Map.of(), 100)))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Governed export blocked by unredacted PII")
+                    .hasMessageContaining("field=email");
+        }
+
+        @Test
+        @DisplayName("governed NDJSON export succeeds when global PII field is redacted")
+        void governedNdjsonSucceedsWhenPiiAlreadyRedacted() {
+            Entity entity = entityWith(Map.of("email", "[REDACTED]", "status", "ACTIVE"));
+            stub(List.of(entity));
+
+            String ndjson = runPromise(() ->
+                    service.exportNdjsonGoverned(TENANT, COLLECTION, Map.of(), 100));
+
+            assertThat(ndjson).contains("\"email\":\"[REDACTED]\"");
+            assertThat(ndjson).contains("\"status\":\"ACTIVE\"");
+        }
+    }
+
     // =========================================================================
     // Pagination — fetchAll
     // =========================================================================

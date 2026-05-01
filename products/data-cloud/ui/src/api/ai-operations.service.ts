@@ -36,6 +36,7 @@ import {
   AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE,
   createRuntimeBoundaryError,
 } from '../lib/runtime-boundaries';
+import { isAiOperationsEnabled } from '../lib/feature-gates';
 
 // ── Common schemas ────────────────────────────────────────────────────────────
 
@@ -239,6 +240,12 @@ function normaliseAiApiError(error: unknown, boundaryMessage: string): never {
   throw error instanceof Error ? error : new Error('Unknown AI operations API error');
 }
 
+function assertAiOperationsEnabled(): void {
+  if (!isAiOperationsEnabled()) {
+    throw createRuntimeBoundaryError(AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE);
+  }
+}
+
 // ── Service class ─────────────────────────────────────────────────────────────
 
 /**
@@ -265,6 +272,7 @@ export class AiOperationsService {
    * @param request - Surface context and optional entity IDs to scope suggestions.
    */
   async getSuggestions(request: GetSuggestionsRequest): Promise<AiOperationSuggestion[]> {
+    assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.post(
@@ -295,6 +303,7 @@ export class AiOperationsService {
     suggestionId: string,
     context?: Record<string, unknown>,
   ): Promise<AiApplySuggestionResponse> {
+    assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.post(
@@ -317,6 +326,7 @@ export class AiOperationsService {
    * @param request - Optional primary surface and entity IDs to scope correlations.
    */
   async getCrossCorrelations(request: GetCorrelationsRequest = {}): Promise<AiCrossCorrelation[]> {
+    assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get('/ai/correlations', {
@@ -339,6 +349,7 @@ export class AiOperationsService {
    * GET /api/v1/ai/advisories/workflows/:workflowId
    */
   async getWorkflowAdvisories(workflowId: string): Promise<AiWorkflowAdvisory> {
+    assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get(`/ai/advisories/workflows/${workflowId}`, {
@@ -356,6 +367,7 @@ export class AiOperationsService {
    * GET /api/v1/ai/advisories/quality/:collectionId
    */
   async getQualityAdvisories(collectionId: string): Promise<AiQualityAdvisory> {
+    assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get(`/ai/advisories/quality/${collectionId}`, {
@@ -373,6 +385,7 @@ export class AiOperationsService {
    * GET /api/v1/ai/advisories/fabric/:collectionId
    */
   async getFabricAdvisories(collectionId: string): Promise<AiFabricAdvisory> {
+    assertAiOperationsEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get(`/ai/advisories/fabric/${collectionId}`, {

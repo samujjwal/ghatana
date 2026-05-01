@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.integration;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("DataCloudMockIntegrationTest")
 class DataCloudMockIntegrationTest extends EventloopTestBase {
 
@@ -38,26 +38,26 @@ class DataCloudMockIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("pattern store reads persisted pattern state from a mocked Data-Cloud client")
-    void patternStoreReadsPersistedPatternStateFromMockClient() { // GH-90000
-        DataCloudPatternStore store = new DataCloudPatternStore(dataCloudClient); // GH-90000
+    void patternStoreReadsPersistedPatternStateFromMockClient() { 
+        DataCloudPatternStore store = new DataCloudPatternStore(dataCloudClient); 
         UUID patternId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
-            patternId.toString(), // GH-90000
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of( 
+            patternId.toString(), 
             "aep_patterns",
-            Map.of( // GH-90000
-                "id", patternId.toString(), // GH-90000
+            Map.of( 
+                "id", patternId.toString(), 
                 "name", "High CPU",
                 "tenantId", "tenant-a",
                 "status", "ACTIVE",
                 "description", "mocked pattern"));
 
         when(dataCloudClient.findById(eq("tenant-a"), eq("aep_patterns"), eq(patternId.toString())))
-            .thenReturn(Promise.of(java.util.Optional.of(entity))); // GH-90000
+            .thenReturn(Promise.of(java.util.Optional.of(entity))); 
 
-        var found = runPromise(() -> store.findByTenantAndId("tenant-a", patternId)); // GH-90000
+        var found = runPromise(() -> store.findByTenantAndId("tenant-a", patternId)); 
 
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().getId()).isEqualTo(patternId); // GH-90000
+        assertThat(found).isPresent(); 
+        assertThat(found.get().getId()).isEqualTo(patternId); 
         assertThat(found.get().getName()).isEqualTo("High CPU");
     }
 }

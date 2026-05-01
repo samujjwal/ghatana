@@ -26,64 +26,64 @@ class SharedServicesJwtBoundaryTest {
 
     @Test
     @DisplayName("shared services should rely on JWT port factories instead of concrete provider construction")
-    void sharedServicesShouldUseJwtPortFactories() throws IOException { // GH-90000
-        Path repoRoot = findRepoRoot(); // GH-90000
-        Map<String, String> violations = new LinkedHashMap<>(); // GH-90000
+    void sharedServicesShouldUseJwtPortFactories() throws IOException { 
+        Path repoRoot = findRepoRoot(); 
+        Map<String, String> violations = new LinkedHashMap<>(); 
 
-        for (String relativePath : new String[]{ // GH-90000
+        for (String relativePath : new String[]{ 
                 "shared-services/auth-gateway/src/main/java/com/ghatana/services/auth/AuthService.java",
                 "shared-services/auth-gateway/src/main/java/com/ghatana/services/auth/AuthGatewayLauncher.java",
                 "shared-services/user-profile-service/src/main/java/com/ghatana/services/userprofile/UserProfileService.java",
                 "shared-services/ai-inference-service/src/main/java/com/ghatana/services/aiinference/AIInferenceServiceLauncher.java"
         }) {
-            Path file = repoRoot.resolve(relativePath); // GH-90000
-            if (!Files.exists(file)) { // GH-90000
+            Path file = repoRoot.resolve(relativePath); 
+            if (!Files.exists(file)) { 
                 continue; // Skip files that don't exist yet
             }
-            String source = Files.readString(file, StandardCharsets.UTF_8); // GH-90000
-            if (source.contains(FORBIDDEN_CONCRETE_REFERENCE)) { // GH-90000
-                violations.put(relativePath, FORBIDDEN_CONCRETE_REFERENCE); // GH-90000
+            String source = Files.readString(file, StandardCharsets.UTF_8); 
+            if (source.contains(FORBIDDEN_CONCRETE_REFERENCE)) { 
+                violations.put(relativePath, FORBIDDEN_CONCRETE_REFERENCE); 
             }
         }
 
-        assertThat(violations) // GH-90000
+        assertThat(violations) 
                 .as("shared-service source should not reference the concrete JWT provider class directly")
-                .isEmpty(); // GH-90000
+                .isEmpty(); 
     }
 
     @Test
     @DisplayName("non-local deployments should reject missing platform JWT secrets")
-    void nonLocalDeploymentsShouldRejectMissingPlatformJwtSecret() { // GH-90000
-        assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret("production", null)) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+    void nonLocalDeploymentsShouldRejectMissingPlatformJwtSecret() { 
+        assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret("production", null)) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("PLATFORM_JWT_SECRET");
     }
 
     @Test
     @DisplayName("non-local deployments should reject the development fallback platform JWT secret")
-    void nonLocalDeploymentsShouldRejectDefaultPlatformJwtSecret() { // GH-90000
-        assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret( // GH-90000
+    void nonLocalDeploymentsShouldRejectDefaultPlatformJwtSecret() { 
+        assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret( 
                 "staging",
                 "dev-platform-jwt-secret-change-me-in-prod!"
         ))
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("minimum 32 characters and not the development fallback");
     }
 
     @Test
     @DisplayName("local development may still use the fallback platform JWT secret")
-    void localDevelopmentMayUseFallbackPlatformJwtSecret() { // GH-90000
-        assertThat(AuthGatewayLauncher.resolvePlatformJwtSecret("development", null)) // GH-90000
+    void localDevelopmentMayUseFallbackPlatformJwtSecret() { 
+        assertThat(AuthGatewayLauncher.resolvePlatformJwtSecret("development", null)) 
                 .isEqualTo("dev-platform-jwt-secret-change-me-in-prod!");
     }
 
-    private static Path findRepoRoot() { // GH-90000
+    private static Path findRepoRoot() { 
         Path current = Path.of("").toAbsolutePath();
-        while (current != null) { // GH-90000
+        while (current != null) { 
             if (Files.exists(current.resolve("settings.gradle.kts"))) {
                 return current;
             }
-            current = current.getParent(); // GH-90000
+            current = current.getParent(); 
         }
         throw new IllegalStateException("Could not locate repository root");
     }

@@ -356,6 +356,7 @@ public class DataCloudHttpServer {
     private AutonomyHandler autonomyHandler; // B9: emergency autonomy shutoff
     private AgentCatalogHandler agentCatalogHandler; // B3: agent catalog runtime API
     private PluginInstallHandler pluginInstallHandler; // B6: plugin install/upgrade lifecycle API
+    private boolean pluginUpgradeEnabled = false;
     private DataCloudRuntimePluginManager runtimePluginManager;
     private CapabilityRegistryHandler capabilityRegistryHandler; // P2.7: runtime capability registry API
     private ContextLayerHandler contextLayerHandler; // P3.1: tenant-scoped context layer API
@@ -850,6 +851,24 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Enables or disables the plugin hot-swap upgrade endpoint ({@code POST /api/v1/plugins/:id/upgrade}).
+     *
+     * <p>Defaults to {@code false} — the endpoint returns HTTP 501 until explicitly enabled.
+     * Do not enable in production until the platform JAR hot-swap capability is ready.
+     *
+     * @param enabled {@code true} to activate the upgrade route
+     * @return this server (fluent)
+     * @doc.type method
+     * @doc.purpose Hard-gate plugin hot-swap to prevent accidental activation in production
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withPluginUpgradeEnabled(boolean enabled) {
+        this.pluginUpgradeEnabled = enabled;
+        return this;
+    }
+
+    /**
      * Attaches an {@link AutonomyController} to enable autonomy management routes (B9).
      *
      * <p>Required for:
@@ -980,6 +999,37 @@ public class DataCloudHttpServer {
             auditAvailable, policyAvailable, tenantResolverAvailable);
     }
 
+    /**
+     * P0.1: Production/strict profiles must not run settings APIs on in-memory storage.
+     */
+    static void validateSettingsStorageConfiguration(boolean strictTenantResolution,
+                                                     String deploymentMode,
+                                                     SettingsStore configuredStore,
+                                                     Logger logger) {
+        requireNonNull(logger, "logger");
+        boolean isProduction = isProductionMode(deploymentMode);
+        if (!isProduction && !strictTenantResolution) {
+            return;
+        }
+
+        if (configuredStore == null) {
+            throw new IllegalStateException(
+                "P0.1: Persistent settings storage is required for production or strict-tenant profiles. "
+                    + "Call withSettingsStore() with a durable implementation (for example JdbcSettingsStore)."
+            );
+        }
+
+        String mode = configuredStore.getStorageMode();
+        if (mode == null || mode.isBlank() || "in-memory".equalsIgnoreCase(mode.trim())) {
+            throw new IllegalStateException(
+                "P0.1: In-memory settings storage is not allowed for production or strict-tenant profiles. "
+                    + "Configure a durable SettingsStore implementation."
+            );
+        }
+
+        logger.info("[DC-P0.1] Settings storage validated for deployment mode {} using {}", deploymentMode, mode);
+    }
+
     static boolean isProductionMode(String deploymentMode) {
         if (deploymentMode == null) return false;
         String lower = deploymentMode.toLowerCase();
@@ -1011,6 +1061,7 @@ public class DataCloudHttpServer {
      */
     public void start() throws Exception {
         validateSecurityConfiguration(apiKeyResolver != null || jwtProvider != null, strictTenantResolution, log);
+        validateSettingsStorageConfiguration(strictTenantResolution, deploymentMode, settingsStore, log);
         validateProductionDependencies(strictTenantResolution, deploymentMode,
             auditService != null, policyEngine != null, true, log);
         corsAllowOrigin = resolveCorsAllowOrigin(System.getenv("DATACLOUD_CORS_ALLOWED_ORIGINS"), strictTenantResolution, log);
@@ -1193,8 +1244,9 @@ public class DataCloudHttpServer {
         pluginInstallHandler = new PluginInstallHandler(
                 httpSupport,
                 com.ghatana.datacloud.spi.StoragePluginRegistry.getInstance(),
-            runtimePluginManager,
-                metricsCollector);
+                runtimePluginManager,
+                metricsCollector)
+                .withPluginUpgradeEnabled(pluginUpgradeEnabled);
 
         // B11: Storage cost estimation handler
         StorageCostHandler storageCostHandler = analyticsEngine != null

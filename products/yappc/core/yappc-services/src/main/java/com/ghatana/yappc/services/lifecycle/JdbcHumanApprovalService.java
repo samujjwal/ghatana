@@ -185,31 +185,43 @@ public class JdbcHumanApprovalService extends HumanApprovalService {
     /**
      * Returns PENDING requests from the database (cross-instance safe).
      *
-     * @throws SQLException if database query fails - caller must implement circuit breaker
+     * @throws RuntimeException if database query fails - caller must implement circuit breaker
      */
     @Override
     public List<ApprovalRequest> pendingFor(String tenantId, String projectId) {
-        return queryPendingFor(tenantId, projectId);
+        try {
+            return queryPendingFor(tenantId, projectId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to query pending requests for tenant=" + tenantId + ", project=" + projectId, e);
+        }
     }
 
     /**
      * Returns all PENDING requests from the database (cross-instance safe).
      *
-     * @throws SQLException if database query fails - caller must implement circuit breaker
+     * @throws RuntimeException if database query fails - caller must implement circuit breaker
      */
     @Override
     public List<ApprovalRequest> allPending(String tenantId) {
-        return queryAllPending(tenantId);
+        try {
+            return queryAllPending(tenantId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to query all pending requests for tenant=" + tenantId, e);
+        }
     }
 
     /**
      * Finds a request by ID from the database.
      *
-     * @throws SQLException if database query fails - caller must implement circuit breaker
+     * @throws RuntimeException if database query fails - caller must implement circuit breaker
      */
     @Override
     public Optional<ApprovalRequest> findById(String tenantId, String requestId) {
-        return queryById(tenantId, requestId);
+        try {
+            return queryById(tenantId, requestId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find request by id=" + requestId + " for tenant=" + tenantId, e);
+        }
     }
 
     // ─── JDBC helpers ─────────────────────────────────────────────────────────

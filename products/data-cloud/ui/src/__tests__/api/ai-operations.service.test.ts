@@ -11,12 +11,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { UnsupportedRuntimeBoundaryError } from '../../lib/runtime-boundaries';
+import {
+  AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE,
+  UnsupportedRuntimeBoundaryError,
+} from '../../lib/runtime-boundaries';
 
 // ── Mock setup ────────────────────────────────────────────────────────────────
 
 const mockGet = vi.hoisted(() => vi.fn());
 const mockPost = vi.hoisted(() => vi.fn());
+const mockIsAiOperationsEnabled = vi.hoisted(() => vi.fn(() => true));
 
 vi.mock('../../lib/api/client', () => ({
   apiClient: {
@@ -29,6 +33,10 @@ vi.mock('../../lib/auth/session', () => ({
   default: {
     requireTenantId: () => 'test-tenant-id',
   },
+}));
+
+vi.mock('../../lib/feature-gates', () => ({
+  isAiOperationsEnabled: mockIsAiOperationsEnabled,
 }));
 
 // Import AFTER mocks are established.
@@ -181,6 +189,21 @@ function makeFabricAdvisory(collectionId: string = 'logs') {
 describe('AiOperationsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsAiOperationsEnabled.mockReturnValue(true);
+  });
+
+  it('fails closed before network calls when AI operations gate is disabled', async () => {
+    mockIsAiOperationsEnabled.mockReturnValue(false);
+
+    await expect(aiOperationsService.getSuggestions({ surface: 'alerts' })).rejects.toThrow(
+      AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE,
+    );
+    await expect(aiOperationsService.getCrossCorrelations()).rejects.toThrow(
+      AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE,
+    );
+
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 
   // ── getSuggestions ──────────────────────────────────────────────────────────

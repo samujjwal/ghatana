@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("PersistentTtsGrpcService")
 class PersistentTtsGrpcServiceTest {
 
@@ -37,48 +37,48 @@ class PersistentTtsGrpcServiceTest {
     private PersistentTtsGrpcService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new PersistentTtsGrpcService( // GH-90000
+    void setUp() { 
+        service = new PersistentTtsGrpcService( 
             library,
-            mock(AudioFileService.class), // GH-90000
-            new SimpleMeterRegistry() // GH-90000
+            mock(AudioFileService.class), 
+            new SimpleMeterRegistry() 
         );
-        lenient().when(library.getTtsEngine()).thenReturn(engine); // GH-90000
-        MDC.clear(); // GH-90000
+        lenient().when(library.getTtsEngine()).thenReturn(engine); 
+        MDC.clear(); 
     }
 
     @Test
     @DisplayName("streamSynthesize rejects requests without tenant context")
-    void streamSynthesizeRejectsRequestsWithoutTenantContext() { // GH-90000
-        CapturingObserver<AudioChunk> observer = new CapturingObserver<>(); // GH-90000
+    void streamSynthesizeRejectsRequestsWithoutTenantContext() { 
+        CapturingObserver<AudioChunk> observer = new CapturingObserver<>(); 
 
         service.streamSynthesize(SynthesizeRequest.newBuilder().setText("hello").build(), observer);
 
-        assertThat(observer.error).isInstanceOf(StatusRuntimeException.class); // GH-90000
-        assertThat(((StatusRuntimeException) observer.error).getStatus().getCode()) // GH-90000
-            .isEqualTo(Status.UNAUTHENTICATED.getCode()); // GH-90000
+        assertThat(observer.error).isInstanceOf(StatusRuntimeException.class); 
+        assertThat(((StatusRuntimeException) observer.error).getStatus().getCode()) 
+            .isEqualTo(Status.UNAUTHENTICATED.getCode()); 
     }
 
     @Test
     @DisplayName("streamSynthesize delegates to base TTS streaming implementation")
-    void streamSynthesizeDelegatesToBaseImplementation() { // GH-90000
-        MDC.put("tenantId", "tenant-a"); // GH-90000
-        doAnswer(invocation -> { // GH-90000
+    void streamSynthesizeDelegatesToBaseImplementation() { 
+        MDC.put("tenantId", "tenant-a"); 
+        doAnswer(invocation -> { 
             @SuppressWarnings("unchecked")
-            java.util.function.Consumer<com.ghatana.media.common.AudioChunk> consumer = invocation.getArgument(2); // GH-90000
-            consumer.accept(new com.ghatana.media.common.AudioChunk(new byte[] {1, 2, 3}, 1, false, 0)); // GH-90000
-            consumer.accept(new com.ghatana.media.common.AudioChunk(new byte[] {4, 5}, 2, true, 1)); // GH-90000
+            java.util.function.Consumer<com.ghatana.media.common.AudioChunk> consumer = invocation.getArgument(2); 
+            consumer.accept(new com.ghatana.media.common.AudioChunk(new byte[] {1, 2, 3}, 1, false, 0)); 
+            consumer.accept(new com.ghatana.media.common.AudioChunk(new byte[] {4, 5}, 2, true, 1)); 
             return null;
-        }).when(engine).synthesizeStreaming(anyString(), any(), any()); // GH-90000
+        }).when(engine).synthesizeStreaming(anyString(), any(), any()); 
 
-        CapturingObserver<AudioChunk> observer = new CapturingObserver<>(); // GH-90000
+        CapturingObserver<AudioChunk> observer = new CapturingObserver<>(); 
         service.streamSynthesize(SynthesizeRequest.newBuilder().setText("hello").build(), observer);
 
-        assertThat(observer.error).isNull(); // GH-90000
-        assertThat(observer.completed).isTrue(); // GH-90000
-        assertThat(observer.value).isNotNull(); // GH-90000
-        assertThat(observer.value.getAudioData().toByteArray()).containsExactly(4, 5); // GH-90000
-        assertThat(observer.value.getIsFinal()).isTrue(); // GH-90000
+        assertThat(observer.error).isNull(); 
+        assertThat(observer.completed).isTrue(); 
+        assertThat(observer.value).isNotNull(); 
+        assertThat(observer.value.getAudioData().toByteArray()).containsExactly(4, 5); 
+        assertThat(observer.value.getIsFinal()).isTrue(); 
     }
 
     private static final class CapturingObserver<T> implements StreamObserver<T> {
@@ -87,17 +87,17 @@ class PersistentTtsGrpcServiceTest {
         private boolean completed;
 
         @Override
-        public void onNext(T value) { // GH-90000
+        public void onNext(T value) { 
             this.value = value;
         }
 
         @Override
-        public void onError(Throwable t) { // GH-90000
+        public void onError(Throwable t) { 
             this.error = t;
         }
 
         @Override
-        public void onCompleted() { // GH-90000
+        public void onCompleted() { 
             this.completed = true;
         }
     }

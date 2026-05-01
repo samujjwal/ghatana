@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("AEP OpenAPI surface drift")
 class AepOpenApiSurfaceDriftTest {
 
-    private static final List<String> REQUIRED_PATHS = List.of( // GH-90000
+    private static final List<String> REQUIRED_PATHS = List.of( 
         "/health",
         "/ready",
         "/live",
@@ -86,10 +86,10 @@ class AepOpenApiSurfaceDriftTest {
         "/api/v1/nlp/parse"
     );
 
-    private static final Map<String, List<String>> REQUIRED_METHODS_FOR_PATHS = Map.ofEntries( // GH-90000
+    private static final Map<String, List<String>> REQUIRED_METHODS_FOR_PATHS = Map.ofEntries( 
         Map.entry("/api/v1/events", List.of("post")),
-        Map.entry("/api/v1/patterns", List.of("get", "post")), // GH-90000
-        Map.entry("/api/v1/patterns/{patternId}", List.of("get", "put", "delete")), // GH-90000
+        Map.entry("/api/v1/patterns", List.of("get", "post")), 
+        Map.entry("/api/v1/patterns/{patternId}", List.of("get", "put", "delete")), 
         Map.entry("/api/v1/agents", List.of("get")),
         Map.entry("/api/v1/agents/{agentId}", List.of("get")),
         Map.entry("/api/v1/agents/{agentId}/execute", List.of("post")),
@@ -111,13 +111,13 @@ class AepOpenApiSurfaceDriftTest {
         Map.entry("/api/v1/analytics/kpis", List.of("post")),
         Map.entry("/api/v1/analytics/query", List.of("post")),
         Map.entry("/api/v1/session", List.of("post")),
-        Map.entry("/api/v1/sessions/current", List.of("get", "delete")), // GH-90000
+        Map.entry("/api/v1/sessions/current", List.of("get", "delete")), 
         Map.entry("/api/v1/sessions", List.of("get")),
         Map.entry("/api/v1/ai/suggestions", List.of("get")),
         Map.entry("/api/v1/nlp/parse", List.of("post"))
     );
 
-    private static final List<String> TENANT_SCOPED_PATHS = List.of( // GH-90000
+    private static final List<String> TENANT_SCOPED_PATHS = List.of( 
         "/api/v1/events",
         "/api/v1/patterns",
         "/api/v1/patterns/{patternId}",
@@ -133,7 +133,7 @@ class AepOpenApiSurfaceDriftTest {
         "/api/v1/ai/suggestions"
     );
 
-    private static final List<String> PUBLIC_PATHS = List.of( // GH-90000
+    private static final List<String> PUBLIC_PATHS = List.of( 
         "/health",
         "/ready",
         "/live",
@@ -141,7 +141,7 @@ class AepOpenApiSurfaceDriftTest {
         "/metrics"
     );
 
-    private static final List<String> POST_PATHS_WITH_REQUEST_BODY = List.of( // GH-90000
+    private static final List<String> POST_PATHS_WITH_REQUEST_BODY = List.of( 
         "/api/v1/events",
         "/api/v1/patterns",
         "/api/v1/agents/{agentId}/execute",
@@ -153,16 +153,16 @@ class AepOpenApiSurfaceDriftTest {
 
     @Test
     @DisplayName("contracts and server OpenAPI specs stay in sync and document exercised public routes")
-    void specsStayInSyncAndCoverRequiredRoutes() throws IOException { // GH-90000
+    void specsStayInSyncAndCoverRequiredRoutes() throws IOException { 
         String contractsSpec = normalizeSpec(Files.readString(findRepoFile("products/aep/contracts/openapi.yaml")));
         String serverSpec = normalizeSpec(Files.readString(findRepoFile("products/aep/server/src/main/resources/openapi.yaml")));
 
-        assertThat(contractsSpec).isEqualTo(serverSpec); // GH-90000
+        assertThat(contractsSpec).isEqualTo(serverSpec); 
 
-        for (String route : REQUIRED_PATHS) { // GH-90000
-            assertThat(contractsSpec) // GH-90000
-                .as("expected route %s to be documented in AEP OpenAPI", route) // GH-90000
-                .contains(pathMarker(route)); // GH-90000
+        for (String route : REQUIRED_PATHS) { 
+            assertThat(contractsSpec) 
+                .as("expected route %s to be documented in AEP OpenAPI", route) 
+                .contains(pathMarker(route)); 
         }
     }
 
@@ -172,28 +172,28 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("all documented paths have response schemas defined")
-        void allDocumentedPathsHaveResponseSchemasDefined() throws IOException { // GH-90000
+        void allDocumentedPathsHaveResponseSchemasDefined() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            for (String path : REQUIRED_PATHS) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
-                assertThat(spec) // GH-90000
-                    .as("path %s should have a response schema defined", path) // GH-90000
-                    .contains(pathMarker(path)); // GH-90000
+            for (String path : REQUIRED_PATHS) { 
+                String block = blockForPath(spec, path); 
+                assertThat(spec) 
+                    .as("path %s should have a response schema defined", path) 
+                    .contains(pathMarker(path)); 
                 assertThat(block).contains("responses:");
             }
         }
 
         @Test
         @DisplayName("POST endpoints have request body schemas defined")
-        void postEndpointsHaveRequestBodySchemasDefined() throws IOException { // GH-90000
+        void postEndpointsHaveRequestBodySchemasDefined() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            for (String path : POST_PATHS_WITH_REQUEST_BODY) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
-                assertThat(spec) // GH-90000
-                    .as("POST endpoint %s should have request body schema", path) // GH-90000
-                    .contains(pathMarker(path)); // GH-90000
+            for (String path : POST_PATHS_WITH_REQUEST_BODY) { 
+                String block = blockForPath(spec, path); 
+                assertThat(spec) 
+                    .as("POST endpoint %s should have request body schema", path) 
+                    .contains(pathMarker(path)); 
                 assertThat(block).contains("    post:");
                 assertThat(block).contains("requestBody:");
             }
@@ -201,26 +201,26 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("endpoints with path parameters have parameter schemas")
-        void endpointsWithPathParametersHaveParameterSchemas() throws IOException { // GH-90000
+        void endpointsWithPathParametersHaveParameterSchemas() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            List<String> pathsWithParams = REQUIRED_PATHS.stream() // GH-90000
+            List<String> pathsWithParams = REQUIRED_PATHS.stream() 
                 .filter(path -> path.contains("{"))
-                .toList(); // GH-90000
+                .toList(); 
 
-            for (String path : pathsWithParams) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
+            for (String path : pathsWithParams) { 
+                String block = blockForPath(spec, path); 
                 String paramName = path.substring(path.indexOf("{") + 1, path.indexOf("}"));
-                boolean hasInlinePathParameter = block.contains("- name: " + paramName) // GH-90000
+                boolean hasInlinePathParameter = block.contains("- name: " + paramName) 
                     && block.contains("in: path");
-                boolean hasReferencedPathParameter = block.contains("#/components/parameters/" + capitalize(paramName)); // GH-90000
+                boolean hasReferencedPathParameter = block.contains("#/components/parameters/" + capitalize(paramName)); 
 
-                assertThat(block) // GH-90000
-                    .as("path %s should have parameter schema for %s", path, paramName) // GH-90000
+                assertThat(block) 
+                    .as("path %s should have parameter schema for %s", path, paramName) 
                     .contains("parameters:");
-                assertThat(hasInlinePathParameter || hasReferencedPathParameter) // GH-90000
-                    .as("path %s should declare or reference schema for %s", path, paramName) // GH-90000
-                    .isTrue(); // GH-90000
+                assertThat(hasInlinePathParameter || hasReferencedPathParameter) 
+                    .as("path %s should declare or reference schema for %s", path, paramName) 
+                    .isTrue(); 
             }
         }
     }
@@ -231,65 +231,65 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("required paths have documented HTTP methods")
-        void requiredPathsHaveDocumentedHttpMethods() throws IOException { // GH-90000
+        void requiredPathsHaveDocumentedHttpMethods() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            for (Map.Entry<String, List<String>> entry : REQUIRED_METHODS_FOR_PATHS.entrySet()) { // GH-90000
-                String path = entry.getKey(); // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
-                for (String method : entry.getValue()) { // GH-90000
-                    assertThat(block) // GH-90000
-                        .as("path %s should document %s method", path, method) // GH-90000
-                        .contains("    " + method + ":"); // GH-90000
+            for (Map.Entry<String, List<String>> entry : REQUIRED_METHODS_FOR_PATHS.entrySet()) { 
+                String path = entry.getKey(); 
+                String block = blockForPath(spec, path); 
+                for (String method : entry.getValue()) { 
+                    assertThat(block) 
+                        .as("path %s should document %s method", path, method) 
+                        .contains("    " + method + ":"); 
                 }
             }
         }
 
         @Test
         @DisplayName("DELETE endpoints have 204 or 200 response defined")
-        void deleteEndpointsHaveProperResponseCodes() throws IOException { // GH-90000
+        void deleteEndpointsHaveProperResponseCodes() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            List<String> deletePaths = REQUIRED_PATHS.stream() // GH-90000
-                .filter(path -> REQUIRED_METHODS_FOR_PATHS.containsKey(path) &&  // GH-90000
+            List<String> deletePaths = REQUIRED_PATHS.stream() 
+                .filter(path -> REQUIRED_METHODS_FOR_PATHS.containsKey(path) &&  
                            REQUIRED_METHODS_FOR_PATHS.get(path).contains("delete"))
-                .toList(); // GH-90000
+                .toList(); 
 
-            for (String path : deletePaths) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
-                assertThat(block) // GH-90000
-                    .as("DELETE endpoint %s should have 204 or 200 response", path) // GH-90000
+            for (String path : deletePaths) { 
+                String block = blockForPath(spec, path); 
+                assertThat(block) 
+                    .as("DELETE endpoint %s should have 204 or 200 response", path) 
                     .contains("    delete:")
                     .contains("responses:");
                 // Support all valid YAML response code formats: unquoted (204:), single-quoted ('204':), double-quoted ("204":)
                 assertThat(block.contains("'204':") || block.contains("'200':") || block.contains("204:") || block.contains("200:")
                     || block.contains("\"204\":") || block.contains("\"200\":"))
                     .as("DELETE endpoint %s should have 204 or 200 response code in any YAML format", path)
-                    .isTrue(); // GH-90000
+                    .isTrue(); 
             }
         }
 
         @Test
         @DisplayName("POST endpoints have 201 or 200 response defined")
-        void postEndpointsHaveProperResponseCodes() throws IOException { // GH-90000
+        void postEndpointsHaveProperResponseCodes() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            List<String> postPaths = REQUIRED_PATHS.stream() // GH-90000
-                .filter(path -> REQUIRED_METHODS_FOR_PATHS.containsKey(path) &&  // GH-90000
+            List<String> postPaths = REQUIRED_PATHS.stream() 
+                .filter(path -> REQUIRED_METHODS_FOR_PATHS.containsKey(path) &&  
                            REQUIRED_METHODS_FOR_PATHS.get(path).contains("post"))
-                .toList(); // GH-90000
+                .toList(); 
 
-            for (String path : postPaths) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
-                assertThat(block) // GH-90000
-                    .as("POST endpoint %s should have 201 or 200 response", path) // GH-90000
+            for (String path : postPaths) { 
+                String block = blockForPath(spec, path); 
+                assertThat(block) 
+                    .as("POST endpoint %s should have 201 or 200 response", path) 
                     .contains("    post:")
                     .contains("responses:");
                 // Support all valid YAML response code formats: unquoted (201:), single-quoted ('201':), double-quoted ("201":)
                 assertThat(block.contains("'201':") || block.contains("'200':") || block.contains("201:") || block.contains("200:")
                     || block.contains("\"201\":") || block.contains("\"200\":"))
                     .as("POST endpoint %s should have 201 or 200 response code in any YAML format", path)
-                    .isTrue(); // GH-90000
+                    .isTrue(); 
             }
         }
     }
@@ -300,42 +300,42 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("tenant-scoped endpoints document X-Tenant-Id header or tenantId parameter")
-        void tenantScopedEndpointsDocumentTenantHeaderOrParameter() throws IOException { // GH-90000
+        void tenantScopedEndpointsDocumentTenantHeaderOrParameter() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            for (String path : TENANT_SCOPED_PATHS) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
+            for (String path : TENANT_SCOPED_PATHS) { 
+                String block = blockForPath(spec, path); 
                 boolean hasTenantHeader = block.contains("#/components/parameters/TenantIdHeader")
                     || block.contains("- name: X-Tenant-Id");
                 boolean hasTenantParam = block.contains("#/components/parameters/TenantIdQuery")
                     || block.contains("- name: tenantId");
 
-                assertThat(hasTenantHeader || hasTenantParam) // GH-90000
-                    .as("API path %s should document X-Tenant-Id header or tenantId parameter", path) // GH-90000
-                    .isTrue(); // GH-90000
+                assertThat(hasTenantHeader || hasTenantParam) 
+                    .as("API path %s should document X-Tenant-Id header or tenantId parameter", path) 
+                    .isTrue(); 
             }
         }
 
         @Test
         @DisplayName("headers include description field for documentation")
-        void headersIncludeDescriptionField() throws IOException { // GH-90000
+        void headersIncludeDescriptionField() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
             // Find all header definitions and verify they have descriptions
             Pattern headerPattern = Pattern.compile("- name: ([A-Za-z\\-]+)");
-            var matcher = headerPattern.matcher(spec); // GH-90000
+            var matcher = headerPattern.matcher(spec); 
             
-            while (matcher.find()) { // GH-90000
-                String headerName = matcher.group(1); // GH-90000
+            while (matcher.find()) { 
+                String headerName = matcher.group(1); 
                 // Check if this header has a description nearby
-                int headerPos = matcher.start(); // GH-90000
-                String surroundingContext = spec.substring(Math.max(0, headerPos - 50),  // GH-90000
-                                                           Math.min(spec.length(), headerPos + 200)); // GH-90000
+                int headerPos = matcher.start(); 
+                String surroundingContext = spec.substring(Math.max(0, headerPos - 50),  
+                                                           Math.min(spec.length(), headerPos + 200)); 
                 
                 // Headers like X-Tenant-Id, X-Correlation-Id should have descriptions
                 if (headerName.startsWith("X-")) {
-                    assertThat(surroundingContext) // GH-90000
-                        .as("header %s should have a description", headerName) // GH-90000
+                    assertThat(surroundingContext) 
+                        .as("header %s should have a description", headerName) 
                         .contains("description:");
                 }
             }
@@ -348,14 +348,14 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("API endpoints document security schemes")
-        void apiEndpointsDocumentSecuritySchemes() throws IOException { // GH-90000
+        void apiEndpointsDocumentSecuritySchemes() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            assertThat(spec) // GH-90000
+            assertThat(spec) 
                 .as("OpenAPI spec should define security schemes")
                 .contains("securitySchemes:");
 
-            assertThat(spec) // GH-90000
+            assertThat(spec) 
                 .as("OpenAPI spec should define bearer auth scheme")
                 .contains("bearerAuth:")
                 .contains("scheme: bearer");
@@ -363,13 +363,13 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("public health endpoints have no security requirement")
-        void publicHealthEndpointsHaveNoSecurityRequirement() throws IOException { // GH-90000
+        void publicHealthEndpointsHaveNoSecurityRequirement() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
-            for (String path : PUBLIC_PATHS) { // GH-90000
-                String block = blockForPath(spec, path); // GH-90000
-                assertThat(block) // GH-90000
-                    .as("public endpoint %s should explicitly opt out of auth when global security is enabled", path) // GH-90000
+            for (String path : PUBLIC_PATHS) { 
+                String block = blockForPath(spec, path); 
+                assertThat(block) 
+                    .as("public endpoint %s should explicitly opt out of auth when global security is enabled", path) 
                     .contains("security:")
                     .contains("[]");
             }
@@ -377,15 +377,15 @@ class AepOpenApiSurfaceDriftTest {
 
         @Test
         @DisplayName("API endpoints require authentication")
-        void apiEndpointsRequireAuthentication() throws IOException { // GH-90000
+        void apiEndpointsRequireAuthentication() throws IOException { 
             String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
 
             boolean hasGlobalSecurity = spec.contains("security:\n  - bearerAuth: []")
                 || spec.contains("security:\r\n  - bearerAuth: []");
 
-            assertThat(hasGlobalSecurity) // GH-90000
+            assertThat(hasGlobalSecurity) 
                 .as("OpenAPI spec should declare global bearer authentication for API endpoints")
-                .isTrue(); // GH-90000
+                .isTrue(); 
         }
     }
 
@@ -414,45 +414,45 @@ class AepOpenApiSurfaceDriftTest {
         }
     }
 
-    private static String pathMarker(String path) { // GH-90000
+    private static String pathMarker(String path) { 
         return "  " + path + ":";
     }
 
-    private static String blockForPath(String spec, String path) { // GH-90000
-        String marker = pathMarker(path); // GH-90000
-        int start = spec.indexOf(marker); // GH-90000
-        assertThat(start) // GH-90000
-            .as("expected path %s to exist in OpenAPI spec", path) // GH-90000
-            .isGreaterThanOrEqualTo(0); // GH-90000
-        int nextPath = spec.indexOf("\n  /", start + marker.length()); // GH-90000
-        int nextComponents = spec.indexOf("\ncomponents:", start + marker.length()); // GH-90000
-        int end = nextPath >= 0 ? nextPath : spec.length(); // GH-90000
-        if (nextComponents >= 0 && nextComponents < end) { // GH-90000
+    private static String blockForPath(String spec, String path) { 
+        String marker = pathMarker(path); 
+        int start = spec.indexOf(marker); 
+        assertThat(start) 
+            .as("expected path %s to exist in OpenAPI spec", path) 
+            .isGreaterThanOrEqualTo(0); 
+        int nextPath = spec.indexOf("\n  /", start + marker.length()); 
+        int nextComponents = spec.indexOf("\ncomponents:", start + marker.length()); 
+        int end = nextPath >= 0 ? nextPath : spec.length(); 
+        if (nextComponents >= 0 && nextComponents < end) { 
             end = nextComponents;
         }
-        return spec.substring(start, end); // GH-90000
+        return spec.substring(start, end); 
     }
 
-    private static String capitalize(String value) { // GH-90000
-        if (value == null || value.isEmpty()) { // GH-90000
+    private static String capitalize(String value) { 
+        if (value == null || value.isEmpty()) { 
             return value;
         }
-        return Character.toUpperCase(value.charAt(0)) + value.substring(1); // GH-90000
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1); 
     }
 
-    private static String normalizeSpec(String spec) { // GH-90000
-        return spec.replace("\r\n", "\n").trim(); // GH-90000
+    private static String normalizeSpec(String spec) { 
+        return spec.replace("\r\n", "\n").trim(); 
     }
 
-    private static Path findRepoFile(String relativePath) throws IOException { // GH-90000
+    private static Path findRepoFile(String relativePath) throws IOException { 
         Path current = Path.of("").toAbsolutePath();
-        while (current != null) { // GH-90000
-            Path candidate = current.resolve(relativePath); // GH-90000
-            if (Files.exists(candidate)) { // GH-90000
+        while (current != null) { 
+            Path candidate = current.resolve(relativePath); 
+            if (Files.exists(candidate)) { 
                 return candidate;
             }
-            current = current.getParent(); // GH-90000
+            current = current.getParent(); 
         }
-        throw new IOException("Unable to locate repo file: " + relativePath); // GH-90000
+        throw new IOException("Unable to locate repo file: " + relativePath); 
     }
 }

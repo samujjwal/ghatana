@@ -136,7 +136,7 @@ include(":core:knowledge-graph")
 include(":core:yappc-domain-impl")
 include(":core:yappc-services")
 include(":core:yappc-infrastructure")
-include(":core:yappc-api")
+// NOTE: core:yappc-api removed — duplicate controllers consolidated into yappc-domain-impl
 include(":core:yappc-shared")
 
 // --- Infrastructure ---

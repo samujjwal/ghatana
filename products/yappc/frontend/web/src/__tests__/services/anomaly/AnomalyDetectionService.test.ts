@@ -1,10 +1,9 @@
-// @ts-nocheck
 /**
  * Unit tests for AnomalyDetectionService
  *
  * Tests validate:
  * - Anomaly detection workflow with Java ML integration
- * - Baseline calculation and updates  
+ * - Baseline calculation and updates
  * - Repository persistence operations
  * - Metrics collection on all operations
  * - Error handling and edge cases
@@ -16,27 +15,47 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AnomalyDetectionService, DetectionRequest } from '../../../services/anomaly/AnomalyDetectionService';
 import { MetricsCollector, NoopMetricsCollector } from '../../../observability/MetricsCollector';
 
+interface AnomalyLike {
+  id: string;
+  type?: string;
+  status?: string;
+}
+
+interface AnomalyDetectionResult {
+  anomalyScores: number[];
+  isAnomalous: boolean[];
+  anomalyIndices: number[];
+  javaExecutionId: string;
+  processingTimeMs: number;
+  confidence: number;
+}
+
+interface AIServiceClientLike {
+  detectAnomalies(request: unknown): Promise<AnomalyDetectionResult>;
+  calculateBaseline(request: unknown): Promise<Record<string, unknown>>;
+}
+
 // Mock repository
 class MockSecurityAnomalyRepository {
-  private anomalies: Map<string, unknown> = new Map();
+  private anomalies: Map<string, AnomalyLike> = new Map();
 
-  async save(anomaly: unknown): Promise<void> {
+  async save(anomaly: AnomalyLike): Promise<void> {
     this.anomalies.set(anomaly.id, anomaly);
   }
 
-  async findById(id: string): Promise<any | null> {
+  async findById(id: string): Promise<AnomalyLike | null> {
     return this.anomalies.get(id) || null;
   }
 
-  async findByType(type: string): Promise<unknown[]> {
+  async findByType(type: string): Promise<AnomalyLike[]> {
     return Array.from(this.anomalies.values()).filter((a) => a.type === type);
   }
 
-  async findByStatus(status: string): Promise<unknown[]> {
+  async findByStatus(status: string): Promise<AnomalyLike[]> {
     return Array.from(this.anomalies.values()).filter((a) => a.status === status);
   }
 
-  async query(): Promise<unknown[]> {
+  async query(): Promise<AnomalyLike[]> {
     return Array.from(this.anomalies.values());
   }
 
@@ -46,8 +65,8 @@ class MockSecurityAnomalyRepository {
 }
 
 // Mock AI service client
-class MockAIServiceClient {
-  async detectAnomalies(request: unknown) {
+class MockAIServiceClient implements AIServiceClientLike {
+  async detectAnomalies(request: unknown): Promise<AnomalyDetectionResult> {
     return {
       anomalyScores: [0.1, 0.2, 0.9, 0.15],
       isAnomalous: [false, false, true, false],
@@ -58,7 +77,7 @@ class MockAIServiceClient {
     };
   }
 
-  async calculateBaseline(request: unknown) {
+  async calculateBaseline(request: unknown): Promise<Record<string, unknown>> {
     return {
       baseline: 50,
       threshold: 75,
@@ -79,7 +98,7 @@ describe('AnomalyDetectionService', () => {
     repository = new MockSecurityAnomalyRepository();
     aiClient = new MockAIServiceClient();
     metrics = new NoopMetricsCollector();
-    service = new AnomalyDetectionService(repository as unknown, aiClient as unknown, metrics);
+    service = new AnomalyDetectionService(repository as unknown, aiClient as AIServiceClientLike, metrics);
   });
 
   afterEach(() => {
@@ -133,7 +152,7 @@ describe('AnomalyDetectionService', () => {
 
       // THEN
       expect(anomalies.length).toBeGreaterThan(0);
-      expect(anomalies[0].type).toBe('NETWORK_SPIKE');
+      expect((anomalies[0] as Record<string, unknown>).type).toBe('NETWORK_SPIKE');
     });
 
     /**
@@ -165,7 +184,7 @@ describe('AnomalyDetectionService', () => {
 
       // THEN
       expect(anomalies.length).toBeGreaterThan(0);
-      expect(anomalies[0].detectedAt).toBeInstanceOf(Date);
+      expect((anomalies[0] as Record<string, unknown>).detectedAt).toBeInstanceOf(Date);
     });
 
     /**
@@ -202,7 +221,7 @@ describe('AnomalyDetectionService', () => {
       // GIVEN
       const mockMetrics = new MetricsCollector();
       const incrementSpy = vi.spyOn(mockMetrics, 'incrementCounter');
-      service = new AnomalyDetectionService(repository as unknown, aiClient as unknown, mockMetrics);
+      service = new AnomalyDetectionService(repository as unknown, aiClient as AIServiceClientLike, mockMetrics);
 
       const request: DetectionRequest = {
         resourceId: 'res-metrics',
@@ -246,7 +265,7 @@ describe('AnomalyDetectionService', () => {
 
       service = new AnomalyDetectionService(
         repository as unknown,
-        noAnomaliesClient as unknown,
+        noAnomaliesClient as AIServiceClientLike,
         metrics
       );
 
@@ -284,7 +303,7 @@ describe('AnomalyDetectionService', () => {
 
       service = new AnomalyDetectionService(
         repository as unknown,
-        errorClient as unknown,
+        errorClient as AIServiceClientLike,
         mockMetrics
       );
 
@@ -329,10 +348,10 @@ describe('AnomalyDetectionService', () => {
 
       // THEN
       expect(baseline).toBeDefined();
-      expect(baseline.baselineValue).toBe(50);
-      expect(baseline.threshold).toBe(75);
-      expect(baseline.standardDeviation).toBe(5.5);
-      expect(baseline.javaServiceExecutionId).toBe('java-baseline-456');
+      expect((baseline as Record<string, unknown>).baselineValue).toBe(50);
+      expect((baseline as Record<string, unknown>).threshold).toBe(75);
+      expect((baseline as Record<string, unknown>).standardDeviation).toBe(5.5);
+      expect((baseline as Record<string, unknown>).javaServiceExecutionId).toBe('java-baseline-456');
     });
 
     /**
@@ -355,7 +374,7 @@ describe('AnomalyDetectionService', () => {
       const baseline = await service.updateBaseline(request);
 
       // THEN
-      expect(baseline.dataPointsUsed).toBe(150);
+      expect((baseline as Record<string, unknown>).dataPointsUsed).toBe(150);
     });
 
     /**
@@ -378,7 +397,7 @@ describe('AnomalyDetectionService', () => {
 
       // THEN
       expect(baseline).toBeDefined();
-      expect(baseline.dataPointsUsed).toBe(5);
+      expect((baseline as Record<string, unknown>).dataPointsUsed).toBe(5);
     });
 
     /**
@@ -391,7 +410,7 @@ describe('AnomalyDetectionService', () => {
     it('should collect metrics on baseline update', async () => {
       // GIVEN
       const mockMetrics = new MetricsCollector();
-      service = new AnomalyDetectionService(repository as unknown, aiClient as unknown, mockMetrics);
+      service = new AnomalyDetectionService(repository as unknown, aiClient as AIServiceClientLike, mockMetrics);
       const startTimerSpy = vi.spyOn(mockMetrics, 'startTimer');
 
       const request = {

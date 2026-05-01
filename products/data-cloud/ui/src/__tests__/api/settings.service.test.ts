@@ -20,18 +20,23 @@ import {
   SETTINGS_PROFILE_BOUNDARY_MESSAGE,
   SETTINGS_PREFERENCES_BOUNDARY_MESSAGE,
   SETTINGS_NOTIFICATION_PREFS_BOUNDARY_MESSAGE,
+  SETTINGS_SURFACE_DISABLED_MESSAGE,
 } from '../../lib/runtime-boundaries';
 
-const { mockApiClient } = vi.hoisted(() => ({
+const { mockApiClient, mockIsSettingsSurfaceEnabled } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
   },
+  mockIsSettingsSurfaceEnabled: vi.fn(() => true),
 }));
 
 vi.mock('../../lib/api/client', () => ({ apiClient: mockApiClient }));
+vi.mock('../../lib/feature-gates', () => ({
+  isSettingsSurfaceEnabled: mockIsSettingsSurfaceEnabled,
+}));
 
 import SessionBootstrap from '../../lib/auth/session';
 import { SettingsService, type ApiKey } from '../../api/settings.service';
@@ -66,8 +71,21 @@ describe('SettingsService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsSettingsSurfaceEnabled.mockReturnValue(true);
     SessionBootstrap.setTenantId(TENANT);
     service = new SettingsService();
+  });
+
+  it('fails closed before network calls when settings surface gate is disabled', async () => {
+    mockIsSettingsSurfaceEnabled.mockReturnValue(false);
+
+    await expect(service.listApiKeys()).rejects.toThrow(SETTINGS_SURFACE_DISABLED_MESSAGE);
+    await expect(service.getProfile()).rejects.toThrow(SETTINGS_SURFACE_DISABLED_MESSAGE);
+
+    expect(mockApiClient.get).not.toHaveBeenCalled();
+    expect(mockApiClient.post).not.toHaveBeenCalled();
+    expect(mockApiClient.patch).not.toHaveBeenCalled();
+    expect(mockApiClient.delete).not.toHaveBeenCalled();
   });
 
   // ── API Key lifecycle ─────────────────────────────────────────────────────

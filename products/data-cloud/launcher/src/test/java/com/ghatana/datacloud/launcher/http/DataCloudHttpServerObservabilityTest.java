@@ -161,7 +161,56 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
         assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_ENTITY_TOTAL); // GH-90000
         assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_EVENT_APPEND_TOTAL); // GH-90000
         assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_GOVERNANCE_TOTAL); // GH-90000
-                assertThat(metricsResponse.body()).contains("tenant-observe");
+        assertThat(metricsResponse.body()).contains("tenant-observe");
+    }
+
+    @Test
+    @DisplayName("records error-status business metrics for invalid entity request payloads")
+    void recordsErrorStatusBusinessMetricsForInvalidPayload() throws Exception {
+        startServer();
+
+        HttpResponse<String> badRequestResponse = postJson(
+                "/api/v1/entities/products",
+                Map.of(),
+                Map.of("X-Tenant-ID", "tenant-observe"));
+        assertThat(badRequestResponse.statusCode()).isEqualTo(400);
+
+        HttpResponse<String> metricsResponse = get("/metrics");
+
+        assertThat(metricsResponse.statusCode()).isEqualTo(200);
+        assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_ENTITY_TOTAL);
+        assertThat(metricsResponse.body()).contains("status=\"error\"");
+        assertThat(metricsResponse.body()).contains("tenant=\"tenant-observe\"");
+    }
+
+    @Test
+    @DisplayName("records AI fallback rate metric when analytics suggest uses heuristic mode (P1-05)") // GH-90000
+    void recordsAiFallbackRateMetricForAnalyticsSuggestHeuristicMode() throws Exception { // GH-90000
+        // When completionService is null, AiAssistHandler falls back to static heuristics
+        // and records dc.ai.recommendation.requests with fallback="true".
+        // This verifies the AI fallback telemetry pipeline is instrumented end-to-end.
+        startServer(); // GH-90000
+
+        HttpResponse<String> analyticsResponse = postJson( // GH-90000
+                "/api/v1/analytics/suggest",
+                Map.of("intent", "summarize sales by region"),
+                Map.of("X-Tenant-ID", "tenant-ai-obs")); // GH-90000
+        // Heuristic mode always returns 200
+        assertThat(analyticsResponse.statusCode()).isEqualTo(200); // GH-90000
+
+        HttpResponse<String> metricsResponse = get("/metrics"); // GH-90000
+        assertThat(metricsResponse.statusCode()).isEqualTo(200); // GH-90000
+        // dc.ai.recommendation.requests emitted with fallback="true" tag
+        String metricsBody = metricsResponse.body(); // GH-90000
+        assertThat(metricsBody)
+                .as("Prometheus scrape should contain dc_ai_recommendation_requests counter. Full body:\n%s", metricsBody)
+                .contains("dc_ai_recommendation_requests"); // GH-90000
+        assertThat(metricsBody)
+                .as("dc_ai_recommendation_requests should have fallback=true tag. Full body:\n%s", metricsBody)
+                .contains("fallback=\"true\""); // GH-90000
+        assertThat(metricsBody)
+                .as("dc_ai_recommendation_requests should have type=analytics_suggest tag. Full body:\n%s", metricsBody)
+                .contains("type=\"analytics_suggest\""); // GH-90000
     }
 
         @Test

@@ -1,4 +1,3 @@
-// @ts-nocheck
 // All tests skipped - incomplete feature
 /**
  * Unit Tests for Canvas Refactoring Components

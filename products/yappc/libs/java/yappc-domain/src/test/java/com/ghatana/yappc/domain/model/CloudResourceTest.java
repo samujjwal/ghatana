@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("CloudResource Domain Model Tests")
 class CloudResourceTest {
 
-    private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
-    private static final UUID CLOUD_ACCOUNT_ID = UUID.randomUUID(); // GH-90000
+    private static final UUID WORKSPACE_ID = UUID.randomUUID(); 
+    private static final UUID CLOUD_ACCOUNT_ID = UUID.randomUUID(); 
     private static final CloudProvider PROVIDER = CloudProvider.AWS;
     private static final String RESOURCE_TYPE = "ec2:instance";
     private static final String IDENTIFIER = "arn:aws:ec2:us-east-1:123456789012:instance/i-1234567890abcdef0";
@@ -34,43 +34,43 @@ class CloudResourceTest {
 
         @Test
         @DisplayName("of() creates resource with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // WHEN
-            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
+            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); 
 
             // THEN
-            assertThat(resource.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(resource.getCloudAccountId()).isEqualTo(CLOUD_ACCOUNT_ID); // GH-90000
-            assertThat(resource.getProvider()).isEqualTo(PROVIDER); // GH-90000
-            assertThat(resource.getResourceType()).isEqualTo(RESOURCE_TYPE); // GH-90000
-            assertThat(resource.getIdentifier()).isEqualTo(IDENTIFIER); // GH-90000
-            assertThat(resource.getRiskScore()).isZero(); // GH-90000
-            assertThat(resource.isPublic()).isFalse(); // GH-90000
-            assertThat(resource.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(resource.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(resource.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(resource.getCloudAccountId()).isEqualTo(CLOUD_ACCOUNT_ID); 
+            assertThat(resource.getProvider()).isEqualTo(PROVIDER); 
+            assertThat(resource.getResourceType()).isEqualTo(RESOURCE_TYPE); 
+            assertThat(resource.getIdentifier()).isEqualTo(IDENTIFIER); 
+            assertThat(resource.getRiskScore()).isZero(); 
+            assertThat(resource.isPublic()).isFalse(); 
+            assertThat(resource.getCreatedAt()).isNotNull(); 
+            assertThat(resource.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException for null required fields")
-        void ofThrowsForNullRequiredFields() { // GH-90000
-            assertThatThrownBy(() -> CloudResource.of(null, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsForNullRequiredFields() { 
+            assertThatThrownBy(() -> CloudResource.of(null, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
 
-            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, null, PROVIDER, RESOURCE_TYPE, IDENTIFIER)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, null, PROVIDER, RESOURCE_TYPE, IDENTIFIER)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("cloudAccountId must not be null");
 
-            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, null, RESOURCE_TYPE, IDENTIFIER)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, null, RESOURCE_TYPE, IDENTIFIER)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("provider must not be null");
 
-            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, null, IDENTIFIER)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, null, IDENTIFIER)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("resourceType must not be null");
 
-            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("identifier must not be null");
         }
     }
@@ -81,36 +81,36 @@ class CloudResourceTest {
 
         @Test
         @DisplayName("recordSync() sets lastSyncedAt and updates timestamp")
-        void recordSyncSetsLastSyncedAtAndUpdates() { // GH-90000
+        void recordSyncSetsLastSyncedAtAndUpdates() { 
             // GIVEN
-            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
-            assertThat(resource.getLastSyncedAt()).isNull(); // GH-90000
-            Instant beforeSync = Instant.now(); // GH-90000
+            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); 
+            assertThat(resource.getLastSyncedAt()).isNull(); 
+            Instant beforeSync = Instant.now(); 
 
             // WHEN
-            CloudResource result = resource.recordSync(); // GH-90000
+            CloudResource result = resource.recordSync(); 
 
             // THEN
-            assertThat(result).isSameAs(resource); // GH-90000
-            assertThat(resource.getLastSyncedAt()).isAfterOrEqualTo(beforeSync); // GH-90000
-            assertThat(resource.getUpdatedAt()).isAfterOrEqualTo(beforeSync); // GH-90000
+            assertThat(result).isSameAs(resource); 
+            assertThat(resource.getLastSyncedAt()).isAfterOrEqualTo(beforeSync); 
+            assertThat(resource.getUpdatedAt()).isAfterOrEqualTo(beforeSync); 
         }
 
         @Test
         @DisplayName("multiple syncs update lastSyncedAt each time")
-        void multipleSyncsUpdateLastSyncedAt() throws InterruptedException { // GH-90000
+        void multipleSyncsUpdateLastSyncedAt() throws InterruptedException { 
             // GIVEN
-            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
+            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); 
 
             // WHEN
-            resource.recordSync(); // GH-90000
-            Instant firstSync = resource.getLastSyncedAt(); // GH-90000
-            Thread.sleep(10); // GH-90000
-            resource.recordSync(); // GH-90000
-            Instant secondSync = resource.getLastSyncedAt(); // GH-90000
+            resource.recordSync(); 
+            Instant firstSync = resource.getLastSyncedAt(); 
+            Thread.sleep(10); 
+            resource.recordSync(); 
+            Instant secondSync = resource.getLastSyncedAt(); 
 
             // THEN
-            assertThat(secondSync).isAfter(firstSync); // GH-90000
+            assertThat(secondSync).isAfter(firstSync); 
         }
     }
 
@@ -120,10 +120,10 @@ class CloudResourceTest {
 
         @Test
         @DisplayName("builder creates resource with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
             String tags = """
                     {"Environment": "Production", "Owner": "security-team"}
                     """;
@@ -132,62 +132,62 @@ class CloudResourceTest {
                     """;
 
             // WHEN
-            CloudResource resource = CloudResource.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .cloudAccountId(CLOUD_ACCOUNT_ID) // GH-90000
-                    .provider(PROVIDER) // GH-90000
-                    .resourceType(RESOURCE_TYPE) // GH-90000
-                    .identifier(IDENTIFIER) // GH-90000
+            CloudResource resource = CloudResource.builder() 
+                    .id(id) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .cloudAccountId(CLOUD_ACCOUNT_ID) 
+                    .provider(PROVIDER) 
+                    .resourceType(RESOURCE_TYPE) 
+                    .identifier(IDENTIFIER) 
                     .name("web-server-01")
                     .region("us-east-1")
-                    .tags(tags) // GH-90000
-                    .configuration(config) // GH-90000
-                    .riskScore(75) // GH-90000
-                    .isPublic(true) // GH-90000
-                    .lastSyncedAt(now) // GH-90000
-                    .createdAt(now) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .version(2) // GH-90000
-                    .build(); // GH-90000
+                    .tags(tags) 
+                    .configuration(config) 
+                    .riskScore(75) 
+                    .isPublic(true) 
+                    .lastSyncedAt(now) 
+                    .createdAt(now) 
+                    .updatedAt(now) 
+                    .version(2) 
+                    .build(); 
 
             // THEN
-            assertThat(resource.getId()).isEqualTo(id); // GH-90000
+            assertThat(resource.getId()).isEqualTo(id); 
             assertThat(resource.getName()).isEqualTo("web-server-01");
             assertThat(resource.getRegion()).isEqualTo("us-east-1");
-            assertThat(resource.getTags()).isEqualTo(tags); // GH-90000
-            assertThat(resource.getConfiguration()).isEqualTo(config); // GH-90000
-            assertThat(resource.getRiskScore()).isEqualTo(75); // GH-90000
-            assertThat(resource.isPublic()).isTrue(); // GH-90000
-            assertThat(resource.getVersion()).isEqualTo(2); // GH-90000
+            assertThat(resource.getTags()).isEqualTo(tags); 
+            assertThat(resource.getConfiguration()).isEqualTo(config); 
+            assertThat(resource.getRiskScore()).isEqualTo(75); 
+            assertThat(resource.isPublic()).isTrue(); 
+            assertThat(resource.getVersion()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("builder defaults riskScore to 0")
-        void builderDefaultsRiskScoreToZero() { // GH-90000
-            CloudResource resource = CloudResource.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .cloudAccountId(CLOUD_ACCOUNT_ID) // GH-90000
-                    .provider(PROVIDER) // GH-90000
-                    .resourceType(RESOURCE_TYPE) // GH-90000
-                    .identifier(IDENTIFIER) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsRiskScoreToZero() { 
+            CloudResource resource = CloudResource.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .cloudAccountId(CLOUD_ACCOUNT_ID) 
+                    .provider(PROVIDER) 
+                    .resourceType(RESOURCE_TYPE) 
+                    .identifier(IDENTIFIER) 
+                    .build(); 
 
-            assertThat(resource.getRiskScore()).isZero(); // GH-90000
+            assertThat(resource.getRiskScore()).isZero(); 
         }
 
         @Test
         @DisplayName("builder defaults isPublic to false")
-        void builderDefaultsIsPublicToFalse() { // GH-90000
-            CloudResource resource = CloudResource.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .cloudAccountId(CLOUD_ACCOUNT_ID) // GH-90000
-                    .provider(PROVIDER) // GH-90000
-                    .resourceType(RESOURCE_TYPE) // GH-90000
-                    .identifier(IDENTIFIER) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsIsPublicToFalse() { 
+            CloudResource resource = CloudResource.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .cloudAccountId(CLOUD_ACCOUNT_ID) 
+                    .provider(PROVIDER) 
+                    .resourceType(RESOURCE_TYPE) 
+                    .identifier(IDENTIFIER) 
+                    .build(); 
 
-            assertThat(resource.isPublic()).isFalse(); // GH-90000
+            assertThat(resource.isPublic()).isFalse(); 
         }
     }
 
@@ -197,22 +197,22 @@ class CloudResourceTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
             CloudResource resource1 = CloudResource.builder().id(id).resourceType("ec2:instance").build();
             CloudResource resource2 = CloudResource.builder().id(id).resourceType("s3:bucket").build();
 
-            assertThat(resource1).isEqualTo(resource2); // GH-90000
-            assertThat(resource1.hashCode()).isEqualTo(resource2.hashCode()); // GH-90000
+            assertThat(resource1).isEqualTo(resource2); 
+            assertThat(resource1.hashCode()).isEqualTo(resource2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            CloudResource resource1 = CloudResource.builder().id(UUID.randomUUID()).build(); // GH-90000
-            CloudResource resource2 = CloudResource.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            CloudResource resource1 = CloudResource.builder().id(UUID.randomUUID()).build(); 
+            CloudResource resource2 = CloudResource.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(resource1).isNotEqualTo(resource2); // GH-90000
+            assertThat(resource1).isNotEqualTo(resource2); 
         }
     }
 
@@ -222,23 +222,23 @@ class CloudResourceTest {
 
         @Test
         @DisplayName("can set various AWS resource types")
-        void canSetVariousAwsResourceTypes() { // GH-90000
+        void canSetVariousAwsResourceTypes() { 
             String[] awsTypes = {"ec2:instance", "s3:bucket", "lambda:function", "rds:instance", "iam:role"};
 
-            for (String type : awsTypes) { // GH-90000
-                CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, CloudProvider.AWS, type, IDENTIFIER); // GH-90000
-                assertThat(resource.getResourceType()).isEqualTo(type); // GH-90000
+            for (String type : awsTypes) { 
+                CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, CloudProvider.AWS, type, IDENTIFIER); 
+                assertThat(resource.getResourceType()).isEqualTo(type); 
             }
         }
 
         @Test
         @DisplayName("can set various Azure resource types")
-        void canSetVariousAzureResourceTypes() { // GH-90000
+        void canSetVariousAzureResourceTypes() { 
             String[] azureTypes = {"vm:instance", "storage:account", "function:app", "sql:database"};
 
-            for (String type : azureTypes) { // GH-90000
-                CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, CloudProvider.AZURE, type, "resource-id"); // GH-90000
-                assertThat(resource.getResourceType()).isEqualTo(type); // GH-90000
+            for (String type : azureTypes) { 
+                CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, CloudProvider.AZURE, type, "resource-id"); 
+                assertThat(resource.getResourceType()).isEqualTo(type); 
             }
         }
     }
@@ -249,29 +249,29 @@ class CloudResourceTest {
 
         @Test
         @DisplayName("can set risk score via setter")
-        void canSetRiskScoreViaSetter() { // GH-90000
-            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
+        void canSetRiskScoreViaSetter() { 
+            CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); 
 
-            resource.setRiskScore(85); // GH-90000
+            resource.setRiskScore(85); 
 
-            assertThat(resource.getRiskScore()).isEqualTo(85); // GH-90000
+            assertThat(resource.getRiskScore()).isEqualTo(85); 
         }
 
         @Test
         @DisplayName("risk score range from 0 to 100")
-        void riskScoreRangeFromZeroToHundred() { // GH-90000
-            CloudResource low = CloudResource.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .riskScore(0) // GH-90000
-                    .build(); // GH-90000
+        void riskScoreRangeFromZeroToHundred() { 
+            CloudResource low = CloudResource.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .riskScore(0) 
+                    .build(); 
 
-            CloudResource high = CloudResource.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .riskScore(100) // GH-90000
-                    .build(); // GH-90000
+            CloudResource high = CloudResource.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .riskScore(100) 
+                    .build(); 
 
-            assertThat(low.getRiskScore()).isEqualTo(0); // GH-90000
-            assertThat(high.getRiskScore()).isEqualTo(100); // GH-90000
+            assertThat(low.getRiskScore()).isEqualTo(0); 
+            assertThat(high.getRiskScore()).isEqualTo(100); 
         }
     }
 }

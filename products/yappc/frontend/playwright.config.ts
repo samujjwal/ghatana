@@ -79,7 +79,7 @@ export default defineConfig({
     // },
   ],
   webServer: {
-    command: 'pnpm --filter @yappc/web-app dev',
+    command: 'pnpm --filter @ghatana/yappc-web-app dev',
     url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:7002',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

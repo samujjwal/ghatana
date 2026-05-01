@@ -4,7 +4,11 @@
  */
 package com.ghatana.datacloud.launcher.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.analytics.export.EntityExportService;
+import com.ghatana.datacloud.entity.Entity;
+import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.datacloud.spi.EntityStore;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +23,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -415,6 +420,68 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
             HttpResponse<String> resp = get("/api/v1/entities/products/export");
 
             assertThat(resp.statusCode()).isEqualTo(501); // GH-90000
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/entities/:collection/export dry-run returns confirmation token")
+        void exportApprovalDryRun_returnsConfirmationToken() throws Exception {
+            EntityRepository repository = mock(EntityRepository.class);
+            EntityExportService exportService = new EntityExportService(repository, new ObjectMapper());
+
+            server = new DataCloudHttpServer(mockClient, port)
+                    .withExportService(exportService);
+            server.start();
+            waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS);
+
+            HttpResponse<String> resp = postJson(
+                    "/api/v1/entities/products/export",
+                    Map.of("dryRun", true, "format", "csv"));
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> body = parseJsonResponse(resp);
+            assertThat(body).containsEntry("dryRun", true);
+            assertThat(body).containsEntry("status", "DRY_RUN_COMPLETE");
+            assertThat(body.get("confirmationToken")).isInstanceOf(String.class);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/entities/:collection/export blocks unredacted PII during approved export")
+        void exportApprovalWithUnredactedPii_returns500() throws Exception {
+            EntityRepository repository = mock(EntityRepository.class);
+            EntityExportService exportService = new EntityExportService(repository, new ObjectMapper());
+
+            Entity piiEntity = new Entity();
+            piiEntity.setId(UUID.randomUUID());
+            piiEntity.setTenantId(TestConstants.TENANT_DEFAULT);
+            piiEntity.setCollectionName("products");
+            piiEntity.setData(Map.of("email", "customer@example.com", "name", "Alice"));
+
+            when(repository.findAll(
+                    eq(TestConstants.TENANT_DEFAULT),
+                    eq("products"),
+                    eq(Map.of()),
+                    eq("createdAt:ASC"),
+                    eq(0),
+                    eq(500)))
+                .thenReturn(Promise.of(List.of(piiEntity)));
+
+            server = new DataCloudHttpServer(mockClient, port)
+                    .withExportService(exportService);
+            server.start();
+            waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS);
+
+            HttpResponse<String> dryRun = postJson(
+                    "/api/v1/entities/products/export",
+                    Map.of("dryRun", true, "format", "csv"));
+            Map<String, Object> dryRunBody = parseJsonResponse(dryRun);
+            String token = String.valueOf(dryRunBody.get("confirmationToken"));
+
+            HttpResponse<String> executeResp = postJson(
+                    "/api/v1/entities/products/export",
+                    Map.of("dryRun", false, "format", "csv", "confirmationToken", token));
+
+            assertThat(executeResp.statusCode()).isEqualTo(500);
+            assertThat(executeResp.body()).contains("Governed export blocked by unredacted PII");
         }
     }
 

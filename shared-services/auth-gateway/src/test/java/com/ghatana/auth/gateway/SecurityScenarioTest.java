@@ -22,63 +22,63 @@ class SecurityScenarioTest {
 
     @Test
     @DisplayName("Should prevent SQL injection attacks")
-    void shouldPreventSqlInjectionAttacks() { // GH-90000
+    void shouldPreventSqlInjectionAttacks() { 
         String maliciousInput = "'; DROP TABLE users; --";
-        String hashed = PasswordHasher.hash(maliciousInput); // GH-90000
+        String hashed = PasswordHasher.hash(maliciousInput); 
 
-        assertThat(hashed).isNotNull(); // GH-90000
+        assertThat(hashed).isNotNull(); 
         assertThat(hashed).doesNotContain("DROP TABLE");
     }
 
     @Test
     @DisplayName("Should prevent XSS attacks")
-    void shouldPreventXssAttacks() { // GH-90000
-        String xssPayload = "<script>alert('xss')</script>"; // GH-90000
-        String hashed = PasswordHasher.hash(xssPayload); // GH-90000
+    void shouldPreventXssAttacks() { 
+        String xssPayload = "<script>alert('xss')</script>"; 
+        String hashed = PasswordHasher.hash(xssPayload); 
 
-        assertThat(hashed).isNotNull(); // GH-90000
+        assertThat(hashed).isNotNull(); 
         assertThat(hashed).doesNotContain("<script>");
     }
 
     @Test
     @DisplayName("Should prevent token manipulation")
-    void shouldPreventTokenManipulation() { // GH-90000
+    void shouldPreventTokenManipulation() { 
         String password = "validPassword123";
-        String hashed = PasswordHasher.hash(password); // GH-90000
+        String hashed = PasswordHasher.hash(password); 
 
-        assertThat(PasswordHasher.verify(password, hashed)).isTrue(); // GH-90000
-        assertThat(PasswordHasher.verify("manipulatedPassword", hashed)).isFalse(); // GH-90000
+        assertThat(PasswordHasher.verify(password, hashed)).isTrue(); 
+        assertThat(PasswordHasher.verify("manipulatedPassword", hashed)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should prevent authentication bypass")
-    void shouldPreventAuthenticationBypass() { // GH-90000
+    void shouldPreventAuthenticationBypass() { 
         String password = "securePassword";
-        String hashed = PasswordHasher.hash(password); // GH-90000
+        String hashed = PasswordHasher.hash(password); 
 
-        assertThat(PasswordHasher.verify("", hashed)).isFalse(); // GH-90000
-        assertThat(PasswordHasher.verify(null, hashed)).isFalse(); // GH-90000
+        assertThat(PasswordHasher.verify("", hashed)).isFalse(); 
+        assertThat(PasswordHasher.verify(null, hashed)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should prevent brute force attacks")
-    void shouldPreventBruteForceAttacks() { // GH-90000
+    void shouldPreventBruteForceAttacks() { 
         String password = "strongPassword123";
-        String hashed = PasswordHasher.hash(password); // GH-90000
+        String hashed = PasswordHasher.hash(password); 
 
         // Multiple failed attempts should still fail
-        assertThat(PasswordHasher.verify("guess1", hashed)).isFalse(); // GH-90000
-        assertThat(PasswordHasher.verify("guess2", hashed)).isFalse(); // GH-90000
-        assertThat(PasswordHasher.verify("guess3", hashed)).isFalse(); // GH-90000
-        assertThat(PasswordHasher.verify(password, hashed)).isTrue(); // GH-90000
+        assertThat(PasswordHasher.verify("guess1", hashed)).isFalse(); 
+        assertThat(PasswordHasher.verify("guess2", hashed)).isFalse(); 
+        assertThat(PasswordHasher.verify("guess3", hashed)).isFalse(); 
+        assertThat(PasswordHasher.verify(password, hashed)).isTrue(); 
     }
 
     @Test
     @DisplayName("Should log security events")
-    void shouldLogSecurityEvents() { // GH-90000
+    void shouldLogSecurityEvents() { 
         String password = "testPassword";
-        String hashed = PasswordHasher.hash(password); // GH-90000
+        String hashed = PasswordHasher.hash(password); 
 
-        assertThat(hashed).isNotNull(); // GH-90000
+        assertThat(hashed).isNotNull(); 
     }
 }

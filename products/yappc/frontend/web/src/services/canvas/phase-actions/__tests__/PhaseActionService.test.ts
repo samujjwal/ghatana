@@ -55,7 +55,7 @@ describe('PhaseActionService', () => {
 
   describe('Intent Phase Handlers', () => {
     it('handleCreateVision calls intent capture API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -72,7 +72,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleAddUserStory calls intent capture API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -89,7 +89,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleDefineRequirement calls intent capture API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -106,7 +106,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleAddStakeholder calls intent capture API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -123,7 +123,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleCreateGoal calls intent capture API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -146,7 +146,7 @@ describe('PhaseActionService', () => {
 
   describe('Shape Phase Handlers', () => {
     it('handleCreateDiagram calls shape derive API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -163,7 +163,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleAddService calls shape derive API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -180,7 +180,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleDefineApiContract calls shape derive API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -197,7 +197,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleAddDataModel calls shape model API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -214,7 +214,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleCreateComponent calls shape derive API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -237,7 +237,7 @@ describe('PhaseActionService', () => {
 
   describe('Validate Phase Handlers', () => {
     it('handleAddValidationRule calls validate API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -254,7 +254,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleCreateTestCase calls validate API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -271,7 +271,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleAddAcceptanceCriteria calls validate API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -294,7 +294,7 @@ describe('PhaseActionService', () => {
 
   describe('Generate Phase Handlers', () => {
     it('handleGenerateCode calls generate API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -311,7 +311,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleCreateScaffold calls generate API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -328,7 +328,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleGenerateTests calls generate API', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -351,7 +351,7 @@ describe('PhaseActionService', () => {
 
   describe('Run Phase Handlers', () => {
     it('handleDeployService creates deployment artifact', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -368,7 +368,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleExecuteTests creates test execution artifact', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -385,7 +385,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleMonitorLogs creates log monitoring artifact', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -408,7 +408,7 @@ describe('PhaseActionService', () => {
 
   describe('Improve Phase Handlers', () => {
     it('handleCreateEnhancement creates enhancement artifact', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -425,7 +425,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleRefactorCode creates refactor artifact', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -442,7 +442,7 @@ describe('PhaseActionService', () => {
     });
 
     it('handleAddFeature creates feature artifact', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => ({ success: true }),
       });
@@ -519,7 +519,7 @@ describe('PhaseActionService', () => {
     });
 
     it('throws API error when fetch fails', async () => {
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({ message: 'Internal Server Error' }),

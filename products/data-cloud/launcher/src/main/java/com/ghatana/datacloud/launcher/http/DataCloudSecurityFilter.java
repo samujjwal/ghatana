@@ -278,6 +278,17 @@ public final class DataCloudSecurityFilter {
             return Promise.of(missingTenantResponse(requestId));
         }
 
+        String requestedTenantId = requestedTenantId(request);
+        if (principalTenantId != null && !principalTenantId.isBlank()
+                && requestedTenantId != null
+                && !principalTenantId.equals(requestedTenantId)) {
+            log.warn("[DC-SEC] Rejecting request: requested tenant does not match principal tenant principal={} method={} path={} principalTenant={} requestedTenant={} requestId={}",
+                principal.getName(), method, path, principalTenantId, requestedTenantId, requestId);
+            if (enforcing) {
+                return Promise.of(forbiddenTenantMismatch());
+            }
+        }
+
         AccessLevel requiredAccess = requiredAccess(method, path, sensitivity);
         if (!hasRequiredAccess(principal, requiredAccess)) {
             log.warn("Forbidden request: principal={} method={} path={} requiredAccess={}",

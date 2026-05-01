@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
-const { mockApiClient, mockRequireTenantId } = vi.hoisted(() => ({
+const { mockApiClient, mockRequireTenantId, mockIsAlertsSurfaceEnabled } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
     post: vi.fn(),
@@ -9,6 +9,7 @@ const { mockApiClient, mockRequireTenantId } = vi.hoisted(() => ({
     delete: vi.fn(),
   },
   mockRequireTenantId: vi.fn(() => TEST_TENANT_ID),
+  mockIsAlertsSurfaceEnabled: vi.fn(() => true),
 }));
 
 class MockEventSource {
@@ -48,13 +49,31 @@ vi.mock('@/lib/auth/session', () => ({
   },
 }));
 
+vi.mock('@/lib/feature-gates', () => ({
+  isAlertsSurfaceEnabled: mockIsAlertsSurfaceEnabled,
+  isAiAlertGroupingFallbackEnabled: () => true,
+}));
+
 import { alertsService } from '@/api/alerts.service';
+import { ALERTS_UNSUPPORTED_MESSAGE } from '@/lib/runtime-boundaries';
 
 describe('alertsService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsAlertsSurfaceEnabled.mockReturnValue(true);
     vi.stubGlobal('EventSource', MockEventSource as unknown as typeof EventSource);
     vi.stubEnv('VITE_API_URL', '/api/v1');
+  });
+
+  it('fails closed before network calls when alerts surface gate is disabled', async () => {
+    mockIsAlertsSurfaceEnabled.mockReturnValue(false);
+
+    await expect(alertsService.getAlerts()).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
+    await expect(alertsService.acknowledgeAlert('alert-1')).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
+    await expect(alertsService.resolveAlert('alert-1')).rejects.toThrow(ALERTS_UNSUPPORTED_MESSAGE);
+
+    expect(mockApiClient.get).not.toHaveBeenCalled();
+    expect(mockApiClient.post).not.toHaveBeenCalled();
   });
 
   it('lists alerts from the canonical launcher envelope', async () => {

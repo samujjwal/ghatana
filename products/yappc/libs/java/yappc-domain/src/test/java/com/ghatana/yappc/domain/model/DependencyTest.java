@@ -32,77 +32,77 @@ class DependencyTest {
 
         @Test
         @DisplayName("of() creates dependency with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // GIVEN
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID projectId = UUID.randomUUID(); // GH-90000
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID projectId = UUID.randomUUID(); 
 
             // WHEN
-            Dependency dependency = Dependency.of(workspaceId, projectId, ECOSYSTEM_NPM, PACKAGE_NAME, VERSION); // GH-90000
+            Dependency dependency = Dependency.of(workspaceId, projectId, ECOSYSTEM_NPM, PACKAGE_NAME, VERSION); 
 
             // THEN
-            assertThat(dependency.getWorkspaceId()).isEqualTo(workspaceId); // GH-90000
-            assertThat(dependency.getProjectId()).isEqualTo(projectId); // GH-90000
-            assertThat(dependency.getEcosystem()).isEqualTo(ECOSYSTEM_NPM); // GH-90000
-            assertThat(dependency.getName()).isEqualTo(PACKAGE_NAME); // GH-90000
-            assertThat(dependency.getVersion()).isEqualTo(VERSION); // GH-90000
-            assertThat(dependency.isDirect()).isTrue(); // GH-90000
-            assertThat(dependency.isOutdated()).isFalse(); // GH-90000
-            assertThat(dependency.getVulnerabilityCount()).isZero(); // GH-90000
-            assertThat(dependency.getDiscoveredAt()).isNotNull(); // GH-90000
-            assertThat(dependency.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(dependency.getWorkspaceId()).isEqualTo(workspaceId); 
+            assertThat(dependency.getProjectId()).isEqualTo(projectId); 
+            assertThat(dependency.getEcosystem()).isEqualTo(ECOSYSTEM_NPM); 
+            assertThat(dependency.getName()).isEqualTo(PACKAGE_NAME); 
+            assertThat(dependency.getVersion()).isEqualTo(VERSION); 
+            assertThat(dependency.isDirect()).isTrue(); 
+            assertThat(dependency.isOutdated()).isFalse(); 
+            assertThat(dependency.getVulnerabilityCount()).isZero(); 
+            assertThat(dependency.getDiscoveredAt()).isNotNull(); 
+            assertThat(dependency.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when workspaceId is null")
-        void ofThrowsWhenWorkspaceIdNull() { // GH-90000
-            UUID projectId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenWorkspaceIdNull() { 
+            UUID projectId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> Dependency.of(null, projectId, ECOSYSTEM_NPM, PACKAGE_NAME, VERSION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> Dependency.of(null, projectId, ECOSYSTEM_NPM, PACKAGE_NAME, VERSION)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when projectId is null")
-        void ofThrowsWhenProjectIdNull() { // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenProjectIdNull() { 
+            UUID workspaceId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> Dependency.of(workspaceId, null, ECOSYSTEM_NPM, PACKAGE_NAME, VERSION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> Dependency.of(workspaceId, null, ECOSYSTEM_NPM, PACKAGE_NAME, VERSION)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("projectId must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when ecosystem is null")
-        void ofThrowsWhenEcosystemNull() { // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID projectId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenEcosystemNull() { 
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID projectId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> Dependency.of(workspaceId, projectId, null, PACKAGE_NAME, VERSION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> Dependency.of(workspaceId, projectId, null, PACKAGE_NAME, VERSION)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("ecosystem must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when name is null")
-        void ofThrowsWhenNameNull() { // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID projectId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenNameNull() { 
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID projectId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> Dependency.of(workspaceId, projectId, ECOSYSTEM_NPM, null, VERSION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> Dependency.of(workspaceId, projectId, ECOSYSTEM_NPM, null, VERSION)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("name must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when version is null")
-        void ofThrowsWhenVersionNull() { // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID projectId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenVersionNull() { 
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID projectId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> Dependency.of(workspaceId, projectId, ECOSYSTEM_NPM, PACKAGE_NAME, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> Dependency.of(workspaceId, projectId, ECOSYSTEM_NPM, PACKAGE_NAME, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("version must not be null");
         }
     }
@@ -113,88 +113,88 @@ class DependencyTest {
 
         @Test
         @DisplayName("builder creates dependency with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID projectId = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID projectId = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(workspaceId) // GH-90000
-                    .projectId(projectId) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
-                    .version(VERSION) // GH-90000
+            Dependency dependency = Dependency.builder() 
+                    .id(id) 
+                    .workspaceId(workspaceId) 
+                    .projectId(projectId) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
+                    .version(VERSION) 
                     .latestVersion("4.18.0")
-                    .isDirect(true) // GH-90000
+                    .isDirect(true) 
                     .license("MIT")
-                    .vulnerabilityCount(2) // GH-90000
+                    .vulnerabilityCount(2) 
                     .maxSeverity("HIGH")
-                    .isOutdated(true) // GH-90000
-                    .discoveredAt(now.minusSeconds(86400)) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .versionLock(5) // GH-90000
-                    .build(); // GH-90000
+                    .isOutdated(true) 
+                    .discoveredAt(now.minusSeconds(86400)) 
+                    .updatedAt(now) 
+                    .versionLock(5) 
+                    .build(); 
 
             // THEN
-            assertThat(dependency.getId()).isEqualTo(id); // GH-90000
-            assertThat(dependency.getWorkspaceId()).isEqualTo(workspaceId); // GH-90000
-            assertThat(dependency.getProjectId()).isEqualTo(projectId); // GH-90000
-            assertThat(dependency.getEcosystem()).isEqualTo(ECOSYSTEM_NPM); // GH-90000
-            assertThat(dependency.getName()).isEqualTo(PACKAGE_NAME); // GH-90000
-            assertThat(dependency.getVersion()).isEqualTo(VERSION); // GH-90000
+            assertThat(dependency.getId()).isEqualTo(id); 
+            assertThat(dependency.getWorkspaceId()).isEqualTo(workspaceId); 
+            assertThat(dependency.getProjectId()).isEqualTo(projectId); 
+            assertThat(dependency.getEcosystem()).isEqualTo(ECOSYSTEM_NPM); 
+            assertThat(dependency.getName()).isEqualTo(PACKAGE_NAME); 
+            assertThat(dependency.getVersion()).isEqualTo(VERSION); 
             assertThat(dependency.getLatestVersion()).isEqualTo("4.18.0");
-            assertThat(dependency.isDirect()).isTrue(); // GH-90000
+            assertThat(dependency.isDirect()).isTrue(); 
             assertThat(dependency.getLicense()).isEqualTo("MIT");
-            assertThat(dependency.getVulnerabilityCount()).isEqualTo(2); // GH-90000
+            assertThat(dependency.getVulnerabilityCount()).isEqualTo(2); 
             assertThat(dependency.getMaxSeverity()).isEqualTo("HIGH");
-            assertThat(dependency.isOutdated()).isTrue(); // GH-90000
-            assertThat(dependency.getVersionLock()).isEqualTo(5); // GH-90000
+            assertThat(dependency.isOutdated()).isTrue(); 
+            assertThat(dependency.getVersionLock()).isEqualTo(5); 
         }
 
         @Test
         @DisplayName("builder defaults isDirect to true")
-        void builderDefaultsIsDirectToTrue() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
-                    .version(VERSION) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsIsDirectToTrue() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
+                    .version(VERSION) 
+                    .build(); 
 
-            assertThat(dependency.isDirect()).isTrue(); // GH-90000
+            assertThat(dependency.isDirect()).isTrue(); 
         }
 
         @Test
         @DisplayName("builder defaults isOutdated to false")
-        void builderDefaultsIsOutdatedToFalse() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
-                    .version(VERSION) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsIsOutdatedToFalse() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
+                    .version(VERSION) 
+                    .build(); 
 
-            assertThat(dependency.isOutdated()).isFalse(); // GH-90000
+            assertThat(dependency.isOutdated()).isFalse(); 
         }
 
         @Test
         @DisplayName("builder defaults vulnerabilityCount to 0")
-        void builderDefaultsVulnerabilityCountToZero() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
-                    .version(VERSION) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsVulnerabilityCountToZero() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
+                    .version(VERSION) 
+                    .build(); 
 
-            assertThat(dependency.getVulnerabilityCount()).isZero(); // GH-90000
+            assertThat(dependency.getVulnerabilityCount()).isZero(); 
         }
     }
 
@@ -204,51 +204,51 @@ class DependencyTest {
 
         @Test
         @DisplayName("hasVulnerabilities() returns true when vulnerabilityCount > 0")
-        void hasVulnerabilitiesReturnsTrueWhenCountPositive() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
-                    .version(VERSION) // GH-90000
-                    .vulnerabilityCount(3) // GH-90000
-                    .build(); // GH-90000
+        void hasVulnerabilitiesReturnsTrueWhenCountPositive() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
+                    .version(VERSION) 
+                    .vulnerabilityCount(3) 
+                    .build(); 
 
-            assertThat(dependency.hasVulnerabilities()).isTrue(); // GH-90000
+            assertThat(dependency.hasVulnerabilities()).isTrue(); 
         }
 
         @Test
         @DisplayName("hasVulnerabilities() returns false when vulnerabilityCount is 0")
-        void hasVulnerabilitiesReturnsFalseWhenCountZero() { // GH-90000
-            Dependency dependency = Dependency.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID(), // GH-90000
+        void hasVulnerabilitiesReturnsFalseWhenCountZero() { 
+            Dependency dependency = Dependency.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID(), 
                     ECOSYSTEM_NPM,
                     PACKAGE_NAME,
                     VERSION
             );
 
-            assertThat(dependency.hasVulnerabilities()).isFalse(); // GH-90000
+            assertThat(dependency.hasVulnerabilities()).isFalse(); 
         }
 
         @Test
         @DisplayName("can track severity levels")
-        void canTrackSeverityLevels() { // GH-90000
+        void canTrackSeverityLevels() { 
             String[] severities = {"CRITICAL", "HIGH", "MEDIUM", "LOW"};
 
-            for (String severity : severities) { // GH-90000
-                Dependency dependency = Dependency.builder() // GH-90000
-                        .workspaceId(UUID.randomUUID()) // GH-90000
-                        .projectId(UUID.randomUUID()) // GH-90000
-                        .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                        .name(PACKAGE_NAME) // GH-90000
-                        .version(VERSION) // GH-90000
-                        .vulnerabilityCount(1) // GH-90000
-                        .maxSeverity(severity) // GH-90000
-                        .build(); // GH-90000
+            for (String severity : severities) { 
+                Dependency dependency = Dependency.builder() 
+                        .workspaceId(UUID.randomUUID()) 
+                        .projectId(UUID.randomUUID()) 
+                        .ecosystem(ECOSYSTEM_NPM) 
+                        .name(PACKAGE_NAME) 
+                        .version(VERSION) 
+                        .vulnerabilityCount(1) 
+                        .maxSeverity(severity) 
+                        .build(); 
 
-                assertThat(dependency.getMaxSeverity()).isEqualTo(severity); // GH-90000
-                assertThat(dependency.hasVulnerabilities()).isTrue(); // GH-90000
+                assertThat(dependency.getMaxSeverity()).isEqualTo(severity); 
+                assertThat(dependency.hasVulnerabilities()).isTrue(); 
             }
         }
     }
@@ -259,46 +259,46 @@ class DependencyTest {
 
         @Test
         @DisplayName("hasUpdate() returns true when latestVersion differs")
-        void hasUpdateReturnsTrueWhenVersionDiffers() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
+        void hasUpdateReturnsTrueWhenVersionDiffers() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
                     .version("4.17.21")
                     .latestVersion("4.18.0")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(dependency.hasUpdate()).isTrue(); // GH-90000
+            assertThat(dependency.hasUpdate()).isTrue(); 
         }
 
         @Test
         @DisplayName("hasUpdate() returns false when version equals latestVersion")
-        void hasUpdateReturnsFalseWhenVersionsEqual() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
+        void hasUpdateReturnsFalseWhenVersionsEqual() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
                     .version("4.17.21")
                     .latestVersion("4.17.21")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(dependency.hasUpdate()).isFalse(); // GH-90000
+            assertThat(dependency.hasUpdate()).isFalse(); 
         }
 
         @Test
         @DisplayName("hasUpdate() returns false when latestVersion is null")
-        void hasUpdateReturnsFalseWhenLatestVersionNull() { // GH-90000
-            Dependency dependency = Dependency.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID(), // GH-90000
+        void hasUpdateReturnsFalseWhenLatestVersionNull() { 
+            Dependency dependency = Dependency.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID(), 
                     ECOSYSTEM_NPM,
                     PACKAGE_NAME,
                     VERSION
             );
 
-            assertThat(dependency.hasUpdate()).isFalse(); // GH-90000
+            assertThat(dependency.hasUpdate()).isFalse(); 
         }
     }
 
@@ -308,10 +308,10 @@ class DependencyTest {
 
         @Test
         @DisplayName("can create npm dependencies")
-        void canCreateNpmDependency() { // GH-90000
-            Dependency dependency = Dependency.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID(), // GH-90000
+        void canCreateNpmDependency() { 
+            Dependency dependency = Dependency.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID(), 
                     "npm",
                     "express",
                     "4.18.2"
@@ -322,10 +322,10 @@ class DependencyTest {
 
         @Test
         @DisplayName("can create maven dependencies")
-        void canCreateMavenDependency() { // GH-90000
-            Dependency dependency = Dependency.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID(), // GH-90000
+        void canCreateMavenDependency() { 
+            Dependency dependency = Dependency.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID(), 
                     "maven",
                     "org.springframework:spring-core",
                     "6.1.0"
@@ -336,10 +336,10 @@ class DependencyTest {
 
         @Test
         @DisplayName("can create pip dependencies")
-        void canCreatePipDependency() { // GH-90000
-            Dependency dependency = Dependency.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID(), // GH-90000
+        void canCreatePipDependency() { 
+            Dependency dependency = Dependency.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID(), 
                     "pip",
                     "requests",
                     "2.31.0"
@@ -350,10 +350,10 @@ class DependencyTest {
 
         @Test
         @DisplayName("can create nuget dependencies")
-        void canCreateNugetDependency() { // GH-90000
-            Dependency dependency = Dependency.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID(), // GH-90000
+        void canCreateNugetDependency() { 
+            Dependency dependency = Dependency.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID(), 
                     "nuget",
                     "Newtonsoft.Json",
                     "13.0.3"
@@ -369,20 +369,20 @@ class DependencyTest {
 
         @Test
         @DisplayName("can track various license types")
-        void canTrackVariousLicenseTypes() { // GH-90000
+        void canTrackVariousLicenseTypes() { 
             String[] licenses = {"MIT", "Apache-2.0", "GPL-3.0", "BSD-3-Clause", "ISC", "MPL-2.0"};
 
-            for (String license : licenses) { // GH-90000
-                Dependency dependency = Dependency.builder() // GH-90000
-                        .workspaceId(UUID.randomUUID()) // GH-90000
-                        .projectId(UUID.randomUUID()) // GH-90000
-                        .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                        .name(PACKAGE_NAME) // GH-90000
-                        .version(VERSION) // GH-90000
-                        .license(license) // GH-90000
-                        .build(); // GH-90000
+            for (String license : licenses) { 
+                Dependency dependency = Dependency.builder() 
+                        .workspaceId(UUID.randomUUID()) 
+                        .projectId(UUID.randomUUID()) 
+                        .ecosystem(ECOSYSTEM_NPM) 
+                        .name(PACKAGE_NAME) 
+                        .version(VERSION) 
+                        .license(license) 
+                        .build(); 
 
-                assertThat(dependency.getLicense()).isEqualTo(license); // GH-90000
+                assertThat(dependency.getLicense()).isEqualTo(license); 
             }
         }
     }
@@ -393,17 +393,17 @@ class DependencyTest {
 
         @Test
         @DisplayName("can mark dependency as transitive")
-        void canMarkAsTransitive() { // GH-90000
-            Dependency dependency = Dependency.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .projectId(UUID.randomUUID()) // GH-90000
-                    .ecosystem(ECOSYSTEM_NPM) // GH-90000
-                    .name(PACKAGE_NAME) // GH-90000
-                    .version(VERSION) // GH-90000
-                    .isDirect(false) // GH-90000
-                    .build(); // GH-90000
+        void canMarkAsTransitive() { 
+            Dependency dependency = Dependency.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .projectId(UUID.randomUUID()) 
+                    .ecosystem(ECOSYSTEM_NPM) 
+                    .name(PACKAGE_NAME) 
+                    .version(VERSION) 
+                    .isDirect(false) 
+                    .build(); 
 
-            assertThat(dependency.isDirect()).isFalse(); // GH-90000
+            assertThat(dependency.isDirect()).isFalse(); 
         }
     }
 
@@ -413,22 +413,22 @@ class DependencyTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
             Dependency dep1 = Dependency.builder().id(id).ecosystem("npm").name("a").version("1").build();
             Dependency dep2 = Dependency.builder().id(id).ecosystem("pip").name("b").version("2").build();
 
-            assertThat(dep1).isEqualTo(dep2); // GH-90000
-            assertThat(dep1.hashCode()).isEqualTo(dep2.hashCode()); // GH-90000
+            assertThat(dep1).isEqualTo(dep2); 
+            assertThat(dep1.hashCode()).isEqualTo(dep2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            Dependency dep1 = Dependency.builder().id(UUID.randomUUID()).build(); // GH-90000
-            Dependency dep2 = Dependency.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            Dependency dep1 = Dependency.builder().id(UUID.randomUUID()).build(); 
+            Dependency dep2 = Dependency.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(dep1).isNotEqualTo(dep2); // GH-90000
+            assertThat(dep1).isNotEqualTo(dep2); 
         }
     }
 }

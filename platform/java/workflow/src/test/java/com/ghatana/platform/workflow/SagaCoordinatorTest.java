@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.workflow;
@@ -25,186 +25,186 @@ class SagaCoordinatorTest {
 
     @Test
     @DisplayName("completes saga successfully when all steps succeed")
-    void completesSuccessfully() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void completesSuccessfully() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step1 = SagaStep.builder() // GH-90000
+        SagaStep step1 = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of("result", "step1"), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of("result", "step1"), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step2 = SagaStep.builder() // GH-90000
+        SagaStep step2 = SagaStep.builder() 
             .name("step2")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of("result", "step2"), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of("result", "step2"), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaCoordinator.SagaResult result = coordinator.execute( // GH-90000
+        SagaCoordinator.SagaResult result = coordinator.execute( 
             "saga-1",
-            List.of(step1, step2), // GH-90000
+            List.of(step1, step2), 
             SagaPolicy.BACKWARD_COMPENSATION
-        ).getResult(); // GH-90000
+        ).getResult(); 
 
-        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.COMPLETED); // GH-90000
-        assertThat(result.stepResults()).hasSize(2); // GH-90000
-        assertThat(result.stepResults().get(0).success()).isTrue(); // GH-90000
-        assertThat(result.stepResults().get(1).success()).isTrue(); // GH-90000
+        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.COMPLETED); 
+        assertThat(result.stepResults()).hasSize(2); 
+        assertThat(result.stepResults().get(0).success()).isTrue(); 
+        assertThat(result.stepResults().get(1).success()).isTrue(); 
     }
 
     @Test
     @DisplayName("compensates steps on failure with backward compensation policy")
-    void compensatesOnFailure() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void compensatesOnFailure() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step1 = SagaStep.builder() // GH-90000
+        SagaStep step1 = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step2 = SagaStep.builder() // GH-90000
+        SagaStep step2 = SagaStep.builder() 
             .name("step2")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step3 = SagaStep.builder() // GH-90000
+        SagaStep step3 = SagaStep.builder() 
             .name("step3")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaCoordinator.SagaResult result = coordinator.execute( // GH-90000
+        SagaCoordinator.SagaResult result = coordinator.execute( 
             "saga-2",
-            List.of(step1, step2, step3), // GH-90000
+            List.of(step1, step2, step3), 
             SagaPolicy.BACKWARD_COMPENSATION
-        ).getResult(); // GH-90000
+        ).getResult(); 
 
-        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.COMPENSATED); // GH-90000
+        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.COMPENSATED); 
     }
 
     @Test
     @DisplayName("continues with forward recovery policy on failure")
-    void continuesWithForwardRecovery() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void continuesWithForwardRecovery() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step1 = SagaStep.builder() // GH-90000
+        SagaStep step1 = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step2 = SagaStep.builder() // GH-90000
+        SagaStep step2 = SagaStep.builder() 
             .name("step2")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step3 = SagaStep.builder() // GH-90000
+        SagaStep step3 = SagaStep.builder() 
             .name("step3")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step3", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaCoordinator.SagaResult result = coordinator.execute( // GH-90000
+        SagaCoordinator.SagaResult result = coordinator.execute( 
             "saga-3",
-            List.of(step1, step2, step3), // GH-90000
+            List.of(step1, step2, step3), 
             SagaPolicy.FORWARD_RECOVERY
-        ).getResult(); // GH-90000
+        ).getResult(); 
 
         // With forward recovery, it should complete all steps despite failure
-        assertThat(result.stepResults()).hasSize(3); // GH-90000
+        assertThat(result.stepResults()).hasSize(3); 
     }
 
     @Test
     @DisplayName("fails immediately with none policy on failure")
-    void failsWithNonePolicy() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void failsWithNonePolicy() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step1 = SagaStep.builder() // GH-90000
+        SagaStep step1 = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step2 = SagaStep.builder() // GH-90000
+        SagaStep step2 = SagaStep.builder() 
             .name("step2")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaCoordinator.SagaResult result = coordinator.execute( // GH-90000
+        SagaCoordinator.SagaResult result = coordinator.execute( 
             "saga-4",
-            List.of(step1, step2), // GH-90000
+            List.of(step1, step2), 
             SagaPolicy.NONE
-        ).getResult(); // GH-90000
+        ).getResult(); 
 
-        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.FAILED); // GH-90000
-        assertThat(result.stepResults()).hasSize(2); // Both steps attempted // GH-90000
+        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.FAILED); 
+        assertThat(result.stepResults()).hasSize(2); // Both steps attempted 
     }
 
     @Test
     @DisplayName("tracks active and completed executions")
-    void tracksExecutions() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void tracksExecutions() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step = SagaStep.builder() // GH-90000
+        SagaStep step = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        coordinator.execute("saga-5", List.of(step), SagaPolicy.BACKWARD_COMPENSATION).getResult(); // GH-90000
+        coordinator.execute("saga-5", List.of(step), SagaPolicy.BACKWARD_COMPENSATION).getResult(); 
 
-        assertThat(coordinator.getActiveExecutions()).isEmpty(); // GH-90000
-        assertThat(coordinator.getCompletedExecutions()).hasSize(1); // GH-90000
+        assertThat(coordinator.getActiveExecutions()).isEmpty(); 
+        assertThat(coordinator.getCompletedExecutions()).hasSize(1); 
         assertThat(coordinator.getCompletedExecution("saga-5")).isPresent();
     }
 
     @Test
     @DisplayName("handles partial compensation failure")
-    void handlesPartialCompensationFailure() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void handlesPartialCompensationFailure() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step1 = SagaStep.builder() // GH-90000
+        SagaStep step1 = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        SagaStep step2 = SagaStep.builder() // GH-90000
+        SagaStep step2 = SagaStep.builder() 
             .name("step2")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", false, "Compensation failed", Map.of(), "Compensation failed"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step2", false, "Step 2 failed", Map.of(), "Failed"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step2", false, "Compensation failed", Map.of(), "Compensation failed"))) 
+            .build(); 
 
-        SagaCoordinator.SagaResult result = coordinator.execute( // GH-90000
+        SagaCoordinator.SagaResult result = coordinator.execute( 
             "saga-6",
-            List.of(step1, step2), // GH-90000
+            List.of(step1, step2), 
             SagaPolicy.BACKWARD_COMPENSATION
-        ).getResult(); // GH-90000
+        ).getResult(); 
 
-        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.PARTIALLY_COMPENSATED); // GH-90000
+        assertThat(result.status()).isEqualTo(SagaCoordinator.SagaStatus.PARTIALLY_COMPENSATED); 
     }
 
     @Test
     @DisplayName("clears completed executions")
-    void clearsCompletedExecutions() { // GH-90000
-        SagaCoordinator coordinator = new SagaCoordinator(); // GH-90000
+    void clearsCompletedExecutions() { 
+        SagaCoordinator coordinator = new SagaCoordinator(); 
 
-        SagaStep step = SagaStep.builder() // GH-90000
+        SagaStep step = SagaStep.builder() 
             .name("step1")
-            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) // GH-90000
-            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) // GH-90000
-            .build(); // GH-90000
+            .execute(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Success"))) 
+            .compensate(Promise.of(new SagaStep.SagaStepResult("step1", true, null, Map.of(), "Compensated"))) 
+            .build(); 
 
-        coordinator.execute("saga-7", List.of(step), SagaPolicy.BACKWARD_COMPENSATION).getResult(); // GH-90000
+        coordinator.execute("saga-7", List.of(step), SagaPolicy.BACKWARD_COMPENSATION).getResult(); 
 
-        assertThat(coordinator.getCompletedExecutions()).hasSize(1); // GH-90000
+        assertThat(coordinator.getCompletedExecutions()).hasSize(1); 
 
-        coordinator.clearAllCompleted(); // GH-90000
+        coordinator.clearAllCompleted(); 
 
-        assertThat(coordinator.getCompletedExecutions()).isEmpty(); // GH-90000
+        assertThat(coordinator.getCompletedExecutions()).isEmpty(); 
     }
 }

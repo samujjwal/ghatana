@@ -223,6 +223,14 @@ export const INSIGHTS_REGISTRY_REQUEST_NOTE =
 export const COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING =
   'Predictive query routing is not exposed by the current Data Cloud API.';
 
+export const COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE =
+  'Query optimization suggestions are not exposed by the current Data Cloud launcher API. '
+  + 'The cost-report endpoint provides per-collection cost data only.';
+
+export const COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE =
+  'Applying query optimization suggestions is not exposed by the current Data Cloud launcher API. '
+  + 'Use the collection migrate endpoint to change storage tiers instead.';
+
 export const QUALITY_CORRELATION_BOUNDARY_PREFIX =
   'Quality correlation is not exposed by the current Data Cloud API';
 
@@ -250,6 +258,15 @@ export const SETTINGS_PREFERENCES_BOUNDARY_MESSAGE =
 export const SETTINGS_NOTIFICATION_PREFS_BOUNDARY_MESSAGE =
   'Notification preference updates are not exposed by the current Data Cloud launcher API. Notification routing requires the notification backend.';
 
+export const SETTINGS_SURFACE_DISABLED_MESSAGE =
+  'Settings surface is disabled by runtime feature-gate policy for this deployment profile.';
+
+export const MEMORY_SURFACE_BOUNDARY_MESSAGE =
+  'Memory Plane APIs are disabled by runtime feature-gate policy for this deployment profile.';
+
+export const CONTEXT_SURFACE_BOUNDARY_MESSAGE =
+  'Context Explorer APIs are disabled by runtime feature-gate policy for this deployment profile.';
+
 // ── AI operations boundaries ─────────────────────────────────────────────────
 
 export const AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE =
@@ -269,6 +286,15 @@ export const AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE =
 
 export const AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE =
   'AI fabric tier advisories are not exposed by the current Data Cloud launcher. Fabric placement scoring requires the ML platform backend.';
+
+export const ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE =
+  'Analytics AI features (query suggestions, policy evaluation) are disabled by runtime feature-gate policy for this deployment profile.';
+
+export const BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE =
+  'Brain autonomy operations are disabled by runtime feature-gate policy for this deployment profile.';
+
+export const AI_OBSERVABILITY_DISABLED_BOUNDARY_MESSAGE =
+  'AI observability and quality-summary APIs are disabled by runtime feature-gate policy for this deployment profile.';
 
 export class UnsupportedRuntimeBoundaryError extends Error {
   constructor(message: string) {

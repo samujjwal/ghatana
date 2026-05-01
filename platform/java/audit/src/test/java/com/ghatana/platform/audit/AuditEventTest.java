@@ -22,19 +22,19 @@ class AuditEventTest {
 
         @Test
         @DisplayName("should build event with all fields")
-        void shouldBuildWithAllFields() { // GH-90000
-            var now = Instant.now(); // GH-90000
-            var event = AuditEvent.builder() // GH-90000
+        void shouldBuildWithAllFields() { 
+            var now = Instant.now(); 
+            var event = AuditEvent.builder() 
                     .id("evt-1")
                     .tenantId("tenant-1")
                     .eventType("USER_LOGIN")
                     .principal("user@example.com")
                     .resourceType("Session")
                     .resourceId("session-123")
-                    .success(true) // GH-90000
-                    .timestamp(now) // GH-90000
-                    .detail("ip", "192.168.1.1") // GH-90000
-                    .build(); // GH-90000
+                    .success(true) 
+                    .timestamp(now) 
+                    .detail("ip", "192.168.1.1") 
+                    .build(); 
 
             assertThat(event.getId()).isEqualTo("evt-1");
             assertThat(event.getTenantId()).isEqualTo("tenant-1");
@@ -42,52 +42,52 @@ class AuditEventTest {
             assertThat(event.getPrincipal()).isEqualTo("user@example.com");
             assertThat(event.getResourceType()).isEqualTo("Session");
             assertThat(event.getResourceId()).isEqualTo("session-123");
-            assertThat(event.getSuccess()).isTrue(); // GH-90000
-            assertThat(event.getTimestamp()).isEqualTo(now); // GH-90000
+            assertThat(event.getSuccess()).isTrue(); 
+            assertThat(event.getTimestamp()).isEqualTo(now); 
             assertThat(event.getDetail("ip")).isEqualTo("192.168.1.1");
         }
 
         @Test
         @DisplayName("should generate id when not provided")
-        void shouldGenerateIdWhenMissing() { // GH-90000
-            var event = AuditEvent.builder() // GH-90000
+        void shouldGenerateIdWhenMissing() { 
+            var event = AuditEvent.builder() 
                     .tenantId("t1")
                     .eventType("TEST")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(event.getId()).isNotNull().isNotEmpty(); // GH-90000
+            assertThat(event.getId()).isNotNull().isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should generate timestamp when not provided")
-        void shouldGenerateTimestampWhenMissing() { // GH-90000
-            var before = Instant.now(); // GH-90000
-            var event = AuditEvent.builder() // GH-90000
+        void shouldGenerateTimestampWhenMissing() { 
+            var before = Instant.now(); 
+            var event = AuditEvent.builder() 
                     .tenantId("t1")
                     .eventType("TEST")
-                    .build(); // GH-90000
-            var after = Instant.now(); // GH-90000
+                    .build(); 
+            var after = Instant.now(); 
 
-            assertThat(event.getTimestamp()).isBetween(before, after); // GH-90000
+            assertThat(event.getTimestamp()).isBetween(before, after); 
         }
 
         @Test
         @DisplayName("should reject null tenantId")
-        void shouldRejectNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> AuditEvent.builder() // GH-90000
+        void shouldRejectNullTenantId() { 
+            assertThatThrownBy(() -> AuditEvent.builder() 
                     .eventType("TEST")
-                    .build()) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .build()) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("tenantId");
         }
 
         @Test
         @DisplayName("should reject null eventType")
-        void shouldRejectNullEventType() { // GH-90000
-            assertThatThrownBy(() -> AuditEvent.builder() // GH-90000
+        void shouldRejectNullEventType() { 
+            assertThatThrownBy(() -> AuditEvent.builder() 
                     .tenantId("t1")
-                    .build()) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+                    .build()) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("eventType");
         }
     }
@@ -98,28 +98,28 @@ class AuditEventTest {
 
         @Test
         @DisplayName("details map should be unmodifiable")
-        void detailsShouldBeUnmodifiable() { // GH-90000
-            var event = AuditEvent.builder() // GH-90000
+        void detailsShouldBeUnmodifiable() { 
+            var event = AuditEvent.builder() 
                     .tenantId("t1")
                     .eventType("TEST")
-                    .detail("key", "value") // GH-90000
-                    .build(); // GH-90000
+                    .detail("key", "value") 
+                    .build(); 
 
-            assertThatThrownBy(() -> event.getDetails().put("bad", "entry")) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+            assertThatThrownBy(() -> event.getDetails().put("bad", "entry")) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("should support bulk details via map")
-        void shouldSupportBulkDetails() { // GH-90000
-            var details = Map.<String, Object>of("a", 1, "b", 2); // GH-90000
-            var event = AuditEvent.builder() // GH-90000
+        void shouldSupportBulkDetails() { 
+            var details = Map.<String, Object>of("a", 1, "b", 2); 
+            var event = AuditEvent.builder() 
                     .tenantId("t1")
                     .eventType("TEST")
-                    .details(details) // GH-90000
-                    .build(); // GH-90000
+                    .details(details) 
+                    .build(); 
 
-            assertThat(event.getDetails()).containsEntry("a", 1).containsEntry("b", 2); // GH-90000
+            assertThat(event.getDetails()).containsEntry("a", 1).containsEntry("b", 2); 
         }
     }
 }

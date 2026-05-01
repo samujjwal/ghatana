@@ -18,6 +18,10 @@ import {
   ALERTS_UNSUPPORTED_MESSAGE,
   createRuntimeBoundaryError,
 } from "@/lib/runtime-boundaries";
+import {
+  isAiAlertGroupingFallbackEnabled,
+  isAlertsSurfaceEnabled,
+} from "@/lib/feature-gates";
 
 export { ALERTS_UNSUPPORTED_MESSAGE } from "@/lib/runtime-boundaries";
 
@@ -198,9 +202,16 @@ function normaliseApiError(error: unknown): never {
   throw error instanceof Error ? error : new Error("Unknown alerts API error");
 }
 
+function assertAlertsSurfaceEnabled(): void {
+  if (!isAlertsSurfaceEnabled()) {
+    throw createRuntimeBoundaryError(ALERTS_UNSUPPORTED_MESSAGE);
+  }
+}
+
 export class AlertsService {
   /** List active and historical alerts */
   async getAlerts(params: AlertQueryParams = {}): Promise<Alert[]> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId(params.tenantId);
     try {
       const response = await apiClient.get("/alerts", {
@@ -218,6 +229,7 @@ export class AlertsService {
 
   /** Acknowledge an alert */
   async acknowledgeAlert(alertId: string): Promise<Alert> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.post(
@@ -236,6 +248,7 @@ export class AlertsService {
 
   /** Resolve an alert */
   async resolveAlert(alertId: string): Promise<Alert> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.post(
@@ -254,6 +267,7 @@ export class AlertsService {
 
   /** Get AI-detected correlated alert groups */
   async getAlertGroups(): Promise<AlertGroup[]> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get("/alerts/groups", {
@@ -265,8 +279,14 @@ export class AlertsService {
         return parsedGroups;
       }
 
-      const alerts = await this.getAlerts({ status: 'active', tenantId });
-      return buildFallbackAlertGroups(alerts);
+      if (isAiAlertGroupingFallbackEnabled()) {
+        const alerts = await this.getAlerts({ status: 'active', tenantId });
+        return buildFallbackAlertGroups(alerts);
+      }
+
+      throw createRuntimeBoundaryError(
+        'AI alert correlation groups are currently unavailable. Enable VITE_FEATURE_AI_ALERT_GROUPING_FALLBACK to use heuristic grouping in non-production profiles.'
+      );
     } catch (error) {
       return normaliseApiError(error);
     }
@@ -274,6 +294,7 @@ export class AlertsService {
 
   /** Auto-resolve a correlated alert group */
   async resolveGroup(groupId: string): Promise<void> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       await apiClient.post(
@@ -291,6 +312,7 @@ export class AlertsService {
 
   /** Get AI resolution suggestions for active alerts */
   async getResolutionSuggestions(): Promise<ResolutionSuggestion[]> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get("/alerts/suggestions", {
@@ -305,6 +327,7 @@ export class AlertsService {
 
   /** Apply an AI resolution suggestion */
   async applySuggestion(suggestionId: string): Promise<void> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       await apiClient.post(
@@ -322,6 +345,7 @@ export class AlertsService {
 
   /** Open an SSE stream for live alert events */
   openStream(): EventSource {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     const query = new URLSearchParams({
       tenantId,
@@ -335,6 +359,7 @@ export class AlertsService {
 
   /** List all configured alert rules */
   async listAlertRules(): Promise<AlertRule[]> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.get("/alerts/rules", {
@@ -349,6 +374,7 @@ export class AlertsService {
 
   /** Create a new alert rule */
   async createAlertRule(rule: Omit<AlertRule, "id">): Promise<AlertRule> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.post("/alerts/rules", rule, {
@@ -366,6 +392,7 @@ export class AlertsService {
     ruleId: string,
     rule: Partial<AlertRule>,
   ): Promise<AlertRule> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       const response = await apiClient.put(`/alerts/rules/${ruleId}`, rule, {
@@ -380,6 +407,7 @@ export class AlertsService {
 
   /** Delete an alert rule */
   async deleteAlertRule(ruleId: string): Promise<void> {
+    assertAlertsSurfaceEnabled();
     const tenantId = getTenantId();
     try {
       await apiClient.delete(`/alerts/rules/${ruleId}`, {

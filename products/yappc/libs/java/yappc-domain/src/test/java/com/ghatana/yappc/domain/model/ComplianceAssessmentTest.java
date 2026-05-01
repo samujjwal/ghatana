@@ -30,45 +30,45 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("of() creates assessment with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // GIVEN
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID frameworkId = UUID.randomUUID(); // GH-90000
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID frameworkId = UUID.randomUUID(); 
 
             // WHEN
-            ComplianceAssessment assessment = ComplianceAssessment.of(workspaceId, frameworkId); // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.of(workspaceId, frameworkId); 
 
             // THEN
-            assertThat(assessment.getWorkspaceId()).isEqualTo(workspaceId); // GH-90000
-            assertThat(assessment.getFrameworkId()).isEqualTo(frameworkId); // GH-90000
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); // GH-90000
-            assertThat(assessment.getTotalControls()).isZero(); // GH-90000
-            assertThat(assessment.getPassedControls()).isZero(); // GH-90000
-            assertThat(assessment.getFailedControls()).isZero(); // GH-90000
-            assertThat(assessment.getNaControls()).isZero(); // GH-90000
-            assertThat(assessment.getScore()).isZero(); // GH-90000
-            assertThat(assessment.getStartedAt()).isNotNull(); // GH-90000
-            assertThat(assessment.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(assessment.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(assessment.getWorkspaceId()).isEqualTo(workspaceId); 
+            assertThat(assessment.getFrameworkId()).isEqualTo(frameworkId); 
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); 
+            assertThat(assessment.getTotalControls()).isZero(); 
+            assertThat(assessment.getPassedControls()).isZero(); 
+            assertThat(assessment.getFailedControls()).isZero(); 
+            assertThat(assessment.getNaControls()).isZero(); 
+            assertThat(assessment.getScore()).isZero(); 
+            assertThat(assessment.getStartedAt()).isNotNull(); 
+            assertThat(assessment.getCreatedAt()).isNotNull(); 
+            assertThat(assessment.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when workspaceId is null")
-        void ofThrowsWhenWorkspaceIdNull() { // GH-90000
-            UUID frameworkId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenWorkspaceIdNull() { 
+            UUID frameworkId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> ComplianceAssessment.of(null, frameworkId)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> ComplianceAssessment.of(null, frameworkId)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when frameworkId is null")
-        void ofThrowsWhenFrameworkIdNull() { // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
+        void ofThrowsWhenFrameworkIdNull() { 
+            UUID workspaceId = UUID.randomUUID(); 
 
-            assertThatThrownBy(() -> ComplianceAssessment.of(workspaceId, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> ComplianceAssessment.of(workspaceId, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("frameworkId must not be null");
         }
     }
@@ -79,53 +79,53 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("builder creates assessment with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            UUID workspaceId = UUID.randomUUID(); // GH-90000
-            UUID frameworkId = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            UUID workspaceId = UUID.randomUUID(); 
+            UUID frameworkId = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(workspaceId) // GH-90000
-                    .frameworkId(frameworkId) // GH-90000
-                    .status(STATUS_COMPLETED) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(85) // GH-90000
-                    .failedControls(10) // GH-90000
-                    .naControls(5) // GH-90000
-                    .score(89) // 85/(100-5)*100 = 89.47 rounded // GH-90000
-                    .startedAt(now.minusSeconds(3600)) // GH-90000
-                    .assessedAt(now) // GH-90000
-                    .createdAt(now.minusSeconds(7200)) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .version(3) // GH-90000
-                    .build(); // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .id(id) 
+                    .workspaceId(workspaceId) 
+                    .frameworkId(frameworkId) 
+                    .status(STATUS_COMPLETED) 
+                    .totalControls(100) 
+                    .passedControls(85) 
+                    .failedControls(10) 
+                    .naControls(5) 
+                    .score(89) // 85/(100-5)*100 = 89.47 rounded 
+                    .startedAt(now.minusSeconds(3600)) 
+                    .assessedAt(now) 
+                    .createdAt(now.minusSeconds(7200)) 
+                    .updatedAt(now) 
+                    .version(3) 
+                    .build(); 
 
             // THEN
-            assertThat(assessment.getId()).isEqualTo(id); // GH-90000
-            assertThat(assessment.getWorkspaceId()).isEqualTo(workspaceId); // GH-90000
-            assertThat(assessment.getFrameworkId()).isEqualTo(frameworkId); // GH-90000
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); // GH-90000
-            assertThat(assessment.getTotalControls()).isEqualTo(100); // GH-90000
-            assertThat(assessment.getPassedControls()).isEqualTo(85); // GH-90000
-            assertThat(assessment.getFailedControls()).isEqualTo(10); // GH-90000
-            assertThat(assessment.getNaControls()).isEqualTo(5); // GH-90000
-            assertThat(assessment.getScore()).isEqualTo(89); // GH-90000
-            assertThat(assessment.getVersion()).isEqualTo(3); // GH-90000
+            assertThat(assessment.getId()).isEqualTo(id); 
+            assertThat(assessment.getWorkspaceId()).isEqualTo(workspaceId); 
+            assertThat(assessment.getFrameworkId()).isEqualTo(frameworkId); 
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); 
+            assertThat(assessment.getTotalControls()).isEqualTo(100); 
+            assertThat(assessment.getPassedControls()).isEqualTo(85); 
+            assertThat(assessment.getFailedControls()).isEqualTo(10); 
+            assertThat(assessment.getNaControls()).isEqualTo(5); 
+            assertThat(assessment.getScore()).isEqualTo(89); 
+            assertThat(assessment.getVersion()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("builder defaults status to IN_PROGRESS")
-        void builderDefaultsStatusToInProgress() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsStatusToInProgress() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .build(); 
 
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); // GH-90000
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); 
         }
     }
 
@@ -135,119 +135,119 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("calculateScore() computes correct percentage")
-        void calculateScoreComputesCorrectPercentage() { // GH-90000
-            // GIVEN: 80 passed out of 100 total (0 N/A) = 80% // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(80) // GH-90000
-                    .failedControls(20) // GH-90000
-                    .naControls(0) // GH-90000
-                    .build(); // GH-90000
+        void calculateScoreComputesCorrectPercentage() { 
+            // GIVEN: 80 passed out of 100 total (0 N/A) = 80% 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(100) 
+                    .passedControls(80) 
+                    .failedControls(20) 
+                    .naControls(0) 
+                    .build(); 
 
             // WHEN
-            assessment.calculateScore(); // GH-90000
+            assessment.calculateScore(); 
 
             // THEN
-            assertThat(assessment.getScore()).isEqualTo(80); // GH-90000
+            assertThat(assessment.getScore()).isEqualTo(80); 
         }
 
         @Test
         @DisplayName("calculateScore() excludes N/A controls from denominator")
-        void calculateScoreExcludesNotApplicable() { // GH-90000
-            // GIVEN: 80 passed, 10 failed, 10 N/A = 80/(100-10)*100 = 88.89 -> 89 // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(80) // GH-90000
-                    .failedControls(10) // GH-90000
-                    .naControls(10) // GH-90000
-                    .build(); // GH-90000
+        void calculateScoreExcludesNotApplicable() { 
+            // GIVEN: 80 passed, 10 failed, 10 N/A = 80/(100-10)*100 = 88.89 -> 89 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(100) 
+                    .passedControls(80) 
+                    .failedControls(10) 
+                    .naControls(10) 
+                    .build(); 
 
             // WHEN
-            assessment.calculateScore(); // GH-90000
+            assessment.calculateScore(); 
 
             // THEN
-            // 80 / (100 - 10) * 100 = 88.89 // GH-90000
-            assertThat(assessment.getScore()).isGreaterThanOrEqualTo(88); // GH-90000
-            assertThat(assessment.getScore()).isLessThanOrEqualTo(89); // GH-90000
+            // 80 / (100 - 10) * 100 = 88.89 
+            assertThat(assessment.getScore()).isGreaterThanOrEqualTo(88); 
+            assertThat(assessment.getScore()).isLessThanOrEqualTo(89); 
         }
 
         @Test
         @DisplayName("calculateScore() returns 0 when all controls are N/A")
-        void calculateScoreReturnsZeroWhenAllNotApplicable() { // GH-90000
+        void calculateScoreReturnsZeroWhenAllNotApplicable() { 
             // GIVEN: All controls are N/A, avoid division by zero
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(50) // GH-90000
-                    .passedControls(0) // GH-90000
-                    .failedControls(0) // GH-90000
-                    .naControls(50) // GH-90000
-                    .build(); // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(50) 
+                    .passedControls(0) 
+                    .failedControls(0) 
+                    .naControls(50) 
+                    .build(); 
 
             // WHEN
-            assessment.calculateScore(); // GH-90000
+            assessment.calculateScore(); 
 
             // THEN
-            assertThat(assessment.getScore()).isZero(); // GH-90000
+            assertThat(assessment.getScore()).isZero(); 
         }
 
         @Test
         @DisplayName("calculateScore() returns 100 for perfect score")
-        void calculateScoreReturns100ForPerfectScore() { // GH-90000
+        void calculateScoreReturns100ForPerfectScore() { 
             // GIVEN: All applicable controls passed
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(90) // GH-90000
-                    .failedControls(0) // GH-90000
-                    .naControls(10) // GH-90000
-                    .build(); // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(100) 
+                    .passedControls(90) 
+                    .failedControls(0) 
+                    .naControls(10) 
+                    .build(); 
 
             // WHEN
-            assessment.calculateScore(); // GH-90000
+            assessment.calculateScore(); 
 
             // THEN
-            assertThat(assessment.getScore()).isEqualTo(100); // GH-90000
+            assertThat(assessment.getScore()).isEqualTo(100); 
         }
 
         @Test
         @DisplayName("calculateScore() returns 0 when no controls passed")
-        void calculateScoreReturns0WhenNoPassed() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(50) // GH-90000
-                    .passedControls(0) // GH-90000
-                    .failedControls(50) // GH-90000
-                    .naControls(0) // GH-90000
-                    .build(); // GH-90000
+        void calculateScoreReturns0WhenNoPassed() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(50) 
+                    .passedControls(0) 
+                    .failedControls(50) 
+                    .naControls(0) 
+                    .build(); 
 
             // WHEN
-            assessment.calculateScore(); // GH-90000
+            assessment.calculateScore(); 
 
             // THEN
-            assertThat(assessment.getScore()).isZero(); // GH-90000
+            assertThat(assessment.getScore()).isZero(); 
         }
 
         @Test
         @DisplayName("calculateScore() returns this for fluent chaining")
-        void calculateScoreReturnsSelfForChaining() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(80) // GH-90000
-                    .failedControls(20) // GH-90000
-                    .build(); // GH-90000
+        void calculateScoreReturnsSelfForChaining() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(100) 
+                    .passedControls(80) 
+                    .failedControls(20) 
+                    .build(); 
 
-            ComplianceAssessment result = assessment.calculateScore(); // GH-90000
+            ComplianceAssessment result = assessment.calculateScore(); 
 
-            assertThat(result).isSameAs(assessment); // GH-90000
+            assertThat(result).isSameAs(assessment); 
         }
     }
 
@@ -257,55 +257,55 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("complete() sets status to COMPLETED and assessedAt")
-        void completeSetsStatusAndTimestamp() { // GH-90000
+        void completeSetsStatusAndTimestamp() { 
             // GIVEN
-            ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID() // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID() 
             );
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); // GH-90000
-            assertThat(assessment.getAssessedAt()).isNull(); // GH-90000
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); 
+            assertThat(assessment.getAssessedAt()).isNull(); 
 
             // WHEN
-            assessment.complete(); // GH-90000
+            assessment.complete(); 
 
             // THEN
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); // GH-90000
-            assertThat(assessment.getAssessedAt()).isNotNull(); // GH-90000
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); 
+            assertThat(assessment.getAssessedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("complete() also calculates the score")
-        void completeAlsoCalculatesScore() { // GH-90000
+        void completeAlsoCalculatesScore() { 
             // GIVEN
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(75) // GH-90000
-                    .failedControls(25) // GH-90000
-                    .naControls(0) // GH-90000
-                    .build(); // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(100) 
+                    .passedControls(75) 
+                    .failedControls(25) 
+                    .naControls(0) 
+                    .build(); 
 
             // WHEN
-            assessment.complete(); // GH-90000
+            assessment.complete(); 
 
             // THEN
-            assertThat(assessment.getScore()).isEqualTo(75); // GH-90000
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); // GH-90000
+            assertThat(assessment.getScore()).isEqualTo(75); 
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); 
         }
 
         @Test
         @DisplayName("complete() returns this for fluent chaining")
-        void completeReturnsSelfForChaining() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID() // GH-90000
+        void completeReturnsSelfForChaining() { 
+            ComplianceAssessment assessment = ComplianceAssessment.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID() 
             );
 
-            ComplianceAssessment result = assessment.complete(); // GH-90000
+            ComplianceAssessment result = assessment.complete(); 
 
-            assertThat(result).isSameAs(assessment); // GH-90000
+            assertThat(result).isSameAs(assessment); 
         }
     }
 
@@ -315,61 +315,61 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("isPassing() returns true when score >= 80")
-        void isPassingReturnsTrueWhenScoreAbove80() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .score(85) // GH-90000
-                    .build(); // GH-90000
+        void isPassingReturnsTrueWhenScoreAbove80() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .score(85) 
+                    .build(); 
 
-            assertThat(assessment.isPassing()).isTrue(); // GH-90000
+            assertThat(assessment.isPassing()).isTrue(); 
         }
 
         @Test
         @DisplayName("isPassing() returns true when score == 80")
-        void isPassingReturnsTrueWhenScoreEquals80() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .score(80) // GH-90000
-                    .build(); // GH-90000
+        void isPassingReturnsTrueWhenScoreEquals80() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .score(80) 
+                    .build(); 
 
-            assertThat(assessment.isPassing()).isTrue(); // GH-90000
+            assertThat(assessment.isPassing()).isTrue(); 
         }
 
         @Test
         @DisplayName("isPassing() returns false when score < 80")
-        void isPassingReturnsFalseWhenScoreBelow80() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .score(79) // GH-90000
-                    .build(); // GH-90000
+        void isPassingReturnsFalseWhenScoreBelow80() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .score(79) 
+                    .build(); 
 
-            assertThat(assessment.isPassing()).isFalse(); // GH-90000
+            assertThat(assessment.isPassing()).isFalse(); 
         }
 
         @Test
         @DisplayName("isPassing() returns false for score of 0")
-        void isPassingReturnsFalseForZeroScore() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID() // GH-90000
+        void isPassingReturnsFalseForZeroScore() { 
+            ComplianceAssessment assessment = ComplianceAssessment.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID() 
             );
 
-            assertThat(assessment.isPassing()).isFalse(); // GH-90000
+            assertThat(assessment.isPassing()).isFalse(); 
         }
 
         @Test
         @DisplayName("isPassing() returns true for perfect score")
-        void isPassingReturnsTrueForPerfectScore() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .score(100) // GH-90000
-                    .build(); // GH-90000
+        void isPassingReturnsTrueForPerfectScore() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .score(100) 
+                    .build(); 
 
-            assertThat(assessment.isPassing()).isTrue(); // GH-90000
+            assertThat(assessment.isPassing()).isTrue(); 
         }
     }
 
@@ -379,22 +379,22 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            ComplianceAssessment assessment1 = ComplianceAssessment.builder().id(id).workspaceId(UUID.randomUUID()).build(); // GH-90000
-            ComplianceAssessment assessment2 = ComplianceAssessment.builder().id(id).workspaceId(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
+            ComplianceAssessment assessment1 = ComplianceAssessment.builder().id(id).workspaceId(UUID.randomUUID()).build(); 
+            ComplianceAssessment assessment2 = ComplianceAssessment.builder().id(id).workspaceId(UUID.randomUUID()).build(); 
 
-            assertThat(assessment1).isEqualTo(assessment2); // GH-90000
-            assertThat(assessment1.hashCode()).isEqualTo(assessment2.hashCode()); // GH-90000
+            assertThat(assessment1).isEqualTo(assessment2); 
+            assertThat(assessment1.hashCode()).isEqualTo(assessment2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            ComplianceAssessment assessment1 = ComplianceAssessment.builder().id(UUID.randomUUID()).build(); // GH-90000
-            ComplianceAssessment assessment2 = ComplianceAssessment.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            ComplianceAssessment assessment1 = ComplianceAssessment.builder().id(UUID.randomUUID()).build(); 
+            ComplianceAssessment assessment2 = ComplianceAssessment.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(assessment1).isNotEqualTo(assessment2); // GH-90000
+            assertThat(assessment1).isNotEqualTo(assessment2); 
         }
     }
 
@@ -404,38 +404,38 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("full lifecycle: create -> set results -> complete")
-        void fullLifecycle() { // GH-90000
+        void fullLifecycle() { 
             // GIVEN: Create assessment
-            ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
-                    UUID.randomUUID(), // GH-90000
-                    UUID.randomUUID() // GH-90000
+            ComplianceAssessment assessment = ComplianceAssessment.of( 
+                    UUID.randomUUID(), 
+                    UUID.randomUUID() 
             );
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); // GH-90000
-            assertThat(assessment.getStartedAt()).isNotNull(); // GH-90000
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_IN_PROGRESS); 
+            assertThat(assessment.getStartedAt()).isNotNull(); 
 
             // WHEN: Set control results
-            assessment.setTotalControls(50); // GH-90000
-            assessment.setPassedControls(45); // GH-90000
-            assessment.setFailedControls(5); // GH-90000
+            assessment.setTotalControls(50); 
+            assessment.setPassedControls(45); 
+            assessment.setFailedControls(5); 
 
             // WHEN: Complete
-            assessment.complete(); // GH-90000
+            assessment.complete(); 
 
             // THEN
-            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); // GH-90000
-            assertThat(assessment.getScore()).isEqualTo(90); // GH-90000
-            assertThat(assessment.isPassing()).isTrue(); // GH-90000
-            assertThat(assessment.getAssessedAt()).isNotNull(); // GH-90000
+            assertThat(assessment.getStatus()).isEqualTo(STATUS_COMPLETED); 
+            assertThat(assessment.getScore()).isEqualTo(90); 
+            assertThat(assessment.isPassing()).isTrue(); 
+            assertThat(assessment.getAssessedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("can store JSON details")
-        void canStoreJsonDetails() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .details("{\"controls\": [{\"id\": \"1\", \"status\": \"PASSED\"}]}") // GH-90000
-                    .build(); // GH-90000
+        void canStoreJsonDetails() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .details("{\"controls\": [{\"id\": \"1\", \"status\": \"PASSED\"}]}") 
+                    .build(); 
 
             assertThat(assessment.getDetails()).contains("controls");
             assertThat(assessment.getDetails()).contains("PASSED");
@@ -448,21 +448,21 @@ class ComplianceAssessmentTest {
 
         @Test
         @DisplayName("control counts sum correctly")
-        void controlCountsSumCorrectly() { // GH-90000
-            ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
-                    .workspaceId(UUID.randomUUID()) // GH-90000
-                    .frameworkId(UUID.randomUUID()) // GH-90000
-                    .totalControls(100) // GH-90000
-                    .passedControls(70) // GH-90000
-                    .failedControls(20) // GH-90000
-                    .naControls(10) // GH-90000
-                    .build(); // GH-90000
+        void controlCountsSumCorrectly() { 
+            ComplianceAssessment assessment = ComplianceAssessment.builder() 
+                    .workspaceId(UUID.randomUUID()) 
+                    .frameworkId(UUID.randomUUID()) 
+                    .totalControls(100) 
+                    .passedControls(70) 
+                    .failedControls(20) 
+                    .naControls(10) 
+                    .build(); 
 
-            int sumOfParts = assessment.getPassedControls() + // GH-90000
-                            assessment.getFailedControls() + // GH-90000
-                            assessment.getNaControls(); // GH-90000
+            int sumOfParts = assessment.getPassedControls() + 
+                            assessment.getFailedControls() + 
+                            assessment.getNaControls(); 
 
-            assertThat(sumOfParts).isEqualTo(assessment.getTotalControls()); // GH-90000
+            assertThat(sumOfParts).isEqualTo(assessment.getTotalControls()); 
         }
     }
 }

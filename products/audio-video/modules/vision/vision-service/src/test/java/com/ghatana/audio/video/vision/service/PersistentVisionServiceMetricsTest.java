@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.audio.video.vision.service;
@@ -51,44 +51,44 @@ class PersistentVisionServiceMetricsTest {
     private Timer detectTimer;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        meterRegistry = new SimpleMeterRegistry(); // GH-90000
+    void setUp() { 
+        meterRegistry = new SimpleMeterRegistry(); 
         // Constructing the real PersistentVisionService registers the timer
         // with publishPercentiles(0.50, 0.95, 0.99) and publishPercentileHistogram().
-        new PersistentVisionService(detector, frameExtractor, audioFileService, meterRegistry); // GH-90000
-        detectTimer = meterRegistry.find("vision.persistent.detect").timer(); // GH-90000
+        new PersistentVisionService(detector, frameExtractor, audioFileService, meterRegistry); 
+        detectTimer = meterRegistry.find("vision.persistent.detect").timer(); 
     }
 
     @Test
     @DisplayName("vision.persistent.detect timer registered after service construction")
-    void detectTimer_registeredInRegistry_afterConstruction() { // GH-90000
-        assertThat(detectTimer).isNotNull(); // GH-90000
+    void detectTimer_registeredInRegistry_afterConstruction() { 
+        assertThat(detectTimer).isNotNull(); 
     }
 
     @Test
     @DisplayName("vision.persistent.detect P50 percentile is tracked (not NaN) after recording")
-    void detectTimer_p50Percentile_trackedAfterRecording() { // GH-90000
-        detectTimer.record(50, TimeUnit.MILLISECONDS); // GH-90000
+    void detectTimer_p50Percentile_trackedAfterRecording() { 
+        detectTimer.record(50, TimeUnit.MILLISECONDS); 
 
         assertThat(detectTimer.percentile(0.50, TimeUnit.MILLISECONDS))
-            .isNotNaN(); // GH-90000
+            .isNotNaN(); 
     }
 
     @Test
     @DisplayName("vision.persistent.detect P95 percentile is tracked (not NaN) after recording")
-    void detectTimer_p95Percentile_trackedAfterRecording() { // GH-90000
-        detectTimer.record(100, TimeUnit.MILLISECONDS); // GH-90000
+    void detectTimer_p95Percentile_trackedAfterRecording() { 
+        detectTimer.record(100, TimeUnit.MILLISECONDS); 
 
         assertThat(detectTimer.percentile(0.95, TimeUnit.MILLISECONDS))
-            .isNotNaN(); // GH-90000
+            .isNotNaN(); 
     }
 
     @Test
     @DisplayName("vision.persistent.detect P99 percentile is tracked (not NaN) after recording")
-    void detectTimer_p99Percentile_trackedAfterRecording() { // GH-90000
-        detectTimer.record(300, TimeUnit.MILLISECONDS); // GH-90000
+    void detectTimer_p99Percentile_trackedAfterRecording() { 
+        detectTimer.record(300, TimeUnit.MILLISECONDS); 
 
         assertThat(detectTimer.percentile(0.99, TimeUnit.MILLISECONDS))
-            .isNotNaN(); // GH-90000
+            .isNotNaN(); 
     }
 }

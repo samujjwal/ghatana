@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("CloudAccount Domain Model Tests")
 class CloudAccountTest {
 
-    private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
+    private static final UUID WORKSPACE_ID = UUID.randomUUID(); 
     private static final CloudProvider PROVIDER = CloudProvider.AWS;
     private static final String ACCOUNT_ID = "123456789012";
     private static final String ACCOUNT_NAME = "Production AWS Account";
@@ -33,50 +33,50 @@ class CloudAccountTest {
 
         @Test
         @DisplayName("of() creates account with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // WHEN
-            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); // GH-90000
+            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); 
 
             // THEN
-            assertThat(account.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(account.getProvider()).isEqualTo(PROVIDER); // GH-90000
-            assertThat(account.getAccountId()).isEqualTo(ACCOUNT_ID); // GH-90000
-            assertThat(account.getName()).isEqualTo(ACCOUNT_NAME); // GH-90000
-            assertThat(account.isEnabled()).isTrue(); // GH-90000
+            assertThat(account.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(account.getProvider()).isEqualTo(PROVIDER); 
+            assertThat(account.getAccountId()).isEqualTo(ACCOUNT_ID); 
+            assertThat(account.getName()).isEqualTo(ACCOUNT_NAME); 
+            assertThat(account.isEnabled()).isTrue(); 
             assertThat(account.getConnectionStatus()).isEqualTo("PENDING");
-            assertThat(account.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(account.getUpdatedAt()).isNotNull(); // GH-90000
+            assertThat(account.getCreatedAt()).isNotNull(); 
+            assertThat(account.getUpdatedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when workspaceId is null")
-        void ofThrowsWhenWorkspaceIdNull() { // GH-90000
-            assertThatThrownBy(() -> CloudAccount.of(null, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenWorkspaceIdNull() { 
+            assertThatThrownBy(() -> CloudAccount.of(null, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when provider is null")
-        void ofThrowsWhenProviderNull() { // GH-90000
-            assertThatThrownBy(() -> CloudAccount.of(WORKSPACE_ID, null, ACCOUNT_ID, ACCOUNT_NAME)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenProviderNull() { 
+            assertThatThrownBy(() -> CloudAccount.of(WORKSPACE_ID, null, ACCOUNT_ID, ACCOUNT_NAME)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("provider must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when accountId is null")
-        void ofThrowsWhenAccountIdNull() { // GH-90000
-            assertThatThrownBy(() -> CloudAccount.of(WORKSPACE_ID, PROVIDER, null, ACCOUNT_NAME)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenAccountIdNull() { 
+            assertThatThrownBy(() -> CloudAccount.of(WORKSPACE_ID, PROVIDER, null, ACCOUNT_NAME)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("accountId must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when name is null")
-        void ofThrowsWhenNameNull() { // GH-90000
-            assertThatThrownBy(() -> CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenNameNull() { 
+            assertThatThrownBy(() -> CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("name must not be null");
         }
     }
@@ -87,67 +87,67 @@ class CloudAccountTest {
 
         @Test
         @DisplayName("markConnected() updates status and timestamp")
-        void markConnectedUpdatesStatusAndTimestamp() { // GH-90000
+        void markConnectedUpdatesStatusAndTimestamp() { 
             // GIVEN
-            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); // GH-90000
-            Instant beforeConnect = Instant.now(); // GH-90000
+            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); 
+            Instant beforeConnect = Instant.now(); 
 
             // WHEN
-            CloudAccount result = account.markConnected(); // GH-90000
+            CloudAccount result = account.markConnected(); 
 
             // THEN
-            assertThat(result).isSameAs(account); // Fluent chaining // GH-90000
+            assertThat(result).isSameAs(account); // Fluent chaining 
             assertThat(account.getConnectionStatus()).isEqualTo("CONNECTED");
-            assertThat(account.getLastConnectedAt()).isNotNull(); // GH-90000
-            assertThat(account.getLastConnectedAt()).isAfterOrEqualTo(beforeConnect); // GH-90000
-            assertThat(account.getUpdatedAt()).isAfterOrEqualTo(beforeConnect); // GH-90000
+            assertThat(account.getLastConnectedAt()).isNotNull(); 
+            assertThat(account.getLastConnectedAt()).isAfterOrEqualTo(beforeConnect); 
+            assertThat(account.getUpdatedAt()).isAfterOrEqualTo(beforeConnect); 
         }
 
         @Test
         @DisplayName("markDisconnected() updates status")
-        void markDisconnectedUpdatesStatus() { // GH-90000
+        void markDisconnectedUpdatesStatus() { 
             // GIVEN
-            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); // GH-90000
-            account.markConnected(); // GH-90000
-            Instant lastConnected = account.getLastConnectedAt(); // GH-90000
+            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); 
+            account.markConnected(); 
+            Instant lastConnected = account.getLastConnectedAt(); 
 
             // WHEN
-            CloudAccount result = account.markDisconnected(); // GH-90000
+            CloudAccount result = account.markDisconnected(); 
 
             // THEN
-            assertThat(result).isSameAs(account); // GH-90000
+            assertThat(result).isSameAs(account); 
             assertThat(account.getConnectionStatus()).isEqualTo("DISCONNECTED");
-            assertThat(account.getLastConnectedAt()).isEqualTo(lastConnected); // Not cleared // GH-90000
+            assertThat(account.getLastConnectedAt()).isEqualTo(lastConnected); // Not cleared 
         }
 
         @Test
         @DisplayName("disable() sets enabled to false")
-        void disableSetsEnabledFalse() { // GH-90000
+        void disableSetsEnabledFalse() { 
             // GIVEN
-            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); // GH-90000
-            assertThat(account.isEnabled()).isTrue(); // GH-90000
+            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); 
+            assertThat(account.isEnabled()).isTrue(); 
 
             // WHEN
-            CloudAccount result = account.disable(); // GH-90000
+            CloudAccount result = account.disable(); 
 
             // THEN
-            assertThat(result).isSameAs(account); // GH-90000
-            assertThat(account.isEnabled()).isFalse(); // GH-90000
+            assertThat(result).isSameAs(account); 
+            assertThat(account.isEnabled()).isFalse(); 
         }
 
         @Test
         @DisplayName("state transitions can be chained")
-        void stateTransitionsCanBeChained() { // GH-90000
+        void stateTransitionsCanBeChained() { 
             // GIVEN
-            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); // GH-90000
+            CloudAccount account = CloudAccount.of(WORKSPACE_ID, PROVIDER, ACCOUNT_ID, ACCOUNT_NAME); 
 
             // WHEN
-            account.markConnected().markDisconnected().disable(); // GH-90000
+            account.markConnected().markDisconnected().disable(); 
 
             // THEN
             assertThat(account.getConnectionStatus()).isEqualTo("DISCONNECTED");
-            assertThat(account.isEnabled()).isFalse(); // GH-90000
-            assertThat(account.getLastConnectedAt()).isNotNull(); // GH-90000
+            assertThat(account.isEnabled()).isFalse(); 
+            assertThat(account.getLastConnectedAt()).isNotNull(); 
         }
     }
 
@@ -157,66 +157,66 @@ class CloudAccountTest {
 
         @Test
         @DisplayName("builder creates account with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            CloudAccount account = CloudAccount.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .provider(PROVIDER) // GH-90000
-                    .accountId(ACCOUNT_ID) // GH-90000
-                    .name(ACCOUNT_NAME) // GH-90000
+            CloudAccount account = CloudAccount.builder() 
+                    .id(id) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .provider(PROVIDER) 
+                    .accountId(ACCOUNT_ID) 
+                    .name(ACCOUNT_NAME) 
                     .region("us-east-1")
                     .externalId("ext-12345")
                     .roleArn("arn:aws:iam::123456789012:role/SecurityAudit")
-                    .enabled(true) // GH-90000
+                    .enabled(true) 
                     .connectionStatus("CONNECTED")
-                    .lastConnectedAt(now) // GH-90000
-                    .createdAt(now) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .version(1) // GH-90000
-                    .build(); // GH-90000
+                    .lastConnectedAt(now) 
+                    .createdAt(now) 
+                    .updatedAt(now) 
+                    .version(1) 
+                    .build(); 
 
             // THEN
-            assertThat(account.getId()).isEqualTo(id); // GH-90000
-            assertThat(account.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(account.getProvider()).isEqualTo(PROVIDER); // GH-90000
-            assertThat(account.getAccountId()).isEqualTo(ACCOUNT_ID); // GH-90000
-            assertThat(account.getName()).isEqualTo(ACCOUNT_NAME); // GH-90000
+            assertThat(account.getId()).isEqualTo(id); 
+            assertThat(account.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(account.getProvider()).isEqualTo(PROVIDER); 
+            assertThat(account.getAccountId()).isEqualTo(ACCOUNT_ID); 
+            assertThat(account.getName()).isEqualTo(ACCOUNT_NAME); 
             assertThat(account.getRegion()).isEqualTo("us-east-1");
             assertThat(account.getExternalId()).isEqualTo("ext-12345");
             assertThat(account.getRoleArn()).isEqualTo("arn:aws:iam::123456789012:role/SecurityAudit");
-            assertThat(account.isEnabled()).isTrue(); // GH-90000
+            assertThat(account.isEnabled()).isTrue(); 
             assertThat(account.getConnectionStatus()).isEqualTo("CONNECTED");
-            assertThat(account.getLastConnectedAt()).isEqualTo(now); // GH-90000
-            assertThat(account.getVersion()).isEqualTo(1); // GH-90000
+            assertThat(account.getLastConnectedAt()).isEqualTo(now); 
+            assertThat(account.getVersion()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("builder defaults enabled to true")
-        void builderDefaultsEnabledToTrue() { // GH-90000
-            CloudAccount account = CloudAccount.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .provider(PROVIDER) // GH-90000
-                    .accountId(ACCOUNT_ID) // GH-90000
-                    .name(ACCOUNT_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsEnabledToTrue() { 
+            CloudAccount account = CloudAccount.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .provider(PROVIDER) 
+                    .accountId(ACCOUNT_ID) 
+                    .name(ACCOUNT_NAME) 
+                    .build(); 
 
-            assertThat(account.isEnabled()).isTrue(); // GH-90000
+            assertThat(account.isEnabled()).isTrue(); 
         }
 
         @Test
         @DisplayName("builder defaults connectionStatus to PENDING")
-        void builderDefaultsConnectionStatusToPending() { // GH-90000
-            CloudAccount account = CloudAccount.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .provider(PROVIDER) // GH-90000
-                    .accountId(ACCOUNT_ID) // GH-90000
-                    .name(ACCOUNT_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsConnectionStatusToPending() { 
+            CloudAccount account = CloudAccount.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .provider(PROVIDER) 
+                    .accountId(ACCOUNT_ID) 
+                    .name(ACCOUNT_NAME) 
+                    .build(); 
 
             assertThat(account.getConnectionStatus()).isEqualTo("PENDING");
         }
@@ -228,22 +228,22 @@ class CloudAccountTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            CloudAccount account1 = CloudAccount.builder().id(id).provider(CloudProvider.AWS).build(); // GH-90000
-            CloudAccount account2 = CloudAccount.builder().id(id).provider(CloudProvider.GCP).build(); // GH-90000
+        void equalsReturnsTrueForSameId() { 
+            UUID id = UUID.randomUUID(); 
+            CloudAccount account1 = CloudAccount.builder().id(id).provider(CloudProvider.AWS).build(); 
+            CloudAccount account2 = CloudAccount.builder().id(id).provider(CloudProvider.GCP).build(); 
 
-            assertThat(account1).isEqualTo(account2); // GH-90000
-            assertThat(account1.hashCode()).isEqualTo(account2.hashCode()); // GH-90000
+            assertThat(account1).isEqualTo(account2); 
+            assertThat(account1.hashCode()).isEqualTo(account2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            CloudAccount account1 = CloudAccount.builder().id(UUID.randomUUID()).build(); // GH-90000
-            CloudAccount account2 = CloudAccount.builder().id(UUID.randomUUID()).build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            CloudAccount account1 = CloudAccount.builder().id(UUID.randomUUID()).build(); 
+            CloudAccount account2 = CloudAccount.builder().id(UUID.randomUUID()).build(); 
 
-            assertThat(account1).isNotEqualTo(account2); // GH-90000
+            assertThat(account1).isNotEqualTo(account2); 
         }
     }
 
@@ -253,29 +253,29 @@ class CloudAccountTest {
 
         @Test
         @DisplayName("can create account for each cloud provider")
-        void canCreateAccountForEachProvider() { // GH-90000
-            for (CloudProvider provider : CloudProvider.values()) { // GH-90000
-                CloudAccount account = CloudAccount.of(WORKSPACE_ID, provider, "account-" + provider.name(), provider.getDisplayName()); // GH-90000
+        void canCreateAccountForEachProvider() { 
+            for (CloudProvider provider : CloudProvider.values()) { 
+                CloudAccount account = CloudAccount.of(WORKSPACE_ID, provider, "account-" + provider.name(), provider.getDisplayName()); 
 
-                assertThat(account.getProvider()).isEqualTo(provider); // GH-90000
-                assertThat(account.getAccountId()).isEqualTo("account-" + provider.name()); // GH-90000
+                assertThat(account.getProvider()).isEqualTo(provider); 
+                assertThat(account.getAccountId()).isEqualTo("account-" + provider.name()); 
             }
         }
 
         @Test
         @DisplayName("AWS account has role ARN support")
-        void awsAccountHasRoleArnSupport() { // GH-90000
-            CloudAccount awsAccount = CloudAccount.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .provider(CloudProvider.AWS) // GH-90000
-                    .accountId(ACCOUNT_ID) // GH-90000
+        void awsAccountHasRoleArnSupport() { 
+            CloudAccount awsAccount = CloudAccount.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .provider(CloudProvider.AWS) 
+                    .accountId(ACCOUNT_ID) 
                     .name("AWS Prod")
                     .roleArn("arn:aws:iam::123456789012:role/SecurityAudit")
                     .externalId("unique-external-id")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(awsAccount.getRoleArn()).isNotNull(); // GH-90000
-            assertThat(awsAccount.getExternalId()).isNotNull(); // GH-90000
+            assertThat(awsAccount.getRoleArn()).isNotNull(); 
+            assertThat(awsAccount.getExternalId()).isNotNull(); 
         }
     }
 }

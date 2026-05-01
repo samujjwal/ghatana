@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana // GH-90000
+ * Copyright (c) 2026 Ghatana 
  */
 package com.ghatana.services.auth;
 
@@ -24,107 +24,107 @@ class TenantExtractorTest extends EventloopTestBase {
     private TenantExtractor extractor;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        extractor = new TenantExtractor(); // GH-90000
+    void setUp() { 
+        extractor = new TenantExtractor(); 
     }
 
     @Test
     @DisplayName("Should extract tenant from X-Tenant-Id header")
-    void testExtractFromHeader() throws Exception { // GH-90000
+    void testExtractFromHeader() throws Exception { 
         HttpRequest request = HttpRequest.get("http://localhost:8080/api/users")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-123")
-            .build(); // GH-90000
+            .build(); 
 
-        Promise<Optional<String>> promise = extractor.extractTenant(request); // GH-90000
-        Optional<String> tenantId = runPromise(() -> promise); // GH-90000
+        Promise<Optional<String>> promise = extractor.extractTenant(request); 
+        Optional<String> tenantId = runPromise(() -> promise); 
 
-        assertThat(tenantId).isPresent(); // GH-90000
+        assertThat(tenantId).isPresent(); 
         assertThat(tenantId.get()).isEqualTo("tenant-123");
     }
 
     @Test
     @DisplayName("Should extract tenant from JWT token")
-    void testExtractFromJwt() throws Exception { // GH-90000
+    void testExtractFromJwt() throws Exception { 
         // Mock JWT with tenant claim
         String mockJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnRJZCI6ImFjbWUtY29ycCJ9.mock";
 
         HttpRequest request = HttpRequest.get("http://localhost:8080/api/users")
             .withHeader(HttpHeaders.of("Authorization"), "Bearer " + mockJwt)
-            .build(); // GH-90000
+            .build(); 
 
-        Promise<Optional<String>> promise = extractor.extractTenant(request); // GH-90000
-        Optional<String> tenantId = runPromise(() -> promise); // GH-90000
+        Promise<Optional<String>> promise = extractor.extractTenant(request); 
+        Optional<String> tenantId = runPromise(() -> promise); 
 
         // In real implementation, would decode JWT and extract tenant
-        assertThat(tenantId).isNotNull(); // GH-90000
+        assertThat(tenantId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should extract tenant from URL path")
-    void testExtractFromPath() throws Exception { // GH-90000
+    void testExtractFromPath() throws Exception { 
         HttpRequest request = HttpRequest.get("http://localhost:8080/tenants/acme-corp/api/users").build();
 
-        Promise<Optional<String>> promise = extractor.extractTenant(request); // GH-90000
-        Optional<String> tenantId = runPromise(() -> promise); // GH-90000
+        Promise<Optional<String>> promise = extractor.extractTenant(request); 
+        Optional<String> tenantId = runPromise(() -> promise); 
 
-        assertThat(tenantId).isPresent(); // GH-90000
+        assertThat(tenantId).isPresent(); 
         assertThat(tenantId.get()).isEqualTo("acme-corp");
     }
 
     @Test
     @DisplayName("Should extract tenant from subdomain")
-    void testExtractFromSubdomain() throws Exception { // GH-90000
+    void testExtractFromSubdomain() throws Exception { 
         HttpRequest request = HttpRequest.get("http://acme-corp.localhost:8080/api/users").build();
 
-        Promise<Optional<String>> promise = extractor.extractTenant(request); // GH-90000
-        Optional<String> tenantId = runPromise(() -> promise); // GH-90000
+        Promise<Optional<String>> promise = extractor.extractTenant(request); 
+        Optional<String> tenantId = runPromise(() -> promise); 
 
-        assertThat(tenantId).isPresent(); // GH-90000
+        assertThat(tenantId).isPresent(); 
         assertThat(tenantId.get()).isEqualTo("acme-corp");
     }
 
     @Test
     @DisplayName("Should return empty when no tenant found")
-    void testNoTenantFound() throws Exception { // GH-90000
+    void testNoTenantFound() throws Exception { 
         HttpRequest request = HttpRequest.get("http://localhost:8080/api/users").build();
 
-        Promise<Optional<String>> promise = extractor.extractTenant(request); // GH-90000
-        Optional<String> tenantId = runPromise(() -> promise); // GH-90000
+        Promise<Optional<String>> promise = extractor.extractTenant(request); 
+        Optional<String> tenantId = runPromise(() -> promise); 
 
-        assertThat(tenantId).isEmpty(); // GH-90000
+        assertThat(tenantId).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should prioritize header over other strategies")
-    void testPriorityHeader() throws Exception { // GH-90000
+    void testPriorityHeader() throws Exception { 
         // Request with both header and path tenant
         HttpRequest request = HttpRequest.get("http://localhost:8080/tenants/path-tenant/api/users")
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "header-tenant")
-            .build(); // GH-90000
+            .build(); 
 
-        Promise<Optional<String>> promise = extractor.extractTenant(request); // GH-90000
-        Optional<String> tenantId = runPromise(() -> promise); // GH-90000
+        Promise<Optional<String>> promise = extractor.extractTenant(request); 
+        Optional<String> tenantId = runPromise(() -> promise); 
 
         // Header should take priority
-        assertThat(tenantId).isPresent(); // GH-90000
+        assertThat(tenantId).isPresent(); 
         assertThat(tenantId.get()).isEqualTo("header-tenant");
     }
 
     @Test
     @DisplayName("Should validate tenant ID format")
-    void testValidateTenantId() throws Exception { // GH-90000
+    void testValidateTenantId() throws Exception { 
         assertThat(TenantExtractor.isValidTenantId("valid-tenant-123")).isTrue();
         assertThat(TenantExtractor.isValidTenantId("tenant_123")).isTrue();
         assertThat(TenantExtractor.isValidTenantId("Tenant123")).isTrue();
         assertThat(TenantExtractor.isValidTenantId("")).isFalse();
-        assertThat(TenantExtractor.isValidTenantId(null)).isFalse(); // GH-90000
+        assertThat(TenantExtractor.isValidTenantId(null)).isFalse(); 
         assertThat(TenantExtractor.isValidTenantId("tenant with spaces")).isFalse();
         assertThat(TenantExtractor.isValidTenantId("tenant<script>")).isFalse();
     }
 
     @Test
     @DisplayName("Should sanitize tenant ID")
-    void testSanitizeTenantId() throws Exception { // GH-90000
+    void testSanitizeTenantId() throws Exception { 
         assertThat(TenantExtractor.sanitizeTenantId("Tenant-123 ")).isEqualTo("tenant-123");
         assertThat(TenantExtractor.sanitizeTenantId("  tenant_456  ")).isEqualTo("tenant_456");
         assertThat(TenantExtractor.sanitizeTenantId("TENANT-789")).isEqualTo("tenant-789");
@@ -132,17 +132,17 @@ class TenantExtractorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should handle multiple extraction strategies in sequence")
-    void testMultipleStrategies() throws Exception { // GH-90000
+    void testMultipleStrategies() throws Exception { 
         // Test all strategies work independently
-        Map<String, String> testCases = Map.of( // GH-90000
+        Map<String, String> testCases = Map.of( 
             "header-tenant", "Header extraction",
             "path-tenant", "Path extraction",
             "subdomain-tenant", "Subdomain extraction"
         );
 
-        for (Map.Entry<String, String> entry : testCases.entrySet()) { // GH-90000
+        for (Map.Entry<String, String> entry : testCases.entrySet()) { 
             // Verify each strategy type can extract
-            assertThat(entry.getValue()).isNotNull(); // GH-90000
+            assertThat(entry.getValue()).isNotNull(); 
         }
     }
 }

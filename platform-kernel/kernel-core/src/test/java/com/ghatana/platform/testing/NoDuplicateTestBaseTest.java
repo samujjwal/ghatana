@@ -25,35 +25,35 @@ class NoDuplicateTestBaseTest {
 
     @Test
     @DisplayName("Should not have EventloopTestBase in kernel-core")
-    void shouldNotHaveEventloopTestBaseInKernelCore() { // GH-90000
+    void shouldNotHaveEventloopTestBaseInKernelCore() { 
         Path kernelCorePath = Paths.get("src/test/java/com/ghatana/platform/testing/activej/EventloopTestBase.java");
 
         // This test runs from platform-kernel/kernel-core directory
-        boolean fileExists = Files.exists(kernelCorePath); // GH-90000
+        boolean fileExists = Files.exists(kernelCorePath); 
         
-        assertThat(fileExists) // GH-90000
+        assertThat(fileExists) 
                 .as("EventloopTestBase should not exist in kernel-core - use platform/java/testing version")
-                .isFalse(); // GH-90000
+                .isFalse(); 
     }
 
     @Test
     @DisplayName("Should not have EventloopTestUtil in kernel-core")
-    void shouldNotHaveEventloopTestUtilInKernelCore() { // GH-90000
+    void shouldNotHaveEventloopTestUtilInKernelCore() { 
         Path kernelCorePath = Paths.get("src/test/java/com/ghatana/platform/testing/activej/EventloopTestUtil.java");
 
-        boolean fileExists = Files.exists(kernelCorePath); // GH-90000
+        boolean fileExists = Files.exists(kernelCorePath); 
         
-        assertThat(fileExists) // GH-90000
+        assertThat(fileExists) 
                 .as("EventloopTestUtil should not exist in kernel-core - use platform/java/testing version")
-                .isFalse(); // GH-90000
+                .isFalse(); 
     }
 
     @Test
     @DisplayName("Platform-testing EventloopTestBase should exist")
-    void platformTestingEventloopTestBaseShouldExist() { // GH-90000
+    void platformTestingEventloopTestBaseShouldExist() { 
         // Verify the canonical version exists in platform/java/testing
         // This test may need adjustment based on actual module structure
         // For now, we just verify kernel-core doesn't have duplicates
-        assertThat(true).isTrue(); // Placeholder - would check platform/java/testing in real implementation // GH-90000
+        assertThat(true).isTrue(); // Placeholder - would check platform/java/testing in real implementation 
     }
 }

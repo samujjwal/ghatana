@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.http.controllers;
@@ -36,29 +36,29 @@ import static org.mockito.Mockito.when;
 @DisplayName("NlpController")
 class NlpControllerTest {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper(); // GH-90000
+    private static final ObjectMapper MAPPER = new ObjectMapper(); 
 
     private NlpController controller;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        controller = new NlpController(); // GH-90000
+    void setUp() { 
+        controller = new NlpController(); 
     }
 
-    private HttpRequest buildPostRequest(String body) { // GH-90000
-        HttpRequest request = mock(HttpRequest.class); // GH-90000
-        when(request.getMethod()).thenReturn(HttpMethod.POST); // GH-90000
+    private HttpRequest buildPostRequest(String body) { 
+        HttpRequest request = mock(HttpRequest.class); 
+        when(request.getMethod()).thenReturn(HttpMethod.POST); 
         when(request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"))).thenReturn(null);
         when(request.getQueryParameter("tenantId")).thenReturn(null);
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8); // GH-90000
-        io.activej.bytebuf.ByteBuf buf = io.activej.bytebuf.ByteBuf.wrapForReading(bytes); // GH-90000
-        when(request.loadBody()).thenReturn(Promise.of(buf)); // GH-90000
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8); 
+        io.activej.bytebuf.ByteBuf buf = io.activej.bytebuf.ByteBuf.wrapForReading(bytes); 
+        when(request.loadBody()).thenReturn(Promise.of(buf)); 
         return request;
     }
 
-    private Map<String, Object> parseBody(HttpResponse response) throws Exception { // GH-90000
-        String json = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        return MAPPER.readValue(json, new TypeReference<>() {}); // GH-90000
+    private Map<String, Object> parseBody(HttpResponse response) throws Exception { 
+        String json = response.getBody().getString(StandardCharsets.UTF_8); 
+        return MAPPER.readValue(json, new TypeReference<>() {}); 
     }
 
     // ─── Missing query ─────────────────────────────────────────────────────────
@@ -69,28 +69,28 @@ class NlpControllerTest {
 
         @Test
         @DisplayName("returns 400 when query field is missing")
-        void missingQuery_returns400() throws Exception { // GH-90000
+        void missingQuery_returns400() throws Exception { 
             HttpRequest request = buildPostRequest("""
                     {"tenantId":"tenant-a"}
                     """);
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            Map<String, Object> body = parseBody(response); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            Map<String, Object> body = parseBody(response); 
             assertThat(body.get("message").toString()).contains("query");
         }
 
         @Test
         @DisplayName("returns 400 when body is blank")
-        void blankQuery_returns400() throws Exception { // GH-90000
+        void blankQuery_returns400() throws Exception { 
             HttpRequest request = buildPostRequest("""
                     {"query":"   ","tenantId":"tenant-a"}
                     """);
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
         }
     }
 
@@ -100,8 +100,8 @@ class NlpControllerTest {
     @DisplayName("intent classification")
     class IntentClassification {
 
-        @ParameterizedTest(name = "query=''{0}'' → intent=''{1}''") // GH-90000
-        @CsvSource({ // GH-90000
+        @ParameterizedTest(name = "query=''{0}'' → intent=''{1}''") 
+        @CsvSource({ 
                 "show me all runs,                         list_runs",
                 "list all pipelines,                       list_pipelines",
                 "get me the agents,                        list_agents",
@@ -113,30 +113,30 @@ class NlpControllerTest {
                 "what is the status of the system,         status_query",
         })
         @DisplayName("classifies intent correctly")
-        void classifiesIntent(String query, String expectedIntent) throws Exception { // GH-90000
-            String body = MAPPER.writeValueAsString(Map.of("query", query, "tenantId", "t1")); // GH-90000
-            HttpRequest request = buildPostRequest(body); // GH-90000
+        void classifiesIntent(String query, String expectedIntent) throws Exception { 
+            String body = MAPPER.writeValueAsString(Map.of("query", query, "tenantId", "t1")); 
+            HttpRequest request = buildPostRequest(body); 
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
-            Map<String, Object> result = parseBody(response); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
+            Map<String, Object> result = parseBody(response); 
 
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
             assertThat(result.get("intent")).isEqualTo(expectedIntent);
             assertThat(((Number) result.get("confidence")).doubleValue()).isGreaterThan(0.5);
         }
 
         @Test
         @DisplayName("returns unknown intent for unrecognised query")
-        void unrecognisedQuery_returnsUnknown() throws Exception { // GH-90000
-            String body = MAPPER.writeValueAsString(Map.of("query", "xyzzy frobozz", "tenantId", "t1")); // GH-90000
-            HttpRequest request = buildPostRequest(body); // GH-90000
+        void unrecognisedQuery_returnsUnknown() throws Exception { 
+            String body = MAPPER.writeValueAsString(Map.of("query", "xyzzy frobozz", "tenantId", "t1")); 
+            HttpRequest request = buildPostRequest(body); 
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
-            Map<String, Object> result = parseBody(response); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
+            Map<String, Object> result = parseBody(response); 
 
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
             assertThat(result.get("intent")).isEqualTo("unknown");
         }
     }
@@ -149,25 +149,25 @@ class NlpControllerTest {
 
         @Test
         @DisplayName("extracts time_window entity correctly")
-        void extractsTimeWindow() throws Exception { // GH-90000
-            String body = MAPPER.writeValueAsString(Map.of( // GH-90000
+        void extractsTimeWindow() throws Exception { 
+            String body = MAPPER.writeValueAsString(Map.of( 
                     "query", "show me failing pipelines last 2 hours", "tenantId", "t1"));
-            HttpRequest request = buildPostRequest(body); // GH-90000
+            HttpRequest request = buildPostRequest(body); 
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
-            Map<String, Object> result = parseBody(response); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
+            Map<String, Object> result = parseBody(response); 
 
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> entities = (List<Map<String, Object>>) result.get("entities");
-            assertThat(entities).isNotEmpty(); // GH-90000
+            assertThat(entities).isNotEmpty(); 
 
-            Map<String, Object> timeEntity = entities.stream() // GH-90000
+            Map<String, Object> timeEntity = entities.stream() 
                     .filter(e -> "time_window".equals(e.get("type")))
-                    .findFirst() // GH-90000
-                    .orElse(null); // GH-90000
-            assertThat(timeEntity).isNotNull(); // GH-90000
+                    .findFirst() 
+                    .orElse(null); 
+            assertThat(timeEntity).isNotNull(); 
             assertThat(timeEntity.get("amount")).isEqualTo(2);
             assertThat(timeEntity.get("unit")).isEqualTo("hours");
             assertThat(timeEntity.get("iso8601")).isEqualTo("PT2H");
@@ -175,31 +175,31 @@ class NlpControllerTest {
 
         @Test
         @DisplayName("extracts status entity correctly")
-        void extractsStatus() throws Exception { // GH-90000
-            String body = MAPPER.writeValueAsString(Map.of( // GH-90000
+        void extractsStatus() throws Exception { 
+            String body = MAPPER.writeValueAsString(Map.of( 
                     "query", "list all failed runs", "tenantId", "t1"));
-            HttpRequest request = buildPostRequest(body); // GH-90000
+            HttpRequest request = buildPostRequest(body); 
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
-            Map<String, Object> result = parseBody(response); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
+            Map<String, Object> result = parseBody(response); 
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> entities = (List<Map<String, Object>>) result.get("entities");
-            boolean hasStatus = entities.stream() // GH-90000
+            boolean hasStatus = entities.stream() 
                     .anyMatch(e -> "status".equals(e.get("type")) && "FAILED".equals(e.get("value")));
-            assertThat(hasStatus).isTrue(); // GH-90000
+            assertThat(hasStatus).isTrue(); 
         }
 
         @Test
         @DisplayName("returns tenant in response")
-        void returnsTenantId() throws Exception { // GH-90000
-            String body = MAPPER.writeValueAsString(Map.of("query", "list runs", "tenantId", "my-tenant")); // GH-90000
-            HttpRequest request = buildPostRequest(body); // GH-90000
+        void returnsTenantId() throws Exception { 
+            String body = MAPPER.writeValueAsString(Map.of("query", "list runs", "tenantId", "my-tenant")); 
+            HttpRequest request = buildPostRequest(body); 
 
-            Promise<HttpResponse> promise = controller.handleParseQuery(request); // GH-90000
-            HttpResponse response = promise.getResult(); // GH-90000
-            Map<String, Object> result = parseBody(response); // GH-90000
+            Promise<HttpResponse> promise = controller.handleParseQuery(request); 
+            HttpResponse response = promise.getResult(); 
+            Map<String, Object> result = parseBody(response); 
 
             assertThat(result.get("tenantId")).isEqualTo("my-tenant");
         }

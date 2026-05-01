@@ -1,16 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MEMORY_SURFACE_BOUNDARY_MESSAGE } from '../../lib/runtime-boundaries';
 
-const { mockApiClient } = vi.hoisted(() => ({
+const { mockApiClient, mockIsMemorySurfaceEnabled } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
   },
+  mockIsMemorySurfaceEnabled: vi.fn(() => true),
 }));
 
 vi.mock('../../lib/api/client', () => ({
   apiClient: mockApiClient,
+}));
+vi.mock('../../lib/feature-gates', () => ({
+  isMemorySurfaceEnabled: mockIsMemorySurfaceEnabled,
 }));
 
 import { memoryService } from '../../api/memory.service';
@@ -18,6 +23,21 @@ import { memoryService } from '../../api/memory.service';
 describe('memoryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsMemorySurfaceEnabled.mockReturnValue(true);
+  });
+
+  it('fails closed before network calls when memory surface gate is disabled', async () => {
+    mockIsMemorySurfaceEnabled.mockReturnValue(false);
+
+    await expect(memoryService.listMemoryItems()).rejects.toThrow(MEMORY_SURFACE_BOUNDARY_MESSAGE);
+    await expect(memoryService.searchMemory('agent-1', 'rollback')).rejects.toThrow(
+      MEMORY_SURFACE_BOUNDARY_MESSAGE,
+    );
+
+    expect(mockApiClient.get).not.toHaveBeenCalled();
+    expect(mockApiClient.post).not.toHaveBeenCalled();
+    expect(mockApiClient.put).not.toHaveBeenCalled();
+    expect(mockApiClient.delete).not.toHaveBeenCalled();
   });
 
   it('unwraps memory search responses from the launcher envelope', async () => {

@@ -1,348 +1,278 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc.
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
 
+import com.ghatana.datacloud.launcher.http.DataCloudSecurityFilter;
+import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
+ * Integration-level tenant isolation tests exercising the real
+ * {@link DataCloudSecurityFilter} chain.
+ *
+ * <p>Asserts that:
+ * <ul>
+ *   <li>JWT token issued for tenant-A is rejected when the request targets tenant-B
+ *       via {@code X-Tenant-Id} header override (cross-tenant mismatch: HTTP 403).</li>
+ *   <li>JWT token missing the required tenant claim is rejected (HTTP 401).</li>
+ *   <li>API key principal with no tenant is rejected in enforcing mode (HTTP 400,
+ *       TENANT_REQUIRED error code).</li>
+ *   <li>JWT token for tenant-A with matching or absent header passes through (HTTP 200).</li>
+ *   <li>Public probes bypass authentication entirely (HTTP 200 without credentials).</li>
+ * </ul>
+ *
+ * <p>These are filter-level integration assertions complementary to
+ * {@code DataCloudSecurityFilterJwtTest} (unit-level) and
+ * {@code RequestObservationFilterTenantValidationTest} (request-boundary level).
+ *
  * @doc.type class
- * @doc.purpose Query correctness, tenant isolation, and security tests
+ * @doc.purpose Cross-tenant denial integration tests for DataCloudSecurityFilter
  * @doc.layer product
- * @doc.pattern UnitTest
+ * @doc.pattern Test
  */
-@DisplayName("Tenant Isolation and Query Tests")
-public class TenantIsolationTest {
+@DisplayName("Tenant Isolation - DataCloudSecurityFilter cross-tenant enforcement")
+public class TenantIsolationTest extends EventloopTestBase {
+
+    private static final String VALID_TOKEN    = "jwt-token-tenant-a";
+    private static final String TENANT_A       = "tenant-a";
+    private static final String TENANT_B       = "tenant-b";
+    private static final String PROTECTED_PATH = "/api/v1/entities/orders";
+
+    private JwtTokenProvider jwtProvider;
+
+    private static final AsyncServlet OK_DELEGATE =
+            request -> Promise.of(HttpResponse.ok200().build());
+
+    @BeforeEach
+    void setUp() {
+        jwtProvider = mock(JwtTokenProvider.class);
+        when(jwtProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtProvider.getUserIdFromToken(VALID_TOKEN)).thenReturn(Optional.of("user-a"));
+        when(jwtProvider.getRolesFromToken(VALID_TOKEN)).thenReturn(List.of("viewer"));
+        when(jwtProvider.extractClaims(VALID_TOKEN))
+                .thenReturn(Optional.of(Map.of("tenant_id", TENANT_A)));
+    }
+
+    private DataCloudSecurityFilter enforcing() {
+        return DataCloudSecurityFilter.builder()
+                .jwtProvider(jwtProvider)
+                .enforcing(true)
+                .build();
+    }
+
+    // -------------------------------------------------------------------------
+    // JWT cross-tenant mismatch
+    // -------------------------------------------------------------------------
 
     @Nested
-    @DisplayName("TenantIsolationTests")
-    class TenantIsolationTests {
+    @DisplayName("JWT cross-tenant isolation")
+    class JwtCrossTenantIsolationTests {
 
         @Test
-        @DisplayName("single tenant: sees only own data")
-        void shouldIsolateTenantData() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "Collection"); // GH-90000
+        @DisplayName("JWT for tenant-A with X-Tenant-Id: tenant-B header returns 403")
+        void jwtTenantACrossTenantHeaderBReturns403() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                    .withHeader(HttpHeaders.of("X-Tenant-Id"), TENANT_B)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            // Tenant 1 can see
-            assertThat(canAccessEntity(entity, "tenant-1")).isTrue(); // GH-90000
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-            // Tenant 2 cannot see
-            assertThat(canAccessEntity(entity, "tenant-2")).isFalse(); // GH-90000
+            assertThat(status).isEqualTo(403);
         }
 
         @Test
-        @DisplayName("multiple tenants: separate namespaces")
-        void shouldMaintainSeparateNamespaces() { // GH-90000
-            Map<String, Object> t1Entity = createEntity("id-1", "tenant-1", "Collection"); // GH-90000
-            Map<String, Object> t2Entity = createEntity("id-1", "tenant-2", "Collection"); // GH-90000
+        @DisplayName("JWT for tenant-A with matching X-Tenant-Id header passes through")
+        void jwtTenantAMatchingHeaderPassesThrough() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                    .withHeader(HttpHeaders.of("X-Tenant-Id"), TENANT_A)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            assertThat(t1Entity.get("tenantId")).isNotEqualTo(t2Entity.get("tenantId"));
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
-        @DisplayName("cross-tenant ID collision: allowed")
-        void shouldAllowCrossTenantIdReuse() { // GH-90000
-            String sameId = "entity-123";
-            Map<String, Object> t1 = createEntity(sameId, "tenant-1", "Collection"); // GH-90000
-            Map<String, Object> t2 = createEntity(sameId, "tenant-2", "Collection"); // GH-90000
+        @DisplayName("JWT for tenant-A without X-Tenant-Id header passes through")
+        void jwtTenantAWithoutHeaderPassesThrough() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            // Same ID in different tenants is OK (isolated by namespace) // GH-90000
-            assertThat(t1.get("id")).isEqualTo(t2.get("id"));
-            assertThat(t1.get("tenantId")).isNotEqualTo(t2.get("tenantId"));
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
-        @DisplayName("tenant admin: still isolated from other tenants")
-        void shouldIsolateAdminData() { // GH-90000
-            Map<String, Object> adminEntity = createEntity("admin-id", "tenant-1", "AdminResource"); // GH-90000
+        @DisplayName("JWT with missing tenant claim returns 401")
+        void jwtMissingTenantClaimReturns401() {
+            when(jwtProvider.extractClaims(VALID_TOKEN))
+                    .thenReturn(Optional.of(Map.of("sub", "user-a"))); // no tenant_id claim
 
-            // Admin of tenant 1
-            assertThat(canAccessEntity(adminEntity, "tenant-1")).isTrue(); // GH-90000
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            // Admin of tenant 2 cannot access
-            assertThat(canAccessEntity(adminEntity, "tenant-2")).isFalse(); // GH-90000
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(401);
         }
 
         @Test
-        @DisplayName("no tenant specified: defaults correctly")
-        void shouldHandleDefaultTenant() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "default-tenant", "Collection"); // GH-90000
+        @DisplayName("JWT cross-tenant via tenantId query parameter also returns 403")
+        void jwtTenantACrossTenantQueryParamReturns403() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get(
+                            "http://localhost" + PROTECTED_PATH + "?tenantId=" + TENANT_B)
+                    .withHeader(HttpHeaders.of("Authorization"), "Bearer " + VALID_TOKEN)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            assertThat(entity.get("tenantId")).isEqualTo("default-tenant");
-        }
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-        @Test
-        @DisplayName("list operation: returns only tenant data")
-        void shouldFilterListByTenant() { // GH-90000
-            List<Map<String, Object>> allEntities = new ArrayList<>(); // GH-90000
-
-            // Add entities for multiple tenants
-            allEntities.add(createEntity("id-1", "tenant-1", "Coll1")); // GH-90000
-            allEntities.add(createEntity("id-2", "tenant-2", "Coll2")); // GH-90000
-            allEntities.add(createEntity("id-3", "tenant-1", "Coll3")); // GH-90000
-
-            // Filter for tenant 1
-            List<Map<String, Object>> t1Only = allEntities.stream() // GH-90000
-                    .filter(e -> e.get("tenantId").equals("tenant-1"))
-                    .toList(); // GH-90000
-
-            assertThat(t1Only).hasSize(2); // GH-90000
+            assertThat(status).isEqualTo(403);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // API key principal tenant scoping
+    // -------------------------------------------------------------------------
 
     @Nested
-    @DisplayName("CrossTenantSecurityTests")
-    class CrossTenantSecurityTests {
+    @DisplayName("API key principal tenant scoping")
+    class ApiKeyTenantScopingTests {
+
+        private static final String VALID_KEY   = "sk-test-a";
+        private static final String INVALID_KEY = "sk-unknown";
 
         @Test
-        @DisplayName("update other tenant data: prevented")
-        void shouldPreventCrossTenantUpdate() { // GH-90000
-            Map<String, Object> t1Entity = createEntity("id-1", "tenant-1", "Original"); // GH-90000
+        @DisplayName("API key principal without tenant in enforcing mode returns 400 TENANT_REQUIRED")
+        void apiKeyPrincipalWithoutTenantEnforcingReturns400() {
+            ApiKeyResolver resolver = mock(ApiKeyResolver.class);
+            when(resolver.resolve(VALID_KEY))
+                    .thenReturn(Optional.of(new Principal("service-a", List.of("admin"), "")));
 
-            // Attempt update from tenant 2 (should be prevented) // GH-90000
-            Map<String, Object> t2Request = new HashMap<>(); // GH-90000
-            t2Request.put("tenantId", "tenant-2"); // GH-90000
-            t2Request.put("name", "Hacked"); // GH-90000
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(resolver)
+                    .enforcing(true)
+                    .build();
 
-            // Verify tenant 2 cannot modify tenant 1's data
-            assertThat(canUpdateEntity(t1Entity, t2Request, "tenant-2")).isFalse(); // GH-90000
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(400);
         }
 
         @Test
-        @DisplayName("delete other tenant data: prevented")
-        void shouldPreventCrossTenantDelete() { // GH-90000
-            Map<String, Object> t1Entity = createEntity("id-1", "tenant-1", "Collection"); // GH-90000
+        @DisplayName("invalid API key returns 401 for protected route")
+        void invalidApiKeyReturns401() {
+            ApiKeyResolver resolver = mock(ApiKeyResolver.class);
+            when(resolver.resolve(INVALID_KEY)).thenReturn(Optional.empty());
 
-            // Cannot delete as tenant 2
-            assertThat(canDeleteEntity(t1Entity, "tenant-2")).isFalse(); // GH-90000
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .apiKeyResolver(resolver)
+                    .enforcing(true)
+                    .build();
 
-            // Can delete as tenant 1
-            assertThat(canDeleteEntity(t1Entity, "tenant-1")).isTrue(); // GH-90000
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.of("X-API-Key"), INVALID_KEY)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
+
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(401);
         }
 
         @Test
-        @DisplayName("list with forged tenant header: rejected")
-        void shouldValidateTenantHeader() { // GH-90000
-            Map<String, Object> request = new HashMap<>(); // GH-90000
-            request.put("requestedTenantId", "tenant-1"); // GH-90000
-            request.put("actualTenantId", "tenant-2"); // GH-90000
+        @DisplayName("missing auth credentials return 401 for protected route")
+        void missingAuthReturns401() {
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
+                    .jwtProvider(jwtProvider)
+                    .enforcing(true)
+                    .build();
 
-            // Validation should catch mismatch
-            assertThat(isValidTenantContext(request)).isFalse(); // GH-90000
-        }
+            AsyncServlet secured = filter.apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost" + PROTECTED_PATH)
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-        @Test
-        @DisplayName("SQL injection via tenant field: escaped")
-        void shouldEscapeTenantValue() { // GH-90000
-            String injectedTenant = "tenant-1' OR '1'='1";
-            Map<String, Object> entity = new HashMap<>(); // GH-90000
-            entity.put("tenantId", injectedTenant); // GH-90000
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-            // Should be treated as literal string, not SQL code
-            assertThat(entity.get("tenantId")).isEqualTo(injectedTenant);
-        }
-
-        @Test
-        @DisplayName("missing tenant context: request fails")
-        void shouldRejectMissingTenatContext() { // GH-90000
-            Map<String, Object> request = new HashMap<>(); // GH-90000
-            // Missing tenantId
-
-            assertThat(isValidTenantContext(request)).isFalse(); // GH-90000
+            assertThat(status).isEqualTo(401);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Public probe bypass
+    // -------------------------------------------------------------------------
 
     @Nested
-    @DisplayName("QuerySecurityTests")
-    class QuerySecurityTests {
+    @DisplayName("Public probe bypass")
+    class PublicProbBypassTests {
 
         @Test
-        @DisplayName("select query: filtered by tenant")
-        void shouldFilterSelectQuery() { // GH-90000
-            List<Map<String, Object>> allData = new ArrayList<>(); // GH-90000
-            allData.add(createEntity("id-1", "tenant-1", "Coll1")); // GH-90000
-            allData.add(createEntity("id-2", "tenant-2", "Coll2")); // GH-90000
+        @DisplayName("/health is accessible without authentication")
+        void healthProbeAccessibleWithoutAuth() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost/health")
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            List<Map<String, Object>> t1Data = queryByTenant(allData, "tenant-1"); // GH-90000
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-            assertThat(t1Data).hasSize(1); // GH-90000
-            assertThat(t1Data.get(0).get("tenantId")).isEqualTo("tenant-1");
-        }
-
-        @Test
-        @DisplayName("aggregate query: includes only tenant data")
-        void shouldAggregateWithTenantFilter() { // GH-90000
-            List<Map<String, Object>> allData = new ArrayList<>(); // GH-90000
-
-            for (int i = 1; i <= 5; i++) { // GH-90000
-                allData.add(createEntity("id-" + i, "tenant-1", "Item" + i)); // GH-90000
-            }
-            for (int i = 1; i <= 3; i++) { // GH-90000
-                allData.add(createEntity("id-" + i, "tenant-2", "Item" + i)); // GH-90000
-            }
-
-            long t1Count = countByTenant(allData, "tenant-1"); // GH-90000
-            long t2Count = countByTenant(allData, "tenant-2"); // GH-90000
-
-            assertThat(t1Count).isEqualTo(5); // GH-90000
-            assertThat(t2Count).isEqualTo(3); // GH-90000
+            assertThat(status).isEqualTo(200);
         }
 
         @Test
-        @DisplayName("join with tenant filter: correct results")
-        void shouldFilterJoinByTenant() { // GH-90000
-            List<Map<String, Object>> collections = new ArrayList<>(); // GH-90000
-            collections.add(createEntity("coll-1", "tenant-1", "Coll1")); // GH-90000
-            collections.add(createEntity("coll-2", "tenant-2", "Coll2")); // GH-90000
+        @DisplayName("/metrics is accessible without authentication")
+        void metricsProbeAccessibleWithoutAuth() {
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+            HttpRequest request = HttpRequest.get("http://localhost/metrics")
+                    .withHeader(HttpHeaders.HOST, "localhost")
+                    .build();
 
-            List<Map<String, Object>> t1Colls = queryByTenant(collections, "tenant-1"); // GH-90000
+            int status = runPromise(() -> secured.serve(request).map(HttpResponse::getCode));
 
-            assertThat(t1Colls).hasSize(1); // GH-90000
+            assertThat(status).isEqualTo(200);
         }
-
-        @Test
-        @DisplayName("union all: maintains tenant boundaries")
-        void shouldMaintainTenantBoundariesInUnion() { // GH-90000
-            List<Map<String, Object>> set1 = new ArrayList<>(); // GH-90000
-            set1.add(createEntity("id-1", "tenant-1", "Item1")); // GH-90000
-
-            List<Map<String, Object>> set2 = new ArrayList<>(); // GH-90000
-            set2.add(createEntity("id-2", "tenant-1", "Item2")); // GH-90000
-
-            List<Map<String, Object>> union = new ArrayList<>(set1); // GH-90000
-            union.addAll(set2); // GH-90000
-
-            // All union results are from same tenant
-            boolean allSameTenant = union.stream() // GH-90000
-                    .allMatch(e -> e.get("tenantId").equals("tenant-1"));
-
-            assertThat(allSameTenant).isTrue(); // GH-90000
-        }
-    }
-
-    @Nested
-    @DisplayName("TenantContextPropagationTests")
-    class TenantContextPropagationTests {
-
-        @Test
-        @DisplayName("tenant context set: propagates to operations")
-        void shouldPropagateTenantContext() { // GH-90000
-            String tenantId = "tenant-1";
-
-            // Set context
-            boolean contextSet = setTenantContext(tenantId); // GH-90000
-            assertThat(contextSet).isTrue(); // GH-90000
-
-            // Operations should see the context
-            String contextTenant = getTenantContext(); // GH-90000
-            assertThat(contextTenant).isEqualTo(tenantId); // GH-90000
-        }
-
-        @Test
-        @DisplayName("tenant context cleared: resets properly")
-        void shouldClearTenantContext() { // GH-90000
-            setTenantContext("tenant-1");
-            clearTenantContext(); // GH-90000
-
-            String context = getTenantContext(); // GH-90000
-            assertThat(context).isNull(); // GH-90000
-        }
-
-        @Test
-        @DisplayName("nested operations: preserve tenant context")
-        void shouldPreserveContextInNestedOps() { // GH-90000
-            String tenantId = "tenant-1";
-            setTenantContext(tenantId); // GH-90000
-
-            // Nested operation
-            String nestedContext = getTenantContext(); // GH-90000
-
-            assertThat(nestedContext).isEqualTo(tenantId); // GH-90000
-        }
-
-        @Test
-        @DisplayName("concurrent tenants: context per thread")
-        void shouldIsolateTenantContextPerThread() { // GH-90000
-            // Thread 1 sets tenant-1
-            String t1 = "tenant-1";
-
-            // Thread 2 sets tenant-2
-            String t2 = "tenant-2";
-
-            // Context should be per-thread (simulated sequentially here) // GH-90000
-            setTenantContext(t1); // GH-90000
-            assertThat(getTenantContext()).isEqualTo(t1); // GH-90000
-
-            setTenantContext(t2); // GH-90000
-            assertThat(getTenantContext()).isEqualTo(t2); // GH-90000
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Helper Methods
-    // ─────────────────────────────────────────────────────────────────────
-
-    private Map<String, Object> createEntity(String id, String tenantId, String name) { // GH-90000
-        Map<String, Object> entity = new HashMap<>(); // GH-90000
-        entity.put("id", id); // GH-90000
-        entity.put("tenantId", tenantId); // GH-90000
-        entity.put("name", name); // GH-90000
-        return entity;
-    }
-
-    private boolean canAccessEntity(Map<String, Object> entity, String requestTenantId) { // GH-90000
-        return entity.get("tenantId").equals(requestTenantId);
-    }
-
-    private boolean canUpdateEntity(Map<String, Object> entity, Map<String, Object> update, String requestTenantId) { // GH-90000
-        return canAccessEntity(entity, requestTenantId); // GH-90000
-    }
-
-    private boolean canDeleteEntity(Map<String, Object> entity, String requestTenantId) { // GH-90000
-        return canAccessEntity(entity, requestTenantId); // GH-90000
-    }
-
-    private boolean isValidTenantContext(Map<String, Object> request) { // GH-90000
-        if (!request.containsKey("requestedTenantId") || !request.containsKey("actualTenantId")) {
-            return false;
-        }
-        return request.get("requestedTenantId").equals(request.get("actualTenantId"));
-    }
-
-    private List<Map<String, Object>> queryByTenant(List<Map<String, Object>> data, String tenantId) { // GH-90000
-        return data.stream() // GH-90000
-                .filter(e -> e.get("tenantId").equals(tenantId))
-                .toList(); // GH-90000
-    }
-
-    private long countByTenant(List<Map<String, Object>> data, String tenantId) { // GH-90000
-        return data.stream() // GH-90000
-                .filter(e -> e.get("tenantId").equals(tenantId))
-                .count(); // GH-90000
-    }
-
-    private String tenantContext;
-
-    private boolean setTenantContext(String tenantId) { // GH-90000
-        this.tenantContext = tenantId;
-        return true;
-    }
-
-    private String getTenantContext() { // GH-90000
-        return tenantContext;
-    }
-
-    private void clearTenantContext() { // GH-90000
-        tenantContext = null;
     }
 }

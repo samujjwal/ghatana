@@ -1,15 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CONTEXT_SURFACE_BOUNDARY_MESSAGE } from '../../lib/runtime-boundaries';
 
-const { mockApiClient } = vi.hoisted(() => ({
+const { mockApiClient, mockIsContextSurfaceEnabled } = vi.hoisted(() => ({
   mockApiClient: {
     get: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
   },
+  mockIsContextSurfaceEnabled: vi.fn(() => true),
 }));
 
 vi.mock('../../lib/api/client', () => ({
   apiClient: mockApiClient,
+}));
+vi.mock('../../lib/feature-gates', () => ({
+  isContextSurfaceEnabled: mockIsContextSurfaceEnabled,
 }));
 
 import {
@@ -28,6 +33,20 @@ import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 describe('context layer API client (P3.1.2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsContextSurfaceEnabled.mockReturnValue(true);
+  });
+
+  it('fails closed before network calls when context surface gate is disabled', async () => {
+    mockIsContextSurfaceEnabled.mockReturnValue(false);
+
+    await expect(getContext()).rejects.toThrow(CONTEXT_SURFACE_BOUNDARY_MESSAGE);
+    await expect(putContextEntries({ locale: 'en-US' })).rejects.toThrow(
+      CONTEXT_SURFACE_BOUNDARY_MESSAGE,
+    );
+
+    expect(mockApiClient.get).not.toHaveBeenCalled();
+    expect(mockApiClient.put).not.toHaveBeenCalled();
+    expect(mockApiClient.delete).not.toHaveBeenCalled();
   });
 
   // ─── getContext ────────────────────────────────────────────────────────────

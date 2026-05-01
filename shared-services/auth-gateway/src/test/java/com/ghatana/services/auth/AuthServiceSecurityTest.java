@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for AuthService security configuration.
- * Validates secret management and production fail-fast behavior (SHM-002). // GH-90000
+ * Validates secret management and production fail-fast behavior (SHM-002). 
  *
  * @doc.type    class
  * @doc.purpose Tests for auth gateway security configuration
@@ -22,36 +22,36 @@ class AuthServiceSecurityTest {
 
     @Test
     @DisplayName("extractCookieValue should return value for matching cookie name")
-    void extractCookieValueShouldReturnMatchingValue() { // GH-90000
+    void extractCookieValueShouldReturnMatchingValue() { 
         // Use reflection to test the private helper or test via behavior
         // The sanitize method prevents info leakage — test the sanitizer behavior indirectly
         // by verifying that double-quote characters in error messages are escaped.
-        // Since sanitize() is private, we verify the behavior through the service. // GH-90000
+        // Since sanitize() is private, we verify the behavior through the service. 
         assertThat(sanitizeForTest("normal message")).isEqualTo("normal message");
-        assertThat(sanitizeForTest("message with \"quotes\"")).isEqualTo("message with \\\"quotes\\\""); // GH-90000
+        assertThat(sanitizeForTest("message with \"quotes\"")).isEqualTo("message with \\\"quotes\\\""); 
         assertThat(sanitizeForTest("message\nwith\nnewlines")).isEqualTo("message with newlines");
-        // \r is removed (not replaced with space) // GH-90000
+        // \r is removed (not replaced with space) 
         assertThat(sanitizeForTest("message\rwith\rCR")).isEqualTo("messagewithCR");
     }
 
     @Test
     @DisplayName("sanitize should handle null gracefully")
-    void sanitizeShouldHandleNull() { // GH-90000
+    void sanitizeShouldHandleNull() { 
         assertThat(sanitizeForTest(null)).isEqualTo("");
     }
 
     @Test
     @DisplayName("sanitize should escape backslashes")
-    void sanitizeShouldEscapeBackslashes() { // GH-90000
+    void sanitizeShouldEscapeBackslashes() { 
         assertThat(sanitizeForTest("path\\to\\file")).isEqualTo("path\\\\to\\\\file");
     }
 
     @Test
     @DisplayName("standardError should use the platform error response structure")
-    void standardErrorShouldUsePlatformStructure() { // GH-90000
-        ErrorResponse error = AuthService.standardError(401, "AUTHENTICATION_FAILED", "Authentication failed", "OIDC callback rejected"); // GH-90000
+    void standardErrorShouldUsePlatformStructure() { 
+        ErrorResponse error = AuthService.standardError(401, "AUTHENTICATION_FAILED", "Authentication failed", "OIDC callback rejected"); 
 
-        assertThat(error.getStatus()).isEqualTo(401); // GH-90000
+        assertThat(error.getStatus()).isEqualTo(401); 
         assertThat(error.getCode()).isEqualTo("AUTHENTICATION_FAILED");
         assertThat(error.getMessage()).isEqualTo("Authentication failed");
         assertThat(error.getDetails()).isEqualTo("OIDC callback rejected");
@@ -59,26 +59,26 @@ class AuthServiceSecurityTest {
 
     @Test
     @DisplayName("errorJson should serialize standard platform error fields")
-    void errorJsonShouldSerializeStandardFields() { // GH-90000
-        String json = AuthService.errorJson(400, "MISSING_CODE", "Missing authorization code"); // GH-90000
+    void errorJsonShouldSerializeStandardFields() { 
+        String json = AuthService.errorJson(400, "MISSING_CODE", "Missing authorization code"); 
 
-        assertThat(json).contains("\"status\":400"); // GH-90000
-        assertThat(json).contains("\"code\":\"MISSING_CODE\""); // GH-90000
-        assertThat(json).contains("\"message\":\"Missing authorization code\""); // GH-90000
+        assertThat(json).contains("\"status\":400"); 
+        assertThat(json).contains("\"code\":\"MISSING_CODE\""); 
+        assertThat(json).contains("\"message\":\"Missing authorization code\""); 
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     /**
-     * Mirrors the logic of AuthService.sanitize() for testing. // GH-90000
+     * Mirrors the logic of AuthService.sanitize() for testing. 
      * This duplicates the logic intentionally to test the expected behavior
      * without exposing the private method.
      */
-    private static String sanitizeForTest(String s) { // GH-90000
-        if (s == null) return ""; // GH-90000
-        return s.replace("\\", "\\\\") // GH-90000
-                .replace("\"", "\\\"") // GH-90000
-                .replace("\n", " ") // GH-90000
-                .replace("\r", ""); // GH-90000
+    private static String sanitizeForTest(String s) { 
+        if (s == null) return ""; 
+        return s.replace("\\", "\\\\") 
+                .replace("\"", "\\\"") 
+                .replace("\n", " ") 
+                .replace("\r", ""); 
     }
 }

@@ -14,6 +14,11 @@
  */
 
 import { apiClient } from './client';
+import { isContextSurfaceEnabled } from '../feature-gates';
+import {
+    CONTEXT_SURFACE_BOUNDARY_MESSAGE,
+    createRuntimeBoundaryError,
+} from '../runtime-boundaries';
 import {
     CollectionContextResponseSchema,
     ContextResponseSchema,
@@ -46,6 +51,12 @@ export interface CollectionContextOptions {
     depth?: number;
 }
 
+function assertContextSurfaceEnabled(): void {
+    if (!isContextSurfaceEnabled()) {
+        throw createRuntimeBoundaryError(CONTEXT_SURFACE_BOUNDARY_MESSAGE);
+    }
+}
+
 // ─── Client functions ─────────────────────────────────────────────────────────
 
 /**
@@ -54,6 +65,7 @@ export interface CollectionContextOptions {
  * @returns Resolved entries, version, and tenant metadata.
  */
 export async function getContext(): Promise<ContextResponse> {
+    assertContextSurfaceEnabled();
     const response = await apiClient.get<ContextResponse>('/context');
     return ContextResponseSchema.parse(response);
 }
@@ -68,6 +80,7 @@ export async function getCollectionContext(
     collection: string,
     options?: CollectionContextOptions,
 ): Promise<CollectionContextResponse> {
+    assertContextSurfaceEnabled();
     const response = await apiClient.get<CollectionContextResponse>(`/context/${encodeURIComponent(collection)}`, {
         params: options?.depth ? { depth: options.depth } : undefined,
     });
@@ -81,6 +94,7 @@ export async function getCollectionContext(
  * @returns Upsert result including the new write version.
  */
 export async function putContextEntries(entries: ContextEntries): Promise<UpsertContextResponse> {
+    assertContextSurfaceEnabled();
     const body = UpsertContextRequestSchema.parse({ entries });
     const response = await apiClient.put<UpsertContextResponse, UpsertContextRequest>('/context', body);
     return UpsertContextResponseSchema.parse(response);
@@ -93,6 +107,7 @@ export async function putContextEntries(entries: ContextEntries): Promise<Upsert
  * @returns Resolves on success (HTTP 204); rejects with an API error on failure.
  */
 export async function deleteContextKey(key: string): Promise<void> {
+    assertContextSurfaceEnabled();
     return apiClient.delete<void>(`/context/keys/${encodeURIComponent(key)}`);
 }
 
@@ -105,6 +120,7 @@ export async function deleteContextKey(key: string): Promise<void> {
  * @returns Full context snapshot with version, counts, and timestamps.
  */
 export async function getContextSnapshot(): Promise<ContextSnapshot> {
+    assertContextSurfaceEnabled();
     const response = await apiClient.get<ContextSnapshot>('/context/snapshot');
     return ContextSnapshotSchema.parse(response);
 }

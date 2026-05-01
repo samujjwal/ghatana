@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.store;
@@ -34,9 +34,9 @@ import static org.mockito.Mockito.*;
  * Unit tests for {@link DataCloudPatternStore}.
  *
  * <p>All Data-Cloud I/O is replaced by Mockito mocks so tests run in-process
- * without requiring real storage. ActiveJ's synchronous {@link Promise#of(Object)} // GH-90000
+ * without requiring real storage. ActiveJ's synchronous {@link Promise#of(Object)} 
  * factory is used to return stub values from mocks, so the tests can call
- * {@code .getResult()} directly (the promise is already resolved and never // GH-90000
+ * {@code .getResult()} directly (the promise is already resolved and never 
  * touches an Eventloop).
  *
  * @doc.type class
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("DataCloudPatternStore")
 class DataCloudPatternStoreTest {
 
@@ -56,8 +56,8 @@ class DataCloudPatternStoreTest {
     private DataCloudPatternStore store;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        store = new DataCloudPatternStore(client); // GH-90000
+    void setUp() { 
+        store = new DataCloudPatternStore(client); 
     }
 
     // =========================================================================
@@ -70,48 +70,48 @@ class DataCloudPatternStoreTest {
 
         @Test
         @DisplayName("save: assigns new UUID when spec.id is null")
-        void save_whenSpecHasNoId_assignsUuid() { // GH-90000
+        void save_whenSpecHasNoId_assignsUuid() { 
             PatternSpecification spec = spec("Pattern A").build();
-            Entity fakeEntity = entity(null); // GH-90000
+            Entity fakeEntity = entity(null); 
 
-            when(client.save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), anyMap())) // GH-90000
-                    .thenReturn(Promise.of(fakeEntity)); // GH-90000
+            when(client.save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), anyMap())) 
+                    .thenReturn(Promise.of(fakeEntity)); 
 
-            PatternMetadata result = store.save(spec).getResult(); // GH-90000
+            PatternMetadata result = store.save(spec).getResult(); 
 
-            ArgumentCaptor<Map<String, Object>> dataCaptor = mapCaptor(); // GH-90000
-            verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), dataCaptor.capture()); // GH-90000
+            ArgumentCaptor<Map<String, Object>> dataCaptor = mapCaptor(); 
+            verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), dataCaptor.capture()); 
             assertThat(dataCaptor.getValue().get("id")).isNotNull();
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("save: preserves existing spec.id")
-        void save_whenSpecHasId_keepsId() { // GH-90000
-            UUID existingId = UUID.randomUUID(); // GH-90000
+        void save_whenSpecHasId_keepsId() { 
+            UUID existingId = UUID.randomUUID(); 
             PatternSpecification spec = spec("Pattern B").id(existingId).build();
-            Entity fakeEntity = entity(existingId.toString()); // GH-90000
+            Entity fakeEntity = entity(existingId.toString()); 
 
-            when(client.save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), anyMap())) // GH-90000
-                    .thenReturn(Promise.of(fakeEntity)); // GH-90000
+            when(client.save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), anyMap())) 
+                    .thenReturn(Promise.of(fakeEntity)); 
 
-            store.save(spec).getResult(); // GH-90000
+            store.save(spec).getResult(); 
 
-            ArgumentCaptor<Map<String, Object>> captor = mapCaptor(); // GH-90000
-            verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), captor.capture()); // GH-90000
+            ArgumentCaptor<Map<String, Object>> captor = mapCaptor(); 
+            verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), captor.capture()); 
             assertThat(captor.getValue().get("id")).isEqualTo(existingId.toString());
         }
 
         @Test
         @DisplayName("save: propagates client exception as failed promise")
-        void save_whenClientThrows_returnsFailedPromise() { // GH-90000
+        void save_whenClientThrows_returnsFailedPromise() { 
             PatternSpecification spec = spec("Pattern C").build();
-            when(client.save(anyString(), anyString(), anyMap())) // GH-90000
+            when(client.save(anyString(), anyString(), anyMap())) 
                     .thenReturn(Promise.ofException(new RuntimeException("storage failure")));
 
-            Promise<PatternMetadata> result = store.save(spec); // GH-90000
+            Promise<PatternMetadata> result = store.save(spec); 
 
-            assertThat(result.isException()).isTrue(); // GH-90000
+            assertThat(result.isException()).isTrue(); 
         }
     }
 
@@ -125,29 +125,29 @@ class DataCloudPatternStoreTest {
 
         @Test
         @DisplayName("findById: returns populated Optional when entity exists")
-        void findById_whenEntityExists_returnsPresent() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity e = entity(id.toString()); // GH-90000
+        void findById_whenEntityExists_returnsPresent() { 
+            UUID id = UUID.randomUUID(); 
+            Entity e = entity(id.toString()); 
             // The store's no-tenant findById uses "system" for cross-tenant reads
-            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(e))); // GH-90000
+            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of(Optional.of(e))); 
 
-            Optional<PatternMetadata> result = store.findById(id).getResult(); // GH-90000
+            Optional<PatternMetadata> result = store.findById(id).getResult(); 
 
-            assertThat(result).isPresent(); // GH-90000
+            assertThat(result).isPresent(); 
         }
 
         @Test
         @DisplayName("findById: returns empty Optional when entity not found")
-        void findById_whenEntityMissing_returnsEmpty() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void findById_whenEntityMissing_returnsEmpty() { 
+            UUID id = UUID.randomUUID(); 
             // The store's no-tenant findById uses "system" for cross-tenant reads
-            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
-            Optional<PatternMetadata> result = store.findById(id).getResult(); // GH-90000
+            Optional<PatternMetadata> result = store.findById(id).getResult(); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -161,27 +161,27 @@ class DataCloudPatternStoreTest {
 
         @Test
         @DisplayName("findByTenant: returns all matching entities for tenant")
-        void findByTenant_returnsMatchingPatterns() { // GH-90000
-            Entity e1 = entity(UUID.randomUUID().toString()); // GH-90000
-            Entity e2 = entity(UUID.randomUUID().toString()); // GH-90000
-            when(client.query(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), any(Query.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of(e1, e2))); // GH-90000
+        void findByTenant_returnsMatchingPatterns() { 
+            Entity e1 = entity(UUID.randomUUID().toString()); 
+            Entity e2 = entity(UUID.randomUUID().toString()); 
+            when(client.query(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), any(Query.class))) 
+                    .thenReturn(Promise.of(List.of(e1, e2))); 
 
-            List<PatternMetadata> result = store.findByTenant(TENANT, PatternStatus.ACTIVE).getResult(); // GH-90000
+            List<PatternMetadata> result = store.findByTenant(TENANT, PatternStatus.ACTIVE).getResult(); 
 
-            assertThat(result).hasSize(2); // GH-90000
+            assertThat(result).hasSize(2); 
         }
 
         @Test
         @DisplayName("findByTenant: null status skips status filter")
-        void findByTenant_withNullStatus_queriesWithoutStatusFilter() { // GH-90000
-            when(client.query(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), any(Query.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void findByTenant_withNullStatus_queriesWithoutStatusFilter() { 
+            when(client.query(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), any(Query.class))) 
+                    .thenReturn(Promise.of(List.of())); 
 
-            List<PatternMetadata> result = store.findByTenant(TENANT, null).getResult(); // GH-90000
+            List<PatternMetadata> result = store.findByTenant(TENANT, null).getResult(); 
 
-            assertThat(result).isEmpty(); // GH-90000
-            verify(client).query(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), any(Query.class)); // GH-90000
+            assertThat(result).isEmpty(); 
+            verify(client).query(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), any(Query.class)); 
         }
     }
 
@@ -195,37 +195,37 @@ class DataCloudPatternStoreTest {
 
         @Test
         @DisplayName("updateStatus: read-modify-write updates status field")
-        void updateStatus_whenEntityExists_updatesStatusField() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity existing = entityWithData(id.toString(), Map.of( // GH-90000
-                    "id", id.toString(), "tenantId", TENANT, "name", "P", // GH-90000
+        void updateStatus_whenEntityExists_updatesStatusField() { 
+            UUID id = UUID.randomUUID(); 
+            Entity existing = entityWithData(id.toString(), Map.of( 
+                    "id", id.toString(), "tenantId", TENANT, "name", "P", 
                     "status", "ACTIVE"));
 
             // The store uses "system" for the cross-tenant findById read
-            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(existing))); // GH-90000
-            // Save uses the tenantId found in the entity's data (TENANT) // GH-90000
-            when(client.save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), anyMap())) // GH-90000
-                    .thenReturn(Promise.of(existing)); // GH-90000
+            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of(Optional.of(existing))); 
+            // Save uses the tenantId found in the entity's data (TENANT) 
+            when(client.save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), anyMap())) 
+                    .thenReturn(Promise.of(existing)); 
 
-            store.updateStatus(id, PatternStatus.INACTIVE).getResult(); // GH-90000
+            store.updateStatus(id, PatternStatus.INACTIVE).getResult(); 
 
-            ArgumentCaptor<Map<String, Object>> captor = mapCaptor(); // GH-90000
-            verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), captor.capture()); // GH-90000
+            ArgumentCaptor<Map<String, Object>> captor = mapCaptor(); 
+            verify(client).save(eq(TENANT), eq(DataCloudPatternStore.COLLECTION), captor.capture()); 
             assertThat(captor.getValue().get("status")).isEqualTo("INACTIVE");
         }
 
         @Test
         @DisplayName("updateStatus: fails with exception when entity not found")
-        void updateStatus_whenEntityMissing_returnsException() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void updateStatus_whenEntityMissing_returnsException() { 
+            UUID id = UUID.randomUUID(); 
             // The store uses "system" for the cross-tenant findById read
-            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
-            Promise<Void> result = store.updateStatus(id, PatternStatus.INACTIVE); // GH-90000
+            Promise<Void> result = store.updateStatus(id, PatternStatus.INACTIVE); 
 
-            assertThat(result.isException()).isTrue(); // GH-90000
+            assertThat(result.isException()).isTrue(); 
         }
     }
 
@@ -239,27 +239,27 @@ class DataCloudPatternStoreTest {
 
         @Test
         @DisplayName("delete: calls DataCloudClient.delete with correct args")
-        void delete_callsClientDelete() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void delete_callsClientDelete() { 
+            UUID id = UUID.randomUUID(); 
             // The store uses "system" as the tenant for cross-store deletes
-            when(client.delete("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of((Void) null)); // GH-90000
+            when(client.delete("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of((Void) null)); 
 
-            store.delete(id).getResult(); // GH-90000
+            store.delete(id).getResult(); 
 
-            verify(client).delete("system", DataCloudPatternStore.COLLECTION, id.toString()); // GH-90000
+            verify(client).delete("system", DataCloudPatternStore.COLLECTION, id.toString()); 
         }
 
         @Test
         @DisplayName("delete(tenant,id): uses tenant-scoped delete for persisted patterns")
-        void deleteWithTenant_callsTenantScopedDelete() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(client.delete(TENANT, DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of((Void) null)); // GH-90000
+        void deleteWithTenant_callsTenantScopedDelete() { 
+            UUID id = UUID.randomUUID(); 
+            when(client.delete(TENANT, DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of((Void) null)); 
 
-            store.delete(TENANT, id).getResult(); // GH-90000
+            store.delete(TENANT, id).getResult(); 
 
-            verify(client).delete(TENANT, DataCloudPatternStore.COLLECTION, id.toString()); // GH-90000
+            verify(client).delete(TENANT, DataCloudPatternStore.COLLECTION, id.toString()); 
         }
     }
 
@@ -273,28 +273,28 @@ class DataCloudPatternStoreTest {
 
         @Test
         @DisplayName("exists: returns true when entity present")
-        void exists_whenEntityPresent_returnsTrue() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void exists_whenEntityPresent_returnsTrue() { 
+            UUID id = UUID.randomUUID(); 
             // The store uses "system" for the cross-tenant exists check
-            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(entity(id.toString())))); // GH-90000
+            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of(Optional.of(entity(id.toString())))); 
 
-            Boolean exists = store.exists(id).getResult(); // GH-90000
+            Boolean exists = store.exists(id).getResult(); 
 
-            assertThat(exists).isTrue(); // GH-90000
+            assertThat(exists).isTrue(); 
         }
 
         @Test
         @DisplayName("exists: returns false when entity absent")
-        void exists_whenEntityAbsent_returnsFalse() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
+        void exists_whenEntityAbsent_returnsFalse() { 
+            UUID id = UUID.randomUUID(); 
             // The store uses "system" for the cross-tenant exists check
-            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+            when(client.findById("system", DataCloudPatternStore.COLLECTION, id.toString())) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
-            Boolean exists = store.exists(id).getResult(); // GH-90000
+            Boolean exists = store.exists(id).getResult(); 
 
-            assertThat(exists).isFalse(); // GH-90000
+            assertThat(exists).isFalse(); 
         }
     }
 
@@ -304,9 +304,9 @@ class DataCloudPatternStoreTest {
 
     @Test
     @DisplayName("constructor: throws NullPointerException when client is null")
-    void constructor_withNullClient_throwsNpe() { // GH-90000
-        assertThatNullPointerException() // GH-90000
-                .isThrownBy(() -> new DataCloudPatternStore(null)) // GH-90000
+    void constructor_withNullClient_throwsNpe() { 
+        assertThatNullPointerException() 
+                .isThrownBy(() -> new DataCloudPatternStore(null)) 
                 .withMessageContaining("DataCloudClient");
     }
 
@@ -314,31 +314,31 @@ class DataCloudPatternStoreTest {
     // Helpers
     // =========================================================================
 
-    private static PatternSpecification.Builder spec(String name) { // GH-90000
-        return new PatternSpecification.Builder() // GH-90000
-                .tenantId(TENANT) // GH-90000
-                .name(name) // GH-90000
-                .status(PatternStatus.ACTIVE); // GH-90000
+    private static PatternSpecification.Builder spec(String name) { 
+        return new PatternSpecification.Builder() 
+                .tenantId(TENANT) 
+                .name(name) 
+                .status(PatternStatus.ACTIVE); 
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"}) // GH-90000
-    private static ArgumentCaptor<Map<String, Object>> mapCaptor() { // GH-90000
-        return (ArgumentCaptor) ArgumentCaptor.forClass(Map.class); // GH-90000
+    @SuppressWarnings({"unchecked", "rawtypes"}) 
+    private static ArgumentCaptor<Map<String, Object>> mapCaptor() { 
+        return (ArgumentCaptor) ArgumentCaptor.forClass(Map.class); 
     }
 
-    private static Entity entity(String id) { // GH-90000
-        String resolvedId = id != null ? id : UUID.randomUUID().toString(); // GH-90000
-        return entityWithData(resolvedId, Map.of( // GH-90000
+    private static Entity entity(String id) { 
+        String resolvedId = id != null ? id : UUID.randomUUID().toString(); 
+        return entityWithData(resolvedId, Map.of( 
                 "id",       resolvedId,
                 "tenantId", TENANT,
                 "name",     "Test Pattern",
                 "status",   "ACTIVE",
-                "createdAt", Instant.now().toString(), // GH-90000
-                "updatedAt", Instant.now().toString() // GH-90000
+                "createdAt", Instant.now().toString(), 
+                "updatedAt", Instant.now().toString() 
         ));
     }
 
-    private static Entity entityWithData(String id, Map<String, Object> data) { // GH-90000
-        return Entity.of(id, DataCloudPatternStore.COLLECTION, data); // GH-90000
+    private static Entity entityWithData(String id, Map<String, Object> data) { 
+        return Entity.of(id, DataCloudPatternStore.COLLECTION, data); 
     }
 }

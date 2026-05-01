@@ -469,8 +469,7 @@ export class CanvasPersistence {
                 return stored ? JSON.parse(stored) : [];
             }
             case 'indexedDB': {
-                // IndexedDB implementation
-                return [];
+                return await this.getHistoryFromIndexedDB(projectId, canvasId);
             }
             case 'api': {
                 // API implementation
@@ -769,21 +768,122 @@ export class CanvasPersistence {
         return stored ? JSON.parse(stored) : null;
     }
 
+    private async openIndexedDB(): Promise<IDBDatabase> {
+        return new Promise((resolve, reject) => {
+            if (typeof window === 'undefined' || !('indexedDB' in window)) {
+                reject(new Error('IndexedDB not available'));
+                return;
+            }
+            const request = indexedDB.open('yappc_canvas_db', 2);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => resolve(request.result);
+            request.onupgradeneeded = (event) => {
+                const db = (event.target as IDBOpenDBRequest).result;
+                if (!db.objectStoreNames.contains('snapshots')) {
+                    db.createObjectStore('snapshots', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('history')) {
+                    db.createObjectStore('history', { keyPath: 'id' });
+                }
+            };
+        });
+    }
+
+    private async saveHistoryToIndexedDB(
+        projectId: string,
+        canvasId: string,
+        history: CanvasSnapshot[]
+    ): Promise<void> {
+        try {
+            const db = await this.openIndexedDB();
+            const tx = db.transaction('history', 'readwrite');
+            const store = tx.objectStore('history');
+            store.put({ id: `${projectId}:${canvasId}`, history, updatedAt: Date.now() });
+            await new Promise<void>((resolve, reject) => {
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            });
+        } catch (err) {
+            logger.warn('IndexedDB history save failed', err);
+        }
+    }
+
+    private async getHistoryFromIndexedDB(
+        projectId: string,
+        canvasId: string
+    ): Promise<CanvasSnapshot[]> {
+        try {
+            const db = await this.openIndexedDB();
+            const tx = db.transaction('history', 'readonly');
+            const store = tx.objectStore('history');
+            const request = store.get(`${projectId}:${canvasId}`);
+            const record = await new Promise<{ history: CanvasSnapshot[] } | undefined>((resolve, reject) => {
+                request.onsuccess = () => resolve(request.result as { history: CanvasSnapshot[] } | undefined);
+                request.onerror = () => reject(request.error);
+            });
+            db.close();
+            return record?.history ?? [];
+        } catch (err) {
+            logger.warn('IndexedDB history load failed, falling back to localStorage', err);
+            return [];
+        }
+    }
+
     private async saveToIndexedDB(
         projectId: string,
         canvasId: string,
         snapshot: CanvasSnapshot
     ): Promise<void> {
-        // IndexedDB implementation
-        console.warn('IndexedDB persistence not yet implemented');
+        try {
+            const db = await this.openIndexedDB();
+            const tx = db.transaction(['snapshots', 'history'], 'readwrite');
+            const store = tx.objectStore('snapshots');
+            const record = { id: `${projectId}:${canvasId}`, snapshot, updatedAt: Date.now() };
+            store.put(record);
+
+            // Also update history
+            const historyStore = tx.objectStore('history');
+            const historyRequest = historyStore.get(`${projectId}:${canvasId}`);
+            const existing = await new Promise<{ history: CanvasSnapshot[] } | undefined>((resolve, reject) => {
+                historyRequest.onsuccess = () => resolve(historyRequest.result as { history: CanvasSnapshot[] } | undefined);
+                historyRequest.onerror = () => reject(historyRequest.error);
+            });
+            const history = existing?.history ?? [];
+            history.unshift(snapshot);
+            const maxSnapshots = this.config.autoSave?.maxSnapshots || 10;
+            if (history.length > maxSnapshots) {
+                history.length = maxSnapshots;
+            }
+            historyStore.put({ id: `${projectId}:${canvasId}`, history, updatedAt: Date.now() });
+
+            await new Promise<void>((resolve, reject) => {
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            });
+        } catch (err) {
+            logger.warn('IndexedDB save failed, falling back to localStorage', err);
+        }
     }
 
     private async loadFromIndexedDB(
         projectId: string,
         canvasId: string
     ): Promise<CanvasSnapshot | null> {
-        console.warn('IndexedDB persistence not yet implemented');
-        return null;
+        try {
+            const db = await this.openIndexedDB();
+            const tx = db.transaction('snapshots', 'readonly');
+            const store = tx.objectStore('snapshots');
+            const request = store.get(`${projectId}:${canvasId}`);
+            const record = await new Promise<{ snapshot: CanvasSnapshot } | undefined>((resolve, reject) => {
+                request.onsuccess = () => resolve(request.result as { snapshot: CanvasSnapshot } | undefined);
+                request.onerror = () => reject(request.error);
+            });
+            db.close();
+            return record?.snapshot ?? null;
+        } catch (err) {
+            logger.warn('IndexedDB load failed, falling back to localStorage', err);
+            return null;
+        }
     }
 
     private async saveToAPI(

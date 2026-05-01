@@ -1,4 +1,3 @@
-// @ts-nocheck
 // All tests skipped - incomplete feature
 import { render, fireEvent, screen, within } from '@testing-library/react';
 import React from 'react';

@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("Dashboard Domain Model Tests")
 class DashboardTest {
 
-    private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
+    private static final UUID WORKSPACE_ID = UUID.randomUUID(); 
     private static final String DASHBOARD_NAME = "Security Overview";
     private static final String DESCRIPTION = "Main security metrics dashboard";
 
@@ -31,32 +31,32 @@ class DashboardTest {
 
         @Test
         @DisplayName("of() creates dashboard with required fields and defaults")
-        void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
+        void ofCreatesWithRequiredFieldsAndDefaults() { 
             // WHEN
-            Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
+            Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); 
 
             // THEN
-            assertThat(dashboard.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(dashboard.getName()).isEqualTo(DASHBOARD_NAME); // GH-90000
-            assertThat(dashboard.isDefault()).isFalse(); // GH-90000
-            assertThat(dashboard.getCreatedAt()).isNotNull(); // GH-90000
-            assertThat(dashboard.getUpdatedAt()).isNotNull(); // GH-90000
-            assertThat(dashboard.getCreatedAt()).isEqualTo(dashboard.getUpdatedAt()); // GH-90000
+            assertThat(dashboard.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(dashboard.getName()).isEqualTo(DASHBOARD_NAME); 
+            assertThat(dashboard.isDefault()).isFalse(); 
+            assertThat(dashboard.getCreatedAt()).isNotNull(); 
+            assertThat(dashboard.getUpdatedAt()).isNotNull(); 
+            assertThat(dashboard.getCreatedAt()).isEqualTo(dashboard.getUpdatedAt()); 
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when workspaceId is null")
-        void ofThrowsWhenWorkspaceIdNull() { // GH-90000
-            assertThatThrownBy(() -> Dashboard.of(null, DASHBOARD_NAME)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenWorkspaceIdNull() { 
+            assertThatThrownBy(() -> Dashboard.of(null, DASHBOARD_NAME)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
         @DisplayName("of() throws NullPointerException when name is null")
-        void ofThrowsWhenNameNull() { // GH-90000
-            assertThatThrownBy(() -> Dashboard.of(WORKSPACE_ID, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void ofThrowsWhenNameNull() { 
+            assertThatThrownBy(() -> Dashboard.of(WORKSPACE_ID, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("name must not be null");
         }
     }
@@ -67,76 +67,76 @@ class DashboardTest {
 
         @Test
         @DisplayName("builder creates dashboard with all fields")
-        void builderCreatesWithAllFields() { // GH-90000
+        void builderCreatesWithAllFields() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            UUID id = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
             String widgetConfig = "{\"widgets\": []}";
 
             // WHEN
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .description(DESCRIPTION) // GH-90000
-                    .widgetConfig(widgetConfig) // GH-90000
-                    .isDefault(true) // GH-90000
-                    .createdAt(now) // GH-90000
-                    .updatedAt(now) // GH-90000
-                    .version(1) // GH-90000
-                    .build(); // GH-90000
+            Dashboard dashboard = Dashboard.builder() 
+                    .id(id) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .description(DESCRIPTION) 
+                    .widgetConfig(widgetConfig) 
+                    .isDefault(true) 
+                    .createdAt(now) 
+                    .updatedAt(now) 
+                    .version(1) 
+                    .build(); 
 
             // THEN
-            assertThat(dashboard.getId()).isEqualTo(id); // GH-90000
-            assertThat(dashboard.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(dashboard.getName()).isEqualTo(DASHBOARD_NAME); // GH-90000
-            assertThat(dashboard.getDescription()).isEqualTo(DESCRIPTION); // GH-90000
-            assertThat(dashboard.getWidgetConfig()).isEqualTo(widgetConfig); // GH-90000
-            assertThat(dashboard.isDefault()).isTrue(); // GH-90000
-            assertThat(dashboard.getCreatedAt()).isEqualTo(now); // GH-90000
-            assertThat(dashboard.getUpdatedAt()).isEqualTo(now); // GH-90000
-            assertThat(dashboard.getVersion()).isEqualTo(1); // GH-90000
+            assertThat(dashboard.getId()).isEqualTo(id); 
+            assertThat(dashboard.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(dashboard.getName()).isEqualTo(DASHBOARD_NAME); 
+            assertThat(dashboard.getDescription()).isEqualTo(DESCRIPTION); 
+            assertThat(dashboard.getWidgetConfig()).isEqualTo(widgetConfig); 
+            assertThat(dashboard.isDefault()).isTrue(); 
+            assertThat(dashboard.getCreatedAt()).isEqualTo(now); 
+            assertThat(dashboard.getUpdatedAt()).isEqualTo(now); 
+            assertThat(dashboard.getVersion()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("builder defaults isDefault to false")
-        void builderDefaultsIsDefaultToFalse() { // GH-90000
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsIsDefaultToFalse() { 
+            Dashboard dashboard = Dashboard.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .build(); 
 
-            assertThat(dashboard.isDefault()).isFalse(); // GH-90000
+            assertThat(dashboard.isDefault()).isFalse(); 
         }
 
         @Test
         @DisplayName("builder defaults version to 0")
-        void builderDefaultsVersionToZero() { // GH-90000
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .build(); // GH-90000
+        void builderDefaultsVersionToZero() { 
+            Dashboard dashboard = Dashboard.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .build(); 
 
-            assertThat(dashboard.getVersion()).isZero(); // GH-90000
+            assertThat(dashboard.getVersion()).isZero(); 
         }
 
         @Test
         @DisplayName("toBuilder creates modifiable copy")
-        void toBuilderCreatesModifiableCopy() { // GH-90000
+        void toBuilderCreatesModifiableCopy() { 
             // GIVEN
-            Dashboard original = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
+            Dashboard original = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); 
 
             // WHEN
-            Dashboard copy = original.toBuilder() // GH-90000
-                    .description(DESCRIPTION) // GH-90000
-                    .isDefault(true) // GH-90000
-                    .build(); // GH-90000
+            Dashboard copy = original.toBuilder() 
+                    .description(DESCRIPTION) 
+                    .isDefault(true) 
+                    .build(); 
 
             // THEN
-            assertThat(copy.getWorkspaceId()).isEqualTo(original.getWorkspaceId()); // GH-90000
-            assertThat(copy.getName()).isEqualTo(original.getName()); // GH-90000
-            assertThat(copy.getDescription()).isEqualTo(DESCRIPTION); // GH-90000
-            assertThat(copy.isDefault()).isTrue(); // GH-90000
+            assertThat(copy.getWorkspaceId()).isEqualTo(original.getWorkspaceId()); 
+            assertThat(copy.getName()).isEqualTo(original.getName()); 
+            assertThat(copy.getDescription()).isEqualTo(DESCRIPTION); 
+            assertThat(copy.isDefault()).isTrue(); 
         }
     }
 
@@ -146,66 +146,66 @@ class DashboardTest {
 
         @Test
         @DisplayName("equals returns true for same id")
-        void equalsReturnsTrueForSameId() { // GH-90000
+        void equalsReturnsTrueForSameId() { 
             // GIVEN
-            UUID id = UUID.randomUUID(); // GH-90000
-            Dashboard dashboard1 = Dashboard.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
+            UUID id = UUID.randomUUID(); 
+            Dashboard dashboard1 = Dashboard.builder() 
+                    .id(id) 
+                    .workspaceId(WORKSPACE_ID) 
                     .name("Dashboard 1")
-                    .build(); // GH-90000
-            Dashboard dashboard2 = Dashboard.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .workspaceId(UUID.randomUUID())  // Different workspace // GH-90000
+                    .build(); 
+            Dashboard dashboard2 = Dashboard.builder() 
+                    .id(id) 
+                    .workspaceId(UUID.randomUUID())  // Different workspace 
                     .name("Dashboard 2")  // Different name
-                    .build(); // GH-90000
+                    .build(); 
 
             // THEN
-            assertThat(dashboard1).isEqualTo(dashboard2); // GH-90000
-            assertThat(dashboard1.hashCode()).isEqualTo(dashboard2.hashCode()); // GH-90000
+            assertThat(dashboard1).isEqualTo(dashboard2); 
+            assertThat(dashboard1.hashCode()).isEqualTo(dashboard2.hashCode()); 
         }
 
         @Test
         @DisplayName("equals returns false for different ids")
-        void equalsReturnsFalseForDifferentIds() { // GH-90000
-            Dashboard dashboard1 = Dashboard.builder() // GH-90000
-                    .id(UUID.randomUUID()) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .build(); // GH-90000
-            Dashboard dashboard2 = Dashboard.builder() // GH-90000
-                    .id(UUID.randomUUID()) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .build(); // GH-90000
+        void equalsReturnsFalseForDifferentIds() { 
+            Dashboard dashboard1 = Dashboard.builder() 
+                    .id(UUID.randomUUID()) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .build(); 
+            Dashboard dashboard2 = Dashboard.builder() 
+                    .id(UUID.randomUUID()) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .build(); 
 
-            assertThat(dashboard1).isNotEqualTo(dashboard2); // GH-90000
+            assertThat(dashboard1).isNotEqualTo(dashboard2); 
         }
 
         @Test
         @DisplayName("equals returns false for null")
-        void equalsReturnsFalseForNull() { // GH-90000
-            Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
-            assertThat(dashboard).isNotEqualTo(null); // GH-90000
+        void equalsReturnsFalseForNull() { 
+            Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); 
+            assertThat(dashboard).isNotEqualTo(null); 
         }
 
         @Test
         @DisplayName("equals returns false for different type")
-        void equalsReturnsFalseForDifferentType() { // GH-90000
-            Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
+        void equalsReturnsFalseForDifferentType() { 
+            Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); 
             assertThat(dashboard).isNotEqualTo("not a dashboard");
         }
 
         @Test
         @DisplayName("equals is reflexive")
-        void equalsIsReflexive() { // GH-90000
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .id(UUID.randomUUID()) // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .build(); // GH-90000
+        void equalsIsReflexive() { 
+            Dashboard dashboard = Dashboard.builder() 
+                    .id(UUID.randomUUID()) 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .build(); 
 
-            assertThat(dashboard).isEqualTo(dashboard); // GH-90000
+            assertThat(dashboard).isEqualTo(dashboard); 
         }
     }
 
@@ -215,31 +215,31 @@ class DashboardTest {
 
         @Test
         @DisplayName("setters update fields correctly")
-        void settersUpdateFieldsCorrectly() { // GH-90000
+        void settersUpdateFieldsCorrectly() { 
             // GIVEN
-            Dashboard dashboard = new Dashboard(); // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            Dashboard dashboard = new Dashboard(); 
+            UUID id = UUID.randomUUID(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            dashboard.setId(id); // GH-90000
-            dashboard.setWorkspaceId(WORKSPACE_ID); // GH-90000
-            dashboard.setName(DASHBOARD_NAME); // GH-90000
-            dashboard.setDescription(DESCRIPTION); // GH-90000
-            dashboard.setDefault(true); // GH-90000
-            dashboard.setCreatedAt(now); // GH-90000
-            dashboard.setUpdatedAt(now); // GH-90000
-            dashboard.setVersion(5); // GH-90000
+            dashboard.setId(id); 
+            dashboard.setWorkspaceId(WORKSPACE_ID); 
+            dashboard.setName(DASHBOARD_NAME); 
+            dashboard.setDescription(DESCRIPTION); 
+            dashboard.setDefault(true); 
+            dashboard.setCreatedAt(now); 
+            dashboard.setUpdatedAt(now); 
+            dashboard.setVersion(5); 
 
             // THEN
-            assertThat(dashboard.getId()).isEqualTo(id); // GH-90000
-            assertThat(dashboard.getWorkspaceId()).isEqualTo(WORKSPACE_ID); // GH-90000
-            assertThat(dashboard.getName()).isEqualTo(DASHBOARD_NAME); // GH-90000
-            assertThat(dashboard.getDescription()).isEqualTo(DESCRIPTION); // GH-90000
-            assertThat(dashboard.isDefault()).isTrue(); // GH-90000
-            assertThat(dashboard.getCreatedAt()).isEqualTo(now); // GH-90000
-            assertThat(dashboard.getUpdatedAt()).isEqualTo(now); // GH-90000
-            assertThat(dashboard.getVersion()).isEqualTo(5); // GH-90000
+            assertThat(dashboard.getId()).isEqualTo(id); 
+            assertThat(dashboard.getWorkspaceId()).isEqualTo(WORKSPACE_ID); 
+            assertThat(dashboard.getName()).isEqualTo(DASHBOARD_NAME); 
+            assertThat(dashboard.getDescription()).isEqualTo(DESCRIPTION); 
+            assertThat(dashboard.isDefault()).isTrue(); 
+            assertThat(dashboard.getCreatedAt()).isEqualTo(now); 
+            assertThat(dashboard.getUpdatedAt()).isEqualTo(now); 
+            assertThat(dashboard.getVersion()).isEqualTo(5); 
         }
     }
 
@@ -249,31 +249,31 @@ class DashboardTest {
 
         @Test
         @DisplayName("handles empty widget config")
-        void handlesEmptyWidgetConfig() { // GH-90000
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
+        void handlesEmptyWidgetConfig() { 
+            Dashboard dashboard = Dashboard.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
                     .widgetConfig("")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(dashboard.getWidgetConfig()).isEmpty(); // GH-90000
+            assertThat(dashboard.getWidgetConfig()).isEmpty(); 
         }
 
         @Test
         @DisplayName("handles null widget config")
-        void handlesNullWidgetConfig() { // GH-90000
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .widgetConfig(null) // GH-90000
-                    .build(); // GH-90000
+        void handlesNullWidgetConfig() { 
+            Dashboard dashboard = Dashboard.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .widgetConfig(null) 
+                    .build(); 
 
-            assertThat(dashboard.getWidgetConfig()).isNull(); // GH-90000
+            assertThat(dashboard.getWidgetConfig()).isNull(); 
         }
 
         @Test
         @DisplayName("handles complex JSON widget config")
-        void handlesComplexJsonWidgetConfig() { // GH-90000
+        void handlesComplexJsonWidgetConfig() { 
             String complexConfig = """
                     {
                         "widgets": [
@@ -284,13 +284,13 @@ class DashboardTest {
                     }
                     """;
 
-            Dashboard dashboard = Dashboard.builder() // GH-90000
-                    .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name(DASHBOARD_NAME) // GH-90000
-                    .widgetConfig(complexConfig) // GH-90000
-                    .build(); // GH-90000
+            Dashboard dashboard = Dashboard.builder() 
+                    .workspaceId(WORKSPACE_ID) 
+                    .name(DASHBOARD_NAME) 
+                    .widgetConfig(complexConfig) 
+                    .build(); 
 
-            assertThat(dashboard.getWidgetConfig()).isEqualTo(complexConfig); // GH-90000
+            assertThat(dashboard.getWidgetConfig()).isEqualTo(complexConfig); 
         }
     }
 }

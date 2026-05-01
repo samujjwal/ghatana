@@ -337,4 +337,66 @@ class EventAppendTest extends DataCloudHttpServerTestBase {
             assertStatusCode(resp, TestConstants.HTTP_NOT_FOUND); // GH-90000
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Error-path — broker/transport failures (P1-07)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Error-path coverage for event append when the underlying storage broker
+     * rejects the write (connection failure, timeout, capacity exceeded, etc.).
+     *
+     * <p>Requirement: When {@code DataCloudClient.appendEvent} fails, the HTTP
+     * layer must surface a {@code 500 Internal Server Error} with a structured
+     * error body so callers can distinguish transport failures from validation
+     * errors.
+     *
+     * @doc.type class
+     * @doc.purpose Broker-failure error-path tests for event append endpoints
+     * @doc.layer product
+     * @doc.pattern Test
+     */
+    @Nested
+    @DisplayName("Event append — broker/transport error paths")
+    class AppendEventErrorPathTests {
+
+        /**
+         * Requirement B011: Surface Broker Write Failure
+         * Route: POST /api/v1/events
+         * Failure: Returns 500 when the event broker rejects the write
+         */
+        @Test
+        @DisplayName("returns 500 when broker fails to persist the event") // GH-90000
+        void appendEvent_brokerFailure_returns500() throws Exception { // GH-90000
+            when(mockClient.appendEvent(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("broker unavailable"))); // GH-90000
+
+            startServer(); // GH-90000
+
+            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
+                    Map.of("type", "ENTITY_CREATED", "data", Map.of("entityId", "ent-1"))); // GH-90000
+
+            // ActiveJ propagates unhandled Promise failures as 500; body may be HTML or structured.
+            assertStatusCode(resp, TestConstants.HTTP_INTERNAL_ERROR); // GH-90000
+        }
+
+        /**
+         * Requirement B012: Surface Broker Read Failure
+         * Route: GET /api/v1/events?from=0
+         * Failure: Returns 500 when the event store query fails
+         */
+        @Test
+        @DisplayName("returns 500 when broker fails to read the event stream") // GH-90000
+        void readEvents_brokerFailure_returns500() throws Exception { // GH-90000
+            when(mockClient.queryEvents(anyString(), any())) // GH-90000
+                    .thenReturn(Promise.ofException(new RuntimeException("event store unavailable"))); // GH-90000
+
+            startServer(); // GH-90000
+
+            HttpResponse<String> resp = get("/api/v1/events?from=0");
+
+            // ActiveJ propagates unhandled Promise failures as 500; body may be HTML or structured.
+            assertStatusCode(resp, TestConstants.HTTP_INTERNAL_ERROR); // GH-90000
+        }
+    }
 }

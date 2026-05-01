@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/ide",
+  "name": "@ghatana/yappc-ide",
   "version": "0.1.0",
   "description": "⚠️ DEPRECATED - Collaborative Polyglot IDE core package. Migrate to @ghatana/yappc-canvas. Sunset: 2026-06-06",
   "deprecated": "This package is deprecated. Please migrate to @ghatana/yappc-canvas. See /docs/LIBRARY_CONSOLIDATION_PLAN.md",

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unit tests for AutomatedResponseService
  *
@@ -16,23 +15,28 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AutomatedResponseService } from '../../../services/anomaly/AutomatedResponseService';
 import { MetricsCollector, NoopMetricsCollector } from '../../../observability/MetricsCollector';
 
+interface IncidentLike {
+  id: string;
+  status?: string;
+}
+
 // Mock incident repository
 class MockIncidentRepository {
-  private incidents: Map<string, unknown> = new Map();
+  private incidents: Map<string, IncidentLike> = new Map();
 
-  async save(incident: unknown): Promise<void> {
+  async save(incident: IncidentLike): Promise<void> {
     this.incidents.set(incident.id, incident);
   }
 
-  async findById(id: string): Promise<any | null> {
+  async findById(id: string): Promise<IncidentLike | null> {
     return this.incidents.get(id) || null;
   }
 
-  async findByStatus(status: string): Promise<unknown[]> {
+  async findByStatus(status: string): Promise<IncidentLike[]> {
     return Array.from(this.incidents.values()).filter((i) => i.status === status);
   }
 
-  async query(): Promise<unknown[]> {
+  async query(): Promise<IncidentLike[]> {
     return Array.from(this.incidents.values());
   }
 

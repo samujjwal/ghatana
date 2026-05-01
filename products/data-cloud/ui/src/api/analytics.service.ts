@@ -22,6 +22,11 @@ import {
   type AnalyticsSuggestResponse,
   type AnalyticsSqlQueryResponse,
 } from '../contracts/schemas';
+import {
+  ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE,
+  createRuntimeBoundaryError,
+} from '../lib/runtime-boundaries';
+import { isAnalyticsAiEnabled } from '../lib/feature-gates';
 
 const API_BASE = '/api/v1';
 
@@ -55,6 +60,9 @@ export type AnalyticsExplainResult = AnalyticsExplainResponse;
 export async function fetchAnalyticsQuerySuggestions(
   intent: string,
 ): Promise<AnalyticsSqlSuggestionResult> {
+  if (!isAnalyticsAiEnabled()) {
+    throw createRuntimeBoundaryError(ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE);
+  }
   const tenantId = getTenantId();
   const response = await apiClient.post<AnalyticsSuggestResponse>(
     '/analytics/suggest',
@@ -185,6 +193,9 @@ function fallbackPolicyEvaluation(sql: string): QueryPolicyEvaluation {
  * Attempts backend policy endpoint first, then falls back to deterministic client heuristics.
  */
 export async function evaluateQueryPolicy(sql: string): Promise<QueryPolicyEvaluation> {
+  if (!isAnalyticsAiEnabled()) {
+    throw createRuntimeBoundaryError(ANALYTICS_AI_DISABLED_BOUNDARY_MESSAGE);
+  }
   const tenantId = getTenantId();
 
   try {

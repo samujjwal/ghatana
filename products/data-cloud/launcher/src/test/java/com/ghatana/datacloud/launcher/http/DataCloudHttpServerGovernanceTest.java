@@ -6,9 +6,13 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.audit.AuditSummaryProvider;
 import com.ghatana.datacloud.spi.BatchResult;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.governance.PolicyEngine;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,9 +41,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * Integration tests for data lifecycle and governance API endpoints (DC-E5). // GH-90000
@@ -351,6 +357,41 @@ class DataCloudHttpServerGovernanceTest {
         }
 
         @Test
+        @DisplayName("dry run preview is deterministic for the same dataset")
+        @SuppressWarnings("unchecked")
+        void dryRunPreview_isDeterministicForSameDataset() throws Exception {
+            storeEntity(entity("det-exp-1", "deterministic_sessions", Map.of("expiresAt", Instant.now().minusSeconds(60).toString())));
+            storeEntity(entity("det-exp-2", "deterministic_sessions", Map.of("expiresAt", Instant.now().minusSeconds(120).toString())));
+            storeEntity(entity("det-live-1", "deterministic_sessions", Map.of("expiresAt", Instant.now().plusSeconds(3600).toString())));
+
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String dryRunBody = mapper.writeValueAsString(Map.of(
+                "collection", "deterministic_sessions",
+                "dryRun", true
+            ));
+
+            HttpResponse<String> first = post("/api/v1/governance/retention/purge", dryRunBody);
+            HttpResponse<String> second = post("/api/v1/governance/retention/purge", dryRunBody);
+
+            assertThat(first.statusCode()).isEqualTo(200);
+            assertThat(second.statusCode()).isEqualTo(200);
+
+            Map<String, Object> firstData = (Map<String, Object>) mapper.readValue(first.body(), Map.class).get("data");
+            Map<String, Object> secondData = (Map<String, Object>) mapper.readValue(second.body(), Map.class).get("data");
+
+            assertThat(firstData.get("status")).isEqualTo("DRY_RUN_COMPLETE");
+            assertThat(secondData.get("status")).isEqualTo("DRY_RUN_COMPLETE");
+            assertThat(firstData.get("estimatedRows")).isEqualTo(2);
+            assertThat(secondData.get("estimatedRows")).isEqualTo(2);
+            assertThat((List<String>) firstData.get("sampleEntityIds"))
+                .containsExactlyElementsOf((List<String>) secondData.get("sampleEntityIds"));
+        }
+
+        @Test
         @DisplayName("real purge deletes expired entities and returns PURGE_COMPLETED status")
         @SuppressWarnings("unchecked")
         void realPurge_returnsPurgeScheduled() throws Exception { // GH-90000
@@ -400,6 +441,44 @@ class DataCloudHttpServerGovernanceTest {
                     assertThat(tombstone.data().get("collection")).isEqualTo("old_events");
                     assertThat(tombstone.data().get("deletedCount")).isEqualTo(2);
                 });
+        }
+
+        @Test
+        @DisplayName("repeating purge execute with same token is safe and returns zero additional deletions")
+        @SuppressWarnings("unchecked")
+        void repeatedExecuteWithSameToken_isSafeAndIdempotent() throws Exception {
+            storeEntity(entity("dup-1", "idempotent_events", Map.of("expiresAt", Instant.now().minusSeconds(180).toString())));
+
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String dryRunBody = mapper.writeValueAsString(Map.of(
+                "collection", "idempotent_events",
+                "dryRun", true
+            ));
+            HttpResponse<String> dryRunResp = post("/api/v1/governance/retention/purge", dryRunBody);
+            assertThat(dryRunResp.statusCode()).isEqualTo(200);
+            Map<String, Object> dryRunData = (Map<String, Object>) mapper.readValue(dryRunResp.body(), Map.class).get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
+
+            String executeBody = mapper.writeValueAsString(Map.of(
+                "collection", "idempotent_events",
+                "confirmationToken", confirmationToken
+            ));
+
+            HttpResponse<String> firstExecute = post("/api/v1/governance/retention/purge", executeBody);
+            assertThat(firstExecute.statusCode()).isEqualTo(200);
+            Map<String, Object> firstData = (Map<String, Object>) mapper.readValue(firstExecute.body(), Map.class).get("data");
+            assertThat(firstData.get("status")).isEqualTo("PURGE_COMPLETED");
+            assertThat(firstData.get("deletedRows")).isEqualTo(1);
+
+            HttpResponse<String> secondExecute = post("/api/v1/governance/retention/purge", executeBody);
+            assertThat(secondExecute.statusCode()).isEqualTo(200);
+            Map<String, Object> secondData = (Map<String, Object>) mapper.readValue(secondExecute.body(), Map.class).get("data");
+            assertThat(secondData.get("status")).isEqualTo("PURGE_COMPLETED");
+            assertThat(secondData.get("deletedRows")).isEqualTo(0);
+            verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 1));
         }
 
         @Test
@@ -960,6 +1039,50 @@ class DataCloudHttpServerGovernanceTest {
                 assertThat(meta.get("tenantId")).isEqualTo("acme-corp");
             }
         }
+
+        @Test
+        @DisplayName("includes audit query dimensions in recent compliance events when audit summary provider is available")
+        @SuppressWarnings("unchecked")
+        void complianceSummary_includesRecentAuditDimensions() throws Exception {
+            AuditService auditSummaryService = mock(AuditService.class, withSettings().extraInterfaces(AuditSummaryProvider.class));
+            when(auditSummaryService.record(any())).thenReturn(Promise.complete());
+
+            AuditSummaryProvider auditSummaryProvider = (AuditSummaryProvider) auditSummaryService;
+            when(auditSummaryProvider.summarize(any(), any(Instant.class), eq(500)))
+                .thenReturn(Promise.of(new AuditSummaryProvider.AuditSummary(
+                    Instant.parse("2026-04-30T10:15:30Z"),
+                    Map.of("RETENTION_PURGE", 2L, "PII_REDACT", 1L),
+                    List.of(Map.of(
+                        "eventType", "RETENTION_PURGE",
+                        "resourceType", "GOVERNANCE",
+                        "resourceId", "retention-policy-main",
+                        "details", Map.of("correlationId", "corr-123", "requestId", "req-123")
+                    ))
+                )));
+
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(auditSummaryService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/compliance/summary");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> data = (Map<String, Object>) body.get("data");
+            assertThat(data.get("lastAuditAt")).isEqualTo("2026-04-30T10:15:30Z");
+            assertThat(((Number) data.get("auditEventsIn30Days")).longValue()).isEqualTo(3L);
+
+            List<Map<String, Object>> recentAuditEvents = (List<Map<String, Object>>) data.get("recentAuditEvents");
+            assertThat(recentAuditEvents).hasSize(1);
+            Map<String, Object> event = recentAuditEvents.get(0);
+            assertThat(event).containsEntry("eventType", "RETENTION_PURGE");
+            assertThat(event).containsEntry("resourceType", "GOVERNANCE");
+            assertThat(event).containsEntry("resourceId", "retention-policy-main");
+            Map<String, Object> details = (Map<String, Object>) event.get("details");
+            assertThat(details).containsEntry("correlationId", "corr-123");
+            assertThat(details).containsEntry("requestId", "req-123");
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1032,6 +1155,82 @@ class DataCloudHttpServerGovernanceTest {
             System.clearProperty(key); // GH-90000
         } else {
             System.setProperty(key, value); // GH-90000
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // P0-04: Cross-tenant enforcement at HTTP server level
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Verifies that when the security filter is active (API key auth enabled)
+     * a caller whose API key is bound to tenant-A cannot access tenant-B resources.
+     */
+    @Nested
+    @DisplayName("Cross-tenant enforcement (P0-04)")
+    class CrossTenantEnforcementTests {
+
+        private static final String TENANT_A_KEY = "key-tenant-a";
+        private static final String TENANT_A     = "tenant-a";
+        private static final String TENANT_B     = "tenant-b";
+
+        private ApiKeyResolver tenantAResolver; // GH-90000
+        private PolicyEngine permissivePolicyEngine; // GH-90000
+
+        @BeforeEach
+        void setUpResolver() { // GH-90000
+            tenantAResolver = mock(ApiKeyResolver.class); // GH-90000
+            permissivePolicyEngine = mock(PolicyEngine.class); // GH-90000
+            when(tenantAResolver.resolve(TENANT_A_KEY))
+                .thenReturn(Optional.of(new Principal("svc-tenant-a", List.of("admin"), TENANT_A))); // GH-90000
+            when(permissivePolicyEngine.evaluate(any(), any())).thenReturn(Promise.of(Boolean.TRUE)); // GH-90000
+            when(mockAuditService.record(any())).thenReturn(Promise.complete()); // GH-90000
+        }
+
+        @Test
+        @DisplayName("API-key principal for tenant-A receives 403 when X-Tenant-ID is tenant-B")
+        @SuppressWarnings("unchecked")
+        void crossTenantRequestReturnsForbidden() throws Exception { // GH-90000
+            server = new DataCloudHttpServer(mockClient, port)
+                .withApiKeyResolver(tenantAResolver)
+                .withAuditService(mockAuditService); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
+
+            // Request claims tenant-B but API key belongs to tenant-A
+            HttpRequest req = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/compliance/summary"))
+                .header("X-API-Key", TENANT_A_KEY)
+                .header("X-Tenant-ID", TENANT_B) // GH-90000
+                .build(); // GH-90000
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+
+            assertThat(resp.statusCode()).isEqualTo(403); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(body).containsKey("error"); // GH-90000
+        }
+
+        @Test
+        @DisplayName("API-key principal for tenant-A receives 200 when X-Tenant-ID matches")
+        @SuppressWarnings("unchecked")
+        void sameTenanRequestIsAllowed() throws Exception { // GH-90000
+            server = new DataCloudHttpServer(mockClient, port)
+                .withApiKeyResolver(tenantAResolver)
+                .withPolicyEngine(permissivePolicyEngine)
+                .withAuditService(mockAuditService); // GH-90000
+            server.start(); // GH-90000
+            waitForServerReady(port); // GH-90000
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/compliance/summary"))
+                .header("X-API-Key", TENANT_A_KEY)
+                .header("X-Tenant-ID", TENANT_A) // GH-90000
+                .build(); // GH-90000
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+
+            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         }
     }
 }

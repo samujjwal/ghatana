@@ -20,32 +20,32 @@ class ErrorHandlerTest {
 
     @Test
     @DisplayName("Should classify timeout exceptions as retryable")
-    void testTimeoutRetryable() { // GH-90000
+    void testTimeoutRetryable() { 
         assertTrue(ErrorHandler.isRetryable(new SocketTimeoutException("Connection timed out")));
         assertTrue(ErrorHandler.isRetryable(new java.util.concurrent.TimeoutException("Operation timeout")));
     }
 
     @Test
     @DisplayName("Should classify connect exceptions as retryable")
-    void testConnectRetryable() { // GH-90000
+    void testConnectRetryable() { 
         assertTrue(ErrorHandler.isRetryable(new ConnectException("Connection refused")));
     }
 
     @Test
     @DisplayName("Should classify validation exceptions as non-retryable")
-    void testValidationNonRetryable() { // GH-90000
+    void testValidationNonRetryable() { 
         assertFalse(ErrorHandler.isRetryable(new ValidationException("Invalid input")));
     }
 
     @Test
     @DisplayName("Should classify security exceptions as non-retryable")
-    void testSecurityNonRetryable() { // GH-90000
+    void testSecurityNonRetryable() { 
         assertFalse(ErrorHandler.isRetryable(new UnauthorizedException("Access denied")));
     }
 
     @Test
     @DisplayName("Should get correct error category")
-    void testErrorCategories() { // GH-90000
+    void testErrorCategories() { 
         assertEquals("VALIDATION", ErrorHandler.getErrorCategory(new ValidationException("Invalid")));
         assertEquals("NOT_FOUND", ErrorHandler.getErrorCategory(new ResourceNotFoundException("Not found")));
         assertEquals("SECURITY", ErrorHandler.getErrorCategory(new UnauthorizedException("Denied")));
@@ -56,87 +56,87 @@ class ErrorHandlerTest {
 
     @Test
     @DisplayName("Should translate exceptions to platform standards")
-    void testExceptionTranslation() { // GH-90000
+    void testExceptionTranslation() { 
         // IllegalArgumentException -> ValidationException
-        BaseException translated = ErrorHandler.translate( // GH-90000
+        BaseException translated = ErrorHandler.translate( 
             new IllegalArgumentException("Bad argument"), "test context"
         );
-        assertInstanceOf(ValidationException.class, translated); // GH-90000
+        assertInstanceOf(ValidationException.class, translated); 
         assertTrue(translated.getMessage().contains("test context"));
 
         // SocketTimeoutException -> TimeoutException
-        translated = ErrorHandler.translate( // GH-90000
+        translated = ErrorHandler.translate( 
             new SocketTimeoutException("Connection timeout"), "network call"
         );
-        assertInstanceOf(TimeoutException.class, translated); // GH-90000
+        assertInstanceOf(TimeoutException.class, translated); 
 
         // ConnectException -> ServiceUnavailableException
-        translated = ErrorHandler.translate( // GH-90000
+        translated = ErrorHandler.translate( 
             new ConnectException("Connection refused"), "service call"
         );
-        assertInstanceOf(ServiceUnavailableException.class, translated); // GH-90000
+        assertInstanceOf(ServiceUnavailableException.class, translated); 
     }
 
     @Test
     @DisplayName("Should pass through BaseException without translation")
-    void testBaseExceptionPassthrough() { // GH-90000
+    void testBaseExceptionPassthrough() { 
         ValidationException original = new ValidationException("Original");
-        BaseException translated = ErrorHandler.translate(original, "context"); // GH-90000
-        assertSame(original, translated); // GH-90000
+        BaseException translated = ErrorHandler.translate(original, "context"); 
+        assertSame(original, translated); 
     }
 
     @Test
     @DisplayName("Should execute operation with handling")
-    void testExecuteWithHandling() { // GH-90000
+    void testExecuteWithHandling() { 
         // Success case
-        String result = ErrorHandler.executeWithHandling(() -> "success", "operation"); // GH-90000
-        assertEquals("success", result); // GH-90000
+        String result = ErrorHandler.executeWithHandling(() -> "success", "operation"); 
+        assertEquals("success", result); 
 
         // Failure case
-        BaseException exception = assertThrows(BaseException.class, () -> { // GH-90000
-            ErrorHandler.executeWithHandling(() -> { // GH-90000
+        BaseException exception = assertThrows(BaseException.class, () -> { 
+            ErrorHandler.executeWithHandling(() -> { 
                 throw new IllegalArgumentException("Bad input");
             }, "test operation");
         });
-        assertInstanceOf(ValidationException.class, exception); // GH-90000
+        assertInstanceOf(ValidationException.class, exception); 
     }
 
     @Test
     @DisplayName("Should execute with fallback on failure")
-    void testExecuteWithFallback() { // GH-90000
-        String result = ErrorHandler.executeWithFallback( // GH-90000
+    void testExecuteWithFallback() { 
+        String result = ErrorHandler.executeWithFallback( 
             () -> { throw new RuntimeException("Primary failed"); },
-            () -> "fallback result", // GH-90000
+            () -> "fallback result", 
             "primary operation"
         );
-        assertEquals("fallback result", result); // GH-90000
+        assertEquals("fallback result", result); 
 
         // Success case - fallback not used
-        result = ErrorHandler.executeWithFallback( // GH-90000
-            () -> "primary result", // GH-90000
-            () -> "fallback result", // GH-90000
+        result = ErrorHandler.executeWithFallback( 
+            () -> "primary result", 
+            () -> "fallback result", 
             "primary operation"
         );
-        assertEquals("primary result", result); // GH-90000
+        assertEquals("primary result", result); 
     }
 
     @Test
     @DisplayName("Should wrap checked exceptions as runtime")
-    void testWrapAsRuntime() { // GH-90000
+    void testWrapAsRuntime() { 
         Exception checked = new Exception("Checked exception");
-        RuntimeException runtime = ErrorHandler.wrapAsRuntime(checked); // GH-90000
-        assertEquals(checked.getMessage(), runtime.getMessage()); // GH-90000
-        assertSame(checked, runtime.getCause()); // GH-90000
+        RuntimeException runtime = ErrorHandler.wrapAsRuntime(checked); 
+        assertEquals(checked.getMessage(), runtime.getMessage()); 
+        assertSame(checked, runtime.getCause()); 
 
         // Already runtime - should return same
         RuntimeException alreadyRuntime = new IllegalArgumentException("Already runtime");
-        RuntimeException result = ErrorHandler.wrapAsRuntime(alreadyRuntime); // GH-90000
-        assertSame(alreadyRuntime, result); // GH-90000
+        RuntimeException result = ErrorHandler.wrapAsRuntime(alreadyRuntime); 
+        assertSame(alreadyRuntime, result); 
     }
 
     @Test
     @DisplayName("Should provide user-friendly messages")
-    void testUserMessages() { // GH-90000
+    void testUserMessages() { 
         assertTrue(ErrorHandler.getUserMessage(new ValidationException("Invalid"))
             .contains("Invalid input"));
         assertTrue(ErrorHandler.getUserMessage(new ResourceNotFoundException("Not found"))
@@ -151,31 +151,31 @@ class ErrorHandlerTest {
 
     @Test
     @DisplayName("Should determine correct severity levels")
-    void testSeverityLevels() { // GH-90000
-        assertEquals(ErrorHandler.Severity.CRITICAL, // GH-90000
+    void testSeverityLevels() { 
+        assertEquals(ErrorHandler.Severity.CRITICAL, 
             ErrorHandler.getSeverity(new InternalException("Critical")));
-        assertEquals(ErrorHandler.Severity.HIGH, // GH-90000
+        assertEquals(ErrorHandler.Severity.HIGH, 
             ErrorHandler.getSeverity(new ServiceUnavailableException("Down")));
-        assertEquals(ErrorHandler.Severity.MEDIUM, // GH-90000
+        assertEquals(ErrorHandler.Severity.MEDIUM, 
             ErrorHandler.getSeverity(new TimeoutException("Timeout")));
-        assertEquals(ErrorHandler.Severity.LOW, // GH-90000
+        assertEquals(ErrorHandler.Severity.LOW, 
             ErrorHandler.getSeverity(new ValidationException("Invalid")));
-        assertEquals(ErrorHandler.Severity.LOW, // GH-90000
+        assertEquals(ErrorHandler.Severity.LOW, 
             ErrorHandler.getSeverity(new ResourceNotFoundException("Not found")));
     }
 
     @Test
     @DisplayName("Should check nested causes for retryable")
-    void testNestedCauseRetryable() { // GH-90000
+    void testNestedCauseRetryable() { 
         // Wrap a retryable exception
-        Exception wrapped = new RuntimeException("Wrapper", // GH-90000
+        Exception wrapped = new RuntimeException("Wrapper", 
             new SocketTimeoutException("Inner timeout"));
-        assertTrue(ErrorHandler.isRetryable(wrapped)); // GH-90000
+        assertTrue(ErrorHandler.isRetryable(wrapped)); 
 
         // Deeply nested
-        Exception deep = new RuntimeException("Level 1", // GH-90000
-            new RuntimeException("Level 2", // GH-90000
+        Exception deep = new RuntimeException("Level 1", 
+            new RuntimeException("Level 2", 
                 new ConnectException("Level 3")));
-        assertTrue(ErrorHandler.isRetryable(deep)); // GH-90000
+        assertTrue(ErrorHandler.isRetryable(deep)); 
     }
 }

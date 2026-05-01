@@ -217,8 +217,10 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 intentController, shapeController, generationController,
                 validationController, advancePhaseUseCase, aepPublisher,
                 humanApprovalService, workflowService);
+        com.ghatana.platform.security.rbac.PolicyRepository policyRepository =
+                injector.getInstance(com.ghatana.platform.security.rbac.PolicyRepository.class);
         YappcApiSecurity.SecurityRoutes securedApi =
-                YappcApiSecurity.secureApi(apiServlet, "yappc:lifecycle-api");
+                YappcApiSecurity.secureApi(apiServlet, "yappc:lifecycle-api", policyRepository);
         AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint(
                 request -> HttpResponse.ok200()
                         .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE,
@@ -226,7 +228,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         "text/plain; version=0.0.4; charset=utf-8"))
                         .withBody(prometheusRegistry.scrape().getBytes(java.nio.charset.StandardCharsets.UTF_8))
                         .toPromise(),
-                "yappc:lifecycle-metrics");
+                "yappc:lifecycle-metrics",
+                policyRepository);
 
         // ── Outer router: /health public, everything else auth-gated ─────
         var router = RoutingServlet.builder(eventloop)

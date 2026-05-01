@@ -51,8 +51,10 @@ import {
 import {
   AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
   BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
+  BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
   UnsupportedRuntimeBoundaryError,
 } from '@/lib/runtime-boundaries';
+import { isBrainAutonomyEnabled } from '../lib/feature-gates';
 
 export interface SalienceScore {
   score: number;
@@ -397,6 +399,9 @@ export class BrainService {
     domain?: string,
     limit: number = 50
   ): Promise<AutonomyAction[]> {
+    if (!isBrainAutonomyEnabled()) {
+      throw new UnsupportedRuntimeBoundaryError(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+    }
     const rawResponse = await apiClient.get<BackendAutonomyLogsResponse>('/autonomy/logs');
     const response = AutonomyLogsResponseSchema.parse(rawResponse);
     const actions = response.logs.map((log) => this.mapAutonomyAction(log));
@@ -438,6 +443,9 @@ export class BrainService {
     level: 'SUGGEST' | 'CONFIRM' | 'NOTIFY' | 'AUTONOMOUS',
     reason: string
   ): Promise<BackendAutonomyLevelOverrideResponse> {
+    if (!isBrainAutonomyEnabled()) {
+      throw new UnsupportedRuntimeBoundaryError(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+    }
     const request = AutonomyLevelOverrideRequestSchema.parse({ level, reason }) as BackendAutonomyLevelOverrideRequest;
     const rawResponse = await apiClient.put<BackendAutonomyLevelOverrideResponse, BackendAutonomyLevelOverrideRequest>(
       '/autonomy/level',
@@ -450,6 +458,9 @@ export class BrainService {
    * Get current global autonomy override level (B9).
    */
   async getGlobalAutonomyLevel(): Promise<BackendAutonomyLevelStatus> {
+    if (!isBrainAutonomyEnabled()) {
+      throw new UnsupportedRuntimeBoundaryError(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+    }
     const rawResponse = await apiClient.get<BackendAutonomyLevelStatus>(
       '/autonomy/level'
     );

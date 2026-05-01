@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Test
  */
 @DisplayName("StandardHumanApprovalPlugin Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Mock
@@ -39,9 +39,9 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     private StandardHumanApprovalPlugin plugin;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        plugin = new StandardHumanApprovalPlugin(); // GH-90000
-        runPromise(() -> plugin.initialize(mockContext).then(v -> plugin.start())); // GH-90000
+    void setUp() { 
+        plugin = new StandardHumanApprovalPlugin(); 
+        runPromise(() -> plugin.initialize(mockContext).then(v -> plugin.start())); 
     }
 
     // -------------------------------------------------------------------------
@@ -50,27 +50,27 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should reflect RUNNING state after start")
-    void testLifecycle_running() { // GH-90000
-        assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); // GH-90000
+    void testLifecycle_running() { 
+        assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); 
     }
 
     @Test
     @DisplayName("Should transition to STOPPED after stop()")
-    void testLifecycle_stop() { // GH-90000
-        runPromise(() -> plugin.stop()); // GH-90000
-        assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED); // GH-90000
+    void testLifecycle_stop() { 
+        runPromise(() -> plugin.stop()); 
+        assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED); 
     }
 
     @Test
     @DisplayName("Should transition to UNLOADED after shutdown()")
-    void testLifecycle_shutdown() { // GH-90000
-        runPromise(() -> plugin.shutdown()); // GH-90000
-        assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
+    void testLifecycle_shutdown() { 
+        runPromise(() -> plugin.shutdown()); 
+        assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED); 
     }
 
     @Test
     @DisplayName("Should return correct metadata id")
-    void testMetadata() { // GH-90000
+    void testMetadata() { 
         assertThat(plugin.metadata().id()).isEqualTo("com.ghatana.plugin.human-approval");
         assertThat(plugin.metadata().version()).isEqualTo("1.0.0");
     }
@@ -81,36 +81,36 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should create a PENDING approval record")
-    void testRequestApproval_createsPending() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-42", "nurse-7", "patient-data-export"); // GH-90000
+    void testRequestApproval_createsPending() { 
+        ApprovalRequest req = buildRequest("patient-42", "nurse-7", "patient-data-export"); 
 
-        ApprovalRecord record = runPromise(() -> plugin.requestApproval(req)); // GH-90000
+        ApprovalRecord record = runPromise(() -> plugin.requestApproval(req)); 
 
-        assertThat(record.requestId()).isEqualTo(req.requestId()); // GH-90000
+        assertThat(record.requestId()).isEqualTo(req.requestId()); 
         assertThat(record.subjectId()).isEqualTo("patient-42");
         assertThat(record.action()).isEqualTo("patient-data-export");
-        assertThat(record.status()).isEqualTo(ApprovalStatus.PENDING); // GH-90000
-        assertThat(record.decidedAt()).isNull(); // GH-90000
-        assertThat(record.reviewerId()).isNull(); // GH-90000
+        assertThat(record.status()).isEqualTo(ApprovalStatus.PENDING); 
+        assertThat(record.decidedAt()).isNull(); 
+        assertThat(record.reviewerId()).isNull(); 
     }
 
     @Test
     @DisplayName("Should be idempotent on duplicate requestId")
-    void testRequestApproval_idempotent() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-42", "nurse-7", "patient-data-export"); // GH-90000
+    void testRequestApproval_idempotent() { 
+        ApprovalRequest req = buildRequest("patient-42", "nurse-7", "patient-data-export"); 
 
-        ApprovalRecord first  = runPromise(() -> plugin.requestApproval(req)); // GH-90000
-        ApprovalRecord second = runPromise(() -> plugin.requestApproval(req)); // GH-90000
+        ApprovalRecord first  = runPromise(() -> plugin.requestApproval(req)); 
+        ApprovalRecord second = runPromise(() -> plugin.requestApproval(req)); 
 
-        assertThat(second.requestId()).isEqualTo(first.requestId()); // GH-90000
-        assertThat(second.status()).isEqualTo(first.status()); // GH-90000
+        assertThat(second.requestId()).isEqualTo(first.requestId()); 
+        assertThat(second.status()).isEqualTo(first.status()); 
     }
 
     @Test
     @DisplayName("Should reject null request")
-    void testRequestApproval_nullRequest() { // GH-90000
-        assertThatThrownBy(() -> runPromise(() -> plugin.requestApproval(null))) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void testRequestApproval_nullRequest() { 
+        assertThatThrownBy(() -> runPromise(() -> plugin.requestApproval(null))) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // -------------------------------------------------------------------------
@@ -119,30 +119,30 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should return empty for unknown requestId")
-    void testGetApprovalStatus_unknown() { // GH-90000
-        Optional<ApprovalRecord> result = runPromise( // GH-90000
+    void testGetApprovalStatus_unknown() { 
+        Optional<ApprovalRecord> result = runPromise( 
                 () -> plugin.getApprovalStatus("does-not-exist"));
-        assertThat(result).isEmpty(); // GH-90000
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should return the record for a known requestId")
-    void testGetApprovalStatus_known() { // GH-90000
-        ApprovalRequest req = buildRequest("trade-99", "system", "large-trade-approval"); // GH-90000
-        runPromise(() -> plugin.requestApproval(req)); // GH-90000
+    void testGetApprovalStatus_known() { 
+        ApprovalRequest req = buildRequest("trade-99", "system", "large-trade-approval"); 
+        runPromise(() -> plugin.requestApproval(req)); 
 
-        Optional<ApprovalRecord> result = runPromise( // GH-90000
-                () -> plugin.getApprovalStatus(req.requestId())); // GH-90000
-        assertThat(result).isPresent(); // GH-90000
-        assertThat(result.get().status()).isEqualTo(ApprovalStatus.PENDING); // GH-90000
+        Optional<ApprovalRecord> result = runPromise( 
+                () -> plugin.getApprovalStatus(req.requestId())); 
+        assertThat(result).isPresent(); 
+        assertThat(result.get().status()).isEqualTo(ApprovalStatus.PENDING); 
     }
 
     @Test
     @DisplayName("Should reject blank requestId in getApprovalStatus")
-    void testGetApprovalStatus_blankId() { // GH-90000
+    void testGetApprovalStatus_blankId() { 
         Promise<Optional<ApprovalRecord>> p = plugin.getApprovalStatus("   ");
-        assertThatThrownBy(() -> runPromise(() -> p)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> p)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     // -------------------------------------------------------------------------
@@ -151,57 +151,57 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should transition to APPROVED")
-    void testCompleteApproval_approved() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-1", "dr-jones", "medication-override"); // GH-90000
-        runPromise(() -> plugin.requestApproval(req)); // GH-90000
+    void testCompleteApproval_approved() { 
+        ApprovalRequest req = buildRequest("patient-1", "dr-jones", "medication-override"); 
+        runPromise(() -> plugin.requestApproval(req)); 
 
-        ApprovalRecord decided = runPromise( // GH-90000
-                () -> plugin.completeApproval(req.requestId(), ApprovalDecision.APPROVED, // GH-90000
+        ApprovalRecord decided = runPromise( 
+                () -> plugin.completeApproval(req.requestId(), ApprovalDecision.APPROVED, 
                         "dr-jones", "Clinically justified"));
 
-        assertThat(decided.status()).isEqualTo(ApprovalStatus.APPROVED); // GH-90000
+        assertThat(decided.status()).isEqualTo(ApprovalStatus.APPROVED); 
         assertThat(decided.reviewerId()).isEqualTo("dr-jones");
         assertThat(decided.reviewerNotes()).isEqualTo("Clinically justified");
-        assertThat(decided.decidedAt()).isNotNull(); // GH-90000
+        assertThat(decided.decidedAt()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should transition to REJECTED")
-    void testCompleteApproval_rejected() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-2", "system", "high-risk-procedure"); // GH-90000
-        runPromise(() -> plugin.requestApproval(req)); // GH-90000
+    void testCompleteApproval_rejected() { 
+        ApprovalRequest req = buildRequest("patient-2", "system", "high-risk-procedure"); 
+        runPromise(() -> plugin.requestApproval(req)); 
 
-        ApprovalRecord decided = runPromise( // GH-90000
-                () -> plugin.completeApproval(req.requestId(), ApprovalDecision.REJECTED, // GH-90000
+        ApprovalRecord decided = runPromise( 
+                () -> plugin.completeApproval(req.requestId(), ApprovalDecision.REJECTED, 
                         "chief-medical", "Protocol not met"));
 
-        assertThat(decided.status()).isEqualTo(ApprovalStatus.REJECTED); // GH-90000
+        assertThat(decided.status()).isEqualTo(ApprovalStatus.REJECTED); 
     }
 
     @Test
     @DisplayName("completeApproval on already-decided record is no-op")
-    void testCompleteApproval_idempotent() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-3", "nurse-1", "export"); // GH-90000
-        runPromise(() -> plugin.requestApproval(req)); // GH-90000
-        runPromise(() -> plugin.completeApproval(req.requestId(), ApprovalDecision.APPROVED, // GH-90000
+    void testCompleteApproval_idempotent() { 
+        ApprovalRequest req = buildRequest("patient-3", "nurse-1", "export"); 
+        runPromise(() -> plugin.requestApproval(req)); 
+        runPromise(() -> plugin.completeApproval(req.requestId(), ApprovalDecision.APPROVED, 
                 "dr-a", "ok"));
 
-        ApprovalRecord second = runPromise( // GH-90000
-                () -> plugin.completeApproval(req.requestId(), ApprovalDecision.REJECTED, // GH-90000
+        ApprovalRecord second = runPromise( 
+                () -> plugin.completeApproval(req.requestId(), ApprovalDecision.REJECTED, 
                         "dr-b", "actually no"));
 
         // The first decision wins — stays APPROVED
-        assertThat(second.status()).isEqualTo(ApprovalStatus.APPROVED); // GH-90000
+        assertThat(second.status()).isEqualTo(ApprovalStatus.APPROVED); 
         assertThat(second.reviewerId()).isEqualTo("dr-a");
     }
 
     @Test
     @DisplayName("completeApproval on unknown requestId returns exception")
-    void testCompleteApproval_unknown() { // GH-90000
-        Promise<ApprovalRecord> p = plugin.completeApproval("bad-id", // GH-90000
+    void testCompleteApproval_unknown() { 
+        Promise<ApprovalRecord> p = plugin.completeApproval("bad-id", 
                 ApprovalDecision.APPROVED, "reviewer", null);
-        assertThatThrownBy(() -> runPromise(() -> p)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> p)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     // -------------------------------------------------------------------------
@@ -210,33 +210,33 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should return only pending records for a subject")
-    void testListPendingForSubject() { // GH-90000
+    void testListPendingForSubject() { 
         String subjectId = "patient-99";
-        ApprovalRequest req1 = buildRequest(subjectId, "nurse-1", "export"); // GH-90000
-        ApprovalRequest req2 = buildRequest(subjectId, "nurse-2", "medication-override"); // GH-90000
-        ApprovalRequest req3 = buildRequest("other-subject", "nurse-3", "action"); // GH-90000
+        ApprovalRequest req1 = buildRequest(subjectId, "nurse-1", "export"); 
+        ApprovalRequest req2 = buildRequest(subjectId, "nurse-2", "medication-override"); 
+        ApprovalRequest req3 = buildRequest("other-subject", "nurse-3", "action"); 
 
-        runPromise(() -> plugin.requestApproval(req1) // GH-90000
-                .then(v -> plugin.requestApproval(req2)) // GH-90000
-                .then(v -> plugin.requestApproval(req3))); // GH-90000
+        runPromise(() -> plugin.requestApproval(req1) 
+                .then(v -> plugin.requestApproval(req2)) 
+                .then(v -> plugin.requestApproval(req3))); 
 
         // Approve req1 — should no longer appear in pending list
-        runPromise(() -> plugin.completeApproval(req1.requestId(), // GH-90000
+        runPromise(() -> plugin.completeApproval(req1.requestId(), 
                 ApprovalDecision.APPROVED, "admin", null));
 
-        List<ApprovalRecord> pending = runPromise( // GH-90000
-                () -> plugin.listPendingForSubject(subjectId)); // GH-90000
+        List<ApprovalRecord> pending = runPromise( 
+                () -> plugin.listPendingForSubject(subjectId)); 
 
-        assertThat(pending).hasSize(1); // GH-90000
-        assertThat(pending.get(0).requestId()).isEqualTo(req2.requestId()); // GH-90000
+        assertThat(pending).hasSize(1); 
+        assertThat(pending.get(0).requestId()).isEqualTo(req2.requestId()); 
     }
 
     @Test
     @DisplayName("Should return empty list when subject has no pending approvals")
-    void testListPendingForSubject_empty() { // GH-90000
-        List<ApprovalRecord> pending = runPromise( // GH-90000
+    void testListPendingForSubject_empty() { 
+        List<ApprovalRecord> pending = runPromise( 
                 () -> plugin.listPendingForSubject("unknown-subject"));
-        assertThat(pending).isEmpty(); // GH-90000
+        assertThat(pending).isEmpty(); 
     }
 
     // -------------------------------------------------------------------------
@@ -245,15 +245,15 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should cancel a pending approval")
-    void testCancelApproval() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-5", "system", "routine-export"); // GH-90000
-        runPromise(() -> plugin.requestApproval(req)); // GH-90000
-        runPromise(() -> plugin.cancelApproval(req.requestId(), "No longer needed")); // GH-90000
+    void testCancelApproval() { 
+        ApprovalRequest req = buildRequest("patient-5", "system", "routine-export"); 
+        runPromise(() -> plugin.requestApproval(req)); 
+        runPromise(() -> plugin.cancelApproval(req.requestId(), "No longer needed")); 
 
-        Optional<ApprovalRecord> result = runPromise( // GH-90000
-                () -> plugin.getApprovalStatus(req.requestId())); // GH-90000
-        assertThat(result).isPresent(); // GH-90000
-        assertThat(result.get().status()).isEqualTo(ApprovalStatus.CANCELLED); // GH-90000
+        Optional<ApprovalRecord> result = runPromise( 
+                () -> plugin.getApprovalStatus(req.requestId())); 
+        assertThat(result).isPresent(); 
+        assertThat(result.get().status()).isEqualTo(ApprovalStatus.CANCELLED); 
         assertThat(result.get().reviewerNotes()).isEqualTo("No longer needed");
     }
 
@@ -327,42 +327,42 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
     @Test
     @DisplayName("cancelApproval on already-decided record is no-op")
-    void testCancelApproval_alreadyDecidedIsNoOp() { // GH-90000
-        ApprovalRequest req = buildRequest("patient-6", "dr-x", "sample"); // GH-90000
-        runPromise(() -> plugin.requestApproval(req)); // GH-90000
-        runPromise(() -> plugin.completeApproval(req.requestId(), // GH-90000
+    void testCancelApproval_alreadyDecidedIsNoOp() { 
+        ApprovalRequest req = buildRequest("patient-6", "dr-x", "sample"); 
+        runPromise(() -> plugin.requestApproval(req)); 
+        runPromise(() -> plugin.completeApproval(req.requestId(), 
                 ApprovalDecision.APPROVED, "dr-x", null));
 
         // cancel should be a no-op
-        runPromise(() -> plugin.cancelApproval(req.requestId(), "late cancel")); // GH-90000
+        runPromise(() -> plugin.cancelApproval(req.requestId(), "late cancel")); 
 
-        Optional<ApprovalRecord> result = runPromise( // GH-90000
-                () -> plugin.getApprovalStatus(req.requestId())); // GH-90000
+        Optional<ApprovalRecord> result = runPromise( 
+                () -> plugin.getApprovalStatus(req.requestId())); 
         assertThat(result).isPresent();
-        assertThat(result.orElseThrow().status()).isEqualTo(ApprovalStatus.APPROVED); // GH-90000
+        assertThat(result.orElseThrow().status()).isEqualTo(ApprovalStatus.APPROVED); 
     }
 
     @Test
     @DisplayName("cancelApproval on unknown requestId returns exception")
-    void testCancelApproval_unknown() { // GH-90000
-        Promise<Void> p = plugin.cancelApproval("ghost-id", "reason"); // GH-90000
-        assertThatThrownBy(() -> runPromise(() -> p)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void testCancelApproval_unknown() { 
+        Promise<Void> p = plugin.cancelApproval("ghost-id", "reason"); 
+        assertThatThrownBy(() -> runPromise(() -> p)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------
 
-    private ApprovalRequest buildRequest(String subjectId, String requestedBy, String action) { // GH-90000
-        return new ApprovalRequest( // GH-90000
-                UUID.randomUUID().toString(), // GH-90000
+    private ApprovalRequest buildRequest(String subjectId, String requestedBy, String action) { 
+        return new ApprovalRequest( 
+                UUID.randomUUID().toString(), 
                 subjectId,
                 requestedBy,
                 action,
                 "Business justification for " + action,
-                Map.of(), // GH-90000
-                Instant.now(), // GH-90000
+                Map.of(), 
+                Instant.now(), 
                 null
         );
     }

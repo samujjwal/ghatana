@@ -246,7 +246,7 @@ export default defineConfig({
       'yappc-collab': path.resolve(__dirname, '../libs/collab/src'),
       'yappc-initialization-ui': path.resolve(__dirname, '../libs/yappc-initialization-ui/src'),
       '@ghatana/code-editor': path.resolve(__dirname, '../../../../platform/typescript/code-editor/src'),
-      '@yappc/ide': path.resolve(__dirname, '../libs/ide/src'),
+      '@ghatana/yappc-ide': path.resolve(__dirname, '../libs/ide/src'),
 
       // Platform shared packages used by YAPPC and transitive UI deps
       '@ghatana/design-system': path.resolve(

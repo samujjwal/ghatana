@@ -21,27 +21,27 @@ class BoundingBoxTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should calculate IoU for overlapping boxes")
-    void shouldCalculateIouForOverlappingBoxes() { // GH-90000
-        BoundingBox left = BoundingBox.builder().x(0).y(0).width(4).height(4).build(); // GH-90000
-        BoundingBox right = BoundingBox.builder().x(2).y(2).width(4).height(4).build(); // GH-90000
+    void shouldCalculateIouForOverlappingBoxes() { 
+        BoundingBox left = BoundingBox.builder().x(0).y(0).width(4).height(4).build(); 
+        BoundingBox right = BoundingBox.builder().x(2).y(2).width(4).height(4).build(); 
 
-        double iou = runPromise(() -> Promise.of(left.calculateIoU(right))); // GH-90000
+        double iou = runPromise(() -> Promise.of(left.calculateIoU(right))); 
 
-        assertEquals(1.0d / 7.0d, iou, 0.0001d); // GH-90000
-        assertTrue(left.intersects(right)); // GH-90000
+        assertEquals(1.0d / 7.0d, iou, 0.0001d); 
+        assertTrue(left.intersects(right)); 
     }
 
     @Test
     @DisplayName("Should expose default and tuned detection presets")
-    void shouldExposeDefaultAndTunedDetectionPresets() { // GH-90000
-        DetectionOptions defaults = runPromise(() -> Promise.of(DetectionOptions.defaults())); // GH-90000
-        DetectionOptions highPrecision = runPromise(() -> Promise.of(DetectionOptions.highPrecision())); // GH-90000
-        DetectionOptions highRecall = runPromise(() -> Promise.of(DetectionOptions.highRecall())); // GH-90000
+    void shouldExposeDefaultAndTunedDetectionPresets() { 
+        DetectionOptions defaults = runPromise(() -> Promise.of(DetectionOptions.defaults())); 
+        DetectionOptions highPrecision = runPromise(() -> Promise.of(DetectionOptions.highPrecision())); 
+        DetectionOptions highRecall = runPromise(() -> Promise.of(DetectionOptions.highRecall())); 
 
-        assertEquals(0.5d, defaults.getConfidenceThreshold(), 0.0001d); // GH-90000
-        assertEquals(0.8d, highPrecision.getConfidenceThreshold(), 0.0001d); // GH-90000
-        assertEquals(0.3d, highRecall.getConfidenceThreshold(), 0.0001d); // GH-90000
-        assertTrue(highPrecision.getConfidenceThreshold() > highRecall.getConfidenceThreshold()); // GH-90000
-        assertFalse(highPrecision.getNmsThreshold() > highRecall.getNmsThreshold()); // GH-90000
+        assertEquals(0.5d, defaults.getConfidenceThreshold(), 0.0001d); 
+        assertEquals(0.8d, highPrecision.getConfidenceThreshold(), 0.0001d); 
+        assertEquals(0.3d, highRecall.getConfidenceThreshold(), 0.0001d); 
+        assertTrue(highPrecision.getConfidenceThreshold() > highRecall.getConfidenceThreshold()); 
+        assertFalse(highPrecision.getNmsThreshold() > highRecall.getNmsThreshold()); 
     }
 }

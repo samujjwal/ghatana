@@ -27,194 +27,194 @@ class SecurityFrameworkIntegrationTest {
     private PolicyEnforcementPoint policyEnforcementPoint;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        securityManager = new MockKernelSecurityManager(); // GH-90000
-        privacyManager = new MockPrivacyManager(); // GH-90000
-        policyEnforcementPoint = new PolicyEnforcementPoint(securityManager, privacyManager); // GH-90000
+    void setUp() { 
+        securityManager = new MockKernelSecurityManager(); 
+        privacyManager = new MockPrivacyManager(); 
+        policyEnforcementPoint = new PolicyEnforcementPoint(securityManager, privacyManager); 
     }
 
     @Test
     @DisplayName("Should create security context with tenant and user")
-    void testCreateSecurityContext() { // GH-90000
-        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
+    void testCreateSecurityContext() { 
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); 
 
-        assertNotNull(context); // GH-90000
-        assertEquals("tenant-1", context.getTenantId()); // GH-90000
-        assertEquals("user-1", context.getUserId()); // GH-90000
-        assertTrue(context.isAuthenticated()); // GH-90000
+        assertNotNull(context); 
+        assertEquals("tenant-1", context.getTenantId()); 
+        assertEquals("user-1", context.getUserId()); 
+        assertTrue(context.isAuthenticated()); 
     }
 
     @Test
     @DisplayName("Should authorize action with valid security context")
-    void testAuthorizeAction() { // GH-90000
-        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
-        KernelSecurityManager.Action action = new KernelSecurityManager.Action( // GH-90000
+    void testAuthorizeAction() { 
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); 
+        KernelSecurityManager.Action action = new KernelSecurityManager.Action( 
             "patient-records", "read", "phr"
         );
 
-        boolean authorized = securityManager.authorizeAction(action, context); // GH-90000
+        boolean authorized = securityManager.authorizeAction(action, context); 
 
-        assertTrue(authorized); // GH-90000
+        assertTrue(authorized); 
     }
 
     @Test
     @DisplayName("Should enforce security policy")
-    void testEnforceSecurityPolicy() { // GH-90000
-        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
-        Policy policy = new MockPolicy("test-policy", Policy.PolicyType.AUTHORIZATION); // GH-90000
+    void testEnforceSecurityPolicy() { 
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); 
+        Policy policy = new MockPolicy("test-policy", Policy.PolicyType.AUTHORIZATION); 
 
-        assertDoesNotThrow(() -> securityManager.enforceSecurityPolicy(context, policy)); // GH-90000
+        assertDoesNotThrow(() -> securityManager.enforceSecurityPolicy(context, policy)); 
     }
 
     @Test
     @DisplayName("Should check consent status for data request")
-    void testCheckConsent() { // GH-90000
-        PrivacyManager.DataRequest request = new PrivacyManager.DataRequest( // GH-90000
-            "user-1", "patient-data", "treatment", Map.of() // GH-90000
+    void testCheckConsent() { 
+        PrivacyManager.DataRequest request = new PrivacyManager.DataRequest( 
+            "user-1", "patient-data", "treatment", Map.of() 
         );
 
-        PrivacyManager.ConsentStatus status = privacyManager.checkConsent(request, "tenant-1"); // GH-90000
+        PrivacyManager.ConsentStatus status = privacyManager.checkConsent(request, "tenant-1"); 
 
-        assertNotNull(status); // GH-90000
-        assertEquals(PrivacyManager.ConsentStatus.GRANTED, status); // GH-90000
+        assertNotNull(status); 
+        assertEquals(PrivacyManager.ConsentStatus.GRANTED, status); 
     }
 
     @Test
     @DisplayName("Should classify data according to privacy rules")
-    void testClassifyData() { // GH-90000
-        Object sensitiveData = Map.of("ssn", "123-45-6789", "name", "John Doe"); // GH-90000
+    void testClassifyData() { 
+        Object sensitiveData = Map.of("ssn", "123-45-6789", "name", "John Doe"); 
 
-        PrivacyManager.DataClassification classification = privacyManager.classifyData(sensitiveData); // GH-90000
+        PrivacyManager.DataClassification classification = privacyManager.classifyData(sensitiveData); 
 
-        assertNotNull(classification); // GH-90000
-        assertEquals(PrivacyManager.DataClassification.PII, classification); // GH-90000
+        assertNotNull(classification); 
+        assertEquals(PrivacyManager.DataClassification.PII, classification); 
     }
 
     @Test
     @DisplayName("Should enforce data residency requirements")
-    void testEnforceResidency() { // GH-90000
-        PrivacyManager.DataLocation location = new PrivacyManager.DataLocation( // GH-90000
+    void testEnforceResidency() { 
+        PrivacyManager.DataLocation location = new PrivacyManager.DataLocation( 
             "us-east-1", "USA", "datacenter-1"
         );
 
-        boolean compliant = privacyManager.enforceResidency(location, "tenant-1"); // GH-90000
+        boolean compliant = privacyManager.enforceResidency(location, "tenant-1"); 
 
-        assertTrue(compliant); // GH-90000
+        assertTrue(compliant); 
     }
 
     @Test
     @DisplayName("Should enforce policy with authenticated context")
-    void testPolicyEnforcementWithAuthentication() { // GH-90000
-        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
-        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
+    void testPolicyEnforcementWithAuthentication() { 
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); 
+        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() 
             .resource("patient-records")
             .operation("read")
             .scope("phr")
-            .build(); // GH-90000
+            .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context); // GH-90000
+            policyEnforcementPoint.enforce(request, context); 
 
-        assertTrue(decision.isAllowed()); // GH-90000
+        assertTrue(decision.isAllowed()); 
     }
 
     @Test
     @DisplayName("Should deny policy enforcement without authentication")
-    void testPolicyEnforcementWithoutAuthentication() { // GH-90000
-        SecurityContext context = new MockSecurityContext("tenant-1", "user-1", false); // GH-90000
-        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
+    void testPolicyEnforcementWithoutAuthentication() { 
+        SecurityContext context = new MockSecurityContext("tenant-1", "user-1", false); 
+        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() 
             .resource("patient-records")
             .operation("read")
             .scope("phr")
-            .build(); // GH-90000
+            .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context); // GH-90000
+            policyEnforcementPoint.enforce(request, context); 
 
-        assertFalse(decision.isAllowed()); // GH-90000
-        assertEquals("Not authenticated", decision.getReason()); // GH-90000
+        assertFalse(decision.isAllowed()); 
+        assertEquals("Not authenticated", decision.getReason()); 
     }
 
     @Test
     @DisplayName("Should enforce consent requirements")
-    void testPolicyEnforcementWithConsent() { // GH-90000
-        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
-        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
+    void testPolicyEnforcementWithConsent() { 
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); 
+        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() 
             .resource("patient-records")
             .operation("read")
             .scope("phr")
-            .requiresConsent(true) // GH-90000
+            .requiresConsent(true) 
             .dataType("patient-data")
             .purpose("treatment")
-            .build(); // GH-90000
+            .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
-            policyEnforcementPoint.enforce(request, context); // GH-90000
+            policyEnforcementPoint.enforce(request, context); 
 
-        assertTrue(decision.isAllowed()); // GH-90000
+        assertTrue(decision.isAllowed()); 
     }
 
     // Mock implementations for testing
 
     private static class MockKernelSecurityManager implements KernelSecurityManager {
         @Override
-        public SecurityContext createSecurityContext(String tenantId, String userId) { // GH-90000
-            return TenantSecurityContext.builder() // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .userId(userId) // GH-90000
-                .sessionId("session-" + System.currentTimeMillis()) // GH-90000
+        public SecurityContext createSecurityContext(String tenantId, String userId) { 
+            return TenantSecurityContext.builder() 
+                .tenantId(tenantId) 
+                .userId(userId) 
+                .sessionId("session-" + System.currentTimeMillis()) 
                 .role("user")
                 .permission("read:patient-records")
-                .authenticated(true) // GH-90000
-                .build(); // GH-90000
+                .authenticated(true) 
+                .build(); 
         }
 
         @Override
-        public boolean authorizeAction(Action action, SecurityContext context) { // GH-90000
-            return context.isAuthenticated(); // GH-90000
+        public boolean authorizeAction(Action action, SecurityContext context) { 
+            return context.isAuthenticated(); 
         }
 
         @Override
-        public void enforceSecurityPolicy(SecurityContext context, Policy policy) { // GH-90000
-            if (!context.isAuthenticated()) { // GH-90000
+        public void enforceSecurityPolicy(SecurityContext context, Policy policy) { 
+            if (!context.isAuthenticated()) { 
                 throw new SecurityPolicyViolationException("Not authenticated");
             }
         }
 
         @Override
-        public ValidationResult validateCredentials(Credentials credentials) { // GH-90000
-            return ValidationResult.success(); // GH-90000
+        public ValidationResult validateCredentials(Credentials credentials) { 
+            return ValidationResult.success(); 
         }
 
         @Override
-        public SecurityContext getCurrentContext() { // GH-90000
+        public SecurityContext getCurrentContext() { 
             return null;
         }
     }
 
     private static class MockPrivacyManager implements PrivacyManager {
         @Override
-        public ConsentStatus checkConsent(DataRequest request, String tenantId) { // GH-90000
+        public ConsentStatus checkConsent(DataRequest request, String tenantId) { 
             return ConsentStatus.GRANTED;
         }
 
         @Override
-        public DataClassification classifyData(Object data) { // GH-90000
+        public DataClassification classifyData(Object data) { 
             return DataClassification.PII;
         }
 
         @Override
-        public boolean enforceResidency(DataLocation location, String tenantId) { // GH-90000
+        public boolean enforceResidency(DataLocation location, String tenantId) { 
             return true;
         }
 
         @Override
-        public void recordConsent(String tenantId, String userId, String purpose, boolean granted) { // GH-90000
+        public void recordConsent(String tenantId, String userId, String purpose, boolean granted) { 
         }
 
         @Override
-        public Policy getPrivacyPolicy(String tenantId) { // GH-90000
-            return new MockPolicy("privacy-policy", Policy.PolicyType.DATA_ACCESS); // GH-90000
+        public Policy getPrivacyPolicy(String tenantId) { 
+            return new MockPolicy("privacy-policy", Policy.PolicyType.DATA_ACCESS); 
         }
     }
 
@@ -222,38 +222,38 @@ class SecurityFrameworkIntegrationTest {
         private final String policyId;
         private final PolicyType type;
 
-        MockPolicy(String policyId, PolicyType type) { // GH-90000
+        MockPolicy(String policyId, PolicyType type) { 
             this.policyId = policyId;
             this.type = type;
         }
 
         @Override
-        public String getPolicyId() { // GH-90000
+        public String getPolicyId() { 
             return policyId;
         }
 
         @Override
-        public String getName() { // GH-90000
+        public String getName() { 
             return "Mock Policy";
         }
 
         @Override
-        public PolicyType getType() { // GH-90000
+        public PolicyType getType() { 
             return type;
         }
 
         @Override
-        public Set<PolicyRule> getRules() { // GH-90000
-            return Set.of(); // GH-90000
+        public Set<PolicyRule> getRules() { 
+            return Set.of(); 
         }
 
         @Override
-        public Map<String, Object> getMetadata() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getMetadata() { 
+            return Map.of(); 
         }
 
         @Override
-        public boolean appliesTo(SecurityContext context) { // GH-90000
+        public boolean appliesTo(SecurityContext context) { 
             return true;
         }
     }
@@ -263,60 +263,60 @@ class SecurityFrameworkIntegrationTest {
         private final String userId;
         private final boolean authenticated;
 
-        MockSecurityContext(String tenantId, String userId, boolean authenticated) { // GH-90000
+        MockSecurityContext(String tenantId, String userId, boolean authenticated) { 
             this.tenantId = tenantId;
             this.userId = userId;
             this.authenticated = authenticated;
         }
 
         @Override
-        public String getTenantId() { // GH-90000
+        public String getTenantId() { 
             return tenantId;
         }
 
         @Override
-        public String getUserId() { // GH-90000
+        public String getUserId() { 
             return userId;
         }
 
         @Override
-        public Set<String> getRoles() { // GH-90000
-            return Set.of(); // GH-90000
+        public Set<String> getRoles() { 
+            return Set.of(); 
         }
 
         @Override
-        public Map<String, Object> getAttributes() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getAttributes() { 
+            return Map.of(); 
         }
 
         @Override
-        public boolean hasRole(String role) { // GH-90000
+        public boolean hasRole(String role) { 
             return false;
         }
 
         @Override
-        public boolean hasPermission(String permission) { // GH-90000
+        public boolean hasPermission(String permission) { 
             return false;
         }
 
         @Override
-        public Object getAttribute(String key) { // GH-90000
+        public Object getAttribute(String key) { 
             return null;
         }
 
         @Override
-        public String getSessionId() { // GH-90000
+        public String getSessionId() { 
             return "mock-session";
         }
 
         @Override
-        public boolean isAuthenticated() { // GH-90000
+        public boolean isAuthenticated() { 
             return authenticated;
         }
 
         @Override
-        public long getAuthenticationTime() { // GH-90000
-            return System.currentTimeMillis(); // GH-90000
+        public long getAuthenticationTime() { 
+            return System.currentTimeMillis(); 
         }
     }
 }

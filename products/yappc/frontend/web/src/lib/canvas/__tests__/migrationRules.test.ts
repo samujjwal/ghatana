@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Migration Rules Tests
  * 

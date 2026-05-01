@@ -213,7 +213,7 @@ export function useVoiceCommands(options: {
     lastCommand: null,
     startListening: async () => {
       console.warn('[VoiceCommands] Attempted to start listening but voice commands are disabled:', error.message);
-      throw error;
+      // Gracefully no-op instead of throwing to prevent UI crashes
     },
     stopListening: () => {
       // No-op when disabled

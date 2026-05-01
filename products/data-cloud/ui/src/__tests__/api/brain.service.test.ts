@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AUTONOMY_POLICY_UPDATE_BOUNDARY_MESSAGE,
   BRAIN_MEMORY_STORE_BOUNDARY_MESSAGE,
+  BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE,
 } from '@/lib/runtime-boundaries';
 
 const { mockApiClient } = vi.hoisted(() => ({
@@ -418,5 +419,36 @@ describe('brainService autonomy boundaries', () => {
         affectedComponents: ['brain', 'review-queue'],
       },
     ]);
+  });
+
+  describe('brain autonomy feature gate', () => {
+    beforeEach(() => {
+      vi.stubEnv('VITE_FEATURE_BRAIN_AUTONOMY', 'false');
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('getAutonomyTimeline throws boundary error when brain autonomy disabled', async () => {
+      await expect(brainService.getAutonomyTimeline('ingestion', 10)).rejects.toThrow(
+        BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE
+      );
+      expect(mockApiClient.get).not.toHaveBeenCalled();
+    });
+
+    it('setGlobalAutonomyLevel throws boundary error when brain autonomy disabled', async () => {
+      await expect(
+        brainService.setGlobalAutonomyLevel('SUGGEST', 'emergency halt')
+      ).rejects.toThrow(BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE);
+      expect(mockApiClient.put).not.toHaveBeenCalled();
+    });
+
+    it('getGlobalAutonomyLevel throws boundary error when brain autonomy disabled', async () => {
+      await expect(brainService.getGlobalAutonomyLevel()).rejects.toThrow(
+        BRAIN_AUTONOMY_DISABLED_BOUNDARY_MESSAGE
+      );
+      expect(mockApiClient.get).not.toHaveBeenCalled();
+    });
   });
 });

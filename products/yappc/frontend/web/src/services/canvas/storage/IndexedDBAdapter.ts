@@ -252,8 +252,8 @@ export class IndexedDBAdapter implements StorageAdapter {
         }
 
         // Legacy compressed format - return as-is (minus metadata)
-        const { _compressed, ...snapshot } = compressed as any;
-        return snapshot;
+        const { _compressed, ...snapshot } = compressed as Record<string, unknown>;
+        return snapshot as CanvasSnapshot;
     }
 
     /**

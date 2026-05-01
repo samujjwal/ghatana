@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unit tests for React components in anomaly detection UI
  *
@@ -33,7 +32,7 @@ describe('Component Helpers', () => {
       { detectedAt: twoHoursAgo, severity: 'LOW' },
     ];
 
-    const getHourBucket = (date) => {
+    const getHourBucket = (date: Date) => {
       const d = new Date(date);
       d.setMinutes(0, 0, 0);
       return d.getTime();
@@ -70,7 +69,7 @@ describe('Component Helpers', () => {
   it('should format dates for display', () => {
     const date = new Date('2025-11-13T14:30:00');
 
-    const formatDate = (d) => {
+    const formatDate = (d: Date) => {
       return new Intl.DateTimeFormat('en-US', {
         month: 'short',
         day: 'numeric',
@@ -162,7 +161,7 @@ describe('Component Helpers', () => {
       status: 'ALL',
     };
 
-    const updateFilter = (key, value) => {
+    const updateFilter = (key: string, value: string) => {
       filters[key] = value;
     };
 
@@ -179,7 +178,7 @@ describe('Component Helpers', () => {
   it('should track sort order', () => {
     let sortBy = 'severity'; // default
 
-    const setSortBy = (field) => {
+    const setSortBy = (field: string) => {
       sortBy = field;
     };
 
@@ -258,7 +257,7 @@ describe('Component Rendering Patterns', () => {
   it('should handle text input changes', () => {
     let notes = '';
 
-    const handleInputChange = (value) => {
+    const handleInputChange = (value: string) => {
       notes = value;
     };
 

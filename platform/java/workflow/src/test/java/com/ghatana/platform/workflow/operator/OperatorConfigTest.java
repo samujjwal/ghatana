@@ -25,33 +25,33 @@ class OperatorConfigTest {
 
         @Test
         @DisplayName("should build config with properties")
-        void shouldBuildWithProperties() { // GH-90000
-            OperatorConfig config = OperatorConfig.builder() // GH-90000
-                    .withProperty("key1", "value1") // GH-90000
-                    .withProperty("key2", "42") // GH-90000
-                    .build(); // GH-90000
+        void shouldBuildWithProperties() { 
+            OperatorConfig config = OperatorConfig.builder() 
+                    .withProperty("key1", "value1") 
+                    .withProperty("key2", "42") 
+                    .build(); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("should support timeout configuration")
-        void shouldSupportTimeout() { // GH-90000
-            OperatorConfig config = OperatorConfig.builder() // GH-90000
-                    .withTimeout(Duration.ofSeconds(30)) // GH-90000
-                    .build(); // GH-90000
+        void shouldSupportTimeout() { 
+            OperatorConfig config = OperatorConfig.builder() 
+                    .withTimeout(Duration.ofSeconds(30)) 
+                    .build(); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("should support max batch size")
-        void shouldSupportMaxBatchSize() { // GH-90000
-            OperatorConfig config = OperatorConfig.builder() // GH-90000
-                    .withMaxBatchSize(100) // GH-90000
-                    .build(); // GH-90000
+        void shouldSupportMaxBatchSize() { 
+            OperatorConfig config = OperatorConfig.builder() 
+                    .withMaxBatchSize(100) 
+                    .build(); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
     }
 
@@ -61,18 +61,18 @@ class OperatorConfigTest {
 
         @Test
         @DisplayName("should retrieve string property")
-        void shouldRetrieveStringProperty() { // GH-90000
-            OperatorConfig config = OperatorConfig.builder() // GH-90000
-                    .withProperty("name", "test-operator") // GH-90000
-                    .build(); // GH-90000
+        void shouldRetrieveStringProperty() { 
+            OperatorConfig config = OperatorConfig.builder() 
+                    .withProperty("name", "test-operator") 
+                    .build(); 
 
             assertThat(config.getString("name")).contains("test-operator");
         }
 
         @Test
         @DisplayName("should return empty for missing property")
-        void shouldReturnEmptyForMissing() { // GH-90000
-            OperatorConfig config = OperatorConfig.builder().build(); // GH-90000
+        void shouldReturnEmptyForMissing() { 
+            OperatorConfig config = OperatorConfig.builder().build(); 
 
             assertThat(config.getString("nonexistent")).isEmpty();
         }

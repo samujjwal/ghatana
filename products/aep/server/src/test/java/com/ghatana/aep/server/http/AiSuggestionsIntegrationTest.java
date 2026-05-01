@@ -30,8 +30,8 @@ import static org.mockito.Mockito.when;
  * <p>Verifies the full call chain from HTTP route to analytics store:
  * <ul>
  *   <li>HTTP route /api/v1/ai/suggestions -> AiSuggestionsController</li>
- *   <li>AiSuggestionsController -> DataCloudAnalyticsStore.queryAnomalies()</li> // GH-90000
- *   <li>AiSuggestionsController -> AepSloMetrics.runCountSnapshot()</li> // GH-90000
+ *   <li>AiSuggestionsController -> DataCloudAnalyticsStore.queryAnomalies()</li> 
+ *   <li>AiSuggestionsController -> AepSloMetrics.runCountSnapshot()</li> 
  *   <li>Fallback behavior when analytics store is null</li>
  * </ul>
  *
@@ -46,10 +46,10 @@ class AiSuggestionsIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("AI suggestions endpoint calls DataCloudAnalyticsStore when available")
-    void aiSuggestionsCallsAnalyticsStore() { // GH-90000
-        DataCloudAnalyticsStore mockAnalyticsStore = mock(DataCloudAnalyticsStore.class); // GH-90000
-        when(mockAnalyticsStore.queryAnomalies(anyString(), any(), any(), any(), anyInt())) // GH-90000
-            .thenReturn(Promise.of(List.of(new DataCloudAnalyticsStore.AnomalyRecord( // GH-90000
+    void aiSuggestionsCallsAnalyticsStore() { 
+        DataCloudAnalyticsStore mockAnalyticsStore = mock(DataCloudAnalyticsStore.class); 
+        when(mockAnalyticsStore.queryAnomalies(anyString(), any(), any(), any(), anyInt())) 
+            .thenReturn(Promise.of(List.of(new DataCloudAnalyticsStore.AnomalyRecord( 
                 "anomaly-1",
                 "HIGH_ERROR_RATE",
                 "HIGH",
@@ -57,19 +57,19 @@ class AiSuggestionsIntegrationTest extends EventloopTestBase {
                 "Pipeline error rate exceeded threshold",
                 "pipeline-123",
                 null,
-                Instant.now(), // GH-90000
+                Instant.now(), 
                 false))));
 
-        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); // GH-90000
-        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); // GH-90000
-        AiSuggestionsController controller = new AiSuggestionsController(mockAnalyticsStore, sloMetrics); // GH-90000
+        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); 
+        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); 
+        AiSuggestionsController controller = new AiSuggestionsController(mockAnalyticsStore, sloMetrics); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/ai/suggestions?tenantId=test-tenant&limit=10").build();
 
-        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); // GH-90000
+        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); 
 
-        assertThat(response).isNotNull(); // GH-90000
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        assertThat(response.getBody().asString(StandardCharsets.UTF_8)) // GH-90000
+        assertThat(response).isNotNull(); 
+        assertThat(response.getCode()).isEqualTo(200); 
+        assertThat(response.getBody().asString(StandardCharsets.UTF_8)) 
             .contains("suggestions")
             .contains("Pipeline error rate exceeded threshold")
             .contains("high");
@@ -77,26 +77,26 @@ class AiSuggestionsIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("AI suggestions degrade gracefully when analytics store is null")
-    void aiSuggestionsDegradesGracefullyWhenAnalyticsStoreNull() { // GH-90000
-        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); // GH-90000
-        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); // GH-90000
-        AiSuggestionsController controller = new AiSuggestionsController(null, sloMetrics); // GH-90000
+    void aiSuggestionsDegradesGracefullyWhenAnalyticsStoreNull() { 
+        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); 
+        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); 
+        AiSuggestionsController controller = new AiSuggestionsController(null, sloMetrics); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/ai/suggestions?tenantId=test-tenant&limit=10").build();
 
-        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); // GH-90000
+        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); 
 
-        assertThat(response).isNotNull(); // GH-90000
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response).isNotNull(); 
+        assertThat(response.getCode()).isEqualTo(200); 
         assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Connect DataCloud to enable AI-scored anomaly detection");
     }
 
     @Test
     @DisplayName("AI suggestions return meaningful results when anomalies are found")
-    void aiSuggestionsReturnMeaningfulResults() { // GH-90000
-        DataCloudAnalyticsStore mockAnalyticsStore = mock(DataCloudAnalyticsStore.class); // GH-90000
-        when(mockAnalyticsStore.queryAnomalies(anyString(), any(), any(), any(), anyInt())) // GH-90000
-            .thenReturn(Promise.of(List.of( // GH-90000
-                new DataCloudAnalyticsStore.AnomalyRecord( // GH-90000
+    void aiSuggestionsReturnMeaningfulResults() { 
+        DataCloudAnalyticsStore mockAnalyticsStore = mock(DataCloudAnalyticsStore.class); 
+        when(mockAnalyticsStore.queryAnomalies(anyString(), any(), any(), any(), anyInt())) 
+            .thenReturn(Promise.of(List.of( 
+                new DataCloudAnalyticsStore.AnomalyRecord( 
                     "anomaly-1",
                     "HIGH_ERROR_RATE",
                     "HIGH",
@@ -104,9 +104,9 @@ class AiSuggestionsIntegrationTest extends EventloopTestBase {
                     "Pipeline error rate 92% in last hour",
                     "pipeline-123",
                     null,
-                    Instant.now(), // GH-90000
+                    Instant.now(), 
                     false),
-                new DataCloudAnalyticsStore.AnomalyRecord( // GH-90000
+                new DataCloudAnalyticsStore.AnomalyRecord( 
                     "anomaly-2",
                     "SLOW_EXECUTION",
                     "MEDIUM",
@@ -114,19 +114,19 @@ class AiSuggestionsIntegrationTest extends EventloopTestBase {
                     "Pipeline execution time exceeded SLA",
                     "pipeline-456",
                     null,
-                    Instant.now(), // GH-90000
+                    Instant.now(), 
                     false))));
 
-        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); // GH-90000
-        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); // GH-90000
-        AiSuggestionsController controller = new AiSuggestionsController(mockAnalyticsStore, sloMetrics); // GH-90000
+        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); 
+        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); 
+        AiSuggestionsController controller = new AiSuggestionsController(mockAnalyticsStore, sloMetrics); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/ai/suggestions?tenantId=test-tenant&limit=10").build();
 
-        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); // GH-90000
+        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); 
 
-        assertThat(response).isNotNull(); // GH-90000
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        assertThat(response.getBody().asString(StandardCharsets.UTF_8)) // GH-90000
+        assertThat(response).isNotNull(); 
+        assertThat(response.getCode()).isEqualTo(200); 
+        assertThat(response.getBody().asString(StandardCharsets.UTF_8)) 
             .contains("suggestions")
             .contains("Pipeline error rate 92% in last hour")
             .contains("Pipeline execution time exceeded SLA")
@@ -136,27 +136,27 @@ class AiSuggestionsIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("AI suggestions include SLO-based hints when metrics available")
-    void aiSuggestionsIncludeSloMetrics() { // GH-90000
-        DataCloudAnalyticsStore mockAnalyticsStore = mock(DataCloudAnalyticsStore.class); // GH-90000
-        when(mockAnalyticsStore.queryAnomalies(anyString(), any(), any(), any(), anyInt())) // GH-90000
-            .thenReturn(Promise.of(List.of())); // GH-90000
+    void aiSuggestionsIncludeSloMetrics() { 
+        DataCloudAnalyticsStore mockAnalyticsStore = mock(DataCloudAnalyticsStore.class); 
+        when(mockAnalyticsStore.queryAnomalies(anyString(), any(), any(), any(), anyInt())) 
+            .thenReturn(Promise.of(List.of())); 
 
-        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); // GH-90000
-        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); // GH-90000
-        for (int index = 0; index < 85; index++) { // GH-90000
-            sloMetrics.recordRunCompleted("test-tenant", "pipeline-1", 100); // GH-90000
+        MetricsCollector metricsCollector = MetricsCollectorFactory.createNoop(); 
+        AepSloMetrics sloMetrics = new AepSloMetrics(metricsCollector); 
+        for (int index = 0; index < 85; index++) { 
+            sloMetrics.recordRunCompleted("test-tenant", "pipeline-1", 100); 
         }
-        for (int index = 0; index < 15; index++) { // GH-90000
-            sloMetrics.recordRunFailed("test-tenant", "pipeline-1", 100, "engine_error"); // GH-90000
+        for (int index = 0; index < 15; index++) { 
+            sloMetrics.recordRunFailed("test-tenant", "pipeline-1", 100, "engine_error"); 
         }
 
-        AiSuggestionsController controller = new AiSuggestionsController(mockAnalyticsStore, sloMetrics); // GH-90000
+        AiSuggestionsController controller = new AiSuggestionsController(mockAnalyticsStore, sloMetrics); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/ai/suggestions?tenantId=test-tenant&limit=10").build();
 
-        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); // GH-90000
+        HttpResponse response = runPromise(() -> controller.handleGetSuggestions(request)); 
 
-        assertThat(response).isNotNull(); // GH-90000
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response).isNotNull(); 
+        assertThat(response.getCode()).isEqualTo(200); 
         assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("15.0%").contains("failed");
     }
 }

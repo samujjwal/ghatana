@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.toolruntime;
@@ -27,16 +27,16 @@ class ToolRuntimeTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns 'noop:<toolName>' for any invocation")
-        void returnsNoopResponse() { // GH-90000
-            String result = runPromise(() -> // GH-90000
-                NoopToolSandbox.INSTANCE.execute("t1", "agent1", "search", Map.of("q", "hello"))); // GH-90000
+        void returnsNoopResponse() { 
+            String result = runPromise(() -> 
+                NoopToolSandbox.INSTANCE.execute("t1", "agent1", "search", Map.of("q", "hello"))); 
             assertThat(result).isEqualTo("noop:search");
         }
 
         @Test
         @DisplayName("INSTANCE singleton is not null")
-        void instanceNotNull() { // GH-90000
-            assertThat(NoopToolSandbox.INSTANCE).isNotNull(); // GH-90000
+        void instanceNotNull() { 
+            assertThat(NoopToolSandbox.INSTANCE).isNotNull(); 
         }
     }
 
@@ -46,58 +46,58 @@ class ToolRuntimeTest extends EventloopTestBase {
 
         @Test
         @DisplayName("getStats returns zeroed stats for unknown tool")
-        void zeroStatsForUnknownTool() { // GH-90000
-            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
-            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); // GH-90000
-            assertThat(stats.totalInvocations()).isZero(); // GH-90000
-            assertThat(stats.avgDurationMs()).isZero(); // GH-90000
+        void zeroStatsForUnknownTool() { 
+            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); 
+            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); 
+            assertThat(stats.totalInvocations()).isZero(); 
+            assertThat(stats.avgDurationMs()).isZero(); 
         }
 
         @Test
         @DisplayName("records one successful execution")
-        void recordSuccess() { // GH-90000
-            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
-            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(50), 128, true)); // GH-90000
+        void recordSuccess() { 
+            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); 
+            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(50), 128, true)); 
 
-            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); // GH-90000
-            assertThat(stats.totalInvocations()).isEqualTo(1); // GH-90000
-            assertThat(stats.successCount()).isEqualTo(1); // GH-90000
-            assertThat(stats.failureCount()).isZero(); // GH-90000
-            assertThat(stats.avgDurationMs()).isEqualTo(50.0); // GH-90000
+            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); 
+            assertThat(stats.totalInvocations()).isEqualTo(1); 
+            assertThat(stats.successCount()).isEqualTo(1); 
+            assertThat(stats.failureCount()).isZero(); 
+            assertThat(stats.avgDurationMs()).isEqualTo(50.0); 
         }
 
         @Test
         @DisplayName("records a failure execution")
-        void recordFailure() { // GH-90000
-            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
-            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(10), 0, false)); // GH-90000
+        void recordFailure() { 
+            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); 
+            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(10), 0, false)); 
 
-            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); // GH-90000
-            assertThat(stats.failureCount()).isEqualTo(1); // GH-90000
-            assertThat(stats.successRate()).isZero(); // GH-90000
+            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); 
+            assertThat(stats.failureCount()).isEqualTo(1); 
+            assertThat(stats.successRate()).isZero(); 
         }
 
         @Test
         @DisplayName("aggregates multiple executions and computes average")
-        void aggregatesMultipleExecutions() { // GH-90000
-            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
-            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(100), 50, true)); // GH-90000
-            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(200), 60, true)); // GH-90000
+        void aggregatesMultipleExecutions() { 
+            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); 
+            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(100), 50, true)); 
+            runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(200), 60, true)); 
 
-            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); // GH-90000
-            assertThat(stats.totalInvocations()).isEqualTo(2); // GH-90000
-            assertThat(stats.avgDurationMs()).isEqualTo(150.0); // GH-90000
-            assertThat(stats.successRate()).isEqualTo(1.0); // GH-90000
+            ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); 
+            assertThat(stats.totalInvocations()).isEqualTo(2); 
+            assertThat(stats.avgDurationMs()).isEqualTo(150.0); 
+            assertThat(stats.successRate()).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("tenants are isolated in stats")
-        void tenantsAreIsolated() { // GH-90000
-            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
-            runBlocking(() -> monitor.record("tenantA", "agent1", "search", Duration.ofMillis(10), 0, true)); // GH-90000
+        void tenantsAreIsolated() { 
+            InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); 
+            runBlocking(() -> monitor.record("tenantA", "agent1", "search", Duration.ofMillis(10), 0, true)); 
 
-            ToolExecutionStats statsB = runPromise(() -> monitor.getStats("tenantB", "search")); // GH-90000
-            assertThat(statsB.totalInvocations()).isZero(); // GH-90000
+            ToolExecutionStats statsB = runPromise(() -> monitor.getStats("tenantB", "search")); 
+            assertThat(statsB.totalInvocations()).isZero(); 
         }
     }
 
@@ -107,16 +107,16 @@ class ToolRuntimeTest extends EventloopTestBase {
 
         @Test
         @DisplayName("successRate returns 0.0 when totalInvocations is zero")
-        void successRateZeroWhenNoInvocations() { // GH-90000
-            ToolExecutionStats stats = new ToolExecutionStats("t1", "s", 0, 0, 0, 0.0); // GH-90000
-            assertThat(stats.successRate()).isZero(); // GH-90000
+        void successRateZeroWhenNoInvocations() { 
+            ToolExecutionStats stats = new ToolExecutionStats("t1", "s", 0, 0, 0, 0.0); 
+            assertThat(stats.successRate()).isZero(); 
         }
 
         @Test
         @DisplayName("successRate computes correctly")
-        void successRateComputed() { // GH-90000
-            ToolExecutionStats stats = new ToolExecutionStats("t1", "s", 4, 3, 1, 100.0); // GH-90000
-            assertThat(stats.successRate()).isEqualTo(0.75); // GH-90000
+        void successRateComputed() { 
+            ToolExecutionStats stats = new ToolExecutionStats("t1", "s", 4, 3, 1, 100.0); 
+            assertThat(stats.successRate()).isEqualTo(0.75); 
         }
     }
 }

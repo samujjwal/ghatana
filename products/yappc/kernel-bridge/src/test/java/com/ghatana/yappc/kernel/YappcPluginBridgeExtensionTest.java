@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
  * @doc.layer adapter
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("YappcPluginBridgeExtension")
 class YappcPluginBridgeExtensionTest extends EventloopTestBase {
 
@@ -44,28 +44,28 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     private YappcPluginBridgeExtension extension;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        pluginRegistry = PluginRegistry.create(new StubPluginContext()); // GH-90000
-        extension = new YappcPluginBridgeExtension(pluginRegistry); // GH-90000
+    void setUp() { 
+        pluginRegistry = PluginRegistry.create(new StubPluginContext()); 
+        extension = new YappcPluginBridgeExtension(pluginRegistry); 
     }
 
     // ==================== Identity ====================
 
     @Test
     @DisplayName("extension ID is 'yappc-plugin-bridge'")
-    void extensionIdIsCorrect() { // GH-90000
+    void extensionIdIsCorrect() { 
         assertThat(extension.getExtensionId()).isEqualTo("yappc-plugin-bridge");
     }
 
     @Test
     @DisplayName("extension name is human-readable")
-    void extensionNameIsHumanReadable() { // GH-90000
+    void extensionNameIsHumanReadable() { 
         assertThat(extension.getName()).isEqualTo("YAPPC Plugin Bridge");
     }
 
     @Test
     @DisplayName("extension version follows semver")
-    void extensionVersionIsSemver() { // GH-90000
+    void extensionVersionIsSemver() { 
         assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.*");
     }
 
@@ -73,37 +73,37 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
 
     @Test
     @DisplayName("descriptor type is EXTENSION")
-    void descriptorTypeIsExtension() { // GH-90000
-        KernelDescriptor descriptor = extension.getDescriptor(); // GH-90000
-        assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); // GH-90000
+    void descriptorTypeIsExtension() { 
+        KernelDescriptor descriptor = extension.getDescriptor(); 
+        assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); 
     }
 
     @Test
     @DisplayName("descriptor ID matches extension ID")
-    void descriptorIdMatchesExtensionId() { // GH-90000
-        assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); // GH-90000
+    void descriptorIdMatchesExtensionId() { 
+        assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); 
     }
 
     // ==================== Capabilities ====================
 
     @Test
     @DisplayName("contributes YAPPC registry and validator capabilities")
-    void contributesTwoCapabilities() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).hasSize(2); // GH-90000
+    void contributesTwoCapabilities() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
+        assertThat(caps).hasSize(2); 
     }
 
     @Test
     @DisplayName("contributes yappc.plugin-registry capability")
-    void contributesRegistryCapability() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+    void contributesRegistryCapability() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
         assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("yappc.plugin-registry"));
     }
 
     @Test
     @DisplayName("contributes yappc.code-validators capability")
-    void contributesValidatorCapability() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+    void contributesValidatorCapability() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
         assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("yappc.code-validators"));
     }
 
@@ -111,50 +111,50 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
 
     @Test
     @DisplayName("is compatible with any non-null module")
-    void isCompatibleWithAnyModule() { // GH-90000
-        assertThat(extension.isCompatible(hostModule)).isTrue(); // GH-90000
+    void isCompatibleWithAnyModule() { 
+        assertThat(extension.isCompatible(hostModule)).isTrue(); 
     }
 
     @Test
     @DisplayName("returns false for null host module")
-    void returnsFalseForNullModule() { // GH-90000
-        assertThat(extension.isCompatible(null)).isFalse(); // GH-90000
+    void returnsFalseForNullModule() { 
+        assertThat(extension.isCompatible(null)).isFalse(); 
     }
 
     // ==================== Lifecycle ====================
 
     @Test
     @DisplayName("onModuleInitialized registers PluginRegistry into context")
-    void onModuleInitializedRegistersRegistry() { // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
+    void onModuleInitializedRegistersRegistry() { 
+        extension.onModuleInitialized(context); 
 
-        verify(context).registerService(eq(PluginRegistry.class), eq(pluginRegistry)); // GH-90000
+        verify(context).registerService(eq(PluginRegistry.class), eq(pluginRegistry)); 
     }
 
     @Test
     @DisplayName("onModuleInitialized is idempotent — second call is no-op")
-    void onModuleInitializedIsIdempotent() { // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
+    void onModuleInitializedIsIdempotent() { 
+        extension.onModuleInitialized(context); 
+        extension.onModuleInitialized(context); 
 
-        verify(context).registerService(eq(PluginRegistry.class), eq(pluginRegistry)); // GH-90000
+        verify(context).registerService(eq(PluginRegistry.class), eq(pluginRegistry)); 
     }
 
     @Test
     @DisplayName("full lifecycle runs without error")
-    void fullLifecycleRunsWithoutError() { // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
-        extension.onModuleStarted(context); // GH-90000
-        extension.onModuleStopped(context); // GH-90000
+    void fullLifecycleRunsWithoutError() { 
+        extension.onModuleInitialized(context); 
+        extension.onModuleStarted(context); 
+        extension.onModuleStopped(context); 
     }
 
     // ==================== Construction guard ====================
 
     @Test
     @DisplayName("null registry is rejected at construction")
-    void nullRegistryIsRejected() { // GH-90000
-        assertThatThrownBy(() -> new YappcPluginBridgeExtension(null)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void nullRegistryIsRejected() { 
+        assertThatThrownBy(() -> new YappcPluginBridgeExtension(null)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 
     // ==================== Helpers ====================
@@ -162,27 +162,27 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     private static class StubPluginContext implements PluginContext {
 
         @Override
-        public Map<String, Object> getConfiguration() { // GH-90000
-            return Map.of(); // GH-90000
+        public Map<String, Object> getConfiguration() { 
+            return Map.of(); 
         }
 
         @Override
-        public Object getConfigValue(String key) { // GH-90000
+        public Object getConfigValue(String key) { 
             return null;
         }
 
         @Override
-        public <T> T getConfigValue(String key, T defaultValue) { // GH-90000
+        public <T> T getConfigValue(String key, T defaultValue) { 
             return defaultValue;
         }
 
         @Override
-        public String getYappcVersion() { // GH-90000
+        public String getYappcVersion() { 
             return "1.0.0-stub";
         }
 
         @Override
-        public String getPluginDirectory() { // GH-90000
+        public String getPluginDirectory() { 
             return "/tmp/yappc-plugins-stub";
         }
     }

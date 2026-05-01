@@ -3,6 +3,13 @@ package com.ghatana.datacloud.launcher.http.plugins;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.platform.health.HealthStatus;
+import com.ghatana.platform.plugin.Plugin;
+import com.ghatana.platform.plugin.PluginCapability;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
+import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -15,8 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -176,6 +185,112 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
             .contains(created.id(), retried.id());
 
         manager.close();
+    }
+
+    @Test
+    @DisplayName("hotSwapPlugin restores previous plugin when replacement initialization fails")
+    void hotSwapPluginRestoresPreviousPluginOnFailure() {
+        DataCloudRuntimePluginManager manager = new DataCloudRuntimePluginManager();
+        AtomicBoolean activeFlag = new AtomicBoolean(true);
+
+        manager.registerProvider(new DataCloudRuntimePluginManager.ManagedRuntimePluginProvider() {
+            @Override
+            public String pluginId() {
+                return "safe-hot-swap-plugin";
+            }
+
+            @Override
+            public Plugin create(Map<String, Object> config) {
+                boolean failInit = Boolean.TRUE.equals(config.get("failInit"));
+                return new ToggleLifecyclePlugin(activeFlag, failInit);
+            }
+        });
+
+        assertThat(manager.getPlugin("safe-hot-swap-plugin")).isPresent();
+        assertThat(activeFlag.get()).isTrue();
+
+        Throwable failure = null;
+        try {
+            runPromise(() -> manager.hotSwapPlugin("safe-hot-swap-plugin", Map.of("failInit", true)));
+        } catch (Throwable throwable) {
+            failure = throwable;
+        }
+
+        assertThat(failure).isNotNull();
+        assertThat(failure).hasMessageContaining("forced initialize failure");
+        assertThat(manager.getPlugin("safe-hot-swap-plugin")).isPresent();
+        assertThat(activeFlag.get()).isTrue();
+
+        manager.close();
+    }
+
+    private static final class ToggleLifecyclePlugin implements Plugin {
+        private final AtomicBoolean activeFlag;
+        private final boolean failInit;
+        private volatile PluginState state = PluginState.UNLOADED;
+
+        private ToggleLifecyclePlugin(AtomicBoolean activeFlag, boolean failInit) {
+            this.activeFlag = activeFlag;
+            this.failInit = failInit;
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder()
+                .id("safe-hot-swap-plugin")
+                .name("Safe Hot Swap Plugin")
+                .version("1.0.0")
+                .description("Test plugin for rollback-safe hot swap")
+                .type(PluginType.CUSTOM)
+                .capabilities(Set.of("test"))
+                .build();
+        }
+
+        @Override
+        public PluginState getState() {
+            return state;
+        }
+
+        @Override
+        public Promise<Void> initialize(PluginContext context) {
+            if (failInit) {
+                activeFlag.set(false);
+                return Promise.ofException(new IllegalStateException("forced initialize failure"));
+            }
+            state = PluginState.INITIALIZED;
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            state = PluginState.RUNNING;
+            activeFlag.set(true);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            state = PluginState.STOPPED;
+            activeFlag.set(false);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> shutdown() {
+            state = PluginState.STOPPED;
+            activeFlag.set(false);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<HealthStatus> healthCheck() {
+            return Promise.of(HealthStatus.ok("ok"));
+        }
+
+        @Override
+        public Set<PluginCapability> getCapabilities() {
+            return Set.of();
+        }
     }
 
     private static final class InMemoryDataCloudClient implements DataCloudClient {

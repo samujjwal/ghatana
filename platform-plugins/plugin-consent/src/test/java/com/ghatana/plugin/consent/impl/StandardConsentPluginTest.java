@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Test
  */
 @DisplayName("StandardConsentPlugin Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class StandardConsentPluginTest extends EventloopTestBase {
 
     @Mock
@@ -32,152 +32,152 @@ class StandardConsentPluginTest extends EventloopTestBase {
     private StandardConsentPlugin consentPlugin;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        consentPlugin = new StandardConsentPlugin(); // GH-90000
+    void setUp() { 
+        consentPlugin = new StandardConsentPlugin(); 
     }
 
     @Test
     @DisplayName("Should initialize consent plugin")
-    void testInitialize() { // GH-90000
-        assertThat(consentPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
-        Promise<Void> result = consentPlugin.initialize(mockContext); // GH-90000
-        runPromise(() -> result); // GH-90000
-        assertThat(consentPlugin.getState()).isEqualTo(PluginState.INITIALIZED); // GH-90000
+    void testInitialize() { 
+        assertThat(consentPlugin.getState()).isEqualTo(PluginState.UNLOADED); 
+        Promise<Void> result = consentPlugin.initialize(mockContext); 
+        runPromise(() -> result); 
+        assertThat(consentPlugin.getState()).isEqualTo(PluginState.INITIALIZED); 
     }
 
     @Test
     @DisplayName("Should start consent plugin")
-    void testStart() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext)); // GH-90000
-        Promise<Void> result = consentPlugin.start(); // GH-90000
-        runPromise(() -> result); // GH-90000
-        assertThat(consentPlugin.getState()).isEqualTo(PluginState.RUNNING); // GH-90000
+    void testStart() { 
+        runPromise(() -> consentPlugin.initialize(mockContext)); 
+        Promise<Void> result = consentPlugin.start(); 
+        runPromise(() -> result); 
+        assertThat(consentPlugin.getState()).isEqualTo(PluginState.RUNNING); 
     }
 
     @Test
     @DisplayName("Should return correct metadata")
-    void testMetadata() { // GH-90000
-        var metadata = consentPlugin.metadata(); // GH-90000
+    void testMetadata() { 
+        var metadata = consentPlugin.metadata(); 
         assertThat(metadata.name()).isEqualTo("Consent Plugin");
         assertThat(metadata.version()).isEqualTo("1.0.0");
     }
 
     @Test
     @DisplayName("Should record grant consent")
-    void testRecordConsent_Grant() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start())); // GH-90000
+    void testRecordConsent_Grant() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start())); 
 
-        Promise<ConsentPlugin.ConsentRecord> result = consentPlugin.recordConsent( // GH-90000
+        Promise<ConsentPlugin.ConsentRecord> result = consentPlugin.recordConsent( 
             "subject1", "marketing", ConsentPlugin.ConsentAction.GRANT);
-        ConsentPlugin.ConsentRecord record = runPromise(() -> result); // GH-90000
+        ConsentPlugin.ConsentRecord record = runPromise(() -> result); 
 
         assertThat(record.subjectId()).isEqualTo("subject1");
         assertThat(record.purpose()).isEqualTo("marketing");
-        assertThat(record.status()).isEqualTo(ConsentPlugin.ConsentStatus.GRANTED); // GH-90000
-        assertThat(record.consentId()).isNotNull(); // GH-90000
+        assertThat(record.status()).isEqualTo(ConsentPlugin.ConsentStatus.GRANTED); 
+        assertThat(record.consentId()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should record deny consent")
-    void testRecordConsent_Deny() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start())); // GH-90000
+    void testRecordConsent_Deny() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start())); 
 
-        Promise<ConsentPlugin.ConsentRecord> result = consentPlugin.recordConsent( // GH-90000
+        Promise<ConsentPlugin.ConsentRecord> result = consentPlugin.recordConsent( 
             "subject2", "analytics", ConsentPlugin.ConsentAction.DENY);
-        ConsentPlugin.ConsentRecord record = runPromise(() -> result); // GH-90000
+        ConsentPlugin.ConsentRecord record = runPromise(() -> result); 
 
-        assertThat(record.status()).isEqualTo(ConsentPlugin.ConsentStatus.DENIED); // GH-90000
+        assertThat(record.status()).isEqualTo(ConsentPlugin.ConsentStatus.DENIED); 
     }
 
     @Test
     @DisplayName("Should verify granted consent")
-    void testVerifyConsent_Granted() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start()) // GH-90000
-                .then(v -> consentPlugin.recordConsent("subject3", "email", // GH-90000
+    void testVerifyConsent_Granted() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start()) 
+                .then(v -> consentPlugin.recordConsent("subject3", "email", 
                     ConsentPlugin.ConsentAction.GRANT)));
 
-        Promise<Boolean> result = consentPlugin.verifyConsent("subject3", "email"); // GH-90000
-        Boolean hasConsent = runPromise(() -> result); // GH-90000
+        Promise<Boolean> result = consentPlugin.verifyConsent("subject3", "email"); 
+        Boolean hasConsent = runPromise(() -> result); 
 
-        assertThat(hasConsent).isTrue(); // GH-90000
+        assertThat(hasConsent).isTrue(); 
     }
 
     @Test
     @DisplayName("Should deny non-existent consent")
-    void testVerifyConsent_NotFound() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start())); // GH-90000
+    void testVerifyConsent_NotFound() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start())); 
 
-        Promise<Boolean> result = consentPlugin.verifyConsent("subject4", "sms"); // GH-90000
-        Boolean hasConsent = runPromise(() -> result); // GH-90000
+        Promise<Boolean> result = consentPlugin.verifyConsent("subject4", "sms"); 
+        Boolean hasConsent = runPromise(() -> result); 
 
-        assertThat(hasConsent).isFalse(); // GH-90000
+        assertThat(hasConsent).isFalse(); 
     }
 
     @Test
     @DisplayName("Should revoke consent")
-    void testRevokeConsent() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start())); // GH-90000
+    void testRevokeConsent() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start())); 
 
-        Promise<ConsentPlugin.ConsentRecord> recordResult = consentPlugin.recordConsent( // GH-90000
+        Promise<ConsentPlugin.ConsentRecord> recordResult = consentPlugin.recordConsent( 
             "subject5", "newsletter", ConsentPlugin.ConsentAction.GRANT);
-        ConsentPlugin.ConsentRecord record = runPromise(() -> recordResult); // GH-90000
+        ConsentPlugin.ConsentRecord record = runPromise(() -> recordResult); 
 
-        Promise<Void> revokeResult = consentPlugin.revokeConsent(record.consentId()); // GH-90000
-        runPromise(() -> revokeResult); // GH-90000
+        Promise<Void> revokeResult = consentPlugin.revokeConsent(record.consentId()); 
+        runPromise(() -> revokeResult); 
 
         // Verify revoked
-        Promise<Boolean> verifyResult = consentPlugin.verifyConsent("subject5", "newsletter"); // GH-90000
-        Boolean hasConsent = runPromise(() -> verifyResult); // GH-90000
+        Promise<Boolean> verifyResult = consentPlugin.verifyConsent("subject5", "newsletter"); 
+        Boolean hasConsent = runPromise(() -> verifyResult); 
 
-        assertThat(hasConsent).isFalse(); // GH-90000
+        assertThat(hasConsent).isFalse(); 
     }
 
     @Test
     @DisplayName("Should get consent history for subject")
-    void testGetConsentHistory() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start()) // GH-90000
-                .then(v -> consentPlugin.recordConsent("subject6", "marketing", // GH-90000
+    void testGetConsentHistory() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start()) 
+                .then(v -> consentPlugin.recordConsent("subject6", "marketing", 
                     ConsentPlugin.ConsentAction.GRANT))
-                .then(v -> consentPlugin.recordConsent("subject6", "analytics", // GH-90000
+                .then(v -> consentPlugin.recordConsent("subject6", "analytics", 
                     ConsentPlugin.ConsentAction.DENY)));
 
         Promise<List<ConsentPlugin.ConsentRecord>> result =
                 consentPlugin.getConsentHistory("subject6");
-        List<ConsentPlugin.ConsentRecord> history = runPromise(() -> result); // GH-90000
+        List<ConsentPlugin.ConsentRecord> history = runPromise(() -> result); 
 
-        assertThat(history).hasSize(2); // GH-90000
+        assertThat(history).hasSize(2); 
     }
 
     @Test
     @DisplayName("Should get current consent status")
-    void testGetCurrentConsent() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start()) // GH-90000
-                .then(v -> consentPlugin.recordConsent("subject7", "sms", // GH-90000
+    void testGetCurrentConsent() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start()) 
+                .then(v -> consentPlugin.recordConsent("subject7", "sms", 
                     ConsentPlugin.ConsentAction.GRANT)));
 
         Promise<ConsentPlugin.ConsentStatus> result =
-                consentPlugin.getCurrentConsent("subject7", "sms"); // GH-90000
-        ConsentPlugin.ConsentStatus status = runPromise(() -> result); // GH-90000
+                consentPlugin.getCurrentConsent("subject7", "sms"); 
+        ConsentPlugin.ConsentStatus status = runPromise(() -> result); 
 
-        assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.GRANTED); // GH-90000
+        assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.GRANTED); 
     }
 
     @Test
     @DisplayName("Should shutdown consent plugin")
-    void testShutdown() { // GH-90000
-        runPromise(() -> consentPlugin.initialize(mockContext) // GH-90000
-                .then(v -> consentPlugin.start())); // GH-90000
+    void testShutdown() { 
+        runPromise(() -> consentPlugin.initialize(mockContext) 
+                .then(v -> consentPlugin.start())); 
 
-        Promise<Void> result = consentPlugin.shutdown(); // GH-90000
-        runPromise(() -> result); // GH-90000
+        Promise<Void> result = consentPlugin.shutdown(); 
+        runPromise(() -> result); 
 
-        assertThat(consentPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
+        assertThat(consentPlugin.getState()).isEqualTo(PluginState.UNLOADED); 
     }
 }

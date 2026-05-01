@@ -31,311 +31,311 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     private TestSecurityManager securityManager;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new KernelRegistryImpl(); // GH-90000
-        context = TestKernelContextFactory.create(registry); // GH-90000
-        securityManager = new TestSecurityManager(); // GH-90000
+    void setUp() { 
+        registry = new KernelRegistryImpl(); 
+        context = TestKernelContextFactory.create(registry); 
+        securityManager = new TestSecurityManager(); 
     }
 
     @Test
     @DisplayName("Should authenticate user with valid credentials")
-    void testUserAuthentication() { // GH-90000
+    void testUserAuthentication() { 
         // GIVEN: Valid user credentials
         String username = "test-user";
         String password = "secure-password";
 
         // WHEN: Authenticate user
-        AuthenticationResult result = runPromise(() -> // GH-90000
-            securityManager.authenticate(username, password) // GH-90000
+        AuthenticationResult result = runPromise(() -> 
+            securityManager.authenticate(username, password) 
         );
 
         // THEN: Authentication succeeds
-        assertThat(result.isAuthenticated()).isTrue(); // GH-90000
-        assertThat(result.getUserId()).isEqualTo(username); // GH-90000
+        assertThat(result.isAuthenticated()).isTrue(); 
+        assertThat(result.getUserId()).isEqualTo(username); 
     }
 
     @Test
     @DisplayName("Should reject invalid credentials")
-    void testInvalidCredentials() { // GH-90000
+    void testInvalidCredentials() { 
         // GIVEN: Invalid credentials
         String username = "test-user";
         String password = "wrong-password";
 
         // WHEN: Authenticate with invalid password
-        AuthenticationResult result = runPromise(() -> // GH-90000
-            securityManager.authenticate(username, password) // GH-90000
+        AuthenticationResult result = runPromise(() -> 
+            securityManager.authenticate(username, password) 
         );
 
         // THEN: Authentication fails
-        assertThat(result.isAuthenticated()).isFalse(); // GH-90000
+        assertThat(result.isAuthenticated()).isFalse(); 
     }
 
     @Test
     @DisplayName("Should authorize user with required permissions")
-    void testUserAuthorization() { // GH-90000
+    void testUserAuthorization() { 
         // GIVEN: Authenticated user with permissions
         String userId = "test-user";
-        securityManager.grantPermission(userId, "module:read"); // GH-90000
-        securityManager.grantPermission(userId, "module:write"); // GH-90000
+        securityManager.grantPermission(userId, "module:read"); 
+        securityManager.grantPermission(userId, "module:write"); 
 
         // WHEN: Check authorization
-        boolean canRead = runPromise(() -> // GH-90000
-            securityManager.hasPermission(userId, "module:read") // GH-90000
+        boolean canRead = runPromise(() -> 
+            securityManager.hasPermission(userId, "module:read") 
         );
-        boolean canWrite = runPromise(() -> // GH-90000
-            securityManager.hasPermission(userId, "module:write") // GH-90000
+        boolean canWrite = runPromise(() -> 
+            securityManager.hasPermission(userId, "module:write") 
         );
-        boolean canDelete = runPromise(() -> // GH-90000
-            securityManager.hasPermission(userId, "module:delete") // GH-90000
+        boolean canDelete = runPromise(() -> 
+            securityManager.hasPermission(userId, "module:delete") 
         );
 
         // THEN: Permissions correctly enforced
-        assertThat(canRead).isTrue(); // GH-90000
-        assertThat(canWrite).isTrue(); // GH-90000
-        assertThat(canDelete).isFalse(); // GH-90000
+        assertThat(canRead).isTrue(); 
+        assertThat(canWrite).isTrue(); 
+        assertThat(canDelete).isFalse(); 
     }
 
     @Test
     @DisplayName("Should enforce role-based access control")
-    void testRoleBasedAccessControl() { // GH-90000
+    void testRoleBasedAccessControl() { 
         // GIVEN: User with admin role
         String userId = "admin-user";
-        securityManager.assignRole(userId, "admin"); // GH-90000
-        securityManager.addRolePermission("admin", "system:manage"); // GH-90000
+        securityManager.assignRole(userId, "admin"); 
+        securityManager.addRolePermission("admin", "system:manage"); 
 
         // WHEN: Check role permissions
-        boolean hasPermission = runPromise(() -> // GH-90000
-            securityManager.hasPermission(userId, "system:manage") // GH-90000
+        boolean hasPermission = runPromise(() -> 
+            securityManager.hasPermission(userId, "system:manage") 
         );
 
         // THEN: Role permissions applied
-        assertThat(hasPermission).isTrue(); // GH-90000
+        assertThat(hasPermission).isTrue(); 
     }
 
     @Test
     @DisplayName("Should validate security tokens")
-    void testSecurityTokenValidation() { // GH-90000
+    void testSecurityTokenValidation() { 
         // GIVEN: Generated security token
         String userId = "test-user";
-        String token = runPromise(() -> // GH-90000
-            securityManager.generateToken(userId) // GH-90000
+        String token = runPromise(() -> 
+            securityManager.generateToken(userId) 
         );
 
         // WHEN: Validate token
-        TokenValidationResult validation = runPromise(() -> // GH-90000
-            securityManager.validateToken(token) // GH-90000
+        TokenValidationResult validation = runPromise(() -> 
+            securityManager.validateToken(token) 
         );
 
         // THEN: Token is valid
-        assertThat(validation.isValid()).isTrue(); // GH-90000
-        assertThat(validation.getUserId()).isEqualTo(userId); // GH-90000
+        assertThat(validation.isValid()).isTrue(); 
+        assertThat(validation.getUserId()).isEqualTo(userId); 
     }
 
     @Test
     @DisplayName("Should reject expired tokens")
-    void testExpiredTokenRejection() { // GH-90000
+    void testExpiredTokenRejection() { 
         // GIVEN: Expired token
         String expiredToken = securityManager.generateExpiredToken("test-user");
 
         // WHEN: Validate expired token
-        TokenValidationResult validation = runPromise(() -> // GH-90000
-            securityManager.validateToken(expiredToken) // GH-90000
+        TokenValidationResult validation = runPromise(() -> 
+            securityManager.validateToken(expiredToken) 
         );
 
         // THEN: Token is invalid
-        assertThat(validation.isValid()).isFalse(); // GH-90000
+        assertThat(validation.isValid()).isFalse(); 
         assertThat(validation.getReason()).contains("expired");
     }
 
     @Test
     @DisplayName("Should enforce security policies across modules")
-    void testCrossModuleSecurityPolicies() { // GH-90000
+    void testCrossModuleSecurityPolicies() { 
         // GIVEN: Security policy for module access
         SecurityPolicy policy = new SecurityPolicy("module-access-policy");
-        policy.addRule("module:finance", "role:finance-user"); // GH-90000
-        policy.addRule("module:phr", "role:healthcare-user"); // GH-90000
+        policy.addRule("module:finance", "role:finance-user"); 
+        policy.addRule("module:phr", "role:healthcare-user"); 
 
-        securityManager.registerPolicy(policy); // GH-90000
+        securityManager.registerPolicy(policy); 
 
         // WHEN: Check access for different users
         String financeUser = "finance-user";
         String phrUser = "phr-user";
 
-        securityManager.assignRole(financeUser, "finance-user"); // GH-90000
-        securityManager.assignRole(phrUser, "healthcare-user"); // GH-90000
+        securityManager.assignRole(financeUser, "finance-user"); 
+        securityManager.assignRole(phrUser, "healthcare-user"); 
 
-        boolean financeAccess = runPromise(() -> // GH-90000
-            securityManager.checkPolicyAccess(financeUser, "module:finance") // GH-90000
+        boolean financeAccess = runPromise(() -> 
+            securityManager.checkPolicyAccess(financeUser, "module:finance") 
         );
-        boolean phrAccess = runPromise(() -> // GH-90000
-            securityManager.checkPolicyAccess(phrUser, "module:phr") // GH-90000
+        boolean phrAccess = runPromise(() -> 
+            securityManager.checkPolicyAccess(phrUser, "module:phr") 
         );
-        boolean crossAccess = runPromise(() -> // GH-90000
-            securityManager.checkPolicyAccess(financeUser, "module:phr") // GH-90000
+        boolean crossAccess = runPromise(() -> 
+            securityManager.checkPolicyAccess(financeUser, "module:phr") 
         );
 
         // THEN: Policies correctly enforced
-        assertThat(financeAccess).isTrue(); // GH-90000
-        assertThat(phrAccess).isTrue(); // GH-90000
-        assertThat(crossAccess).isFalse(); // GH-90000
+        assertThat(financeAccess).isTrue(); 
+        assertThat(phrAccess).isTrue(); 
+        assertThat(crossAccess).isFalse(); 
     }
 
     @Test
     @DisplayName("Should audit security events")
-    void testSecurityAuditLogging() { // GH-90000
+    void testSecurityAuditLogging() { 
         // GIVEN: Security manager with audit logging
         String userId = "test-user";
 
         // WHEN: Perform security operations
-        runPromise(() -> securityManager.authenticate(userId, "password")); // GH-90000
-        runPromise(() -> securityManager.hasPermission(userId, "module:read")); // GH-90000
+        runPromise(() -> securityManager.authenticate(userId, "password")); 
+        runPromise(() -> securityManager.hasPermission(userId, "module:read")); 
 
         // THEN: Security events are audited
-        assertThat(securityManager.getAuditLog()).isNotEmpty(); // GH-90000
-        assertThat(securityManager.getAuditLog()) // GH-90000
+        assertThat(securityManager.getAuditLog()).isNotEmpty(); 
+        assertThat(securityManager.getAuditLog()) 
             .anyMatch(event -> event.contains("authentication"))
             .anyMatch(event -> event.contains("authorization"));
     }
 
     @Test
     @DisplayName("Should handle concurrent authentication requests")
-    void testConcurrentAuthentication() throws Exception { // GH-90000
+    void testConcurrentAuthentication() throws Exception { 
         // GIVEN: Multiple concurrent authentication requests
         int requestCount = 50;
-        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(requestCount); // GH-90000
-        java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0); // GH-90000
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(requestCount); 
+        java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0); 
 
         // WHEN: Authenticate concurrently
-        for (int i = 0; i < requestCount; i++) { // GH-90000
+        for (int i = 0; i < requestCount; i++) { 
             final String userId = "user-" + i;
-            new Thread(() -> { // GH-90000
+            new Thread(() -> { 
                 try {
-                    AuthenticationResult result = runPromise(() -> // GH-90000
-                        securityManager.authenticate(userId, "password") // GH-90000
+                    AuthenticationResult result = runPromise(() -> 
+                        securityManager.authenticate(userId, "password") 
                     );
-                    if (result.isAuthenticated()) { // GH-90000
-                        successCount.incrementAndGet(); // GH-90000
+                    if (result.isAuthenticated()) { 
+                        successCount.incrementAndGet(); 
                     }
                 } finally {
-                    latch.countDown(); // GH-90000
+                    latch.countDown(); 
                 }
-            }).start(); // GH-90000
+            }).start(); 
         }
 
-        latch.await(); // GH-90000
+        latch.await(); 
 
         // THEN: All authentications succeed
-        assertThat(successCount.get()).isEqualTo(requestCount); // GH-90000
+        assertThat(successCount.get()).isEqualTo(requestCount); 
     }
 
     // Test security implementations
 
     private static class TestSecurityManager {
-        private final Set<String> validUsers = new HashSet<>(); // GH-90000
-        private final java.util.Map<String, Set<String>> userPermissions = new java.util.HashMap<>(); // GH-90000
-        private final java.util.Map<String, Set<String>> userRoles = new java.util.HashMap<>(); // GH-90000
-        private final java.util.Map<String, Set<String>> rolePermissions = new java.util.HashMap<>(); // GH-90000
-        private final java.util.Map<String, SecurityPolicy> policies = new java.util.HashMap<>(); // GH-90000
-        private final java.util.List<String> auditLog = new java.util.ArrayList<>(); // GH-90000
-        private final java.util.Map<String, Long> tokens = new java.util.HashMap<>(); // GH-90000
-        private final java.util.Map<String, String> tokenUsers = new java.util.HashMap<>(); // GH-90000
+        private final Set<String> validUsers = new HashSet<>(); 
+        private final java.util.Map<String, Set<String>> userPermissions = new java.util.HashMap<>(); 
+        private final java.util.Map<String, Set<String>> userRoles = new java.util.HashMap<>(); 
+        private final java.util.Map<String, Set<String>> rolePermissions = new java.util.HashMap<>(); 
+        private final java.util.Map<String, SecurityPolicy> policies = new java.util.HashMap<>(); 
+        private final java.util.List<String> auditLog = new java.util.ArrayList<>(); 
+        private final java.util.Map<String, Long> tokens = new java.util.HashMap<>(); 
+        private final java.util.Map<String, String> tokenUsers = new java.util.HashMap<>(); 
 
-        TestSecurityManager() { // GH-90000
+        TestSecurityManager() { 
             validUsers.add("test-user");
             validUsers.add("admin-user");
             validUsers.add("finance-user");
             validUsers.add("phr-user");
         }
 
-        Promise<AuthenticationResult> authenticate(String username, String password) { // GH-90000
-            auditLog.add("authentication:" + username); // GH-90000
+        Promise<AuthenticationResult> authenticate(String username, String password) { 
+            auditLog.add("authentication:" + username); 
 
             if ((validUsers.contains(username) || username.startsWith("user-"))
-                && ("password".equals(password) || "secure-password".equals(password))) { // GH-90000
-                return Promise.of(new AuthenticationResult(true, username)); // GH-90000
+                && ("password".equals(password) || "secure-password".equals(password))) { 
+                return Promise.of(new AuthenticationResult(true, username)); 
             }
-            return Promise.of(new AuthenticationResult(false, null)); // GH-90000
+            return Promise.of(new AuthenticationResult(false, null)); 
         }
 
-        void grantPermission(String userId, String permission) { // GH-90000
-            userPermissions.computeIfAbsent(userId, k -> new HashSet<>()).add(permission); // GH-90000
+        void grantPermission(String userId, String permission) { 
+            userPermissions.computeIfAbsent(userId, k -> new HashSet<>()).add(permission); 
         }
 
-        void assignRole(String userId, String role) { // GH-90000
-            userRoles.computeIfAbsent(userId, k -> new HashSet<>()).add(role); // GH-90000
+        void assignRole(String userId, String role) { 
+            userRoles.computeIfAbsent(userId, k -> new HashSet<>()).add(role); 
         }
 
-        void addRolePermission(String role, String permission) { // GH-90000
-            rolePermissions.computeIfAbsent(role, k -> new HashSet<>()).add(permission); // GH-90000
+        void addRolePermission(String role, String permission) { 
+            rolePermissions.computeIfAbsent(role, k -> new HashSet<>()).add(permission); 
         }
 
-        Promise<Boolean> hasPermission(String userId, String permission) { // GH-90000
-            auditLog.add("authorization:" + userId + ":" + permission); // GH-90000
+        Promise<Boolean> hasPermission(String userId, String permission) { 
+            auditLog.add("authorization:" + userId + ":" + permission); 
 
             // Check direct permissions
-            if (userPermissions.getOrDefault(userId, Set.of()).contains(permission)) { // GH-90000
-                return Promise.of(true); // GH-90000
+            if (userPermissions.getOrDefault(userId, Set.of()).contains(permission)) { 
+                return Promise.of(true); 
             }
 
             // Check role permissions
-            Set<String> roles = userRoles.getOrDefault(userId, Set.of()); // GH-90000
-            for (String role : roles) { // GH-90000
-                if (rolePermissions.getOrDefault(role, Set.of()).contains(permission)) { // GH-90000
-                    return Promise.of(true); // GH-90000
+            Set<String> roles = userRoles.getOrDefault(userId, Set.of()); 
+            for (String role : roles) { 
+                if (rolePermissions.getOrDefault(role, Set.of()).contains(permission)) { 
+                    return Promise.of(true); 
                 }
             }
 
-            return Promise.of(false); // GH-90000
+            return Promise.of(false); 
         }
 
-        Promise<String> generateToken(String userId) { // GH-90000
-            String token = "token-" + userId + "-" + System.currentTimeMillis(); // GH-90000
-            tokens.put(token, System.currentTimeMillis() + 3600000); // 1 hour expiry // GH-90000
-            tokenUsers.put(token, userId); // GH-90000
-            return Promise.of(token); // GH-90000
+        Promise<String> generateToken(String userId) { 
+            String token = "token-" + userId + "-" + System.currentTimeMillis(); 
+            tokens.put(token, System.currentTimeMillis() + 3600000); // 1 hour expiry 
+            tokenUsers.put(token, userId); 
+            return Promise.of(token); 
         }
 
-        String generateExpiredToken(String userId) { // GH-90000
+        String generateExpiredToken(String userId) { 
             String token = "expired-token-" + userId;
-            tokens.put(token, System.currentTimeMillis() - 1000); // Already expired // GH-90000
-            tokenUsers.put(token, userId); // GH-90000
+            tokens.put(token, System.currentTimeMillis() - 1000); // Already expired 
+            tokenUsers.put(token, userId); 
             return token;
         }
 
-        Promise<TokenValidationResult> validateToken(String token) { // GH-90000
-            Long expiry = tokens.get(token); // GH-90000
-            if (expiry == null) { // GH-90000
-                return Promise.of(new TokenValidationResult(false, null, "Token not found")); // GH-90000
+        Promise<TokenValidationResult> validateToken(String token) { 
+            Long expiry = tokens.get(token); 
+            if (expiry == null) { 
+                return Promise.of(new TokenValidationResult(false, null, "Token not found")); 
             }
 
-            if (System.currentTimeMillis() > expiry) { // GH-90000
-                return Promise.of(new TokenValidationResult(false, null, "Token expired")); // GH-90000
+            if (System.currentTimeMillis() > expiry) { 
+                return Promise.of(new TokenValidationResult(false, null, "Token expired")); 
             }
 
-            String userId = tokenUsers.get(token); // GH-90000
-            return Promise.of(new TokenValidationResult(true, userId, null)); // GH-90000
+            String userId = tokenUsers.get(token); 
+            return Promise.of(new TokenValidationResult(true, userId, null)); 
         }
 
-        void registerPolicy(SecurityPolicy policy) { // GH-90000
-            policies.put(policy.getName(), policy); // GH-90000
+        void registerPolicy(SecurityPolicy policy) { 
+            policies.put(policy.getName(), policy); 
         }
 
-        Promise<Boolean> checkPolicyAccess(String userId, String resource) { // GH-90000
-            for (SecurityPolicy policy : policies.values()) { // GH-90000
-                String requiredRole = policy.getRequiredRole(resource); // GH-90000
-                if (requiredRole != null) { // GH-90000
-                    Set<String> roles = userRoles.getOrDefault(userId, Set.of()); // GH-90000
+        Promise<Boolean> checkPolicyAccess(String userId, String resource) { 
+            for (SecurityPolicy policy : policies.values()) { 
+                String requiredRole = policy.getRequiredRole(resource); 
+                if (requiredRole != null) { 
+                    Set<String> roles = userRoles.getOrDefault(userId, Set.of()); 
                     String normalizedRole = requiredRole.startsWith("role:")
-                        ? requiredRole.substring("role:".length()) // GH-90000
+                        ? requiredRole.substring("role:".length()) 
                         : requiredRole;
-                    return Promise.of(roles.contains(normalizedRole)); // GH-90000
+                    return Promise.of(roles.contains(normalizedRole)); 
                 }
             }
-            return Promise.of(false); // GH-90000
+            return Promise.of(false); 
         }
 
-        java.util.List<String> getAuditLog() { // GH-90000
-            return new java.util.ArrayList<>(auditLog); // GH-90000
+        java.util.List<String> getAuditLog() { 
+            return new java.util.ArrayList<>(auditLog); 
         }
     }
 
@@ -343,16 +343,16 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         private final boolean authenticated;
         private final String userId;
 
-        AuthenticationResult(boolean authenticated, String userId) { // GH-90000
+        AuthenticationResult(boolean authenticated, String userId) { 
             this.authenticated = authenticated;
             this.userId = userId;
         }
 
-        boolean isAuthenticated() { // GH-90000
+        boolean isAuthenticated() { 
             return authenticated;
         }
 
-        String getUserId() { // GH-90000
+        String getUserId() { 
             return userId;
         }
     }
@@ -362,43 +362,43 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         private final String userId;
         private final String reason;
 
-        TokenValidationResult(boolean valid, String userId, String reason) { // GH-90000
+        TokenValidationResult(boolean valid, String userId, String reason) { 
             this.valid = valid;
             this.userId = userId;
             this.reason = reason;
         }
 
-        boolean isValid() { // GH-90000
+        boolean isValid() { 
             return valid;
         }
 
-        String getUserId() { // GH-90000
+        String getUserId() { 
             return userId;
         }
 
-        String getReason() { // GH-90000
+        String getReason() { 
             return reason;
         }
     }
 
     private static class SecurityPolicy {
         private final String name;
-        private final java.util.Map<String, String> rules = new java.util.HashMap<>(); // GH-90000
+        private final java.util.Map<String, String> rules = new java.util.HashMap<>(); 
 
-        SecurityPolicy(String name) { // GH-90000
+        SecurityPolicy(String name) { 
             this.name = name;
         }
 
-        void addRule(String resource, String requiredRole) { // GH-90000
-            rules.put(resource, requiredRole); // GH-90000
+        void addRule(String resource, String requiredRole) { 
+            rules.put(resource, requiredRole); 
         }
 
-        String getName() { // GH-90000
+        String getName() { 
             return name;
         }
 
-        String getRequiredRole(String resource) { // GH-90000
-            return rules.get(resource); // GH-90000
+        String getRequiredRole(String resource) { 
+            return rules.get(resource); 
         }
     }
 }

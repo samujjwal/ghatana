@@ -54,8 +54,8 @@
       "@yappc/initialization-ui/*": ["libs/yappc-initialization-ui/src/*"],
       "@ghatana/code-editor": ["../../../../platform/typescript/code-editor/src"],
       "@ghatana/code-editor/*": ["../../../../platform/typescript/code-editor/src/*"],
-      "@yappc/ide": ["libs/ide/src"],
-      "@yappc/ide/*": ["libs/ide/src/*"],
+      "@ghatana/yappc-ide": ["libs/ide/src"],
+      "@ghatana/yappc-ide/*": ["libs/ide/src/*"],
       "@yappc/core/types": ["libs/yappc-core/src/types"],
       "@yappc/core/types/*": ["libs/yappc-core/src/types/*"],
 

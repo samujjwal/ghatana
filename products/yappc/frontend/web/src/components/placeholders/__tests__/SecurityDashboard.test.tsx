@@ -80,8 +80,7 @@ function renderDashboard(
   const store = createStore();
   store.set(vulnerabilitiesAtom, vulnerabilities);
   store.set(securityScoreAtom, score);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  store.set(securityAlertsAtom as any, alerts);
+  store.set(securityAlertsAtom as never, alerts);
 
   return render(
     <Provider store={store}>

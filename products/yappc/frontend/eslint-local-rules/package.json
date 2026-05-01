@@ -1,5 +1,5 @@
 {
-  "name": "@yappc/eslint-local-rules",
+  "name": "@ghatana/yappc-eslint-local-rules",
   "version": "1.0.0",
   "description": "Custom ESLint rules for YAPPC design system enforcement",
   "type": "module",

@@ -26,23 +26,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RedisKernelConfigResolverTest {
 
     private static final class InMemoryDistributedCachePort implements DistributedCachePort<String, Object> {
-        private final Map<String, Object> storage = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, Object> storage = new ConcurrentHashMap<>(); 
 
         @Override
-        public Promise<Optional<Object>> get(String key) { // GH-90000
-            return Promise.of(Optional.ofNullable(storage.get(key))); // GH-90000
+        public Promise<Optional<Object>> get(String key) { 
+            return Promise.of(Optional.ofNullable(storage.get(key))); 
         }
 
         @Override
-        public Promise<Void> put(String key, Object value, Duration ttl) { // GH-90000
-            storage.put(key, value); // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> put(String key, Object value, Duration ttl) { 
+            storage.put(key, value); 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> invalidateAll() { // GH-90000
-            storage.clear(); // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> invalidateAll() { 
+            storage.clear(); 
+            return Promise.complete(); 
         }
     }
 
@@ -50,16 +50,16 @@ class RedisKernelConfigResolverTest {
     private KernelTenantContext tenant;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        resolver = new RedisKernelConfigResolver( // GH-90000
-            new InMemoryDistributedCachePort(), // GH-90000
-            Duration.ofMinutes(5) // GH-90000
+    void setUp() { 
+        resolver = new RedisKernelConfigResolver( 
+            new InMemoryDistributedCachePort(), 
+            Duration.ofMinutes(5) 
         );
-        tenant = new KernelTenantContext( // GH-90000
+        tenant = new KernelTenantContext( 
             "tenant-1",
             KernelTenantContext.TenantType.STANDARD,
-            Map.of(), // GH-90000
-            Set.of(), // GH-90000
+            Map.of(), 
+            Set.of(), 
             null,
             Runnable::run
         );
@@ -67,24 +67,24 @@ class RedisKernelConfigResolverTest {
 
     @Test
     @DisplayName("resolves tenant override first")
-    void resolvesTenantOverride() { // GH-90000
-        resolver.putTenantOverride("tenant-1", "feature.flag", true).toCompletableFuture().join(); // GH-90000
-        Boolean value = resolver.resolve("feature.flag", Boolean.class, tenant); // GH-90000
-        assertTrue(value); // GH-90000
+    void resolvesTenantOverride() { 
+        resolver.putTenantOverride("tenant-1", "feature.flag", true).toCompletableFuture().join(); 
+        Boolean value = resolver.resolve("feature.flag", Boolean.class, tenant); 
+        assertTrue(value); 
     }
 
     @Test
     @DisplayName("falls back to kernel default")
-    void fallsBackToDefault() { // GH-90000
-        resolver.setKernelDefault("risk.threshold", 0.9d); // GH-90000
-        Double threshold = resolver.resolve("risk.threshold", Double.class, tenant); // GH-90000
-        assertEquals(0.9d, threshold); // GH-90000
+    void fallsBackToDefault() { 
+        resolver.setKernelDefault("risk.threshold", 0.9d); 
+        Double threshold = resolver.resolve("risk.threshold", Double.class, tenant); 
+        assertEquals(0.9d, threshold); 
     }
 
     @Test
     @DisplayName("returns optional empty when key missing")
-    void optionalEmpty() { // GH-90000
-        Optional<String> missing = resolver.resolveOptional("missing.key", String.class, tenant); // GH-90000
-        assertTrue(missing.isEmpty()); // GH-90000
+    void optionalEmpty() { 
+        Optional<String> missing = resolver.resolveOptional("missing.key", String.class, tenant); 
+        assertTrue(missing.isEmpty()); 
     }
 }

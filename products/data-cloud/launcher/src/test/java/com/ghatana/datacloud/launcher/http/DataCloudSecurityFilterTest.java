@@ -128,9 +128,13 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     }
 
     private static HttpRequest getWithKey(String path, String apiKey) { // GH-90000
+        return getWithTenant(path, apiKey, TEST_TENANT); // GH-90000
+    }
+
+    private static HttpRequest getWithTenant(String path, String apiKey, String tenantId) { // GH-90000
         return HttpRequest.get("http://localhost" + path) // GH-90000
                 .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
-                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), tenantId)
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
     }
@@ -376,6 +380,107 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             assertThat(status).isEqualTo(403); // GH-90000
             verify(policyEngine, never()).evaluate(anyString(), any()); // GH-90000
+        }
+
+        @Test
+        @DisplayName("auditor cannot execute governance mutation")
+        void auditorCannotExecuteGovernanceMutation() { // GH-90000
+            when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
+                .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
+            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
+                .build(); // GH-90000
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
+
+            assertThat(status).isEqualTo(403); // GH-90000
+            verify(policyEngine, never()).evaluate(anyString(), any()); // GH-90000
+        }
+
+        @Test
+        @DisplayName("auditor cannot execute governance retention classify mutation")
+        void auditorCannotExecuteGovernanceRetentionClassifyMutation() { // GH-90000
+            when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
+                .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
+            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/classify")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
+                .build(); // GH-90000
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
+
+            assertThat(status).isEqualTo(403); // GH-90000
+            verify(policyEngine, never()).evaluate(anyString(), any()); // GH-90000
+        }
+
+        @Test
+        @DisplayName("admin can execute governance mutation")
+        void adminCanExecuteGovernanceMutation() { // GH-90000
+            when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
+            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
+                .build(); // GH-90000
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
+
+            assertThat(status).isEqualTo(200); // GH-90000
+            verify(policyEngine).evaluate(anyString(), any()); // GH-90000
+        }
+
+        @Test
+        @DisplayName("admin can execute governance privacy redact mutation")
+        void adminCanExecuteGovernancePrivacyRedactMutation() { // GH-90000
+            when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
+            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/privacy/redact")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
+                .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
+                .build(); // GH-90000
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
+
+            assertThat(status).isEqualTo(200); // GH-90000
+            verify(policyEngine).evaluate(anyString(), any()); // GH-90000
+        }
+
+        @Test
+        @DisplayName("mismatched tenant header is denied for API-key principal in enforcing mode")
+        void mismatchedTenantHeaderIsDeniedWhenEnforcing() { // GH-90000
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+
+            int status = runPromise(() -> secured
+                .serve(getWithTenant("/api/v1/governance/compliance/summary", VALID_API_KEY, "other-tenant"))
+                .map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(403);
+            verify(policyEngine, never()).evaluate(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("mismatched tenant header is audit-only warning when enforcing is disabled")
+        void mismatchedTenantHeaderPassesWhenAuditOnly() { // GH-90000
+            when(apiKeyResolver.resolve(VALID_API_KEY))
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
+            AsyncServlet secured = auditOnly().apply(OK_DELEGATE);
+
+            int status = runPromise(() -> secured
+                .serve(getWithTenant("/api/v1/governance/compliance/summary", VALID_API_KEY, "other-tenant"))
+                .map(HttpResponse::getCode));
+
+            assertThat(status).isEqualTo(200);
         }
     }
 

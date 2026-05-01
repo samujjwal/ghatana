@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Versioning Components Integration Tests
  *

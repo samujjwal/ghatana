@@ -201,6 +201,8 @@ Important local-profile caveats:
 - Workflow execution history is only restart-safe when the selected Data Cloud storage is itself durable.
 - Federated query and tier migration degrade when external services are absent.
 - Semantic search currently uses the in-process vector plugin initialized by the launcher.
+- Settings APIs in strict or production-like profiles require a durable settings store; in-memory settings storage is blocked at startup.
+- In non-embedded profiles, authentication is fail-closed by default (API key or JWT must be configured).
 
 ## EventLogStore Durability
 
@@ -223,6 +225,10 @@ Operational guarantees:
 | Variable | Purpose |
 | --- | --- |
 | `DATACLOUD_PROFILE` | Runtime profile, currently `local` is the supported zero-dependency mode |
+| `DATACLOUD_API_KEYS` | Comma-separated static API keys for API key authentication in non-embedded deployments |
+| `DATACLOUD_JWT_SECRET` / `DATACLOUD_JWT_JWKS_URL` | JWT authentication source (shared-secret or JWKS) |
+| `DATACLOUD_INSECURE_MODE` | Opt-out switch for auth fail-closed checks in local/embedded workflows only |
+| `DATACLOUD_BIND_HOST` | Bind host; insecure embedded mode requires loopback-only host |
 | `DATACLOUD_SOVEREIGN_DATA_DIR` | Base directory for sovereign embedded H2 data files |
 | `DATACLOUD_COMPACTION_INTERVAL_SECONDS` | Sovereign storage compaction interval |
 | `DATACLOUD_COMPACTION_TOMBSTONE_THRESHOLD` | Tombstone count that triggers sovereign compaction |

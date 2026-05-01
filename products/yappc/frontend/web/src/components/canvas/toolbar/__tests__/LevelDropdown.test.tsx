@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * LevelDropdown Component Tests
  * 

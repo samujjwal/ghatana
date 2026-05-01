@@ -1,10 +1,9 @@
-// @ts-nocheck
 import { describe, it, expect } from 'vitest';
 
 // Small pure helper tests for normalization behavior used by the canvas
 // For now we implement a dummy normalize helper inline to test expectations
 
-function normalizeNodePayload(payload: unknown) {
+function normalizeNodePayload(payload: Record<string, unknown>) {
   // emulate the normalizer used in the app: ensure id, position and data exist
   return {
     id: String(payload.id ?? `node-${Math.random().toString(36).slice(2, 8)}`),

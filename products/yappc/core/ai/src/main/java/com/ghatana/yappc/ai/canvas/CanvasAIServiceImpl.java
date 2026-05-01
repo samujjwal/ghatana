@@ -7,19 +7,23 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.sql.DataSource;
 
 /**
  * Canvas AI Service gRPC Implementation
  *
  * Implements CanvasAIService gRPC interface.
  * Orchestrates validation and code generation services.
+ * History is persisted via JDBC (PostgreSQL) so data survives restarts.
  *
  * @doc.type class
  * @doc.purpose gRPC service implementation for Canvas AI operations
@@ -33,17 +37,106 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
     private final CanvasValidationService validationService;
     private final CanvasGenerationService generationService;
     private final MetricsCollector metrics;
-
-    // In-memory history storage (use Redis/DB in production)
-    private final Map<String, List<ValidationReport>> validationHistory = new HashMap<>();
-    private final Map<String, List<CodeGenerationResult>> generationHistory = new HashMap<>();
+    private final DataSource dataSource;
 
     public CanvasAIServiceImpl(CanvasValidationService validationService,
                                CanvasGenerationService generationService,
-                               MetricsCollector metrics) {
+                               MetricsCollector metrics,
+                               DataSource dataSource) {
         this.validationService = validationService;
         this.generationService = generationService;
         this.metrics = metrics;
+        this.dataSource = dataSource;
+    }
+
+    private Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    private void saveValidationReport(String canvasId, ValidationReport report) {
+        String sql = "INSERT INTO canvas_validation_history (canvas_id, report_bytes, created_at) VALUES (?, ?, NOW())";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, canvasId);
+            ps.setBytes(2, report.toByteArray());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.warn("Failed to persist validation report for canvas {}: {}", canvasId, e.getMessage());
+        }
+    }
+
+    private List<ValidationReport> loadValidationReports(String canvasId, int limit) {
+        List<ValidationReport> reports = new ArrayList<>();
+        String sql = "SELECT report_bytes FROM canvas_validation_history WHERE canvas_id = ? ORDER BY created_at DESC LIMIT ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, canvasId);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    reports.add(ValidationReport.parseFrom(rs.getBytes("report_bytes")));
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to load validation history for canvas {}: {}", canvasId, e.getMessage());
+        }
+        return reports;
+    }
+
+    private int countValidationReports(String canvasId) {
+        String sql = "SELECT COUNT(*) FROM canvas_validation_history WHERE canvas_id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, canvasId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Failed to count validation history for canvas {}: {}", canvasId, e.getMessage());
+        }
+        return 0;
+    }
+
+    private void saveGenerationResult(String canvasId, CodeGenerationResult result) {
+        String sql = "INSERT INTO canvas_generation_history (canvas_id, result_bytes, created_at) VALUES (?, ?, NOW())";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, canvasId);
+            ps.setBytes(2, result.toByteArray());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.warn("Failed to persist generation result for canvas {}: {}", canvasId, e.getMessage());
+        }
+    }
+
+    private List<CodeGenerationResult> loadGenerationResults(String canvasId, int limit) {
+        List<CodeGenerationResult> results = new ArrayList<>();
+        String sql = "SELECT result_bytes FROM canvas_generation_history WHERE canvas_id = ? ORDER BY created_at DESC LIMIT ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, canvasId);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    results.add(CodeGenerationResult.parseFrom(rs.getBytes("result_bytes")));
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to load generation history for canvas {}: {}", canvasId, e.getMessage());
+        }
+        return results;
+    }
+
+    private int countGenerationResults(String canvasId) {
+        String sql = "SELECT COUNT(*) FROM canvas_generation_history WHERE canvas_id = ?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, canvasId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            logger.warn("Failed to count generation history for canvas {}: {}", canvasId, e.getMessage());
+        }
+        return 0;
     }
 
     /**
@@ -92,7 +185,7 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
 
             // Store in history
             String canvasId = request.getCanvasState().getCanvasId();
-            validationHistory.computeIfAbsent(canvasId, k -> new ArrayList<>()).add(report);
+            saveValidationReport(canvasId, report);
 
             // Send response
             responseObserver.onNext(report);
@@ -124,7 +217,7 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
 
             // Store in history
             String canvasId = request.getCanvasState().getCanvasId();
-            generationHistory.computeIfAbsent(canvasId, k -> new ArrayList<>()).add(result);
+            saveGenerationResult(canvasId, result);
 
             // Send response
             responseObserver.onNext(result);
@@ -167,7 +260,7 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
             CodeGenerationResult result = awaitPromise(generationService.generate(request));
 
             // Store in history
-            generationHistory.computeIfAbsent(canvasId, k -> new ArrayList<>()).add(result);
+            saveGenerationResult(canvasId, result);
 
             // Send progress updates
             responseObserver.onNext(GenerationProgress.newBuilder()
@@ -218,17 +311,13 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
         try {
             metrics.incrementCounter("grpc.canvas.validation.history.requests");
 
-            List<ValidationReport> reports = validationHistory.getOrDefault(
-                request.getCanvasId(), List.of());
-
-            // Apply limit if specified
-            int limit = request.getLimit() > 0 ? request.getLimit() : reports.size();
-            List<ValidationReport> limited = reports.subList(
-                Math.max(0, reports.size() - limit), reports.size());
+            int limit = request.getLimit() > 0 ? request.getLimit() : Integer.MAX_VALUE;
+            List<ValidationReport> reports = loadValidationReports(request.getCanvasId(), limit);
+            int total = countValidationReports(request.getCanvasId());
 
             GetValidationHistoryResponse response = GetValidationHistoryResponse.newBuilder()
-                .addAllReports(limited)
-                .setTotalCount(reports.size())
+                .addAllReports(reports)
+                .setTotalCount(total)
                 .build();
 
             responseObserver.onNext(response);
@@ -255,17 +344,13 @@ public class CanvasAIServiceImpl extends CanvasAIServiceGrpc.CanvasAIServiceImpl
         try {
             metrics.incrementCounter("grpc.canvas.generation.history.requests");
 
-            List<CodeGenerationResult> results = generationHistory.getOrDefault(
-                request.getCanvasId(), List.of());
-
-            // Apply limit if specified
-            int limit = request.getLimit() > 0 ? request.getLimit() : results.size();
-            List<CodeGenerationResult> limited = results.subList(
-                Math.max(0, results.size() - limit), results.size());
+            int limit = request.getLimit() > 0 ? request.getLimit() : Integer.MAX_VALUE;
+            List<CodeGenerationResult> results = loadGenerationResults(request.getCanvasId(), limit);
+            int total = countGenerationResults(request.getCanvasId());
 
             GetGenerationHistoryResponse response = GetGenerationHistoryResponse.newBuilder()
-                .addAllResults(limited)
-                .setTotalCount(results.size())
+                .addAllResults(results)
+                .setTotalCount(total)
                 .build();
 
             responseObserver.onNext(response);

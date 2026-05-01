@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Performance and Edge Case Tests
  * Additional testing for complex scenarios and edge cases

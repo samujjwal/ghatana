@@ -2,8 +2,11 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.analytics.export.EntityExportService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +14,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,7 +52,7 @@ class EntityExportHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         handler = new EntityExportHandler(exportService, http); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
@@ -57,4 +66,70 @@ class EntityExportHandlerTest extends EventloopTestBase {
         verify(exportService, never()).exportCsv("default", "default", java.util.Map.of(), 0); // GH-90000
         verify(exportService, never()).exportNdjson("default", "default", java.util.Map.of(), 0); // GH-90000
     }
+
+        @Test
+        @DisplayName("approved export route rejects missing confirmation token")
+        void approvedExportRejectsMissingToken() {
+        HttpResponse badRequest = org.mockito.Mockito.mock(HttpResponse.class);
+        when(http.requireTenantIdOrFail(request)).thenReturn("tenant-a");
+        when(request.getPathParameter("collection")).thenReturn("users");
+        when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(
+            "{\"dryRun\":false,\"format\":\"csv\"}".getBytes(StandardCharsets.UTF_8))));
+        when(http.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
+        when(http.errorResponse(400,
+            "confirmationToken is required to authorise PII export. Perform a dry-run first to obtain a valid token."))
+            .thenReturn(badRequest);
+
+        HttpResponse response = runPromise(() -> handler.handleExportEntitiesWithApproval(request));
+
+        assertThat(response).isSameAs(badRequest);
+        verify(exportService, never()).exportCsvGoverned(any(), any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        verify(exportService, never()).exportNdjsonGoverned(any(), any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        }
+
+        @Test
+        @DisplayName("approved export route rejects invalid confirmation token")
+        void approvedExportRejectsInvalidToken() {
+        HttpResponse forbidden = org.mockito.Mockito.mock(HttpResponse.class);
+        when(http.requireTenantIdOrFail(request)).thenReturn("tenant-a");
+        when(request.getPathParameter("collection")).thenReturn("users");
+        when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(
+            "{\"dryRun\":false,\"format\":\"csv\",\"confirmationToken\":\"bad-token\"}"
+                .getBytes(StandardCharsets.UTF_8))));
+        when(http.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
+        when(http.errorResponse(org.mockito.ArgumentMatchers.eq(403), org.mockito.ArgumentMatchers.contains("invalid or expired")))
+            .thenReturn(forbidden);
+
+        HttpResponse response = runPromise(() -> handler.handleExportEntitiesWithApproval(request));
+
+        assertThat(response).isSameAs(forbidden);
+        verify(exportService, never()).exportCsvGoverned(any(), any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        verify(exportService, never()).exportNdjsonGoverned(any(), any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        }
+
+        @Test
+        @DisplayName("approved export route uses governed CSV export after valid token")
+        void approvedExportUsesGovernedCsvMethod() {
+        when(http.requireTenantIdOrFail(request)).thenReturn("tenant-a");
+        when(request.getPathParameter("collection")).thenReturn("users");
+        when(http.corsAllowOrigin()).thenReturn("*");
+        when(http.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper());
+
+        String token = DestructiveActionToken.buildToken(
+            "export-pii",
+            "tenant-a",
+            "users",
+            Instant.now().toEpochMilli());
+
+        when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(
+            ("{\"dryRun\":false,\"format\":\"csv\",\"confirmationToken\":\"" + token + "\"}")
+                .getBytes(StandardCharsets.UTF_8))));
+        when(exportService.exportCsvGoverned("tenant-a", "users", Map.of(), 10_000)).thenReturn(Promise.of("id,name\n1,alice"));
+
+        HttpResponse response = runPromise(() -> handler.handleExportEntitiesWithApproval(request));
+
+        Assertions.assertEquals(200, response.getCode());
+        verify(exportService).exportCsvGoverned("tenant-a", "users", Map.of(), 10_000);
+        verify(exportService, never()).exportCsv("tenant-a", "users", Map.of(), 10_000);
+        }
 }

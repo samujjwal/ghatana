@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.workflow;
@@ -15,72 +15,72 @@ import static org.assertj.core.api.Assertions.*;
 class WorkflowOptionsTest {
 
     @Test
-    void shouldCreateEphemeralDefaults() { // GH-90000
-        WorkflowOptions opts = WorkflowOptions.ephemeral(); // GH-90000
+    void shouldCreateEphemeralDefaults() { 
+        WorkflowOptions opts = WorkflowOptions.ephemeral(); 
 
-        assertThat(opts.kind()).isEqualTo(WorkflowKind.EPHEMERAL); // GH-90000
-        assertThat(opts.timeout()).isEqualTo(Duration.ofMinutes(5)); // GH-90000
-        assertThat(opts.maxRetries()).isZero(); // GH-90000
-        assertThat(opts.sagaPolicy()).isEqualTo(SagaPolicy.NONE); // GH-90000
+        assertThat(opts.kind()).isEqualTo(WorkflowKind.EPHEMERAL); 
+        assertThat(opts.timeout()).isEqualTo(Duration.ofMinutes(5)); 
+        assertThat(opts.maxRetries()).isZero(); 
+        assertThat(opts.sagaPolicy()).isEqualTo(SagaPolicy.NONE); 
     }
 
     @Test
-    void shouldCreateDurableDefaults() { // GH-90000
-        WorkflowOptions opts = WorkflowOptions.durable(); // GH-90000
+    void shouldCreateDurableDefaults() { 
+        WorkflowOptions opts = WorkflowOptions.durable(); 
 
-        assertThat(opts.kind()).isEqualTo(WorkflowKind.DURABLE); // GH-90000
-        assertThat(opts.timeout()).isNull(); // GH-90000
-        assertThat(opts.maxRetries()).isEqualTo(3); // GH-90000
-        assertThat(opts.sagaPolicy()).isEqualTo(SagaPolicy.BACKWARD_COMPENSATION); // GH-90000
+        assertThat(opts.kind()).isEqualTo(WorkflowKind.DURABLE); 
+        assertThat(opts.timeout()).isNull(); 
+        assertThat(opts.maxRetries()).isEqualTo(3); 
+        assertThat(opts.sagaPolicy()).isEqualTo(SagaPolicy.BACKWARD_COMPENSATION); 
     }
 
     @Test
-    void shouldCreateCustomOptions() { // GH-90000
-        WorkflowOptions opts = new WorkflowOptions( // GH-90000
-            WorkflowKind.DURABLE, Duration.ofHours(1), 10, SagaPolicy.FORWARD_RECOVERY); // GH-90000
+    void shouldCreateCustomOptions() { 
+        WorkflowOptions opts = new WorkflowOptions( 
+            WorkflowKind.DURABLE, Duration.ofHours(1), 10, SagaPolicy.FORWARD_RECOVERY); 
 
-        assertThat(opts.kind()).isEqualTo(WorkflowKind.DURABLE); // GH-90000
-        assertThat(opts.timeout()).isEqualTo(Duration.ofHours(1)); // GH-90000
-        assertThat(opts.maxRetries()).isEqualTo(10); // GH-90000
-        assertThat(opts.sagaPolicy()).isEqualTo(SagaPolicy.FORWARD_RECOVERY); // GH-90000
+        assertThat(opts.kind()).isEqualTo(WorkflowKind.DURABLE); 
+        assertThat(opts.timeout()).isEqualTo(Duration.ofHours(1)); 
+        assertThat(opts.maxRetries()).isEqualTo(10); 
+        assertThat(opts.sagaPolicy()).isEqualTo(SagaPolicy.FORWARD_RECOVERY); 
     }
 
     @Test
-    void shouldCopyWithTimeout() { // GH-90000
-        WorkflowOptions base = WorkflowOptions.ephemeral(); // GH-90000
-        WorkflowOptions custom = base.withTimeout(Duration.ofMinutes(15)); // GH-90000
+    void shouldCopyWithTimeout() { 
+        WorkflowOptions base = WorkflowOptions.ephemeral(); 
+        WorkflowOptions custom = base.withTimeout(Duration.ofMinutes(15)); 
 
-        assertThat(custom.timeout()).isEqualTo(Duration.ofMinutes(15)); // GH-90000
-        assertThat(custom.kind()).isEqualTo(base.kind()); // GH-90000
+        assertThat(custom.timeout()).isEqualTo(Duration.ofMinutes(15)); 
+        assertThat(custom.kind()).isEqualTo(base.kind()); 
     }
 
     @Test
-    void shouldCopyWithMaxRetries() { // GH-90000
-        WorkflowOptions base = WorkflowOptions.ephemeral(); // GH-90000
-        WorkflowOptions custom = base.withMaxRetries(7); // GH-90000
+    void shouldCopyWithMaxRetries() { 
+        WorkflowOptions base = WorkflowOptions.ephemeral(); 
+        WorkflowOptions custom = base.withMaxRetries(7); 
 
-        assertThat(custom.maxRetries()).isEqualTo(7); // GH-90000
-        assertThat(custom.kind()).isEqualTo(base.kind()); // GH-90000
+        assertThat(custom.maxRetries()).isEqualTo(7); 
+        assertThat(custom.kind()).isEqualTo(base.kind()); 
     }
 
     @Test
-    void shouldCopyWithSagaPolicy() { // GH-90000
-        WorkflowOptions base = WorkflowOptions.ephemeral(); // GH-90000
-        WorkflowOptions custom = base.withSagaPolicy(SagaPolicy.BACKWARD_COMPENSATION); // GH-90000
+    void shouldCopyWithSagaPolicy() { 
+        WorkflowOptions base = WorkflowOptions.ephemeral(); 
+        WorkflowOptions custom = base.withSagaPolicy(SagaPolicy.BACKWARD_COMPENSATION); 
 
-        assertThat(custom.sagaPolicy()).isEqualTo(SagaPolicy.BACKWARD_COMPENSATION); // GH-90000
-        assertThat(custom.kind()).isEqualTo(base.kind()); // GH-90000
+        assertThat(custom.sagaPolicy()).isEqualTo(SagaPolicy.BACKWARD_COMPENSATION); 
+        assertThat(custom.kind()).isEqualTo(base.kind()); 
     }
 
     @Test
-    void shouldRejectNullKind() { // GH-90000
-        assertThatThrownBy(() -> new WorkflowOptions(null, Duration.ZERO, 0, SagaPolicy.NONE)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void shouldRejectNullKind() { 
+        assertThatThrownBy(() -> new WorkflowOptions(null, Duration.ZERO, 0, SagaPolicy.NONE)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
-    void shouldAllowNullTimeout() { // GH-90000
-        WorkflowOptions opts = new WorkflowOptions(WorkflowKind.EPHEMERAL, null, 0, SagaPolicy.NONE); // GH-90000
-        assertThat(opts.timeout()).isNull(); // GH-90000
+    void shouldAllowNullTimeout() { 
+        WorkflowOptions opts = new WorkflowOptions(WorkflowKind.EPHEMERAL, null, 0, SagaPolicy.NONE); 
+        assertThat(opts.timeout()).isNull(); 
     }
 }

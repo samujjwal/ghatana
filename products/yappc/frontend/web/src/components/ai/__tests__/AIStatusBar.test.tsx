@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * AI Status Bar Component Tests
  *

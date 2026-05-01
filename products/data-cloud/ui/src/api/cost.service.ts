@@ -18,7 +18,7 @@ import {
   CollectionCostReportSchema,
   MigrateCollectionResultSchema,
 } from '../contracts/schemas';
-import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING } from '../lib/runtime-boundaries';
+import { COST_PREDICTIVE_ROUTING_BOUNDARY_WARNING, COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE, COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE } from '../lib/runtime-boundaries';
 
 export interface CostBreakdown {
   total: number;
@@ -137,28 +137,26 @@ export class CostService {
   }
 
   /**
-   * Get optimization suggestions for a query
+   * Get optimization suggestions for a query.
+   *
+   * @throws {Error} Always — this surface is not exposed by the current Data Cloud launcher API.
+   *   Callers must catch and render the boundary message via {@code UnsupportedSurfaceBoundary}.
    */
-  async getQueryOptimization(query: string): Promise<QueryOptimization> {
-    return {
-      queryId: 'estimate-only',
-      originalQuery: query,
-      suggestions: [],
-      currentCost: 0,
-      potentialCost: 0,
-    };
+  async getQueryOptimization(_query: string): Promise<QueryOptimization> {
+    throw new Error(COST_QUERY_OPTIMIZATION_BOUNDARY_MESSAGE);
   }
 
   /**
-   * Apply optimization suggestion
+   * Apply an optimization suggestion.
+   *
+   * @throws {Error} Always — this surface is not exposed by the current Data Cloud launcher API.
+   *   Callers must catch and render the boundary message via {@code UnsupportedSurfaceBoundary}.
    */
   async applyOptimization(
-    queryId: string,
-    suggestionType: string
+    _queryId: string,
+    _suggestionType: string,
   ): Promise<{ success: boolean; newQuery?: string }> {
-    void queryId;
-    void suggestionType;
-    return { success: false };
+    throw new Error(COST_APPLY_OPTIMIZATION_BOUNDARY_MESSAGE);
   }
 
   /**
@@ -176,20 +174,27 @@ export class CostService {
   }
 
   /**
-   * Get materialized view suggestions
+   * Get materialized view suggestions.
+   *
+   * Not yet backed by a launcher endpoint — returns an empty list.
+   * When the materialized-view API lands, this will call the real route.
    */
   async getMaterializedViewSuggestions(): Promise<MaterializedViewSuggestion[]> {
     return [];
   }
 
   /**
-   * Create materialized view
+   * Create materialized view.
+   *
+   * @throws {Error} Always — materialized view creation is not exposed by the current
+   *   Data Cloud launcher API.
    */
   async createMaterializedView(
-    suggestion: MaterializedViewSuggestion
+    _suggestion: MaterializedViewSuggestion,
   ): Promise<{ id: string; status: string }> {
-    void suggestion;
-    return { id: 'unsupported', status: 'unsupported' };
+    throw new Error(
+      'Materialized view creation is not exposed by the current Data Cloud launcher API.',
+    );
   }
 
   /**

@@ -24,18 +24,18 @@ class OperatorResultTest {
 
         @Test
         @DisplayName("empty() should create successful result with no events")
-        void shouldCreateEmptyResult() { // GH-90000
-            OperatorResult result = OperatorResult.empty(); // GH-90000
+        void shouldCreateEmptyResult() { 
+            OperatorResult result = OperatorResult.empty(); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("failed() should create failed result with error message")
-        void shouldCreateFailedResult() { // GH-90000
+        void shouldCreateFailedResult() { 
             OperatorResult result = OperatorResult.failed("Something went wrong");
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
     }
 
@@ -45,23 +45,23 @@ class OperatorResultTest {
 
         @Test
         @DisplayName("should build a successful result")
-        void shouldBuildSuccessResult() { // GH-90000
-            OperatorResult result = OperatorResult.builder() // GH-90000
-                    .success() // GH-90000
-                    .processingTime(150L) // GH-90000
-                    .build(); // GH-90000
+        void shouldBuildSuccessResult() { 
+            OperatorResult result = OperatorResult.builder() 
+                    .success() 
+                    .processingTime(150L) 
+                    .build(); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("should build a failed result with message")
-        void shouldBuildFailedResult() { // GH-90000
-            OperatorResult result = OperatorResult.builder() // GH-90000
+        void shouldBuildFailedResult() { 
+            OperatorResult result = OperatorResult.builder() 
                     .failed("Validation error")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
     }
 }

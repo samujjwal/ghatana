@@ -26,14 +26,14 @@ class RateLimiterTest {
     private DefaultRateLimiter rateLimiter;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        rateLimiter = DefaultRateLimiter.create( // GH-90000
-                RateLimiterConfig.builder() // GH-90000
-                        .maxRequestsPerMinute(5) // GH-90000
-                        .burstSize(5) // GH-90000
-                        .windowDuration(Duration.ofMinutes(1)) // GH-90000
-                        .build(), // GH-90000
-                new NoopMetricsCollector(), // GH-90000
+    void setUp() { 
+        rateLimiter = DefaultRateLimiter.create( 
+                RateLimiterConfig.builder() 
+                        .maxRequestsPerMinute(5) 
+                        .burstSize(5) 
+                        .windowDuration(Duration.ofMinutes(1)) 
+                        .build(), 
+                new NoopMetricsCollector(), 
                 "auth.gateway.rate_limit"
         );
     }
@@ -42,16 +42,16 @@ class RateLimiterTest {
 
     @Test
     @DisplayName("Requests within limit should be allowed")
-    void requestsWithinLimitShouldBeAllowed() { // GH-90000
-        for (int i = 0; i < 5; i++) { // GH-90000
+    void requestsWithinLimitShouldBeAllowed() { 
+        for (int i = 0; i < 5; i++) { 
             assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isTrue();
         }
     }
 
     @Test
     @DisplayName("Request exceeding limit should be rejected")
-    void requestExceedingLimitShouldBeRejected() { // GH-90000
-        for (int i = 0; i < 5; i++) { // GH-90000
+    void requestExceedingLimitShouldBeRejected() { 
+        for (int i = 0; i < 5; i++) { 
             rateLimiter.tryAcquire("tenant-1");
         }
         assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isFalse();
@@ -61,8 +61,8 @@ class RateLimiterTest {
 
     @Test
     @DisplayName("Rate limit should be per-tenant")
-    void rateLimitShouldBePerTenant() { // GH-90000
-        for (int i = 0; i < 5; i++) { // GH-90000
+    void rateLimitShouldBePerTenant() { 
+        for (int i = 0; i < 5; i++) { 
             rateLimiter.tryAcquire("tenant-1");
         }
         assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isFalse();
@@ -73,8 +73,8 @@ class RateLimiterTest {
 
     @Test
     @DisplayName("Reset should clear tenant counter")
-    void resetShouldClearCounter() { // GH-90000
-        for (int i = 0; i < 5; i++) { // GH-90000
+    void resetShouldClearCounter() { 
+        for (int i = 0; i < 5; i++) { 
             rateLimiter.tryAcquire("tenant-1");
         }
         rateLimiter.reset("tenant-1");
@@ -83,47 +83,47 @@ class RateLimiterTest {
 
     @Test
     @DisplayName("resetAll should clear all tenant counters")
-    void resetAllShouldClearAllCounters() { // GH-90000
+    void resetAllShouldClearAllCounters() { 
         rateLimiter.tryAcquire("tenant-1");
         rateLimiter.tryAcquire("tenant-2");
-        rateLimiter.resetAll(); // GH-90000
-        assertThat(rateLimiter.getTrackedKeyCount()).isEqualTo(0); // GH-90000
+        rateLimiter.resetAll(); 
+        assertThat(rateLimiter.getTrackedKeyCount()).isEqualTo(0); 
     }
 
     // ─── Inspection ───────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("getCurrentCount should reflect actual count")
-    void getCurrentCountShouldReflectActualCount() { // GH-90000
+    void getCurrentCountShouldReflectActualCount() { 
         rateLimiter.tryAcquire("tenant-1");
         rateLimiter.tryAcquire("tenant-1");
         rateLimiter.tryAcquire("tenant-1");
-        assertThat(rateLimiter.getStats().getTotalAllowed()).isEqualTo(3); // GH-90000
+        assertThat(rateLimiter.getStats().getTotalAllowed()).isEqualTo(3); 
     }
 
     @Test
     @DisplayName("getActiveTenantCount should count distinct tenants")
-    void getActiveTenantCountShouldCountDistinctTenants() { // GH-90000
+    void getActiveTenantCountShouldCountDistinctTenants() { 
         rateLimiter.tryAcquire("tenant-1");
         rateLimiter.tryAcquire("tenant-2");
         rateLimiter.tryAcquire("tenant-3");
-        assertThat(rateLimiter.getTrackedKeyCount()).isEqualTo(3); // GH-90000
+        assertThat(rateLimiter.getTrackedKeyCount()).isEqualTo(3); 
     }
 
     // ─── Construction validation ──────────────────────────────────────────────
 
     @Test
     @DisplayName("Zero requestsPerMinute should throw")
-    void zeroRequestsPerMinuteShouldThrow() { // GH-90000
-        assertThatThrownBy(() -> RateLimiterConfig.builder().maxRequestsPerMinute(0).build()) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void zeroRequestsPerMinuteShouldThrow() { 
+        assertThatThrownBy(() -> RateLimiterConfig.builder().maxRequestsPerMinute(0).build()) 
+                .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("maxRequestsPerMinute must be positive");
     }
 
     @Test
     @DisplayName("Null metrics should throw NullPointerException")
-    void nullMetricsShouldThrow() { // GH-90000
-        assertThatThrownBy(() -> DefaultRateLimiter.create(RateLimiterConfig.builder().build(), null, "auth.gateway.rate_limit")) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void nullMetricsShouldThrow() { 
+        assertThatThrownBy(() -> DefaultRateLimiter.create(RateLimiterConfig.builder().build(), null, "auth.gateway.rate_limit")) 
+                .isInstanceOf(NullPointerException.class); 
     }
 }

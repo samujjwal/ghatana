@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * UnifiedCanvasToolbar Component Tests
  * 

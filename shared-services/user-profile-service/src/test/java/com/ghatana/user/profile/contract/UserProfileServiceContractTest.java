@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("User Profile Service Contract Tests")
 public class UserProfileServiceContractTest {
 
-    private static final Path SPEC_PATH = Path.of( // GH-90000
+    private static final Path SPEC_PATH = Path.of( 
             "..",
             "..",
             "platform",
@@ -42,23 +42,23 @@ public class UserProfileServiceContractTest {
             "user-profile-service.yaml"
     );
 
-    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
+    private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); 
 
     private static final String API_VERSION = "1.0.0";
 
     @Test
     @DisplayName("OpenAPI contract file exists and is readable")
-    void openApiContractFileExists() { // GH-90000
-        assertThat(SPEC_PATH) // GH-90000
-                .as("User Profile OpenAPI contract should exist at %s", SPEC_PATH) // GH-90000
-                .exists() // GH-90000
-                .isReadable(); // GH-90000
+    void openApiContractFileExists() { 
+        assertThat(SPEC_PATH) 
+                .as("User Profile OpenAPI contract should exist at %s", SPEC_PATH) 
+                .exists() 
+                .isReadable(); 
     }
 
     @Test
     @DisplayName("OpenAPI metadata matches expected user profile service contract")
-    void openApiMetadataIsConsistent() throws Exception { // GH-90000
-        JsonNode root = readSpec(); // GH-90000
+    void openApiMetadataIsConsistent() throws Exception { 
+        JsonNode root = readSpec(); 
 
         assertThat(root.path("openapi").asText()).isEqualTo("3.1.0");
         assertThat(root.path("info").path("title").asText())
@@ -69,7 +69,7 @@ public class UserProfileServiceContractTest {
 
     @Test
     @DisplayName("OpenAPI exposes the expected user profile and observability paths")
-    void openApiContainsExpectedPaths() throws Exception { // GH-90000
+    void openApiContainsExpectedPaths() throws Exception { 
         JsonNode paths = readSpec().path("paths");
 
         assertThat(paths.has("/health")).isTrue();
@@ -79,7 +79,7 @@ public class UserProfileServiceContractTest {
 
     @Test
     @DisplayName("OpenAPI defines expected user profile schemas and error responses")
-    void openApiContainsExpectedSchemas() throws Exception { // GH-90000
+    void openApiContainsExpectedSchemas() throws Exception { 
         JsonNode schemas = readSpec().path("components").path("schemas");
 
         assertThat(schemas.has("HealthResponse")).isTrue();
@@ -90,8 +90,8 @@ public class UserProfileServiceContractTest {
 
     @Test
     @DisplayName("OpenAPI declares required tenant and auth security boundaries")
-    void openApiDefinesTenantAndSecurityRequirements() throws Exception { // GH-90000
-        JsonNode root = readSpec(); // GH-90000
+    void openApiDefinesTenantAndSecurityRequirements() throws Exception { 
+        JsonNode root = readSpec(); 
         JsonNode components = root.path("components");
         JsonNode profilePath = root.path("paths").path("/profiles/{userId}");
 
@@ -103,9 +103,9 @@ public class UserProfileServiceContractTest {
         assertThat(profilePath.path("delete").path("security")).isNotEmpty();
     }
 
-    private JsonNode readSpec() throws IOException { // GH-90000
-        try (var inputStream = Files.newInputStream(SPEC_PATH)) { // GH-90000
-            return objectMapper.readTree(inputStream); // GH-90000
+    private JsonNode readSpec() throws IOException { 
+        try (var inputStream = Files.newInputStream(SPEC_PATH)) { 
+            return objectMapper.readTree(inputStream); 
         }
     }
 }
