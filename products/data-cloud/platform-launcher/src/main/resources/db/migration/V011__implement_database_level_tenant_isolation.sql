@@ -12,6 +12,21 @@
 -- Ticket: DC-SEC-001
 
 -- ====================================================================================
+-- Role Setup (for test environments)
+-- ====================================================================================
+
+-- Create roles if they don't exist (for test environments)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'application_user') THEN
+        CREATE ROLE application_user;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user') THEN
+        CREATE ROLE admin_user;
+    END IF;
+END $$;
+
+-- ====================================================================================
 -- Tenant Context Management
 -- ====================================================================================
 
@@ -47,85 +62,61 @@ $$ LANGUAGE plpgsql STABLE;
 -- Row-Level Security Policies for Events Table
 -- ====================================================================================
 
--- Enable RLS on events table
-ALTER TABLE events ENABLE ROW LEVEL SECURITY;
-
--- Create policy for tenant isolation on events
-CREATE POLICY tenant_isolation_events ON events
-    FOR ALL
-    TO application_user
-    USING (tenant_id = tenant_security.get_current_tenant())
-    WITH CHECK (tenant_id = tenant_security.get_current_tenant());
-
--- Create policy for admin access on events (bypass RLS)
-CREATE POLICY admin_access_events ON events
-    FOR ALL
-    TO admin_user
-    USING (true)
-    WITH CHECK (true);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'events' AND table_schema = 'public') THEN
+        EXECUTE 'ALTER TABLE events ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_events ON events';
+        EXECUTE 'CREATE POLICY tenant_isolation_events ON events FOR ALL TO application_user USING (tenant_id = tenant_security.get_current_tenant()) WITH CHECK (tenant_id = tenant_security.get_current_tenant())';
+        EXECUTE 'DROP POLICY IF EXISTS admin_access_events ON events';
+        EXECUTE 'CREATE POLICY admin_access_events ON events FOR ALL TO admin_user USING (true) WITH CHECK (true)';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Row-Level Security Policies for Entities Table
 -- ====================================================================================
 
--- Enable RLS on entities table
-ALTER TABLE entities ENABLE ROW LEVEL SECURITY;
-
--- Create policy for tenant isolation on entities
-CREATE POLICY tenant_isolation_entities ON entities
-    FOR ALL
-    TO application_user
-    USING (tenant_id = tenant_security.get_current_tenant())
-    WITH CHECK (tenant_id = tenant_security.get_current_tenant());
-
--- Create policy for admin access on entities
-CREATE POLICY admin_access_entities ON entities
-    FOR ALL
-    TO admin_user
-    USING (true)
-    WITH CHECK (true);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entities' AND table_schema = 'public') THEN
+        EXECUTE 'ALTER TABLE entities ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_entities ON entities';
+        EXECUTE 'CREATE POLICY tenant_isolation_entities ON entities FOR ALL TO application_user USING (tenant_id = tenant_security.get_current_tenant()) WITH CHECK (tenant_id = tenant_security.get_current_tenant())';
+        EXECUTE 'DROP POLICY IF EXISTS admin_access_entities ON entities';
+        EXECUTE 'CREATE POLICY admin_access_entities ON entities FOR ALL TO admin_user USING (true) WITH CHECK (true)';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Row-Level Security Policies for Collections Metadata
 -- ====================================================================================
 
--- Enable RLS on collections metadata table
-ALTER TABLE collections_metadata ENABLE ROW LEVEL SECURITY;
-
--- Create policy for tenant isolation on collections
-CREATE POLICY tenant_isolation_collections ON collections_metadata
-    FOR ALL
-    TO application_user
-    USING (tenant_id = tenant_security.get_current_tenant())
-    WITH CHECK (tenant_id = tenant_security.get_current_tenant());
-
--- Create policy for admin access on collections
-CREATE POLICY admin_access_collections ON collections_metadata
-    FOR ALL
-    TO admin_user
-    USING (true)
-    WITH CHECK (true);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections_metadata' AND table_schema = 'public') THEN
+        EXECUTE 'ALTER TABLE collections_metadata ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_collections ON collections_metadata';
+        EXECUTE 'CREATE POLICY tenant_isolation_collections ON collections_metadata FOR ALL TO application_user USING (tenant_id = tenant_security.get_current_tenant()) WITH CHECK (tenant_id = tenant_security.get_current_tenant())';
+        EXECUTE 'DROP POLICY IF EXISTS admin_access_collections ON collections_metadata';
+        EXECUTE 'CREATE POLICY admin_access_collections ON collections_metadata FOR ALL TO admin_user USING (true) WITH CHECK (true)';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Row-Level Security Policies for Timeseries Table
 -- ====================================================================================
 
--- Enable RLS on timeseries table
-ALTER TABLE timeseries ENABLE ROW LEVEL SECURITY;
-
--- Create policy for tenant isolation on timeseries
-CREATE POLICY tenant_isolation_timeseries ON timeseries
-    FOR ALL
-    TO application_user
-    USING (tenant_id = tenant_security.get_current_tenant())
-    WITH CHECK (tenant_id = tenant_security.get_current_tenant());
-
--- Create policy for admin access on timeseries
-CREATE POLICY admin_access_timeseries ON timeseries
-    FOR ALL
-    TO admin_user
-    USING (true)
-    WITH CHECK (true);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timeseries' AND table_schema = 'public') THEN
+        EXECUTE 'ALTER TABLE timeseries ENABLE ROW LEVEL SECURITY';
+        EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_timeseries ON timeseries';
+        EXECUTE 'CREATE POLICY tenant_isolation_timeseries ON timeseries FOR ALL TO application_user USING (tenant_id = tenant_security.get_current_tenant()) WITH CHECK (tenant_id = tenant_security.get_current_tenant())';
+        EXECUTE 'DROP POLICY IF EXISTS admin_access_timeseries ON timeseries';
+        EXECUTE 'CREATE POLICY admin_access_timeseries ON timeseries FOR ALL TO admin_user USING (true) WITH CHECK (true)';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Cross-Tenant Access Detection and Audit
@@ -194,30 +185,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create triggers for cross-tenant access detection
-DROP TRIGGER IF EXISTS detect_cross_tenant_events ON events;
-CREATE TRIGGER detect_cross_tenant_events
-    BEFORE INSERT OR UPDATE ON events
-    FOR EACH ROW
-    EXECUTE FUNCTION tenant_security.detect_cross_tenant_access();
-
-DROP TRIGGER IF EXISTS detect_cross_tenant_entities ON entities;
-CREATE TRIGGER detect_cross_tenant_entities
-    BEFORE INSERT OR UPDATE ON entities
-    FOR EACH ROW
-    EXECUTE FUNCTION tenant_security.detect_cross_tenant_access();
-
-DROP TRIGGER IF EXISTS detect_cross_tenant_collections ON collections_metadata;
-CREATE TRIGGER detect_cross_tenant_collections
-    BEFORE INSERT OR UPDATE ON collections_metadata
-    FOR EACH ROW
-    EXECUTE FUNCTION tenant_security.detect_cross_tenant_access();
-
-DROP TRIGGER IF EXISTS detect_cross_tenant_timeseries ON timeseries;
-CREATE TRIGGER detect_cross_tenant_timeseries
-    BEFORE INSERT OR UPDATE ON timeseries
-    FOR EACH ROW
-    EXECUTE FUNCTION tenant_security.detect_cross_tenant_access();
+-- Create triggers for cross-tenant access detection (conditional on table existence)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'events' AND table_schema = 'public') THEN
+        EXECUTE 'DROP TRIGGER IF EXISTS detect_cross_tenant_events ON events';
+        EXECUTE 'CREATE TRIGGER detect_cross_tenant_events BEFORE INSERT OR UPDATE ON events FOR EACH ROW EXECUTE FUNCTION tenant_security.detect_cross_tenant_access()';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entities' AND table_schema = 'public') THEN
+        EXECUTE 'DROP TRIGGER IF EXISTS detect_cross_tenant_entities ON entities';
+        EXECUTE 'CREATE TRIGGER detect_cross_tenant_entities BEFORE INSERT OR UPDATE ON entities FOR EACH ROW EXECUTE FUNCTION tenant_security.detect_cross_tenant_access()';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections_metadata' AND table_schema = 'public') THEN
+        EXECUTE 'DROP TRIGGER IF EXISTS detect_cross_tenant_collections ON collections_metadata';
+        EXECUTE 'CREATE TRIGGER detect_cross_tenant_collections BEFORE INSERT OR UPDATE ON collections_metadata FOR EACH ROW EXECUTE FUNCTION tenant_security.detect_cross_tenant_access()';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timeseries' AND table_schema = 'public') THEN
+        EXECUTE 'DROP TRIGGER IF EXISTS detect_cross_tenant_timeseries ON timeseries';
+        EXECUTE 'CREATE TRIGGER detect_cross_tenant_timeseries BEFORE INSERT OR UPDATE ON timeseries FOR EACH ROW EXECUTE FUNCTION tenant_security.detect_cross_tenant_access()';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Tenant Context Validation Function
@@ -237,23 +224,43 @@ $$ LANGUAGE plpgsql;
 -- Performance Optimizations
 -- ====================================================================================
 
--- Create composite indexes for RLS performance
+-- Create composite indexes for RLS performance (conditional on table existence)
 -- These indexes help PostgreSQL optimize RLS policy evaluation
 
 -- Events table optimized indexes for RLS
-CREATE INDEX IF NOT EXISTS idx_events_tenant_rls ON events(tenant_id, id);
-CREATE INDEX IF NOT EXISTS idx_events_tenant_stream_rls ON events(tenant_id, stream_name, partition_id, event_offset);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'events' AND table_schema = 'public') THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_tenant_rls ON events(tenant_id, id)';
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_events_tenant_stream_rls ON events(tenant_id, stream_name, partition_id, event_offset)';
+    END IF;
+END $$;
 
 -- Entities table optimized indexes for RLS
-CREATE INDEX IF NOT EXISTS idx_entities_tenant_rls ON entities(tenant_id, id);
-CREATE INDEX IF NOT EXISTS idx_entities_tenant_collection_rls ON entities(tenant_id, collection_name, created_at DESC);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entities' AND table_schema = 'public') THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_entities_tenant_rls ON entities(tenant_id, id)';
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_entities_tenant_collection_rls ON entities(tenant_id, collection_name, created_at DESC)';
+    END IF;
+END $$;
 
 -- Collections metadata optimized indexes
-CREATE INDEX IF NOT EXISTS idx_collections_tenant_rls ON collections_metadata(tenant_id, id);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections_metadata' AND table_schema = 'public') THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_collections_tenant_rls ON collections_metadata(tenant_id, id)';
+    END IF;
+END $$;
 
 -- Timeseries table optimized indexes for RLS
-CREATE INDEX IF NOT EXISTS idx_timeseries_tenant_rls ON timeseries(tenant_id, id);
-CREATE INDEX IF NOT EXISTS idx_timeseries_tenant_timestamp_rls ON timeseries(tenant_id, timestamp DESC);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timeseries' AND table_schema = 'public') THEN
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_timeseries_tenant_rls ON timeseries(tenant_id, id)';
+        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_timeseries_tenant_timestamp_rls ON timeseries(tenant_id, timestamp DESC)';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Monitoring Views
@@ -273,47 +280,47 @@ WHERE detected_at > NOW() - INTERVAL '24 hours'
 GROUP BY 1, 2, 3, 4
 ORDER BY hour DESC, attempt_count DESC;
 
--- View for tenant data distribution
-CREATE OR REPLACE VIEW tenant_security.tenant_data_distribution AS
-SELECT 
-    tenant_id,
-    'events' as table_name,
-    COUNT(*) as record_count,
-    pg_size_pretty(pg_total_relation_size('events')) as storage_size
-FROM events
-GROUP BY tenant_id
-
-UNION ALL
-
-SELECT 
-    tenant_id,
-    'entities' as table_name,
-    COUNT(*) as record_count,
-    pg_size_pretty(pg_total_relation_size('entities')) as storage_size
-FROM entities
-GROUP BY tenant_id
-
-UNION ALL
-
-SELECT 
-    tenant_id,
-    'collections' as table_name,
-    COUNT(*) as record_count,
-    pg_size_pretty(pg_total_relation_size('collections_metadata')) as storage_size
-FROM collections_metadata
-GROUP BY tenant_id
-
-UNION ALL
-
-SELECT 
-    tenant_id,
-    'timeseries' as table_name,
-    COUNT(*) as record_count,
-    pg_size_pretty(pg_total_relation_size('timeseries')) as storage_size
-FROM timeseries
-GROUP BY tenant_id
-
-ORDER BY tenant_id, table_name;
+-- View for tenant data distribution (conditional on table existence)
+DO $$
+DECLARE
+    view_query text := '';
+BEGIN
+    -- Build the view query dynamically based on which tables exist
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'events' AND table_schema = 'public') THEN
+        view_query := view_query || 
+            'SELECT tenant_id, ''events'' as table_name, COUNT(*) as record_count, pg_size_pretty(pg_total_relation_size(''events'')) as storage_size FROM events GROUP BY tenant_id';
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entities' AND table_schema = 'public') THEN
+        IF view_query != '' THEN
+            view_query := view_query || ' UNION ALL ';
+        END IF;
+        view_query := view_query || 
+            'SELECT tenant_id, ''entities'' as table_name, COUNT(*) as record_count, pg_size_pretty(pg_total_relation_size(''entities'')) as storage_size FROM entities GROUP BY tenant_id';
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections_metadata' AND table_schema = 'public') THEN
+        IF view_query != '' THEN
+            view_query := view_query || ' UNION ALL ';
+        END IF;
+        view_query := view_query || 
+            'SELECT tenant_id, ''collections'' as table_name, COUNT(*) as record_count, pg_size_pretty(pg_total_relation_size(''collections_metadata'')) as storage_size FROM collections_metadata GROUP BY tenant_id';
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timeseries' AND table_schema = 'public') THEN
+        IF view_query != '' THEN
+            view_query := view_query || ' UNION ALL ';
+        END IF;
+        view_query := view_query || 
+            'SELECT tenant_id, ''timeseries'' as table_name, COUNT(*) as record_count, pg_size_pretty(pg_total_relation_size(''timeseries'')) as storage_size FROM timeseries GROUP BY tenant_id';
+    END IF;
+    
+    -- Only create the view if we have at least one table
+    IF view_query != '' THEN
+        view_query := 'CREATE OR REPLACE VIEW tenant_security.tenant_data_distribution AS ' || view_query || ' ORDER BY tenant_id, table_name';
+        EXECUTE view_query;
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Cleanup and Maintenance Functions
@@ -369,17 +376,22 @@ COMMENT ON FUNCTION tenant_security.validate_tenant_context() IS
 COMMENT ON TABLE tenant_security.cross_tenant_access_log IS 
     'Audit log for detected cross-tenant access attempts. Review regularly for security incidents.';
 
-COMMENT ON POLICY tenant_isolation_events ON events IS 
-    'Row-level security policy ensuring users can only access events from their own tenant';
-
-COMMENT ON POLICY tenant_isolation_entities ON entities IS 
-    'Row-level security policy ensuring users can only access entities from their own tenant';
-
-COMMENT ON POLICY tenant_isolation_collections ON collections_metadata IS 
-    'Row-level security policy ensuring users can only access collections from their own tenant';
-
-COMMENT ON POLICY tenant_isolation_timeseries ON timeseries IS 
-    'Row-level security policy ensuring users can only access timeseries data from their own tenant';
+-- Comment on policies (conditional on table existence)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'events' AND table_schema = 'public') THEN
+        EXECUTE 'COMMENT ON POLICY tenant_isolation_events ON events IS ''Row-level security policy ensuring users can only access events from their own tenant''';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entities' AND table_schema = 'public') THEN
+        EXECUTE 'COMMENT ON POLICY tenant_isolation_entities ON entities IS ''Row-level security policy ensuring users can only access entities from their own tenant''';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'collections_metadata' AND table_schema = 'public') THEN
+        EXECUTE 'COMMENT ON POLICY tenant_isolation_collections ON collections_metadata IS ''Row-level security policy ensuring users can only access collections from their own tenant''';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timeseries' AND table_schema = 'public') THEN
+        EXECUTE 'COMMENT ON POLICY tenant_isolation_timeseries ON timeseries IS ''Row-level security policy ensuring users can only access timeseries data from their own tenant''';
+    END IF;
+END $$;
 
 -- ====================================================================================
 -- Usage Examples

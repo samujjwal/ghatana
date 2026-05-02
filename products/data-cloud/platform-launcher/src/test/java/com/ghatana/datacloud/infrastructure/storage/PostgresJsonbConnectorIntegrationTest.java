@@ -416,8 +416,14 @@ class JdbcEntityRepository implements EntityRepository {
         }
 
         @Override
-        public Promise<List<Entity>> findByQuery(String tenantId, String collectionName, Object querySpec) { 
-            return findAll(tenantId, collectionName, Map.of(), null, 0, 100); 
+        public Promise<List<Entity>> findByQuery(String tenantId, String collectionName, Object querySpec) {
+            int limit = 100;
+            int offset = 0;
+            if (querySpec instanceof QuerySpec spec) {
+                limit = spec.getLimit() > 0 ? spec.getLimit() : 100;
+                offset = spec.getOffset();
+            }
+            return findAll(tenantId, collectionName, Map.of(), null, offset, limit);
         }
 
         @Override

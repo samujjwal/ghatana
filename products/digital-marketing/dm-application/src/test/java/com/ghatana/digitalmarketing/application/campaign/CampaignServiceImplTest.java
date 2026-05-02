@@ -10,44 +10,54 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
+import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
-/**
- * Unit tests for {@link CampaignServiceImpl}.
- */
 @DisplayName("CampaignServiceImpl")
-@ExtendWith(MockitoExtension.class)
 class CampaignServiceImplTest extends EventloopTestBase {
 
-    @Mock private DigitalMarketingKernelAdapter kernelAdapter;
-    @Mock private CampaignRepository repository;
-    @Mock private CompliancePlugin compliancePlugin;
-
+    private RecordingKernelAdapter kernelAdapter;
+    private InMemoryCampaignRepository repository;
+    private ToggleCompliancePlugin compliancePlugin;
     private CampaignServiceImpl service;
-
     private DmOperationContext ctx;
 
     @BeforeEach
     void setUp() {
-        service = new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin);
+        kernelAdapter = new RecordingKernelAdapter();
+        repository = new InMemoryCampaignRepository();
+        compliancePlugin = new ToggleCompliancePlugin();
+        service = new CampaignServiceImpl(
+            kernelAdapter,
+            repository,
+            compliancePlugin,
+            (opCtx, campaign) -> Promise.of(new CampaignPreflightDataProvider.CampaignPreflightData(
+                true,
+                1,
+                1,
+                0.0,
+                1000.0
+            ))
+        );
 
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -57,233 +67,299 @@ class CampaignServiceImplTest extends EventloopTestBase {
             .idempotencyKey(DmIdempotencyKey.of("idk-1"))
             .build();
 
-        // Lenient: not used by every test
-        lenient().when(kernelAdapter.isAuthorized(any(), any(), any()))
-            .thenReturn(Promise.of(true));
-        lenient().when(kernelAdapter.recordAudit(any(), any(), any(), any()))
-            .thenReturn(Promise.of("audit-1"));
+        kernelAdapter.setDefaultAuthorization(true);
+        compliancePlugin.setCompliant(true);
     }
 
-    // -----------------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------------
-
     @Test
-    @DisplayName("constructor throws on null kernelAdapter")
-    void shouldThrowOnNullKernelAdapter() {
+    @DisplayName("constructor throws on null dependencies")
+    void shouldRejectNullDependencies() {
+        CampaignPreflightDataProvider preflightProvider = (opCtx, campaign) -> Promise.of(
+            new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 1000.0)
+        );
+
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin));
-    }
-
-    @Test
-    @DisplayName("constructor throws on null repository")
-    void shouldThrowOnNullRepository() {
+            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin));
-    }
-
-    @Test
-    @DisplayName("constructor throws on null compliancePlugin")
-    void shouldThrowOnNullCompliancePlugin() {
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider));
+        assertThatNullPointerException()
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null));
     }
 
-    // -----------------------------------------------------------------------
-    // createCampaign
-    // -----------------------------------------------------------------------
-
     @Test
-    @DisplayName("createCampaign() creates and returns a DRAFT campaign")
+    @DisplayName("createCampaign creates draft campaign and records audit")
     void shouldCreateCampaignInDraft() {
-        when(repository.save(any())).thenAnswer(inv -> Promise.of(inv.getArgument(0)));
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("Q4 Acquisition", CampaignType.EMAIL)
+        ));
 
-        Campaign created = runPromise(() -> service.createCampaign(ctx,
-            new CampaignService.CreateCampaignCommand("Q4 Acquisition", CampaignType.EMAIL)));
-
-        assertThat(created.getName()).isEqualTo("Q4 Acquisition");
         assertThat(created.getStatus()).isEqualTo(CampaignStatus.DRAFT);
-        assertThat(created.getType()).isEqualTo(CampaignType.EMAIL);
-        assertThat(created.getWorkspaceId()).isEqualTo(DmWorkspaceId.of("ws-1"));
-        assertThat(created.getCreatedBy()).isEqualTo("user-42");
         assertThat(created.getId()).isNotBlank();
+        assertThat(kernelAdapter.auditActions()).contains("create");
     }
 
     @Test
-    @DisplayName("createCampaign() rejects when not authorized")
+    @DisplayName("createCampaign rejects when not authorized")
     void shouldDenyCreateWhenNotAuthorized() {
-        when(kernelAdapter.isAuthorized(any(), eq("campaigns/*"), eq("write")))
-            .thenReturn(Promise.of(false));
+        kernelAdapter.setAuthorization("campaigns/*", "write", false);
 
         assertThatExceptionOfType(SecurityException.class)
-            .isThrownBy(() -> runPromise(() -> service.createCampaign(ctx,
-                new CampaignService.CreateCampaignCommand("Test", CampaignType.EMAIL))));
+            .isThrownBy(() -> runPromise(() -> service.createCampaign(
+                ctx,
+                new CampaignService.CreateCampaignCommand("Denied", CampaignType.EMAIL)
+            )));
     }
 
     @Test
-    @DisplayName("createCampaign() records an audit event")
-    void shouldRecordAuditOnCreate() {
-        when(repository.save(any())).thenAnswer(inv -> Promise.of(inv.getArgument(0)));
-
-        runPromise(() -> service.createCampaign(ctx,
-            new CampaignService.CreateCampaignCommand("Promo", CampaignType.SOCIAL)));
-
-        verify(kernelAdapter).recordAudit(any(), any(), eq("create"), any());
-    }
-
-    // -----------------------------------------------------------------------
-    // launchCampaign
-    // -----------------------------------------------------------------------
-
-    @Test
-    @DisplayName("launchCampaign() transitions DRAFT campaign to LAUNCHED")
+    @DisplayName("launchCampaign transitions draft to launched")
     void shouldLaunchDraftCampaign() {
-        Campaign draft = buildCampaign(CampaignStatus.DRAFT);
-        when(repository.findById(any(), eq("campaign-1"))).thenReturn(Promise.of(Optional.of(draft)));
-        when(repository.save(any())).thenAnswer(inv -> Promise.of(inv.getArgument(0)));
-        stubPassingCompliance();
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("Launchable", CampaignType.EMAIL)
+        ));
 
-        Campaign launched = runPromise(() -> service.launchCampaign(ctx, "campaign-1"));
+        Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
 
         assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
+        assertThat(kernelAdapter.auditActions()).contains("launch");
     }
 
     @Test
-    @DisplayName("launchCampaign() records audit on launch")
-    void shouldRecordAuditOnLaunch() {
-        Campaign draft = buildCampaign(CampaignStatus.DRAFT);
-        when(repository.findById(any(), eq("campaign-1"))).thenReturn(Promise.of(Optional.of(draft)));
-        when(repository.save(any())).thenAnswer(inv -> Promise.of(inv.getArgument(0)));
-        stubPassingCompliance();
+    @DisplayName("launchCampaign throws compliance violation when preflight fails")
+    void shouldThrowOnComplianceFailure() {
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("Blocked", CampaignType.EMAIL)
+        ));
+        compliancePlugin.setCompliant(false);
 
-        runPromise(() -> service.launchCampaign(ctx, "campaign-1"));
-
-        verify(kernelAdapter).recordAudit(any(), eq("campaign-1"), eq("launch"), any());
+        assertThatExceptionOfType(CampaignComplianceViolationException.class)
+            .isThrownBy(() -> runPromise(() -> service.launchCampaign(ctx, created.getId())));
     }
 
     @Test
-    @DisplayName("launchCampaign() throws NoSuchElementException when campaign not found")
+    @DisplayName("pauseCampaign transitions launched to paused")
+    void shouldPauseLaunchedCampaign() {
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("Pausable", CampaignType.EMAIL)
+        ));
+        runPromise(() -> service.launchCampaign(ctx, created.getId()));
+
+        Campaign paused = runPromise(() -> service.pauseCampaign(ctx, created.getId()));
+
+        assertThat(paused.getStatus()).isEqualTo(CampaignStatus.PAUSED);
+        assertThat(kernelAdapter.auditActions()).contains("pause");
+    }
+
+    @Test
+    @DisplayName("getCampaign enforces authorization and returns existing campaign")
+    void shouldReadCampaign() {
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("Readable", CampaignType.SOCIAL)
+        ));
+
+        Campaign found = runPromise(() -> service.getCampaign(ctx, created.getId()));
+        assertThat(found.getId()).isEqualTo(created.getId());
+
+        kernelAdapter.setAuthorization("campaigns/" + created.getId(), "read", false);
+        assertThatExceptionOfType(SecurityException.class)
+            .isThrownBy(() -> runPromise(() -> service.getCampaign(ctx, created.getId())));
+    }
+
+    @Test
+    @DisplayName("launchCampaign throws when campaign is missing")
     void shouldThrowWhenLaunchingMissingCampaign() {
-        when(repository.findById(any(), any())).thenReturn(Promise.of(Optional.empty()));
-
         assertThatExceptionOfType(NoSuchElementException.class)
             .isThrownBy(() -> runPromise(() -> service.launchCampaign(ctx, "missing")));
     }
 
     @Test
-    @DisplayName("launchCampaign() rejects when not authorized")
+    @DisplayName("launchCampaign rejects when not authorized")
     void shouldDenyLaunchWhenNotAuthorized() {
-        when(kernelAdapter.isAuthorized(any(), contains("campaign-1"), eq("launch")))
-            .thenReturn(Promise.of(false));
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("AuthDenied", CampaignType.EMAIL)
+        ));
+
+        kernelAdapter.setAuthorization("campaigns/" + created.getId(), "launch", false);
 
         assertThatExceptionOfType(SecurityException.class)
-            .isThrownBy(() -> runPromise(() -> service.launchCampaign(ctx, "campaign-1")));
+            .isThrownBy(() -> runPromise(() -> service.launchCampaign(ctx, created.getId())));
     }
 
     @Test
-    @DisplayName("launchCampaign() throws ComplianceViolationException when preflight fails")
-    void shouldThrowOnCompliancePreflight() {
-        Campaign draft = buildCampaign(CampaignStatus.DRAFT);
-        when(repository.findById(any(), eq("campaign-1"))).thenReturn(Promise.of(Optional.of(draft)));
-        CompliancePlugin.ComplianceResult failingResult = new CompliancePlugin.ComplianceResult(
-            false,
-            List.of(new CompliancePlugin.ComplianceViolation(
-                "CP-001", "Missing approved content", CompliancePlugin.ComplianceRule.Severity.HIGH, Map.of()
-            )),
-            "DM_CAMPAIGN_PREFLIGHT",
-            Instant.now()
-        );
-        when(compliancePlugin.evaluate(any(), any())).thenReturn(Promise.of(failingResult));
-
-        assertThatExceptionOfType(CampaignComplianceViolationException.class)
-            .isThrownBy(() -> runPromise(() -> service.launchCampaign(ctx, "campaign-1")));
-    }
-
-    // -----------------------------------------------------------------------
-    // pauseCampaign
-    // -----------------------------------------------------------------------
-
-    @Test
-    @DisplayName("pauseCampaign() transitions LAUNCHED campaign to PAUSED")
-    void shouldPauseLaunchedCampaign() {
-        Campaign launched = buildCampaign(CampaignStatus.LAUNCHED);
-        when(repository.findById(any(), eq("campaign-1"))).thenReturn(Promise.of(Optional.of(launched)));
-        when(repository.save(any())).thenAnswer(inv -> Promise.of(inv.getArgument(0)));
-
-        Campaign paused = runPromise(() -> service.pauseCampaign(ctx, "campaign-1"));
-
-        assertThat(paused.getStatus()).isEqualTo(CampaignStatus.PAUSED);
-    }
-
-    @Test
-    @DisplayName("pauseCampaign() rejects when not authorized")
+    @DisplayName("pauseCampaign rejects when not authorized")
     void shouldDenyPauseWhenNotAuthorized() {
-        when(kernelAdapter.isAuthorized(any(), contains("campaign-1"), eq("pause")))
-            .thenReturn(Promise.of(false));
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("PauseAuthDenied", CampaignType.EMAIL)
+        ));
+        runPromise(() -> service.launchCampaign(ctx, created.getId()));
+
+        kernelAdapter.setAuthorization("campaigns/" + created.getId(), "pause", false);
 
         assertThatExceptionOfType(SecurityException.class)
-            .isThrownBy(() -> runPromise(() -> service.pauseCampaign(ctx, "campaign-1")));
-    }
-
-    // -----------------------------------------------------------------------
-    // getCampaign
-    // -----------------------------------------------------------------------
-
-    @Test
-    @DisplayName("getCampaign() returns campaign by ID")
-    void shouldGetCampaignById() {
-        Campaign campaign = buildCampaign(CampaignStatus.DRAFT);
-        when(repository.findById(any(), eq("campaign-1"))).thenReturn(Promise.of(Optional.of(campaign)));
-
-        Campaign found = runPromise(() -> service.getCampaign(ctx, "campaign-1"));
-        assertThat(found.getId()).isEqualTo("campaign-1");
+            .isThrownBy(() -> runPromise(() -> service.pauseCampaign(ctx, created.getId())));
     }
 
     @Test
-    @DisplayName("getCampaign() throws NoSuchElementException when campaign not found")
-    void shouldThrowWhenCampaignNotFound() {
-        when(repository.findById(any(), any())).thenReturn(Promise.of(Optional.empty()));
-
+    @DisplayName("pauseCampaign throws when campaign is missing")
+    void shouldThrowWhenPausingMissingCampaign() {
         assertThatExceptionOfType(NoSuchElementException.class)
-            .isThrownBy(() -> runPromise(() -> service.getCampaign(ctx, "missing")));
+            .isThrownBy(() -> runPromise(() -> service.pauseCampaign(ctx, "no-such-campaign")));
     }
 
-    @Test
-    @DisplayName("getCampaign() rejects when not authorized")
-    void shouldDenyGetWhenNotAuthorized() {
-        when(kernelAdapter.isAuthorized(any(), contains("campaign-1"), eq("read")))
-            .thenReturn(Promise.of(false));
+    private static final class InMemoryCampaignRepository implements CampaignRepository {
+        private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
-        assertThatExceptionOfType(SecurityException.class)
-            .isThrownBy(() -> runPromise(() -> service.getCampaign(ctx, "campaign-1")));
+        @Override
+        public Promise<Campaign> save(Campaign campaign) {
+            store.put(campaign.getWorkspaceId().getValue() + ":" + campaign.getId(), campaign);
+            return Promise.of(campaign);
+        }
+
+        @Override
+        public Promise<Optional<Campaign>> findById(DmWorkspaceId workspaceId, String campaignId) {
+            return Promise.of(Optional.ofNullable(store.get(workspaceId.getValue() + ":" + campaignId)));
+        }
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
+    private static final class RecordingKernelAdapter implements DigitalMarketingKernelAdapter {
+        private final Map<String, Boolean> decisionMap = new ConcurrentHashMap<>();
+        private volatile boolean defaultAuthorization = true;
+        private final List<String> auditActions = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-    private Campaign buildCampaign(CampaignStatus status) {
-        Instant now = Instant.now();
-        Campaign draft = Campaign.builder()
-            .id("campaign-1")
-            .workspaceId(DmWorkspaceId.of("ws-1"))
-            .name("Test Campaign")
-            .type(CampaignType.EMAIL)
-            .status(CampaignStatus.DRAFT)
-            .createdAt(now)
-            .updatedAt(now)
-            .createdBy("user-42")
-            .build();
-        if (status == CampaignStatus.LAUNCHED) return draft.launch();
-        if (status == CampaignStatus.PAUSED)   return draft.launch().pause();
-        if (status == CampaignStatus.COMPLETED) return draft.launch().complete();
-        return draft;
+        void setDefaultAuthorization(boolean allowed) {
+            defaultAuthorization = allowed;
+        }
+
+        void setAuthorization(String resource, String action, boolean allowed) {
+            decisionMap.put(resource + "|" + action, allowed);
+        }
+
+        List<String> auditActions() {
+            return auditActions;
+        }
+
+        @Override
+        public void start() {
+            // no-op
+        }
+
+        @Override
+        public void stop() {
+            // no-op
+        }
+
+        @Override
+        public Promise<Boolean> isAuthorized(DmOperationContext context, String resource, String action) {
+            return Promise.of(decisionMap.getOrDefault(resource + "|" + action, defaultAuthorization));
+        }
+
+        @Override
+        public Promise<Boolean> verifyConsent(DmOperationContext context, String subjectId, String purpose) {
+            return Promise.of(true);
+        }
+
+        @Override
+        public Promise<String> requestApproval(
+            DmOperationContext context,
+            String operationType,
+            String subjectId,
+            String description
+        ) {
+            return Promise.of("approval-1");
+        }
+
+        @Override
+        public Promise<String> recordAudit(
+            DmOperationContext context,
+            String entityId,
+            String action,
+            Map<String, Object> attributes
+        ) {
+            auditActions.add(action);
+            return Promise.of("audit-1");
+        }
     }
 
-    private void stubPassingCompliance() {
-        CompliancePlugin.ComplianceResult passing = new CompliancePlugin.ComplianceResult(
-            true, List.of(), "DM_CAMPAIGN_PREFLIGHT", Instant.now()
-        );
-        when(compliancePlugin.evaluate(any(), any())).thenReturn(Promise.of(passing));
+    private static final class ToggleCompliancePlugin implements CompliancePlugin {
+        private volatile boolean compliant = true;
+
+        void setCompliant(boolean value) {
+            compliant = value;
+        }
+
+        @Override
+        public Promise<ComplianceResult> evaluate(String ruleSetId, ComplianceContext context) {
+            if (compliant) {
+                return Promise.of(new ComplianceResult(true, List.of(), ruleSetId, Instant.now()));
+            }
+            return Promise.of(new ComplianceResult(
+                false,
+                List.of(new ComplianceViolation(
+                    "DM-CP-001",
+                    "Preflight failed",
+                    ComplianceRule.Severity.HIGH,
+                    Map.of("reason", "simulated")
+                )),
+                ruleSetId,
+                Instant.now()
+            ));
+        }
+
+        @Override
+        public Promise<Void> registerRuleSet(String ruleSetId, List<ComplianceRule> rules) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> addRule(String ruleSetId, ComplianceRule rule) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<List<AuditEntry>> getAuditTrail(String entityId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<List<ComplianceViolation>> getActiveViolations(String ruleSetId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder()
+                .id("dm-application-test-compliance-plugin")
+                .name("DM Application Test Compliance Plugin")
+                .type(PluginType.CUSTOM)
+                .build();
+        }
+
+        @Override
+        public PluginState getState() {
+            return PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(PluginContext context) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.of(null);
+        }
     }
 }

@@ -57,10 +57,12 @@ class KafkaEventLogStoreConformanceIT extends EventloopTestBase {
     private KafkaEventLogStore store;
 
     @BeforeEach
-    void setUp() { 
+    void setUp() {
+        // Strip protocol prefix from bootstrap servers (e.g., PLAINTEXT://host:port -> host:port)
+        String bootstrapServers = KAFKA.getBootstrapServers().replaceAll("^[a-zA-Z]+://", "");
         store = new KafkaEventLogStore(
                 KafkaEventLogStoreConfig.builder()
-                        .bootstrapServers(KAFKA.getBootstrapServers()) 
+                        .bootstrapServers(bootstrapServers)
                         .partitions(1)
                         .replicationFactor((short) 1)
                         .readTimeoutMs(8_000L)

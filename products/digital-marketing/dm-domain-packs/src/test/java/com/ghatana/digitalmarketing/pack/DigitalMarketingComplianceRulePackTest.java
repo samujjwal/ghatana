@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for {@link DigitalMarketingComplianceRulePack}.
@@ -24,9 +24,9 @@ class DigitalMarketingComplianceRulePackTest {
         List<ComplianceRule> rules = DigitalMarketingComplianceRulePack.marketingIntegrityRules();
 
         assertThat(rules).hasSize(3);
-        assertThatRuleExists(rules, "MI-001", Severity.HIGH);
-        assertThatRuleExists(rules, "MI-002", Severity.MEDIUM);
-        assertThatRuleExists(rules, "MI-003", Severity.MEDIUM);
+        assertThatRuleExists(rules, "DM-MI-001", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-MI-002", Severity.MEDIUM);
+        assertThatRuleExists(rules, "DM-MI-003", Severity.MEDIUM);
     }
 
     @Test
@@ -35,10 +35,10 @@ class DigitalMarketingComplianceRulePackTest {
         List<ComplianceRule> rules = DigitalMarketingComplianceRulePack.consentLifecycleRules();
 
         assertThat(rules).hasSize(4);
-        assertThatRuleExists(rules, "CL-001", Severity.CRITICAL);
-        assertThatRuleExists(rules, "CL-002", Severity.CRITICAL);
-        assertThatRuleExists(rules, "CL-003", Severity.HIGH);
-        assertThatRuleExists(rules, "CL-004", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CL-001", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-CL-002", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-CL-003", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CL-004", Severity.HIGH);
     }
 
     @Test
@@ -58,10 +58,10 @@ class DigitalMarketingComplianceRulePackTest {
         List<ComplianceRule> rules = DigitalMarketingComplianceRulePack.campaignPreflightRules();
 
         assertThat(rules).hasSize(4);
-        assertThatRuleExists(rules, "CP-001", Severity.HIGH);
-        assertThatRuleExists(rules, "CP-002", Severity.HIGH);
-        assertThatRuleExists(rules, "CP-003", Severity.HIGH);
-        assertThatRuleExists(rules, "CP-004", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-CP-001", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CP-002", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CP-003", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CP-004", Severity.CRITICAL);
     }
 
     @Test
@@ -70,8 +70,8 @@ class DigitalMarketingComplianceRulePackTest {
         List<ComplianceRule> rules = DigitalMarketingComplianceRulePack.claimsDisclosuresRules();
 
         assertThat(rules).hasSize(2);
-        assertThatRuleExists(rules, "CD-001", Severity.HIGH);
-        assertThatRuleExists(rules, "CD-002", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-CD-001", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CD-002", Severity.CRITICAL);
     }
 
     @Test
@@ -80,10 +80,10 @@ class DigitalMarketingComplianceRulePackTest {
         List<ComplianceRule> rules = DigitalMarketingComplianceRulePack.emailComplianceRules();
 
         assertThat(rules).hasSize(4);
-        assertThatRuleExists(rules, "EC-001", Severity.CRITICAL);
-        assertThatRuleExists(rules, "EC-002", Severity.CRITICAL);
-        assertThatRuleExists(rules, "EC-003", Severity.HIGH);
-        assertThatRuleExists(rules, "EC-004", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-EC-001", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-EC-002", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-EC-003", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-EC-004", Severity.HIGH);
     }
 
     @Test
@@ -92,9 +92,9 @@ class DigitalMarketingComplianceRulePackTest {
         List<ComplianceRule> rules = DigitalMarketingComplianceRulePack.connectorExecutionSafetyRules();
 
         assertThat(rules).hasSize(3);
-        assertThatRuleExists(rules, "CES-001", Severity.CRITICAL);
-        assertThatRuleExists(rules, "CES-002", Severity.CRITICAL);
-        assertThatRuleExists(rules, "CES-003", Severity.HIGH);
+        assertThatRuleExists(rules, "DM-CES-001", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-CES-002", Severity.CRITICAL);
+        assertThatRuleExists(rules, "DM-CES-003", Severity.HIGH);
     }
 
     @Test
@@ -125,9 +125,6 @@ class DigitalMarketingComplianceRulePackTest {
     @Test
     @DisplayName("all rule IDs across all packs are globally unique")
     void shouldHaveGloballyUniqueRuleIds() {
-        long total = 0;
-        long distinct = 0;
-
         List<List<ComplianceRule>> allRuleSets = List.of(
             DigitalMarketingComplianceRulePack.marketingIntegrityRules(),
             DigitalMarketingComplianceRulePack.consentLifecycleRules(),
@@ -145,6 +142,26 @@ class DigitalMarketingComplianceRulePackTest {
 
         long distinctCount = allIds.stream().distinct().count();
         assertThat(distinctCount).isEqualTo(allIds.size());
+    }
+
+    @Test
+    @DisplayName("all rule IDs across all packs use DM- prefix")
+    void shouldUseDmPrefixForAllRuleIds() {
+        List<List<ComplianceRule>> allRuleSets = List.of(
+            DigitalMarketingComplianceRulePack.marketingIntegrityRules(),
+            DigitalMarketingComplianceRulePack.consentLifecycleRules(),
+            DigitalMarketingComplianceRulePack.auditTraceabilityRules(),
+            DigitalMarketingComplianceRulePack.campaignPreflightRules(),
+            DigitalMarketingComplianceRulePack.claimsDisclosuresRules(),
+            DigitalMarketingComplianceRulePack.emailComplianceRules(),
+            DigitalMarketingComplianceRulePack.connectorExecutionSafetyRules()
+        );
+
+        allRuleSets.stream()
+            .flatMap(List::stream)
+            .forEach(rule -> assertThat(rule.ruleId())
+                .as("ruleId %s should start with DM-", rule.ruleId())
+                .startsWith("DM-"));
     }
 
     // -----------------------------------------------------------------------

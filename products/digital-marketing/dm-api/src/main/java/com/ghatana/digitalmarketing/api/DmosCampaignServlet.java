@@ -107,14 +107,14 @@ public final class DmosCampaignServlet {
                     new CampaignService.CreateCampaignCommand(body.name(), body.type()))
                     .map(campaign -> jsonResponse(201, CampaignResponse.from(campaign)))
                     .then(r -> Promise.of(r), e -> {
-                        if (e instanceof SecurityException) return Promise.of(errorResponse(403, e.getMessage()));
+                        if (e instanceof SecurityException) {
+                            return Promise.of(errorResponse(403, e.getMessage()));
+                        }
                         LOG.error("[DMOS] Failed to create campaign", e);
                         return Promise.of(errorResponse(500, "Internal error"));
                     });
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
-            } catch (SecurityException e) {
-                return Promise.of(errorResponse(403, e.getMessage()));
             } catch (Exception e) {
                 LOG.error("[DMOS] Failed to create campaign", e);
                 return Promise.of(errorResponse(500, "Internal error"));
@@ -131,13 +131,17 @@ public final class DmosCampaignServlet {
             return campaignService.getCampaign(ctx, campaignId)
                 .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
                 .then(r -> Promise.of(r), e -> {
-                    if (e instanceof SecurityException)             return Promise.of(errorResponse(403, e.getMessage()));
-                    if (e instanceof java.util.NoSuchElementException) return Promise.of(errorResponse(404, "Campaign not found: " + campaignId));
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage()));
+                    }
+                    if (e instanceof java.util.NoSuchElementException) {
+                        return Promise.of(errorResponse(404, "Campaign not found: " + campaignId));
+                    }
                     LOG.error("[DMOS] Failed to get campaign", e);
                     return Promise.of(errorResponse(500, "Internal error"));
                 });
-        } catch (SecurityException e) {
-            return Promise.of(errorResponse(403, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return Promise.of(errorResponse(400, e.getMessage()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to get campaign", e);
             return Promise.of(errorResponse(500, "Internal error"));
@@ -153,13 +157,23 @@ public final class DmosCampaignServlet {
             return campaignService.launchCampaign(ctx, campaignId)
                 .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
                 .then(r -> Promise.of(r), e -> {
-                    if (e instanceof SecurityException)             return Promise.of(errorResponse(403, e.getMessage()));
-                    if (e instanceof java.util.NoSuchElementException) return Promise.of(errorResponse(404, e.getMessage()));
-                    if (e instanceof IllegalStateException)         return Promise.of(errorResponse(409, e.getMessage()));
-                    if (e instanceof CampaignComplianceViolationException) return Promise.of(errorResponse(422, e.getMessage()));
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage()));
+                    }
+                    if (e instanceof java.util.NoSuchElementException) {
+                        return Promise.of(errorResponse(404, e.getMessage()));
+                    }
+                    if (e instanceof IllegalStateException) {
+                        return Promise.of(errorResponse(409, e.getMessage()));
+                    }
+                    if (e instanceof CampaignComplianceViolationException) {
+                        return Promise.of(errorResponse(422, e.getMessage()));
+                    }
                     LOG.error("[DMOS] Failed to launch campaign", e);
                     return Promise.of(errorResponse(500, "Internal error"));
                 });
+        } catch (IllegalArgumentException e) {
+            return Promise.of(errorResponse(400, e.getMessage()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to launch campaign", e);
             return Promise.of(errorResponse(500, "Internal error"));
@@ -175,12 +189,20 @@ public final class DmosCampaignServlet {
             return campaignService.pauseCampaign(ctx, campaignId)
                 .map(campaign -> jsonResponse(200, CampaignResponse.from(campaign)))
                 .then(r -> Promise.of(r), e -> {
-                    if (e instanceof SecurityException)             return Promise.of(errorResponse(403, e.getMessage()));
-                    if (e instanceof java.util.NoSuchElementException) return Promise.of(errorResponse(404, e.getMessage()));
-                    if (e instanceof IllegalStateException)         return Promise.of(errorResponse(409, e.getMessage()));
+                    if (e instanceof SecurityException) {
+                        return Promise.of(errorResponse(403, e.getMessage()));
+                    }
+                    if (e instanceof java.util.NoSuchElementException) {
+                        return Promise.of(errorResponse(404, e.getMessage()));
+                    }
+                    if (e instanceof IllegalStateException) {
+                        return Promise.of(errorResponse(409, e.getMessage()));
+                    }
                     LOG.error("[DMOS] Failed to pause campaign", e);
                     return Promise.of(errorResponse(500, "Internal error"));
                 });
+        } catch (IllegalArgumentException e) {
+            return Promise.of(errorResponse(400, e.getMessage()));
         } catch (Exception e) {
             LOG.error("[DMOS] Failed to pause campaign", e);
             return Promise.of(errorResponse(500, "Internal error"));
@@ -259,7 +281,7 @@ public final class DmosCampaignServlet {
     // -------------------------------------------------------------------------
 
     /** Request body for campaign creation. */
-    record CreateCampaignRequest(String name, CampaignType type) {}
+    record CreateCampaignRequest(String name, CampaignType type) { }
 
     /** API response representation of a campaign. */
     record CampaignResponse(
@@ -287,5 +309,5 @@ public final class DmosCampaignServlet {
     }
 
     /** Error response body. */
-    record ErrorBody(int status, String message) {}
+    record ErrorBody(int status, String message) { }
 }

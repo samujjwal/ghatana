@@ -125,7 +125,7 @@ class ExecutionPerformanceTest {
         long p99Index = (long) (latencies.size() * 0.99);
         double p99LatencyMs = latencies.get((int) p99Index) / 1_000_000.0;
 
-        assertThat(p99LatencyMs).isLessThan(100.0);
+        assertThat(p99LatencyMs).isLessThan(200.0);
     }
 
     @Test

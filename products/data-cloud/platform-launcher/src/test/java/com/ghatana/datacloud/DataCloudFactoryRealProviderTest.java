@@ -53,24 +53,16 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
     static void migrateSchemaAndConfigureProviders() { 
         Flyway.configure() 
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) 
-            .locations("filesystem:" + Path.of( 
-                System.getProperty("user.dir"),
-                "products",
-                "data-cloud",
-                "platform-launcher",
-                "src",
-                "main",
-                "resources",
-                "db",
-                "migration"
-            ))
+            .locations("classpath:db/migration") 
             .load() 
             .migrate(); 
 
-        System.setProperty("datacloud.db.url", POSTGRES.getJdbcUrl()); 
-        System.setProperty("datacloud.db.user", POSTGRES.getUsername()); 
-        System.setProperty("datacloud.db.password", POSTGRES.getPassword()); 
-        System.setProperty("datacloud.kafka.bootstrapServers", KAFKA.getBootstrapServers()); 
+        System.setProperty("datacloud.db.url", POSTGRES.getJdbcUrl());
+        System.setProperty("datacloud.db.user", POSTGRES.getUsername());
+        System.setProperty("datacloud.db.password", POSTGRES.getPassword());
+        // Strip protocol prefix from bootstrap servers (e.g., PLAINTEXT://host:port -> host:port)
+        String bootstrapServers = KAFKA.getBootstrapServers().replaceAll("^[a-zA-Z]+://", "");
+        System.setProperty("datacloud.kafka.bootstrapServers", bootstrapServers); 
     }
 
     @AfterEach

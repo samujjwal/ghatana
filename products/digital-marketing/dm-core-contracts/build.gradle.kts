@@ -2,6 +2,8 @@ plugins {
     id("java-module")
 }
 
+apply(from = "../gradle/dmos-quality-gates.gradle.kts")
+
 group = "com.ghatana.digitalmarketing"
 description = "DMOS Core Contracts — canonical IDs, context value objects, event schema version, and correlation standards"
 
@@ -28,4 +30,25 @@ tasks.jacocoTestReport {
         html.required.set(true)
         csv.required.set(false)
     }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.95".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.75".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }

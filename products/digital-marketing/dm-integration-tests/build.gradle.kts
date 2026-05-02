@@ -2,6 +2,8 @@ plugins {
     id("java-module")
 }
 
+apply(from = "../gradle/dmos-quality-gates.gradle.kts")
+
 group = "com.ghatana.digitalmarketing"
 description = "DMOS Integration Tests — cross-module integration tests for the digital-marketing product"
 

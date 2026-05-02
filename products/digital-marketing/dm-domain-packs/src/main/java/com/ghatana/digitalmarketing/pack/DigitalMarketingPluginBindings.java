@@ -6,8 +6,6 @@ import io.activej.promise.Promises;
 
 import java.util.Objects;
 
-import static com.ghatana.digitalmarketing.pack.DmComplianceRuleSetIds.*;
-
 /**
  * Startup bindings that register all DMOS plugin rule packs and hooks into
  * platform plugin infrastructure.
@@ -60,31 +58,31 @@ public final class DigitalMarketingPluginBindings {
     public Promise<Void> registerAll() {
         return Promises.all(
             compliancePlugin.registerRuleSet(
-                DM_MARKETING_INTEGRITY,
+                DmComplianceRuleSetIds.DM_MARKETING_INTEGRITY,
                 DigitalMarketingComplianceRulePack.marketingIntegrityRules()
             ),
             compliancePlugin.registerRuleSet(
-                DM_CONSENT_LIFECYCLE,
+                DmComplianceRuleSetIds.DM_CONSENT_LIFECYCLE,
                 DigitalMarketingComplianceRulePack.consentLifecycleRules()
             ),
             compliancePlugin.registerRuleSet(
-                DM_AUDIT_TRACEABILITY,
+                DmComplianceRuleSetIds.DM_AUDIT_TRACEABILITY,
                 DigitalMarketingComplianceRulePack.auditTraceabilityRules()
             ),
             compliancePlugin.registerRuleSet(
-                DM_CAMPAIGN_PREFLIGHT,
+                DmComplianceRuleSetIds.DM_CAMPAIGN_PREFLIGHT,
                 DigitalMarketingComplianceRulePack.campaignPreflightRules()
             ),
             compliancePlugin.registerRuleSet(
-                DM_CLAIMS_DISCLOSURES,
+                DmComplianceRuleSetIds.DM_CLAIMS_DISCLOSURES,
                 DigitalMarketingComplianceRulePack.claimsDisclosuresRules()
             ),
             compliancePlugin.registerRuleSet(
-                DM_EMAIL_COMPLIANCE,
+                DmComplianceRuleSetIds.DM_EMAIL_COMPLIANCE,
                 DigitalMarketingComplianceRulePack.emailComplianceRules()
             ),
             compliancePlugin.registerRuleSet(
-                DM_CONNECTOR_EXECUTION_SAFETY,
+                DmComplianceRuleSetIds.DM_CONNECTOR_EXECUTION_SAFETY,
                 DigitalMarketingComplianceRulePack.connectorExecutionSafetyRules()
             )
         );

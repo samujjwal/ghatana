@@ -21,8 +21,8 @@ DMOS Integration Tests. Validates cross-module behavior across `dm-domain`, `dm-
 
 Integration tests use:
 - **In-memory `CampaignRepository`** — validates real persistence scoping without a database
-- **Mock `DigitalMarketingKernelAdapter`** — validates kernel interactions at real service call sites
-- **Mock `CompliancePlugin`** — validates compliance evaluation is correctly invoked
+- **Deterministic in-memory `DigitalMarketingKernelAdapter` test double** — validates kernel interactions at real service call sites
+- **Deterministic in-memory `CompliancePlugin` test double** — validates compliance evaluation is correctly invoked
 - **`EventloopTestBase`** — validates ActiveJ async flows complete correctly
 
 ## Dependencies

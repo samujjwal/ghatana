@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS encryption_verification.encryption_status (
     verification_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     verification_notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (table_name, column_name)
 );
 
 -- Create index for efficient querying

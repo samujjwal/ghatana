@@ -43,21 +43,28 @@ public final class CampaignServiceImpl implements CampaignService {
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final CampaignRepository repository;
     private final CompliancePlugin compliancePlugin;
+    private final CampaignPreflightDataProvider preflightDataProvider;
 
     /**
      * Constructs the campaign service.
      *
-     * @param kernelAdapter    DMOS kernel adapter for auth, consent, approval, audit
-     * @param repository       campaign persistence
-     * @param compliancePlugin compliance evaluation for preflight checks
+     * @param kernelAdapter          DMOS kernel adapter for auth, consent, approval, audit
+     * @param repository             campaign persistence
+     * @param compliancePlugin       compliance evaluation for preflight checks
+     * @param preflightDataProvider  provider for campaign preflight evidence
      */
     public CampaignServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             CampaignRepository repository,
-            CompliancePlugin compliancePlugin) {
-        this.kernelAdapter    = Objects.requireNonNull(kernelAdapter,    "kernelAdapter must not be null");
-        this.repository       = Objects.requireNonNull(repository,       "repository must not be null");
+            CompliancePlugin compliancePlugin,
+            CampaignPreflightDataProvider preflightDataProvider) {
+        this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
+        this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.compliancePlugin = Objects.requireNonNull(compliancePlugin, "compliancePlugin must not be null");
+        this.preflightDataProvider = Objects.requireNonNull(
+            preflightDataProvider,
+            "preflightDataProvider must not be null"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -209,21 +216,23 @@ public final class CampaignServiceImpl implements CampaignService {
      * Throws {@link CampaignComplianceViolationException} if the campaign is not compliant.
      */
     private Promise<Campaign> runCompliancePreflight(DmOperationContext ctx, Campaign campaign) {
-        CompliancePlugin.ComplianceContext complianceCtx = new CompliancePlugin.ComplianceContext(
-            campaign.getId(),
-            "campaign",
-            Map.of(
-                "budgetApproved",       true, // Placeholder — in production, resolved from budget aggregate
-                "targetAudienceCount",  1,    // Placeholder — in production, resolved from audience repo
-                "approvedContentCount", 1,    // Placeholder — in production, resolved from content repo
-                "totalSpend",           0.0,
-                "approvedBudget",       Double.MAX_VALUE
-            ),
-            ctx.getActor().getPrincipalId(),
-            Instant.now()
-        );
-
-        return compliancePlugin.evaluate(DM_CAMPAIGN_PREFLIGHT, complianceCtx)
+        return preflightDataProvider.resolve(ctx, campaign)
+            .then(preflight -> {
+                CompliancePlugin.ComplianceContext complianceCtx = new CompliancePlugin.ComplianceContext(
+                    campaign.getId(),
+                    "campaign",
+                    Map.of(
+                        "budgetApproved", preflight.budgetApproved(),
+                        "targetAudienceCount", preflight.targetAudienceCount(),
+                        "approvedContentCount", preflight.approvedContentCount(),
+                        "totalSpend", preflight.totalSpend(),
+                        "approvedBudget", preflight.approvedBudget()
+                    ),
+                    ctx.getActor().getPrincipalId(),
+                    Instant.now()
+                );
+                return compliancePlugin.evaluate(DM_CAMPAIGN_PREFLIGHT, complianceCtx);
+            })
             .then(result -> {
                 if (!result.compliant()) {
                     return Promise.ofException(new CampaignComplianceViolationException(

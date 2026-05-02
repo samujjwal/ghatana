@@ -75,7 +75,9 @@ public interface CampaignService {
         public CreateCampaignCommand {
             java.util.Objects.requireNonNull(name, "name must not be null");
             java.util.Objects.requireNonNull(type, "type must not be null");
-            if (name.isBlank()) throw new IllegalArgumentException("name must not be blank");
+            if (name.isBlank()) {
+                throw new IllegalArgumentException("name must not be blank");
+            }
         }
     }
 }

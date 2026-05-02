@@ -160,7 +160,7 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
         Offset o1 = runPromise(() -> plugin.append(first));
         Offset o2 = runPromise(() -> plugin.append(second));
 
-        assertThat(o2.value()).isEqualTo(o1.value());  — same offset signals deduplication
+        assertThat(o2.value()).isEqualTo(o1.value()); // same offset signals deduplication
     }
 
     @Test

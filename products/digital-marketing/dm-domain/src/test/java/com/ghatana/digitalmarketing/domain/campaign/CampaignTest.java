@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 /**
  * Unit tests for {@link Campaign} — covers construction, lifecycle state machine, and
@@ -209,7 +211,26 @@ class CampaignTest {
     void shouldHaveIdBasedEquality() {
         Campaign a = newDraftCampaign();
         Campaign b = newDraftCampaign();
+        // same id: equal
         assertThat(a).isEqualTo(b);
         assertThat(a.hashCode()).isEqualTo(b.hashCode());
+        // self-reference
+        assertThat(a).isEqualTo(a);
+        // null and different type: not equal
+        assertThat(a).isNotEqualTo(null);
+        assertThat(a).isNotEqualTo("some-string");
+        // different id: not equal
+        Campaign different = Campaign.builder()
+            .id("campaign-different")
+            .workspaceId(WS)
+            .name("Other")
+            .type(CampaignType.SOCIAL)
+            .status(CampaignStatus.DRAFT)
+            .createdAt(java.time.Instant.now())
+            .updatedAt(java.time.Instant.now())
+            .createdBy("user-1")
+            .build();
+        assertThat(a).isNotEqualTo(different);
+        assertThat(a.hashCode()).isNotEqualTo(different.hashCode());
     }
 }

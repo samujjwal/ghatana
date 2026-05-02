@@ -2,6 +2,8 @@ plugins {
     id("java-module")
 }
 
+apply(from = "../gradle/dmos-quality-gates.gradle.kts")
+
 group = "com.ghatana.digitalmarketing"
 description = "DMOS Kernel Bridge — production AbstractKernelBridge extension for DMOS operations"
 
@@ -36,4 +38,18 @@ tasks.jacocoTestReport {
         html.required.set(true)
         csv.required.set(false)
     }
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit { counter = "LINE"; value = "COVEREDRATIO"; minimum = "0.95".toBigDecimal() }
+            limit { counter = "BRANCH"; value = "COVEREDRATIO"; minimum = "0.90".toBigDecimal() }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }

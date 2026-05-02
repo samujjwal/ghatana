@@ -2,6 +2,8 @@ plugins {
     id("java-module")
 }
 
+apply(from = "../gradle/dmos-quality-gates.gradle.kts")
+
 group = "com.ghatana.digitalmarketing"
 description = "DMOS API — HTTP servlet layer exposing DMOS application services"
 
@@ -32,4 +34,25 @@ tasks.jacocoTestReport {
         html.required.set(true)
         csv.required.set(false)
     }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.82".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.85".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }

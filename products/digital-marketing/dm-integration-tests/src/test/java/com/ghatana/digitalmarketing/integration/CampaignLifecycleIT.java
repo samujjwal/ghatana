@@ -1,7 +1,7 @@
 package com.ghatana.digitalmarketing.integration;
 
-import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignComplianceViolationException;
+import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
@@ -14,15 +14,16 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
+import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,23 +32,17 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Integration tests for the DMOS Campaign lifecycle.
- *
- * <p>Uses an in-memory {@link CampaignRepository} and mock kernel + compliance plugins
- * to verify that the application service correctly orchestrates domain transitions.</p>
+ * Integration tests for the DMOS Campaign lifecycle using in-memory fakes.
  */
 @DisplayName("Campaign Lifecycle Integration")
-@ExtendWith(MockitoExtension.class)
 class CampaignLifecycleIT extends EventloopTestBase {
 
-    @Mock private DigitalMarketingKernelAdapter kernelAdapter;
-    @Mock private CompliancePlugin compliancePlugin;
-
+    private RecordingKernelAdapter kernelAdapter;
+    private InMemoryCompliancePlugin compliancePlugin;
     private CampaignService campaignService;
     private DmOperationContext writeCtx;
     private DmOperationContext readCtx;
@@ -55,7 +50,20 @@ class CampaignLifecycleIT extends EventloopTestBase {
     @BeforeEach
     void setUp() {
         CampaignRepository inMemoryRepo = new InMemoryCampaignRepository();
-        campaignService = new CampaignServiceImpl(kernelAdapter, inMemoryRepo, compliancePlugin);
+        kernelAdapter = new RecordingKernelAdapter();
+        compliancePlugin = new InMemoryCompliancePlugin();
+        campaignService = new CampaignServiceImpl(
+            kernelAdapter,
+            inMemoryRepo,
+            compliancePlugin,
+            (opCtx, campaign) -> Promise.of(new com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider.CampaignPreflightData(
+                true,
+                1,
+                1,
+                0.0,
+                1000.0
+            ))
+        );
 
         writeCtx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -72,54 +80,34 @@ class CampaignLifecycleIT extends EventloopTestBase {
             .correlationId(DmCorrelationId.generate())
             .build();
 
-        // Default kernel stub: always authorized, audit succeeds
-        lenient().when(kernelAdapter.isAuthorized(any(), any(), any()))
-            .thenReturn(Promise.of(true));
-        lenient().when(kernelAdapter.recordAudit(any(), any(), any(), any()))
-            .thenReturn(Promise.of("audit-entry-1"));
+        kernelAdapter.setDefaultAuthorization(true);
+        compliancePlugin.setCompliant(true);
     }
 
-    // -----------------------------------------------------------------------
-    // Full lifecycle: DRAFT → LAUNCHED → PAUSED → LAUNCHED → COMPLETED
-    // -----------------------------------------------------------------------
-
     @Test
-    @DisplayName("full lifecycle: create → launch → pause → resume → get")
+    @DisplayName("full lifecycle: create, launch, pause, resume, and get")
     void shouldExecuteFullLifecycle() {
-        stubPassingCompliance();
-
-        // Create
         Campaign created = runPromise(() -> campaignService.createCampaign(writeCtx,
             new CampaignService.CreateCampaignCommand("Q4 Acquisition", CampaignType.EMAIL)));
         assertThat(created.getStatus()).isEqualTo(CampaignStatus.DRAFT);
-        String id = created.getId();
 
-        // Launch
-        Campaign launched = runPromise(() -> campaignService.launchCampaign(writeCtx, id));
+        Campaign launched = runPromise(() -> campaignService.launchCampaign(writeCtx, created.getId()));
         assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
 
-        // Pause
-        Campaign paused = runPromise(() -> campaignService.pauseCampaign(writeCtx, id));
+        Campaign paused = runPromise(() -> campaignService.pauseCampaign(writeCtx, created.getId()));
         assertThat(paused.getStatus()).isEqualTo(CampaignStatus.PAUSED);
 
-        // Resume (launch again)
-        Campaign resumed = runPromise(() -> campaignService.launchCampaign(writeCtx, id));
+        Campaign resumed = runPromise(() -> campaignService.launchCampaign(writeCtx, created.getId()));
         assertThat(resumed.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
 
-        // Get — persisted state is LAUNCHED
-        Campaign fetched = runPromise(() -> campaignService.getCampaign(readCtx, id));
+        Campaign fetched = runPromise(() -> campaignService.getCampaign(readCtx, created.getId()));
         assertThat(fetched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
     }
-
-    // -----------------------------------------------------------------------
-    // Authorization enforcement
-    // -----------------------------------------------------------------------
 
     @Test
     @DisplayName("create is denied when not authorized")
     void shouldDenyCreateWhenNotAuthorized() {
-        when(kernelAdapter.isAuthorized(any(), eq("campaigns/*"), eq("write")))
-            .thenReturn(Promise.of(false));
+        kernelAdapter.setAuthorization("campaigns/*", "write", false);
 
         assertThatExceptionOfType(SecurityException.class)
             .isThrownBy(() -> runPromise(() -> campaignService.createCampaign(writeCtx,
@@ -127,70 +115,30 @@ class CampaignLifecycleIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("launch is denied when not authorized")
-    void shouldDenyLaunchWhenNotAuthorized() {
-        stubPassingCompliance();
-        // Create with normal auth
-        Campaign created = runPromise(() -> campaignService.createCampaign(writeCtx,
-            new CampaignService.CreateCampaignCommand("Campaign", CampaignType.EMAIL)));
-
-        // Then revoke launch authorization
-        when(kernelAdapter.isAuthorized(any(), contains(created.getId()), eq("launch")))
-            .thenReturn(Promise.of(false));
-
-        assertThatExceptionOfType(SecurityException.class)
-            .isThrownBy(() -> runPromise(() -> campaignService.launchCampaign(writeCtx, created.getId())));
-    }
-
-    // -----------------------------------------------------------------------
-    // Compliance enforcement
-    // -----------------------------------------------------------------------
-
-    @Test
     @DisplayName("launch is blocked when compliance preflight fails")
     void shouldBlockLaunchOnComplianceFailure() {
         Campaign created = runPromise(() -> campaignService.createCampaign(writeCtx,
             new CampaignService.CreateCampaignCommand("Non-Compliant", CampaignType.EMAIL)));
-
-        CompliancePlugin.ComplianceResult failResult = new CompliancePlugin.ComplianceResult(
-            false,
-            List.of(new CompliancePlugin.ComplianceViolation(
-                "CP-001", "No approved content", CompliancePlugin.ComplianceRule.Severity.HIGH, Map.of()
-            )),
-            "DM_CAMPAIGN_PREFLIGHT",
-            Instant.now()
-        );
-        when(compliancePlugin.evaluate(any(), any())).thenReturn(Promise.of(failResult));
+        compliancePlugin.setCompliant(false);
 
         assertThatExceptionOfType(CampaignComplianceViolationException.class)
             .isThrownBy(() -> runPromise(() -> campaignService.launchCampaign(writeCtx, created.getId())));
     }
 
-    // -----------------------------------------------------------------------
-    // Audit recording
-    // -----------------------------------------------------------------------
-
     @Test
-    @DisplayName("create and launch each record distinct audit events")
+    @DisplayName("create and launch each emit distinct audit actions")
     void shouldRecordAuditForCreateAndLaunch() {
-        stubPassingCompliance();
-
         Campaign created = runPromise(() -> campaignService.createCampaign(writeCtx,
             new CampaignService.CreateCampaignCommand("Audited", CampaignType.EMAIL)));
         runPromise(() -> campaignService.launchCampaign(writeCtx, created.getId()));
 
-        verify(kernelAdapter).recordAudit(any(), any(), eq("create"), any());
-        verify(kernelAdapter).recordAudit(any(), any(), eq("launch"), any());
+        assertThat(kernelAdapter.auditActions())
+            .contains("create", "launch");
     }
 
-    // -----------------------------------------------------------------------
-    // Persistence scoping
-    // -----------------------------------------------------------------------
-
     @Test
-    @DisplayName("campaigns in different workspaces are isolated")
+    @DisplayName("campaigns are isolated by workspace")
     void shouldIsolateCampaignsByWorkspace() {
-        stubPassingCompliance();
         DmOperationContext wsACtx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("ws-A"))
@@ -199,18 +147,6 @@ class CampaignLifecycleIT extends EventloopTestBase {
             .idempotencyKey(DmIdempotencyKey.generate())
             .build();
 
-        DmOperationContext wsBCtx = DmOperationContext.builder()
-            .tenantId(DmTenantId.of("tenant-1"))
-            .workspaceId(DmWorkspaceId.of("ws-B"))
-            .actor(ActorRef.user("user-2"))
-            .correlationId(DmCorrelationId.generate())
-            .idempotencyKey(DmIdempotencyKey.generate())
-            .build();
-
-        Campaign inA = runPromise(() -> campaignService.createCampaign(wsACtx,
-            new CampaignService.CreateCampaignCommand("Campaign A", CampaignType.EMAIL)));
-
-        // Looking up the campaign from workspace B should not find it
         DmOperationContext wsBReadCtx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
             .workspaceId(DmWorkspaceId.of("ws-B"))
@@ -218,34 +154,19 @@ class CampaignLifecycleIT extends EventloopTestBase {
             .correlationId(DmCorrelationId.generate())
             .build();
 
+        Campaign inA = runPromise(() -> campaignService.createCampaign(wsACtx,
+            new CampaignService.CreateCampaignCommand("Campaign A", CampaignType.EMAIL)));
+
         assertThatExceptionOfType(NoSuchElementException.class)
             .isThrownBy(() -> runPromise(() -> campaignService.getCampaign(wsBReadCtx, inA.getId())));
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
-    private void stubPassingCompliance() {
-        lenient().when(compliancePlugin.evaluate(any(), any()))
-            .thenReturn(Promise.of(new CompliancePlugin.ComplianceResult(
-                true, List.of(), "DM_CAMPAIGN_PREFLIGHT", Instant.now()
-            )));
-    }
-
-    /**
-     * Simple, non-thread-safe in-memory campaign store for integration tests.
-     * Scopes campaigns by workspaceId + campaignId.
-     */
     private static final class InMemoryCampaignRepository implements CampaignRepository {
-
-        /** Key: workspaceId + ":" + campaignId */
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
         @Override
         public Promise<Campaign> save(Campaign campaign) {
-            String key = key(campaign.getWorkspaceId().getValue(), campaign.getId());
-            store.put(key, campaign);
+            store.put(key(campaign.getWorkspaceId().getValue(), campaign.getId()), campaign);
             return Promise.of(campaign);
         }
 
@@ -254,8 +175,142 @@ class CampaignLifecycleIT extends EventloopTestBase {
             return Promise.of(Optional.ofNullable(store.get(key(workspaceId.getValue(), campaignId))));
         }
 
-        private static String key(String wsId, String campaignId) {
-            return wsId + ":" + campaignId;
+        private static String key(String workspaceId, String campaignId) {
+            return workspaceId + ":" + campaignId;
+        }
+    }
+
+    private static final class RecordingKernelAdapter implements DigitalMarketingKernelAdapter {
+        private final Map<String, Boolean> decisionMap = new ConcurrentHashMap<>();
+        private volatile boolean defaultAuthorization = true;
+        private final List<String> auditActions = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+        void setDefaultAuthorization(boolean allowed) {
+            defaultAuthorization = allowed;
+        }
+
+        void setAuthorization(String resource, String action, boolean allowed) {
+            decisionMap.put(resource + "|" + action, allowed);
+        }
+
+        List<String> auditActions() {
+            return auditActions;
+        }
+
+        @Override
+        public void start() {
+            // no-op for integration tests
+        }
+
+        @Override
+        public void stop() {
+            // no-op for integration tests
+        }
+
+        @Override
+        public Promise<Boolean> isAuthorized(DmOperationContext context, String resource, String action) {
+            return Promise.of(decisionMap.getOrDefault(resource + "|" + action, defaultAuthorization));
+        }
+
+        @Override
+        public Promise<Boolean> verifyConsent(DmOperationContext context, String subjectId, String purpose) {
+            return Promise.of(true);
+        }
+
+        @Override
+        public Promise<String> requestApproval(
+            DmOperationContext context,
+            String operationType,
+            String subjectId,
+            String description
+        ) {
+            return Promise.of("approval-1");
+        }
+
+        @Override
+        public Promise<String> recordAudit(
+            DmOperationContext context,
+            String entityId,
+            String action,
+            Map<String, Object> attributes
+        ) {
+            auditActions.add(action);
+            return Promise.of("audit-entry-1");
+        }
+    }
+
+    private static final class InMemoryCompliancePlugin implements CompliancePlugin {
+        private volatile boolean compliant = true;
+
+        void setCompliant(boolean value) {
+            compliant = value;
+        }
+
+        @Override
+        public Promise<ComplianceResult> evaluate(String ruleSetId, ComplianceContext context) {
+            if (compliant) {
+                return Promise.of(new ComplianceResult(true, List.of(), ruleSetId, Instant.now()));
+            }
+            return Promise.of(new ComplianceResult(
+                false,
+                List.of(new ComplianceViolation(
+                    "DM-CP-001",
+                    "Preflight failed",
+                    ComplianceRule.Severity.HIGH,
+                    Map.of("reason", "simulated")
+                )),
+                ruleSetId,
+                Instant.now()
+            ));
+        }
+
+        @Override
+        public Promise<Void> registerRuleSet(String ruleSetId, List<ComplianceRule> rules) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> addRule(String ruleSetId, ComplianceRule rule) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<List<AuditEntry>> getAuditTrail(String entityId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<List<ComplianceViolation>> getActiveViolations(String ruleSetId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder()
+                .id("dm-it-compliance-plugin")
+                .name("DM IT Compliance Plugin")
+                .type(PluginType.CUSTOM)
+                .build();
+        }
+
+        @Override
+        public PluginState getState() {
+            return PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(PluginContext context) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.of(null);
         }
     }
 }
