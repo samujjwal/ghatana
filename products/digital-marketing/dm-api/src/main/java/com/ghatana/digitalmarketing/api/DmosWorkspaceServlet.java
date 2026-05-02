@@ -9,9 +9,11 @@ import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
+import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.workspace.Workspace;
+import com.ghatana.kernel.security.TenantSecurityContext;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -24,8 +26,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * ActiveJ HTTP servlet exposing the DMOS workspace management API.
@@ -215,22 +220,48 @@ public final class DmosWorkspaceServlet {
         String principal = getHeader(request, "X-Principal-ID", "anonymous");
         String correlId  = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
         String idkValue  = getHeader(request, "X-Idempotency-Key", null);
+        String sessionId = getHeader(request, "X-Session-ID", null);
+        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
+        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
 
         if (requireIdk && (idkValue == null || idkValue.isBlank())) {
             throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
         }
 
-        DmOperationContext.Builder builder = DmOperationContext.builder()
+        DmIdempotencyKey idk = (idkValue != null && !idkValue.isBlank()) ? DmIdempotencyKey.of(idkValue) : null;
+        DmWorkspaceId workspace = DmWorkspaceId.of("root");
+
+        DmOperationContext baseContext = DmOperationContext.builder()
             .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(DmWorkspaceId.of("root"))
+            .workspaceId(workspace)
             .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlId));
+            .correlationId(DmCorrelationId.of(correlId))
+            .build();
 
-        if (idkValue != null && !idkValue.isBlank()) {
-            builder.idempotencyKey(DmIdempotencyKey.of(idkValue));
+        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
+            baseContext,
+            sessionId,
+            roles,
+            permissions,
+            null
+        );
+
+        return DmSecurityContextMapper.fromSecurityContext(
+            securityContext,
+            workspace,
+            DmCorrelationId.of(correlId),
+            idk
+        );
+    }
+
+    private static Set<String> parseCsvHeader(String value) {
+        if (value == null || value.isBlank()) {
+            return Set.of();
         }
-
-        return builder.build();
+        return Arrays.stream(value.split(","))
+            .map(String::trim)
+            .filter(token -> !token.isBlank())
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
     private Promise<HttpResponse> handleError(String operation, Throwable e) {

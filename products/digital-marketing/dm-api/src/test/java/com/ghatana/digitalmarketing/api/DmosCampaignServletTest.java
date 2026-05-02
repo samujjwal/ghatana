@@ -80,9 +80,37 @@ class DmosCampaignServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST campaigns returns 500 on unexpected service failure")
+    void shouldReturn500OnCreateUnexpectedFailure() {
+        campaignService.createResult = Promise.ofException(new RuntimeException("create-failure"));
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody("{\"name\":\"Q4 Acquisition\",\"type\":\"EMAIL\"}".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(500);
+    }
+
+    @Test
     @DisplayName("POST campaigns returns 400 when tenant header is missing")
     void shouldReturn400WhenTenantHeaderMissing() {
         HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody("{\"name\":\"Test\",\"type\":\"EMAIL\"}".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("POST campaigns returns 400 when tenant header is blank")
+    void shouldReturn400WhenTenantHeaderBlank() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "   ")
             .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
             .withBody("{\"name\":\"Test\",\"type\":\"EMAIL\"}".getBytes())
             .build();
@@ -106,6 +134,24 @@ class DmosCampaignServletTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> servlet.serve(request));
         assertThat(response.getCode()).isEqualTo(201);
         assertThat(campaignService.lastContext.getActor().getPrincipalId()).isEqualTo("anonymous");
+    }
+
+    @Test
+    @DisplayName("POST campaigns parses role and permission headers with blanks")
+    void shouldParseRolesAndPermissionsOnCreate() {
+        campaignService.createResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/campaigns")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "owner, , operator")
+            .withHeader(HttpHeaders.of("X-Permissions"), "campaign:write, ,campaign:read")
+            .withBody("{\"name\":\"Q4 Acquisition\",\"type\":\"EMAIL\"}".getBytes())
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(201);
     }
 
     @Test

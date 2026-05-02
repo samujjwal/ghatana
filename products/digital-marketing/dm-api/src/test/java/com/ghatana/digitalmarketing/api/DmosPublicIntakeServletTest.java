@@ -96,6 +96,26 @@ class DmosPublicIntakeServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("parses role and permission headers with blanks")
+    void shouldParseRolesAndPermissionsHeaders() {
+        suppressionService.suppressed = false;
+        String payload = "{\"campaignId\":\"camp-1\",\"email\":\"a@example.com\"}";
+
+        HttpRequest request = HttpRequest.post("http://localhost/public/v1/workspaces/ws-1/intake/leads")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "guest, , submitter")
+            .withHeader(HttpHeaders.of("X-Permissions"), "lead:create, ,lead:read")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody(payload.getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(201);
+    }
+
+    @Test
     @DisplayName("returns 409 when email is suppressed")
     void shouldReturn409WhenSuppressed() {
         suppressionService.suppressed = true;
@@ -132,6 +152,19 @@ class DmosPublicIntakeServletTest extends EventloopTestBase {
     @DisplayName("returns 400 when tenant header is missing")
     void shouldReturn400OnMissingTenantHeader() {
         HttpRequest request = HttpRequest.post("http://localhost/public/v1/workspaces/ws-1/intake/leads")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody("{}".getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("returns 400 when tenant header is blank")
+    void shouldReturn400OnBlankTenantHeader() {
+        HttpRequest request = HttpRequest.post("http://localhost/public/v1/workspaces/ws-1/intake/leads")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "   ")
             .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
             .withBody("{}".getBytes(StandardCharsets.UTF_8))
             .build();

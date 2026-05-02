@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.contact;
 
+import com.ghatana.digitalmarketing.application.consent.ConsentProofService;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -208,6 +210,23 @@ class ContactServiceImplTest extends EventloopTestBase {
         assertThat(result).isFalse();
     }
 
+    @Test
+    @DisplayName("grantConsent persists consent proof snapshot when proof service is configured")
+    void shouldPersistConsentProofOnGrant() {
+        RecordingConsentProofService proofService = new RecordingConsentProofService();
+        ContactServiceImpl proofAwareService = new ContactServiceImpl(kernelAdapter, repository, proofService);
+
+        Contact created = runPromise(() -> proofAwareService.registerContact(
+            ctx,
+            new ContactService.RegisterContactCommand("proof@example.com", "Proof")));
+
+        runPromise(() -> proofAwareService.grantConsent(ctx, created.getId(), "marketing-email"));
+
+        assertThat(proofService.snapshots).hasSize(1);
+        assertThat(proofService.snapshots.get(0).contactId()).isEqualTo(created.getId());
+        assertThat(proofService.snapshots.get(0).consentStatus()).isEqualTo("GRANTED");
+    }
+
     // -----------------------------------------------------------------------
     // Test doubles
     // -----------------------------------------------------------------------
@@ -302,5 +321,51 @@ class ContactServiceImplTest extends EventloopTestBase {
             auditActions.add(action);
             return Promise.of("audit-1");
         }
+    }
+
+    private static final class RecordingConsentProofService implements ConsentProofService {
+        private final CopyOnWriteArrayList<SnapshotRecord> snapshots = new CopyOnWriteArrayList<>();
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.consent.ConsentProofSnapshot> recordSnapshot(
+                DmOperationContext ctx,
+                String contactId,
+                String consentStatus,
+                String consentPurpose,
+                String evidenceType,
+                String evidenceReference) {
+            snapshots.add(new SnapshotRecord(contactId, consentStatus, consentPurpose, evidenceType, evidenceReference));
+
+            com.ghatana.digitalmarketing.domain.consent.ConsentProofSnapshot snapshot =
+                com.ghatana.digitalmarketing.domain.consent.ConsentProofSnapshot.builder()
+                    .snapshotId("snapshot-1")
+                    .contactId(contactId)
+                    .workspaceId(ctx.getWorkspaceId())
+                    .consentStatus(consentStatus)
+                    .consentPurpose(consentPurpose)
+                    .evidenceType(evidenceType)
+                    .evidenceReference(evidenceReference)
+                    .recordedAt(java.time.Instant.now())
+                    .recordedBy(ctx.getActor().getPrincipalId())
+                    .correlationId(ctx.getCorrelationId().getValue())
+                    .build();
+
+            return Promise.of(snapshot);
+        }
+
+        @Override
+        public Promise<List<com.ghatana.digitalmarketing.domain.consent.ConsentProofSnapshot>> listSnapshots(
+                DmOperationContext ctx,
+                String contactId) {
+            return Promise.of(List.of());
+        }
+
+        private record SnapshotRecord(
+            String contactId,
+            String consentStatus,
+            String consentPurpose,
+            String evidenceType,
+            String evidenceReference
+        ) { }
     }
 }

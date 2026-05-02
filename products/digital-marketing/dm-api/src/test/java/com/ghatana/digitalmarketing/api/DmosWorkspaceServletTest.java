@@ -87,6 +87,26 @@ class DmosWorkspaceServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("POST create parses role and permission headers with blanks")
+    void shouldParseRolesAndPermissionsOnCreate() {
+        workspaceService.createResult = Promise.of(workspace("ws-1", WorkspaceStatus.ACTIVE));
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "owner-1")
+            .withHeader(HttpHeaders.of("X-Session-ID"), "session-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin, , editor")
+            .withHeader(HttpHeaders.of("X-Permissions"), "workspace:write, ,workspace:read")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-roles-1")
+            .withBody("{\"name\":\"Main\",\"description\":\"Primary workspace\"}".getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(201);
+    }
+
+    @Test
     @DisplayName("POST create returns 500 when payload is malformed JSON")
     void shouldReturn500OnCreateMalformedJson() {
         HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces")
@@ -314,6 +334,17 @@ class DmosWorkspaceServletTest extends EventloopTestBase {
     @DisplayName("GET list returns 400 when X-Tenant-ID header is missing")
     void shouldReturn400OnMissingTenantHeaderForList() {
         HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("GET list returns 400 when X-Tenant-ID header is blank")
+    void shouldReturn400OnBlankTenantHeaderForList() {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "   ")
             .build();
 
         HttpResponse response = runPromise(() -> servlet.serve(request));

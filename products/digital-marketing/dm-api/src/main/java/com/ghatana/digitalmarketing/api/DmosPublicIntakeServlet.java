@@ -10,9 +10,11 @@ import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
+import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.lead.Lead;
+import com.ghatana.kernel.security.TenantSecurityContext;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -25,7 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Public intake servlet for self-marketing lead capture.
@@ -116,18 +121,46 @@ public final class DmosPublicIntakeServlet {
         String principal = getHeader(request, "X-Principal-ID", "public-intake");
         String correlId = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
         String idkValue = getHeader(request, "X-Idempotency-Key", null);
+        String sessionId = getHeader(request, "X-Session-ID", null);
+        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
+        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
 
         if (idkValue == null || idkValue.isBlank()) {
             throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
         }
 
-        return DmOperationContext.builder()
+        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
+        DmOperationContext baseContext = DmOperationContext.builder()
             .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(DmWorkspaceId.of(workspaceId))
+            .workspaceId(workspace)
             .actor(ActorRef.user(principal))
             .correlationId(DmCorrelationId.of(correlId))
-            .idempotencyKey(DmIdempotencyKey.of(idkValue))
             .build();
+
+        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
+            baseContext,
+            sessionId,
+            roles,
+            permissions,
+            null
+        );
+
+        return DmSecurityContextMapper.fromSecurityContext(
+            securityContext,
+            workspace,
+            DmCorrelationId.of(correlId),
+            DmIdempotencyKey.of(idkValue)
+        );
+    }
+
+    private static Set<String> parseCsvHeader(String value) {
+        if (value == null || value.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(value.split(","))
+            .map(String::trim)
+            .filter(token -> !token.isBlank())
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static String getRequiredHeader(HttpRequest request, String name) {

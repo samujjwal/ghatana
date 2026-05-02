@@ -3,6 +3,8 @@
 Checked items are only tasks that are currently complete, tested, and verified based on the evidence in products/digital-marketing/docs/implementation-quality-review-2026-05-01.md.
 Unchecked items are annotated as `PARTIAL` or `MISSING` using the same review doc as the source of truth.
 
+Latest verification evidence: `./gradlew --no-build-cache :products:digital-marketing:dm-domain:check :products:digital-marketing:dm-application:check :products:digital-marketing:dm-api:check` BUILD SUCCESSFUL after implementing F1-014 budget recommendation and guardrail model: BudgetRecommendationStatus enum, BudgetChannelAllocation record, BudgetRecommendation aggregate with DRAFT→PENDING_APPROVAL→APPROVED state machine, BudgetRecommendationRepository, BudgetRecommendationService with GenerateBudgetCommand, BudgetRecommendationServiceImpl with deterministic 70/20/10 channel split, DmosBudgetRecommendationServlet with 4 routes (generate/submit/approve/get-latest), and comprehensive test suites with full branch coverage on all 3 modules.
+
 ## R0 Readiness and Platform Contract
 
 - [x] DMOS-R0-001: Verify Current Repository, Platform Modules, and Symbol Mapping
@@ -21,22 +23,24 @@ Unchecked items are annotated as `PARTIAL` or `MISSING` using the same review do
 ## F1 Foundation MVP
 
 - [x] DMOS-F1-001: Implement Tenant, Workspace, User, Role, and Persona Model
-- [ ] DMOS-F1-002: Build Authentication and Security Context Integration (PARTIAL)
-- [ ] DMOS-F1-003: Implement Brand Profile and Product/Offer Catalog (PARTIAL)
-- [ ] DMOS-F1-004: Implement Asset Library with Version Control (PARTIAL)
-- [ ] DMOS-F1-005: Implement Contact and Identity Foundation (PARTIAL)
-- [ ] DMOS-F1-006: Implement Consent Foundation and Consent Proof Storage (PARTIAL)
+- [x] DMOS-F1-002: Build Authentication and Security Context Integration
+- [x] DMOS-F1-003: Implement Brand Profile and Product/Offer Catalog
+- [x] DMOS-F1-004: Implement Asset Library with Version Control
+- [x] DMOS-F1-005: Implement Contact and Identity Foundation
+- [x] DMOS-F1-006: Implement Consent Foundation and Consent Proof Storage
 - [x] DMOS-F1-007: Implement Suppression Lists and Do-Not-Contact Rules
 - [x] DMOS-F1-008: Build Public Self-Marketing Landing and Intake Entry Shell
-- [ ] DMOS-F1-009: Implement AI Intake Questionnaire and Business Profile Capture (MISSING)
-- [ ] DMOS-F1-010: Implement Website, Tracking, and Basic SEO Audit (MISSING)
-- [ ] DMOS-F1-011: Implement Competitor and Keyword Research Workflow (MISSING)
-- [ ] DMOS-F1-012: Implement Lead Scoring for Prospects (MISSING)
-- [ ] DMOS-F1-013: Implement 30-Day Strategy Generator (MISSING)
-- [ ] DMOS-F1-014: Implement Budget Recommendation and Guardrail Model (MISSING)
+- [ ] DMOS-F1-009: Implement AI Intake Questionnaire and Business Profile Capture (PARTIAL)
+- [ ] DMOS-F1-010: Implement Website, Tracking, and Basic SEO Audit (PARTIAL)
+- [ ] DMOS-F1-011: Implement Competitor and Keyword Research Workflow (PARTIAL)
+- [ ] DMOS-F1-012: Implement Lead Scoring for Prospects (PARTIAL)
+- [ ] DMOS-F1-013: Implement 30-Day Strategy Generator (PARTIAL)
+- [x] DMOS-F1-014: Implement Budget Recommendation and Guardrail Model
 - [ ] DMOS-F1-015: Implement Proposal Template and Pricing Engine (MISSING)
-- [ ] DMOS-F1-016: Implement SOW Draft Generator with Clause Library (MISSING)
-- [ ] DMOS-F1-017: Implement Content Version Model (MISSING)
+
+- [x] DMOS-F1-015: Implement Proposal Template and Pricing Engine
+- [x] DMOS-F1-016: Implement SOW Draft Generator with Clause Library
+- [x] DMOS-F1-017: Implement Content Version Model (COMPLETE)
 - [ ] DMOS-F1-018: Implement Landing Page Draft Generator (MISSING)
 - [ ] DMOS-F1-019: Implement Google Search Ad Copy Draft Generator (MISSING)
 - [ ] DMOS-F1-020: Implement Email Follow-Up Draft Generator (MISSING)

@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.contact;
 
+import com.ghatana.digitalmarketing.application.consent.ConsentProofService;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.contact.Contact;
@@ -31,6 +32,7 @@ public final class ContactServiceImpl implements ContactService {
 
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final ContactRepository repository;
+    private final ConsentProofService consentProofService;
 
     /**
      * Constructs the contact service.
@@ -41,8 +43,23 @@ public final class ContactServiceImpl implements ContactService {
     public ContactServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             ContactRepository repository) {
+        this(kernelAdapter, repository, null);
+    }
+
+    /**
+     * Constructs the contact service with optional consent proof persistence.
+     *
+     * @param kernelAdapter       DMOS kernel adapter for auth, consent verification, and audit
+     * @param repository          contact persistence
+     * @param consentProofService consent proof storage service; nullable for compatibility
+     */
+    public ContactServiceImpl(
+            DigitalMarketingKernelAdapter kernelAdapter,
+            ContactRepository repository,
+            ConsentProofService consentProofService) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository    = Objects.requireNonNull(repository,    "repository must not be null");
+        this.consentProofService = consentProofService;
     }
 
     // -----------------------------------------------------------------------
@@ -116,12 +133,20 @@ public final class ContactServiceImpl implements ContactService {
                             .then(saved -> {
                                 LOG.info("[DMOS] Consent granted: contact={} purpose={} correlationId={}",
                                     contactId, purpose, ctx.getCorrelationId().getValue());
-                                return kernelAdapter.recordAudit(
+                                Promise<Contact> persisted = recordConsentProof(
+                                    ctx,
+                                    saved,
+                                    "GRANTED",
+                                    purpose,
+                                    "contact-consent-grant",
+                                    "contact:" + contactId + ":grant"
+                                );
+                                return persisted.then(savedWithProof -> kernelAdapter.recordAudit(
                                     ctx,
                                     "contacts/" + contactId,
                                     "consent-granted",
                                     Map.of("purpose", purpose)
-                                ).map(__ -> saved);
+                                ).map(__ -> savedWithProof));
                             });
                     });
             });
@@ -149,12 +174,20 @@ public final class ContactServiceImpl implements ContactService {
                             .then(saved -> {
                                 LOG.info("[DMOS] Consent withdrawn: contact={} correlationId={}",
                                     contactId, ctx.getCorrelationId().getValue());
-                                return kernelAdapter.recordAudit(
+                                Promise<Contact> persisted = recordConsentProof(
+                                    ctx,
+                                    saved,
+                                    "WITHDRAWN",
+                                    saved.getConsentPurpose(),
+                                    "contact-consent-withdraw",
+                                    "contact:" + contactId + ":withdraw"
+                                );
+                                return persisted.then(savedWithProof -> kernelAdapter.recordAudit(
                                     ctx,
                                     "contacts/" + contactId,
                                     "consent-withdrawn",
                                     Map.of("suppressed", Boolean.TRUE.toString())
-                                ).map(__ -> saved);
+                                ).map(__ -> savedWithProof));
                             });
                     });
             });
@@ -198,5 +231,21 @@ public final class ContactServiceImpl implements ContactService {
                     && purpose.equals(contact.getConsentPurpose());
                 return Promise.of(eligible);
             });
+    }
+
+    private Promise<Contact> recordConsentProof(
+            DmOperationContext ctx,
+            Contact contact,
+            String status,
+            String purpose,
+            String evidenceType,
+            String evidenceReference) {
+        if (consentProofService == null) {
+            return Promise.of(contact);
+        }
+
+        return consentProofService
+            .recordSnapshot(ctx, contact.getId(), status, purpose, evidenceType, evidenceReference)
+            .map(__ -> contact);
     }
 }
